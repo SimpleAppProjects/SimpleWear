@@ -1,0 +1,64 @@
+apply plugin: 'com.android.application'
+
+def buildType = ""
+
+def getCurrentBuildType() {
+    Gradle gradle = getGradle()
+    String tskReqStr = gradle.getStartParameter().getTaskRequests().toString()
+    println(tskReqStr)
+
+    if (tskReqStr.contains("Release")) {
+        return "release"
+    } else if (tskReqStr.contains("assembleDebug") || tskReqStr.contains("generateDebug")) {
+        return "debug"
+    }
+
+    return ""
+}
+
+android {
+    compileSdkVersion 28
+    defaultConfig {
+        applicationId "com.thewizrd.simplewear"
+        minSdkVersion 21
+        targetSdkVersion 28
+        // NOTE: Version Code Format (TargetSDK, Version Name, Build Number, Variant Code (Android: 00, WearOS: 01)
+        versionCode 1
+        versionName "1.0"
+
+        vectorDrawables.useSupportLibrary = true
+    }
+    buildTypes {
+        debug {
+            applicationIdSuffix ".debug"
+            debuggable true
+            minifyEnabled false
+            useProguard false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            manifestPlaceholders = [allowBackup: false]
+        }
+        release {
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            manifestPlaceholders = [allowBackup: true]
+        }
+    }
+}
+
+dependencies {
+    implementation project(":shared_resources")
+    wearApp project(':wear')
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+
+    implementation 'com.google.android.gms:play-services-wearable:17.0.0'
+
+    implementation 'androidx.appcompat:appcompat:1.0.2'
+    implementation 'androidx.preference:preference:1.0.0'
+    implementation 'androidx.constraintlayout:constraintlayout:1.1.3'
+    implementation 'com.google.android.material:material:1.0.0'
+
+    implementation 'com.jakewharton.timber:timber:4.5.1'
+    implementation 'com.jakewharton.threetenabp:threetenabp:1.1.1'
+    implementation 'com.google.code.gson:gson:2.8.5'
+}

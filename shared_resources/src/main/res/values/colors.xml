@@ -1,0 +1,8 @@
+<resources>
+    <color name="colorPrimary">#0070c0</color>
+    <color name="colorPrimaryDark">#00468f</color>
+    <color name="colorPrimaryLight">#599ef3</color>
+    <color name="colorPrimaryMedium">#007dd6</color>
+    <color name="colorText">#FFFFFF</color>
+    <color name="colorTextHint">#D0FFFFFF</color>
+</resources>

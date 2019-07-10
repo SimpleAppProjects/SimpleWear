@@ -1,0 +1,19 @@
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <PreferenceCategory android:title="General">
+
+        <SwitchPreferenceCompat
+            android:defaultValue="false"
+            android:key=""
+            android:summary="Enable Service"
+            android:title="Setting 1" />
+
+        <SwitchPreferenceCompat
+            android:defaultValue="false"
+            android:key=""
+            android:summary="Setting 2"
+            android:title="Setting 2" />
+
+    </PreferenceCategory>
+
+</PreferenceScreen>

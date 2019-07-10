@@ -1,0 +1,19 @@
+<resources>
+
+    <!-- Base application theme. -->
+    <style name="WearAppTheme" parent="Theme.MaterialComponents.NoActionBar">
+        <!-- Customize your theme here. -->
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+        <item name="colorAccent">@color/colorPrimaryLight</item>
+    </style>
+
+    <style name="WearAppTheme.Launcher">
+        <item name="android:background">@drawable/ic_splash_screen</item>
+    </style>
+
+    <style name="WearSettingsTheme" parent="Theme.MaterialComponents.NoActionBar">
+        <item name="colorAccent">@color/colorPrimaryLight</item>
+    </style>
+
+</resources>
