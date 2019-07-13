@@ -28,6 +28,7 @@ public class WearableHelper {
     public static final String ActionsPath = "/actions";
     public static final String StatusPath = "/status";
     public static final String BatteryPath = "/status/battery";
+    public static final String BluetoothPath = "/status/bt";
     public static final String WifiPath = "/status/wifi";
     public static final String UpdatePath = "/update/all";
 

@@ -1,5 +1,6 @@
 package com.thewizrd.simplewear;
 
+import android.bluetooth.BluetoothAdapter;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -22,6 +23,11 @@ public class PhoneBroadcastReceiver extends BroadcastReceiver {
                     .setAction(WearableDataListenerService.ACTION_SENDWIFIUPDATE)
                     .putExtra(WearableDataListenerService.EXTRA_STATUS,
                             intent.getIntExtra(WifiManager.EXTRA_WIFI_STATE, WifiManager.WIFI_STATE_UNKNOWN)));
+        } else if (BluetoothAdapter.ACTION_STATE_CHANGED.equals(intent.getAction())) {
+            WearableDataListenerService.enqueueWork(context, new Intent(context, WearableDataListenerService.class)
+                    .setAction(WearableDataListenerService.ACTION_SENDBTUPDATE)
+                    .putExtra(WearableDataListenerService.EXTRA_STATUS,
+                            intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.STATE_ON)));
         } else {
             Logger.writeLine(Log.INFO, "%s: Unhandled action: %s", TAG, intent.getAction());
         }

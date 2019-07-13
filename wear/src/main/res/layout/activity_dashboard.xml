@@ -1,19 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.wear.widget.BoxInsetLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/colorPrimary"
-    android:padding="@dimen/box_inset_layout_padding"
+    android:fillViewport="true"
+    android:background="@color/dark_grey"
     tools:context="com.thewizrd.simplewear.DashboardActivity"
     tools:deviceIds="wear">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:padding="@dimen/inner_frame_layout_padding"
-        app:boxedEdges="all">
+        android:layout_height="wrap_content"
+        android:padding="@dimen/inner_layout_padding">
 
         <androidx.appcompat.widget.AppCompatImageView
             android:id="@+id/device_stat_icon"
@@ -63,30 +62,6 @@
             android:text="---"
             tools:text="99%, Charging" />
 
-        <androidx.appcompat.widget.AppCompatImageView
-            android:id="@+id/wifi_stat_icon"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:padding="4dp"
-            app:srcCompat="@drawable/ic_network_wifi_white_24dp"
-            app:layout_constraintTop_toBottomOf="@id/batt_stat_icon"
-            app:layout_constraintStart_toStartOf="parent" />
-
-        <androidx.appcompat.widget.AppCompatTextView
-            android:id="@+id/wifi_stat_text"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:padding="4dp"
-            android:ellipsize="marquee"
-            android:marqueeRepeatLimit="marquee_forever"
-            app:layout_constraintTop_toTopOf="@id/wifi_stat_icon"
-            app:layout_constraintStart_toEndOf="@id/wifi_stat_icon"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintBottom_toBottomOf="@id/wifi_stat_icon"
-            android:text="---"
-            tools:text="Enabled" />
-
         <androidx.appcompat.widget.AppCompatTextView
             android:id="@+id/actions_title"
             android:layout_width="match_parent"
@@ -97,7 +72,7 @@
             android:textAppearance="@style/TextAppearance.AppCompat.Body2"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/wifi_stat_icon" />
+            app:layout_constraintTop_toBottomOf="@id/batt_stat_icon" />
 
         <androidx.wear.widget.WearableRecyclerView
             android:id="@+id/actions_list"
@@ -108,10 +83,12 @@
             app:layout_constraintTop_toBottomOf="@id/actions_title"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintVertical_bias="0.0">
+            app:layout_constraintVertical_bias="0.0"
+            tools:listitem="@layout/control_fabtogglebutton">
 
         </androidx.wear.widget.WearableRecyclerView>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
-</androidx.wear.widget.BoxInsetLayout>
+
+</ScrollView>
 

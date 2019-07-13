@@ -8,6 +8,10 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
+import com.google.gson.typeadapters.RuntimeTypeAdapterFactory;
+import com.thewizrd.shared_resources.helpers.Action;
+import com.thewizrd.shared_resources.helpers.ToggleAction;
+import com.thewizrd.shared_resources.helpers.ValueAction;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -24,6 +28,10 @@ public class JSONParser {
 
     static {
         gson = new GsonBuilder()
+                .registerTypeAdapterFactory(
+                        RuntimeTypeAdapterFactory.of(Action.class)
+                                .registerSubtype(ToggleAction.class)
+                                .registerSubtype(ValueAction.class))
                 .setDateFormat("dd.MM.yyyy HH:mm:ss ZZZZZ")
                 .serializeNulls().create();
     }

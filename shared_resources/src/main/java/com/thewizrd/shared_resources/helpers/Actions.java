@@ -3,7 +3,9 @@ package com.thewizrd.shared_resources.helpers;
 import android.util.SparseArray;
 
 public enum Actions {
-    WIFI(0);
+    WIFI(0),
+    BLUETOOTH(1),
+    MOBILEDATA(2);
 
     private final int value;
 

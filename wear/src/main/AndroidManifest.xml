@@ -3,6 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     package="com.thewizrd.simplewear">
 
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <uses-feature android:name="android.hardware.type.watch" />
@@ -44,19 +45,6 @@
             android:name=".DashboardActivity"
             android:label="@string/title_activity_dashboard"
             android:theme="@style/WearAppTheme" />
-
-        <service
-            android:name=".wearable.WearableDataListenerService"
-            android:enabled="true">
-            <intent-filter>
-                <action android:name="com.google.android.gms.wearable.MESSAGE_RECEIVED" />
-                <action android:name="com.google.android.gms.wearable.CAPABILITY_CHANGED" />
-
-                <data
-                    android:host="*"
-                    android:scheme="wear" />
-            </intent-filter>
-        </service>
     </application>
 
 </manifest>

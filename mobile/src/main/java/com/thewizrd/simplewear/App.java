@@ -6,6 +6,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.net.ConnectivityManager;
 import android.os.BatteryManager;
 import android.os.Bundle;
 import android.util.Log;
@@ -25,6 +26,7 @@ public class App extends Application implements ApplicationLib, Application.Acti
     private Context context;
     private AppState applicationState;
     private BroadcastReceiver mBatteryReceiver;
+    private BroadcastReceiver mNetChangeReceiver;
 
     public static synchronized ApplicationLib getInstance() {
         return sInstance;
@@ -78,7 +80,18 @@ public class App extends Application implements ApplicationLib, Application.Acti
             }
         };
         IntentFilter batteryLevelFilter = new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
+
+        mNetChangeReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                WearableDataListenerService.enqueueWork(context, new Intent(context, WearableDataListenerService.class)
+                        .setAction(WearableDataListenerService.ACTION_SENDMOBILEDATAUPDATE));
+            }
+        };
+        IntentFilter netChangeFilter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
+
         context.registerReceiver(mBatteryReceiver, batteryLevelFilter);
+        context.registerReceiver(mNetChangeReceiver, netChangeFilter);
 
         final Thread.UncaughtExceptionHandler oldHandler = Thread.getDefaultUncaughtExceptionHandler();
 

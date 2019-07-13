@@ -1,6 +1,5 @@
 package com.thewizrd.simplewear;
 
-import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -12,20 +11,29 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.Nullable;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.wear.widget.CircularProgressLayout;
 
 import com.google.android.wearable.intent.RemoteIntent;
+import com.thewizrd.shared_resources.AsyncTask;
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus;
 import com.thewizrd.shared_resources.helpers.WearableHelper;
-import com.thewizrd.simplewear.wearable.WearableDataListenerService;
 
-public class PhoneSyncActivity extends Activity {
+public class PhoneSyncActivity extends WearableListenerActivity {
     private CircularProgressLayout mCircularProgress;
     private ImageView mButtonView;
     private TextView mTextView;
     private BroadcastReceiver mBroadcastReceiver;
     private IntentFilter intentFilter;
+
+    @Override
+    protected BroadcastReceiver getBroadcastReceiver() {
+        return mBroadcastReceiver;
+    }
+
+    @Override
+    public IntentFilter getIntentFilter() {
+        return intentFilter;
+    }
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -42,8 +50,8 @@ public class PhoneSyncActivity extends Activity {
         mBroadcastReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                if (WearableDataListenerService.ACTION_UPDATECONNECTIONSTATUS.equals(intent.getAction())) {
-                    WearConnectionStatus connStatus = WearConnectionStatus.valueOf(intent.getIntExtra(WearableDataListenerService.EXTRA_CONNECTIONSTATUS, 0));
+                if (ACTION_UPDATECONNECTIONSTATUS.equals(intent.getAction())) {
+                    WearConnectionStatus connStatus = WearConnectionStatus.valueOf(intent.getIntExtra(EXTRA_CONNECTIONSTATUS, 0));
                     switch (connStatus) {
                         case DISCONNECTED:
                             mTextView.setText(R.string.status_disconnected);
@@ -87,8 +95,8 @@ public class PhoneSyncActivity extends Activity {
                             stopProgressBar();
                             break;
                     }
-                } else if (WearableDataListenerService.ACTION_OPENONPHONE.equals(intent.getAction())) {
-                    boolean success = intent.getBooleanExtra(WearableDataListenerService.EXTRA_SUCCESS, false);
+                } else if (ACTION_OPENONPHONE.equals(intent.getAction())) {
+                    boolean success = intent.getBooleanExtra(EXTRA_SUCCESS, false);
 
                     new ConfirmationOverlay()
                             .setType(success ? ConfirmationOverlay.OPEN_ON_PHONE_ANIMATION : ConfirmationOverlay.FAILURE_ANIMATION)
@@ -103,7 +111,7 @@ public class PhoneSyncActivity extends Activity {
 
         mTextView.setText(R.string.message_gettingstatus);
 
-        intentFilter = new IntentFilter(WearableDataListenerService.ACTION_UPDATECONNECTIONSTATUS);
+        intentFilter = new IntentFilter(ACTION_UPDATECONNECTIONSTATUS);
     }
 
     private void stopProgressBar() {
@@ -115,17 +123,17 @@ public class PhoneSyncActivity extends Activity {
     protected void onResume() {
         super.onResume();
 
-        LocalBroadcastManager.getInstance(this)
-                .registerReceiver(mBroadcastReceiver, intentFilter);
-
-        startService(new Intent(this, WearableDataListenerService.class)
-                .setAction(WearableDataListenerService.ACTION_UPDATECONNECTIONSTATUS));
+        // Update statuses
+        AsyncTask.run(new Runnable() {
+            @Override
+            public void run() {
+                updateConnectionStatus();
+            }
+        });
     }
 
     @Override
     protected void onPause() {
-        LocalBroadcastManager.getInstance(this)
-                .unregisterReceiver(mBroadcastReceiver);
         super.onPause();
     }
 }
