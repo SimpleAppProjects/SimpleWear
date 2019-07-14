@@ -59,9 +59,10 @@ public class ToggleActionAdapter extends RecyclerView.Adapter {
         // create a new view
         ToggleActionButton v = new ToggleActionButton(parent.getContext());
 
-        v.setLayoutParams(new RecyclerView.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-        int padding = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 2, parent.getContext().getResources().getDisplayMetrics());
-        v.setPaddingRelative(padding, padding, padding, padding);
+        RecyclerView.LayoutParams vParams = new RecyclerView.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        int padding = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 6, parent.getContext().getResources().getDisplayMetrics());
+        vParams.setMargins(0, padding, 0, padding);
+        v.setLayoutParams(vParams);
         return new ViewHolder(v);
     }
 
