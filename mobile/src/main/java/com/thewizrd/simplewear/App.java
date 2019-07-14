@@ -3,13 +3,18 @@ package com.thewizrd.simplewear;
 import android.app.Activity;
 import android.app.Application;
 import android.content.BroadcastReceiver;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.database.ContentObserver;
 import android.location.LocationManager;
 import android.net.ConnectivityManager;
+import android.net.Uri;
 import android.os.BatteryManager;
 import android.os.Bundle;
+import android.os.Handler;
+import android.provider.Settings;
 import android.util.Log;
 
 import com.jakewharton.threetenabp.AndroidThreeTen;
@@ -28,6 +33,7 @@ public class App extends Application implements ApplicationLib, Application.Acti
     private Context context;
     private AppState applicationState;
     private BroadcastReceiver mActionsReceiver;
+    private ContentObserver mContentObserver;
 
     public static synchronized ApplicationLib getInstance() {
         return sInstance;
@@ -96,6 +102,27 @@ public class App extends Application implements ApplicationLib, Application.Acti
 
         context.registerReceiver(mActionsReceiver, actionsFilter);
 
+        // Register listener system settings
+        ContentResolver contentResolver = getContentResolver();
+        Uri setting = Settings.Global.getUriFor("mobile_data");
+        mContentObserver = new ContentObserver(new Handler()) {
+            @Override
+            public boolean deliverSelfNotifications() {
+                return super.deliverSelfNotifications();
+            }
+
+            @Override
+            public void onChange(boolean selfChange, Uri uri) {
+                super.onChange(selfChange, uri);
+
+                if (uri.toString().contains("mobile_data")) {
+                    WearableDataListenerService.enqueueWork(context, new Intent(context, WearableDataListenerService.class)
+                            .setAction(WearableDataListenerService.ACTION_SENDMOBILEDATAUPDATE));
+                }
+            }
+        };
+        contentResolver.registerContentObserver(setting, false, mContentObserver);
+
         final Thread.UncaughtExceptionHandler oldHandler = Thread.getDefaultUncaughtExceptionHandler();
 
         Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
@@ -116,6 +143,7 @@ public class App extends Application implements ApplicationLib, Application.Acti
 
     @Override
     public void onTerminate() {
+        getContentResolver().unregisterContentObserver(mContentObserver);
         context.unregisterReceiver(mActionsReceiver);
         super.onTerminate();
         // Shutdown logger

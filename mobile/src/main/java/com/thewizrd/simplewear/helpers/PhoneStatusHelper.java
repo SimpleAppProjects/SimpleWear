@@ -94,14 +94,16 @@ public class PhoneStatusHelper {
     public static boolean isMobileDataEnabled(@NonNull Context context) {
         boolean enabled = false;
 
+        boolean mobileDataSettingEnabled = Settings.Global.getInt(context.getContentResolver(), "mobile_data", 0) == 1;
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             ConnectivityManager cm =
                     (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
 
             NetworkCapabilities cap = cm.getNetworkCapabilities(cm.getActiveNetwork());
-            enabled = cap.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR);
+            enabled = cap.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) || mobileDataSettingEnabled;
         } else {
-            enabled = Settings.Global.getInt(context.getContentResolver(), "mobile_data", 0) == 1;
+            enabled = mobileDataSettingEnabled;
         }
 
         return enabled;
