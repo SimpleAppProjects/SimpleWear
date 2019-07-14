@@ -12,13 +12,16 @@ import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.os.Handler;
 import android.os.Looper;
+import android.support.wearable.input.RotaryEncoder;
 import android.support.wearable.view.ConfirmationOverlay;
 import android.util.Log;
 import android.util.SparseArray;
+import android.view.MotionEvent;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.core.widget.NestedScrollView;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
@@ -45,6 +48,7 @@ public class DashboardActivity extends WearableListenerActivity {
     private WearableRecyclerView mActionsList;
     private ToggleActionAdapter mAdapter;
     private SwipeRefreshLayout mSwipeLayout;
+    private NestedScrollView mScrollView;
 
     private TextView mConnStatus;
     private TextView mBattStatus;
@@ -193,6 +197,10 @@ public class DashboardActivity extends WearableListenerActivity {
         mActionsList.setCircularScrollingGestureEnabled(false);
         mActionsList.setLayoutManager(new GridLayoutManager(this, 3));
 
+        mScrollView = findViewById(R.id.scrollView);
+        mActionsList.setFocusable(false);
+        mActionsList.clearFocus();
+
         mAdapter = new ToggleActionAdapter();
         mActionsList.setAdapter(mAdapter);
         mActionsList.setEnabled(false);
@@ -209,6 +217,22 @@ public class DashboardActivity extends WearableListenerActivity {
         mMainHandler = new Handler(Looper.getMainLooper());
         connectivityManager =
                 (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+    }
+
+    @Override
+    public boolean onGenericMotionEvent(MotionEvent event) {
+        if (event.getAction() == MotionEvent.ACTION_SCROLL && RotaryEncoder.isFromRotaryEncoder(event)) {
+            // Don't forget the negation here
+            float delta = -RotaryEncoder.getRotaryAxisValue(event) * RotaryEncoder.getScaledScrollFactor(
+                    DashboardActivity.this);
+
+            // Swap these axes if you want to do horizontal scrolling instead
+            mScrollView.scrollBy(0, Math.round(delta));
+
+            return true;
+        }
+
+        return super.onGenericMotionEvent(event);
     }
 
     private void cancelTimer(Actions action) {

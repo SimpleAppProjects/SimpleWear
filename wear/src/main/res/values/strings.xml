@@ -28,6 +28,7 @@
     <string name="batt_state_discharging">Discharging</string>
     <string name="state_unknown">Unknown</string>
     <string name="title_actions">Actions</string>
+    <string name="state_syncing">Syncing…</string>
 
     <string name="error_torch_action">Camera permission disabled. Please check permission on phone app</string>
     <string name="error_sendmessage">No response. Please check connection</string>

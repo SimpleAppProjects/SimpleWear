@@ -10,6 +10,7 @@
     tools:deviceIds="wear">
 
     <androidx.core.widget.NestedScrollView
+        android:id="@+id/scrollView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:fillViewport="true"
@@ -43,7 +44,7 @@
                 app:layout_constraintStart_toEndOf="@id/device_stat_icon"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintBottom_toBottomOf="@id/device_stat_icon"
-                android:text="---"
+                android:text="@string/state_syncing"
                 tools:text="Connected" />
 
             <androidx.appcompat.widget.AppCompatImageView
@@ -67,7 +68,7 @@
                 app:layout_constraintStart_toEndOf="@id/batt_stat_icon"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintBottom_toBottomOf="@id/batt_stat_icon"
-                android:text="---"
+                android:text="@string/state_syncing"
                 tools:text="99%, Charging" />
 
             <androidx.appcompat.widget.AppCompatTextView
@@ -85,8 +86,7 @@
             <androidx.wear.widget.WearableRecyclerView
                 android:id="@+id/actions_list"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:padding="4dp"
+                android:layout_height="match_parent"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/actions_title"
                 app:layout_constraintEnd_toEndOf="parent"
