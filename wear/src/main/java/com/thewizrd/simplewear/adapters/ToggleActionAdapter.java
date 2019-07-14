@@ -15,15 +15,20 @@ import com.thewizrd.shared_resources.helpers.Action;
 import com.thewizrd.shared_resources.helpers.Actions;
 import com.thewizrd.shared_resources.helpers.ToggleAction;
 import com.thewizrd.shared_resources.utils.JSONParser;
-import com.thewizrd.simplewear.R;
-import com.thewizrd.simplewear.ToggleActionButton;
 import com.thewizrd.simplewear.WearableListenerActivity;
+import com.thewizrd.simplewear.controls.ToggleActionButton;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class ToggleActionAdapter extends RecyclerView.Adapter {
-    private List<ToggleAction> mDataset;
+    private static class ActionItemType {
+        public final static int TOGGLE_ACTION = 1;
+        public final static int VALUE_ACTION = 2;
+        public final static int READONLY_ACTION = 3;
+    }
+
+    private List<Action> mDataset;
 
     // Provide a reference to the views for each data item
     // Complex data items may need more than one view per item, and
@@ -67,37 +72,59 @@ public class ToggleActionAdapter extends RecyclerView.Adapter {
         // - replace the contents of the view with that element
         final ViewHolder vh = (ViewHolder) holder;
         final Context context = vh.mToggleButton.getContext();
-        final ToggleAction toggle = mDataset.get(position);
-        vh.mToggleButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                vh.mToggleButton.toggleState();
-                LocalBroadcastManager.getInstance(context)
-                        .sendBroadcast(new Intent(WearableListenerActivity.ACTION_CHANGED)
-                                .putExtra(WearableListenerActivity.EXTRA_ACTIONDATA,
-                                        JSONParser.serializer(new ToggleAction(toggle.getAction(), vh.mToggleButton.isActionEnabled()), Action.class)));
-            }
-        });
+        final ToggleAction toggle = (ToggleAction) mDataset.get(position);
+
+        if (holder.getItemViewType() != ActionItemType.READONLY_ACTION) {
+            vh.mToggleButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    vh.mToggleButton.toggleState();
+                    LocalBroadcastManager.getInstance(context)
+                            .sendBroadcast(new Intent(WearableListenerActivity.ACTION_CHANGED)
+                                    .putExtra(WearableListenerActivity.EXTRA_ACTIONDATA,
+                                            JSONParser.serializer(new ToggleAction(toggle.getAction(), vh.mToggleButton.isActionEnabled()), Action.class)));
+                }
+            });
+        } else {
+            vh.mToggleButton.setOnClickListener(null);
+        }
+
+        vh.mToggleButton.setAction(toggle.getAction());
+        if (toggle.isEnabled() != vh.mToggleButton.isActionEnabled())
+            vh.mToggleButton.toggleState();
+
         switch (toggle.getAction()) {
             case WIFI:
-                vh.mToggleButton.setIcons(context.getDrawable(R.drawable.ic_network_wifi_white_24dp), context.getDrawable(R.drawable.ic_signal_wifi_off_white_24dp));
-                if (toggle.isEnabled() != vh.mToggleButton.isActionEnabled())
-                    vh.mToggleButton.toggleState();
-                vh.mToggleButton.setToggleSuccessful(toggle.isActionSuccessful());
-                break;
             case BLUETOOTH:
-                vh.mToggleButton.setIcons(context.getDrawable(R.drawable.ic_bluetooth_white_24dp), context.getDrawable(R.drawable.ic_bluetooth_disabled_white_24dp));
-                if (toggle.isEnabled() != vh.mToggleButton.isActionEnabled())
-                    vh.mToggleButton.toggleState();
+            case TORCH:
+            default:
                 vh.mToggleButton.setToggleSuccessful(toggle.isActionSuccessful());
                 break;
             case MOBILEDATA:
-                vh.mToggleButton.setIcons(context.getDrawable(R.drawable.ic_network_cell_white_24dp), context.getDrawable(R.drawable.ic_signal_cellular_off_white_24dp));
-                if (toggle.isEnabled() != vh.mToggleButton.isActionEnabled())
-                    vh.mToggleButton.toggleState();
+            case LOCATION:
                 vh.mToggleButton.setToggleSuccessful(true);
                 break;
         }
+    }
+
+    @Override
+    public int getItemViewType(int position) {
+        int type = -1;
+
+        switch (mDataset.get(position).getAction()) {
+            case WIFI:
+            case BLUETOOTH:
+            case TORCH:
+            default:
+                type = ActionItemType.TOGGLE_ACTION;
+                break;
+            case MOBILEDATA:
+            case LOCATION:
+                type = ActionItemType.READONLY_ACTION;
+                break;
+        }
+
+        return type;
     }
 
     @Override

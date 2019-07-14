@@ -10,14 +10,13 @@
         android:id="@+id/app_bar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:theme="@style/ThemeOverlay.MaterialComponents.ActionBar"
-        android:stateListAnimator="@null">
+        android:theme="@style/ThemeOverlay.MaterialComponents.ActionBar">
 
         <androidx.appcompat.widget.Toolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:title="SimpleWear"
+            app:title="@string/app_name"
             app:titleTextColor="@color/colorText" />
 
     </com.google.android.material.appbar.AppBarLayout>

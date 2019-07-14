@@ -1,4 +1,4 @@
-package com.thewizrd.simplewear;
+package com.thewizrd.simplewear.controls;
 
 import android.content.Context;
 import android.content.res.ColorStateList;
@@ -13,12 +13,15 @@ import android.widget.LinearLayout;
 import androidx.annotation.NonNull;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.thewizrd.shared_resources.helpers.Actions;
+import com.thewizrd.simplewear.R;
 
 public class ToggleActionButton extends FloatingActionButton {
     private Drawable mIconOn;
     private Drawable mIconOff;
     private Context context;
     private boolean isEnabled;
+    private Actions action;
 
     public ToggleActionButton(Context context) {
         super(context);
@@ -78,7 +81,35 @@ public class ToggleActionButton extends FloatingActionButton {
         mIconOff = drawable;
     }
 
-    public void setIcons(@NonNull Drawable drawableIconOn, @NonNull Drawable drawableIconOff) {
+    public void setAction(Actions action) {
+        this.action = action;
+
+        switch (action) {
+            case WIFI:
+                setIcons(context.getDrawable(R.drawable.ic_network_wifi_white_24dp), context.getDrawable(R.drawable.ic_signal_wifi_off_white_24dp));
+                break;
+            case BLUETOOTH:
+                setIcons(context.getDrawable(R.drawable.ic_bluetooth_white_24dp), context.getDrawable(R.drawable.ic_bluetooth_disabled_white_24dp));
+                break;
+            case MOBILEDATA:
+                setIcons(context.getDrawable(R.drawable.ic_network_cell_white_24dp), context.getDrawable(R.drawable.ic_signal_cellular_off_white_24dp));
+                break;
+            case LOCATION:
+                setIcons(context.getDrawable(R.drawable.ic_location_on_white_24dp), context.getDrawable(R.drawable.ic_location_off_white_24dp));
+                break;
+            case TORCH:
+                setIcons(context.getDrawable(R.drawable.ic_lightbulb_outline_white_24dp));
+                break;
+        }
+    }
+
+    private void setIcons(Drawable drawableIcon) {
+        setIconOn(drawableIcon);
+        setIconOff(drawableIcon);
+        setImageDrawable(isEnabled ? mIconOn : mIconOff);
+    }
+
+    private void setIcons(Drawable drawableIconOn, Drawable drawableIconOff) {
         setIconOn(drawableIconOn);
         setIconOff(drawableIconOff);
         setImageDrawable(isEnabled ? mIconOn : mIconOff);

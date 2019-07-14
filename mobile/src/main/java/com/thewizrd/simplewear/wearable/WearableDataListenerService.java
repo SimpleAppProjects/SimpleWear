@@ -10,7 +10,6 @@ import android.os.Build;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -53,9 +52,11 @@ public class WearableDataListenerService extends WearableListenerService {
     public static final String ACTION_SENDWIFIUPDATE = "SimpleWear.Droid.action.SEND_WIFI_UPDATE";
     public static final String ACTION_SENDBTUPDATE = "SimpleWear.Droid.action.SEND_BT_UPDATE";
     public static final String ACTION_SENDMOBILEDATAUPDATE = "SimpleWear.Droid.action.SEND_MOBILEDATA_UPDATE";
+    public static final String ACTION_SENDACTIONUPDATE = "SimpleWear.Droid.action.SEND_ACTION_UPDATE";
 
     // Extras
     public static final String EXTRA_STATUS = "SimpleWear.Droid.extra.STATUS";
+    public static final String EXTRA_ACTION_CHANGED = "SimpleWear.Droid.extra.ACTION_CHANGED";
 
     private Collection<Node> mWearNodesWithApp;
     private boolean mLoaded = false;
@@ -97,7 +98,7 @@ public class WearableDataListenerService extends WearableListenerService {
         NotificationCompat.Builder mBuilder =
                 new NotificationCompat.Builder(context, NOT_CHANNEL_ID)
                         .setSmallIcon(R.drawable.ic_icon)
-                        .setContentTitle("Syncing...")
+                        .setContentTitle(context.getString(R.string.not_title_wearservice))
                         .setProgress(0, 0, true)
                         .setColor(context.getColor(R.color.colorPrimary))
                         .setOnlyAlertOnce(true)
@@ -211,8 +212,10 @@ public class WearableDataListenerService extends WearableListenerService {
                 } else if (intent != null && ACTION_SENDBTUPDATE.equals(intent.getAction())) {
                     sendMessage(null, WearableHelper.BluetoothPath, new byte[]{(byte) intent.getIntExtra(EXTRA_STATUS, -1)});
                 } else if (intent != null && ACTION_SENDMOBILEDATAUPDATE.equals(intent.getAction())) {
-                    Action action = new ToggleAction(Actions.MOBILEDATA, PhoneStatusHelper.isMobileDataEnabled(WearableDataListenerService.this), true);
-                    sendMessage(null, WearableHelper.ActionsPath, stringToBytes(JSONParser.serializer(action, Action.class)));
+                    sendActionsUpdate(null, Actions.MOBILEDATA);
+                } else if (intent != null && ACTION_SENDACTIONUPDATE.equals(intent.getAction())) {
+                    Actions action = (Actions) intent.getSerializableExtra(EXTRA_ACTION_CHANGED);
+                    sendActionsUpdate(null, action);
                 } else if (intent != null) {
                     Logger.writeLine(Log.INFO, "%s: Unhandled action: %s", TAG, intent.getAction());
                 }
@@ -252,7 +255,7 @@ public class WearableDataListenerService extends WearableListenerService {
         }
     }
 
-    private void sendStatusUpdate(@Nullable String nodeID, @Nullable String path) {
+    private void sendStatusUpdate(String nodeID, String path) {
         if (path != null && path.contains(WearableHelper.WifiPath)) {
             sendMessage(nodeID, path, new byte[]{(byte) PhoneStatusHelper.getWifiState(this.getApplicationContext())});
         } else if (path != null && path.contains(WearableHelper.BatteryPath)) {
@@ -264,27 +267,39 @@ public class WearableDataListenerService extends WearableListenerService {
         }
     }
 
-    private void sendActionsUpdate(@NonNull String nodeID) {
-        Action action;
+    private void sendActionsUpdate(String nodeID) {
         for (Actions act : Actions.values()) {
-            switch (act) {
-                case WIFI:
-                    action = new ToggleAction(act, PhoneStatusHelper.isWifiEnabled(this), true);
-                    sendMessage(nodeID, WearableHelper.ActionsPath, stringToBytes(JSONParser.serializer(action, Action.class)));
-                    break;
-                case BLUETOOTH:
-                    action = new ToggleAction(act, PhoneStatusHelper.isBluetoothEnabled(this), true);
-                    sendMessage(nodeID, WearableHelper.ActionsPath, stringToBytes(JSONParser.serializer(action, Action.class)));
-                    break;
-                case MOBILEDATA:
-                    action = new ToggleAction(act, PhoneStatusHelper.isMobileDataEnabled(this), true);
-                    sendMessage(nodeID, WearableHelper.ActionsPath, stringToBytes(JSONParser.serializer(action, Action.class)));
-                    break;
-            }
+            sendActionsUpdate(nodeID, act);
         }
     }
 
-    private void performAction(@Nullable String nodeID, Action action) {
+    private void sendActionsUpdate(String nodeID, Actions act) {
+        Action action;
+        switch (act) {
+            case WIFI:
+                action = new ToggleAction(act, PhoneStatusHelper.isWifiEnabled(this), true);
+                sendMessage(nodeID, WearableHelper.ActionsPath, stringToBytes(JSONParser.serializer(action, Action.class)));
+                break;
+            case BLUETOOTH:
+                action = new ToggleAction(act, PhoneStatusHelper.isBluetoothEnabled(this), true);
+                sendMessage(nodeID, WearableHelper.ActionsPath, stringToBytes(JSONParser.serializer(action, Action.class)));
+                break;
+            case MOBILEDATA:
+                action = new ToggleAction(act, PhoneStatusHelper.isMobileDataEnabled(this), true);
+                sendMessage(nodeID, WearableHelper.ActionsPath, stringToBytes(JSONParser.serializer(action, Action.class)));
+                break;
+            case LOCATION:
+                action = new ToggleAction(act, PhoneStatusHelper.isLocationEnabled(this), true);
+                sendMessage(nodeID, WearableHelper.ActionsPath, stringToBytes(JSONParser.serializer(action, Action.class)));
+                break;
+            case TORCH:
+                action = new ToggleAction(act, PhoneStatusHelper.isTorchEnabled(this), true);
+                sendMessage(nodeID, WearableHelper.ActionsPath, stringToBytes(JSONParser.serializer(action, Action.class)));
+                break;
+        }
+    }
+
+    private void performAction(String nodeID, Action action) {
         ToggleAction tA = (ToggleAction) action;
         switch (action.getAction()) {
             case WIFI:
@@ -299,10 +314,18 @@ public class WearableDataListenerService extends WearableListenerService {
                 tA.setEnabled(PhoneStatusHelper.isMobileDataEnabled(this));
                 sendMessage(nodeID, WearableHelper.ActionsPath, stringToBytes(JSONParser.serializer(tA, Action.class)));
                 break;
+            case LOCATION:
+                tA.setEnabled(PhoneStatusHelper.isLocationEnabled(this));
+                sendMessage(nodeID, WearableHelper.ActionsPath, stringToBytes(JSONParser.serializer(action, Action.class)));
+                break;
+            case TORCH:
+                tA.setActionSuccessful(PhoneStatusHelper.setTorchEnabled(this, tA.isEnabled()));
+                sendMessage(nodeID, WearableHelper.ActionsPath, stringToBytes(JSONParser.serializer(action, Action.class)));
+                break;
         }
     }
 
-    private void sendMessage(@Nullable String nodeID, @NonNull String path, byte[] data) {
+    private void sendMessage(String nodeID, @NonNull String path, byte[] data) {
         if (nodeID == null) {
             if (mWearNodesWithApp == null) {
                 // Create requests if nodes exist with app support

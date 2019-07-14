@@ -16,16 +16,19 @@ import android.support.wearable.view.ConfirmationOverlay;
 import android.util.Log;
 import android.util.SparseArray;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import androidx.wear.widget.WearableRecyclerView;
 
 import com.google.android.wearable.intent.RemoteIntent;
 import com.thewizrd.shared_resources.AsyncTask;
 import com.thewizrd.shared_resources.BatteryStatus;
 import com.thewizrd.shared_resources.helpers.Action;
+import com.thewizrd.shared_resources.helpers.Actions;
 import com.thewizrd.shared_resources.helpers.ToggleAction;
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus;
 import com.thewizrd.shared_resources.helpers.WearableHelper;
@@ -42,6 +45,7 @@ public class DashboardActivity extends WearableListenerActivity {
     private IntentFilter intentFilter;
     private WearableRecyclerView mActionsList;
     private ToggleActionAdapter mAdapter;
+    private SwipeRefreshLayout mSwipeLayout;
 
     private TextView mConnStatus;
     private TextView mBattStatus;
@@ -127,11 +131,11 @@ public class DashboardActivity extends WearableListenerActivity {
                         String jsonData = intent.getStringExtra(EXTRA_ACTIONDATA);
                         Action action = JSONParser.deserializer(jsonData, Action.class);
 
-                        CountDownTimer timer = activeTimers.get(action.getAction().getValue());
-                        if (timer != null) {
-                            timer.cancel();
-                            activeTimers.delete(action.getAction().getValue());
-                            timer = null;
+                        cancelTimer(action.getAction());
+
+                        if (!intent.hasExtra("TIMEOUT") && action.getAction() == Actions.TORCH && !action.isActionSuccessful()) {
+                            Toast.makeText(DashboardActivity.this, R.string.error_torch_action, Toast.LENGTH_SHORT).show();
+                            openAppOnPhone();
                         }
 
                         if (action instanceof ToggleAction)
@@ -154,7 +158,9 @@ public class DashboardActivity extends WearableListenerActivity {
                                 action.setActionSuccessful(false);
                                 LocalBroadcastManager.getInstance(DashboardActivity.this)
                                         .sendBroadcast(new Intent(WearableHelper.ActionsPath)
-                                                .putExtra(EXTRA_ACTIONDATA, JSONParser.serializer(action, Action.class)));
+                                                .putExtra(EXTRA_ACTIONDATA, JSONParser.serializer(action, Action.class))
+                                                .putExtra("TIMEOUT", true));
+                                Toast.makeText(DashboardActivity.this, R.string.error_sendmessage, Toast.LENGTH_SHORT).show();
                             }
                         };
                         timer.start();
@@ -166,9 +172,24 @@ public class DashboardActivity extends WearableListenerActivity {
             }
         };
 
+        mSwipeLayout = findViewById(R.id.swipe_layout);
         mConnStatus = findViewById(R.id.device_stat_text);
         mBattStatus = findViewById(R.id.batt_stat_text);
         mActionsList = findViewById(R.id.actions_list);
+
+        mSwipeLayout.setColorSchemeColors(getColor(R.color.colorPrimary));
+        mSwipeLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                AsyncTask.run(new Runnable() {
+                    @Override
+                    public void run() {
+                        requestUpdate();
+                    }
+                });
+                mSwipeLayout.setRefreshing(false);
+            }
+        });
 
         mConnStatus.setText(R.string.message_gettingstatus);
 
@@ -192,6 +213,15 @@ public class DashboardActivity extends WearableListenerActivity {
         mMainHandler = new Handler(Looper.getMainLooper());
         connectivityManager =
                 (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+    }
+
+    private void cancelTimer(Actions action) {
+        CountDownTimer timer = activeTimers.get(action.getValue());
+        if (timer != null) {
+            timer.cancel();
+            activeTimers.delete(action.getValue());
+            timer = null;
+        }
     }
 
     private ConnectivityManager.NetworkCallback mNetCallback = new ConnectivityManager.NetworkCallback() {

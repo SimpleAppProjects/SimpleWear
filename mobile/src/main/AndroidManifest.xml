@@ -11,6 +11,8 @@
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
+    <uses-permission android:name="android.permission.CAMERA" />
+
     <application
         android:name=".App"
         android:allowBackup="false"
@@ -20,6 +22,7 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         tools:ignore="GoogleAppIndexingWarning">
+
         <activity android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -40,16 +43,22 @@
                     android:scheme="wear" />
             </intent-filter>
         </service>
+
         <receiver
             android:name=".PhoneBroadcastReceiver"
             android:enabled="true">
-
             <intent-filter>
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
                 <action android:name="android.net.wifi.WIFI_STATE_CHANGED" />
                 <action android:name="android.bluetooth.adapter.action.STATE_CHANGED" />
             </intent-filter>
         </receiver>
+
+        <service
+            android:name=".services.TorchService"
+            android:enabled="true"
+            android:exported="false" />
+
     </application>
 
 </manifest>

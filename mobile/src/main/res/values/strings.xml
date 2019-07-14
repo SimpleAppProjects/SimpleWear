@@ -1,1 +1,7 @@
-<resources></resources>
+<resources>
+
+    <string name="permission_camera_enabled">Camera permission granted.</string>
+    <string name="permission_camera_disabled">Camera permission disabled. Please click to enable</string>
+    <string name="not_title_wearservice">Syncing…</string>
+
+</resources>

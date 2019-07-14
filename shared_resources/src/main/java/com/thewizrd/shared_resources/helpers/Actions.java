@@ -5,7 +5,9 @@ import android.util.SparseArray;
 public enum Actions {
     WIFI(0),
     BLUETOOTH(1),
-    MOBILEDATA(2);
+    MOBILEDATA(2),
+    LOCATION(3),
+    TORCH(4);
 
     private final int value;
 

@@ -14,7 +14,7 @@ public class MainActivity extends AppCompatActivity {
         // Check if fragment exists
         if (getSupportFragmentManager().findFragmentById(R.id.fragment_container) == null) {
             getSupportFragmentManager().beginTransaction()
-                    .replace(R.id.fragment_container, new SettingsFragment())
+                    .replace(R.id.fragment_container, new PermissionCheckFragment())
                     .commitNow();
         }
     }

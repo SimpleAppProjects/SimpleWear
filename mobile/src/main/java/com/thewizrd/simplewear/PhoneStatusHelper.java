@@ -1,22 +1,27 @@
 package com.thewizrd.simplewear;
 
 import android.Manifest;
+import android.app.ActivityManager;
 import android.bluetooth.BluetoothAdapter;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.location.LocationManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkCapabilities;
 import android.net.wifi.WifiManager;
 import android.os.BatteryManager;
 import android.os.Build;
 import android.provider.Settings;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 
 import com.thewizrd.shared_resources.BatteryStatus;
+import com.thewizrd.shared_resources.utils.Logger;
+import com.thewizrd.simplewear.services.TorchService;
 
 public class PhoneStatusHelper {
 
@@ -97,5 +102,53 @@ public class PhoneStatusHelper {
         }
 
         return enabled;
+    }
+
+    public static boolean isLocationEnabled(@NonNull Context context) {
+        LocationManager locMan = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
+        boolean isGPSEnabled = false;
+        boolean isNetEnabled = false;
+        if (locMan != null) {
+            isGPSEnabled = locMan.isProviderEnabled(LocationManager.GPS_PROVIDER);
+            isNetEnabled = locMan.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
+        }
+
+        return isGPSEnabled || isNetEnabled;
+    }
+
+    public static boolean isCameraPermissionEnabled(@NonNull Context context) {
+        return ContextCompat.checkSelfPermission(context.getApplicationContext(), Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED;
+    }
+
+    public static boolean isTorchEnabled(@NonNull Context context) {
+        return isServiceRunning(context, TorchService.class);
+    }
+
+    private static boolean isServiceRunning(@NonNull Context context, Class<?> serviceClass) {
+        ActivityManager manager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+            if (serviceClass.getName().equals(service.service.getClassName())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static boolean setTorchEnabled(@NonNull Context context, boolean enable) {
+        boolean success = false;
+
+        if (!isCameraPermissionEnabled(context))
+            return false;
+
+        try {
+            TorchService.enqueueWork(context.getApplicationContext(), new Intent(context.getApplicationContext(), TorchService.class)
+                    .setAction(enable ? TorchService.ACTION_START_LIGHT : TorchService.ACTION_END_LIGHT));
+            success = true;
+        } catch (Exception e) {
+            Logger.writeLine(Log.ERROR, e);
+            success = false;
+        }
+
+        return success;
     }
 }

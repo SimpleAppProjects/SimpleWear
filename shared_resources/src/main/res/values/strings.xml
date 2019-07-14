@@ -2,4 +2,8 @@
     <string name="app_name">SimpleWear</string>
 
     <string name="not_channel_name_general">General notifications</string>
+    <string name="not_channel_name_torch">Flashlight notification</string>
+
+    <string name="action_torch">Flashlight</string>
+    <string name="not_torch_turnoff_summary">Tap to turn off</string>
 </resources>
