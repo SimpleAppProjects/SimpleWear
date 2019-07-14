@@ -6,4 +6,6 @@
 
     <string name="action_torch">Flashlight</string>
     <string name="not_torch_turnoff_summary">Tap to turn off</string>
+
+    <string name="action_lockscreen">Lock screen</string>
 </resources>

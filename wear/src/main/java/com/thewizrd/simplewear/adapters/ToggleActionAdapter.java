@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.thewizrd.shared_resources.helpers.Action;
 import com.thewizrd.shared_resources.helpers.Actions;
+import com.thewizrd.shared_resources.helpers.NormalAction;
 import com.thewizrd.shared_resources.helpers.ToggleAction;
 import com.thewizrd.shared_resources.utils.JSONParser;
 import com.thewizrd.simplewear.WearableListenerActivity;
@@ -23,6 +24,7 @@ import java.util.List;
 
 public class ToggleActionAdapter extends RecyclerView.Adapter {
     private static class ActionItemType {
+        public final static int ACTION = 0;
         public final static int TOGGLE_ACTION = 1;
         public final static int VALUE_ACTION = 2;
         public final static int READONLY_ACTION = 3;
@@ -47,7 +49,18 @@ public class ToggleActionAdapter extends RecyclerView.Adapter {
         mDataset = new ArrayList<>();
 
         for (Actions action : Actions.values()) {
-            mDataset.add(new ToggleAction(action, false));
+            switch (action) {
+                case WIFI:
+                case BLUETOOTH:
+                case MOBILEDATA:
+                case LOCATION:
+                case TORCH:
+                    mDataset.add(new ToggleAction(action, true));
+                    break;
+                case LOCKSCREEN:
+                    mDataset.add(new NormalAction(action));
+                    break;
+            }
         }
     }
 
@@ -73,33 +86,42 @@ public class ToggleActionAdapter extends RecyclerView.Adapter {
         // - replace the contents of the view with that element
         final ViewHolder vh = (ViewHolder) holder;
         final Context context = vh.mToggleButton.getContext();
-        final ToggleAction toggle = (ToggleAction) mDataset.get(position);
+        final Action action = mDataset.get(position);
 
         if (holder.getItemViewType() != ActionItemType.READONLY_ACTION) {
             vh.mToggleButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    vh.mToggleButton.toggleState();
+                    Action actionData = action;
+
+                    if (action instanceof ToggleAction) {
+                        vh.mToggleButton.toggleState();
+                        actionData = new ToggleAction(action.getAction(), vh.mToggleButton.isActionEnabled());
+                    } else {
+                        vh.mToggleButton.resetState();
+                    }
+
                     LocalBroadcastManager.getInstance(context)
                             .sendBroadcast(new Intent(WearableListenerActivity.ACTION_CHANGED)
                                     .putExtra(WearableListenerActivity.EXTRA_ACTIONDATA,
-                                            JSONParser.serializer(new ToggleAction(toggle.getAction(), vh.mToggleButton.isActionEnabled()), Action.class)));
+                                            JSONParser.serializer(actionData, Action.class)));
                 }
             });
         } else {
             vh.mToggleButton.setOnClickListener(null);
         }
 
-        vh.mToggleButton.setAction(toggle.getAction());
-        if (toggle.isEnabled() != vh.mToggleButton.isActionEnabled())
+        vh.mToggleButton.setAction(action.getAction());
+        if (action instanceof ToggleAction && ((ToggleAction) action).isEnabled() != vh.mToggleButton.isActionEnabled())
             vh.mToggleButton.toggleState();
 
-        switch (toggle.getAction()) {
+        switch (action.getAction()) {
             case WIFI:
             case BLUETOOTH:
             case TORCH:
+            case LOCKSCREEN:
             default:
-                vh.mToggleButton.setToggleSuccessful(toggle.isActionSuccessful());
+                vh.mToggleButton.setToggleSuccessful(action.isActionSuccessful());
                 break;
             case MOBILEDATA:
             case LOCATION:
@@ -123,6 +145,9 @@ public class ToggleActionAdapter extends RecyclerView.Adapter {
             case LOCATION:
                 type = ActionItemType.READONLY_ACTION;
                 break;
+            case LOCKSCREEN:
+                type = ActionItemType.ACTION;
+                break;
         }
 
         return type;
@@ -134,7 +159,7 @@ public class ToggleActionAdapter extends RecyclerView.Adapter {
         return mDataset.size();
     }
 
-    public void updateToggle(ToggleAction action) {
+    public void updateButton(Action action) {
         int idx = action.getAction().getValue();
         mDataset.set(idx, action);
         notifyItemChanged(idx);

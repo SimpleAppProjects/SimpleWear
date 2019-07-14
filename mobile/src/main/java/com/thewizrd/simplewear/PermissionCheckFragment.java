@@ -1,7 +1,11 @@
 package com.thewizrd.simplewear;
 
 import android.Manifest;
+import android.app.Activity;
+import android.app.admin.DevicePolicyManager;
+import android.content.ComponentName;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.os.Bundle;
@@ -14,16 +18,19 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
+
+import com.thewizrd.simplewear.helpers.PhoneStatusHelper;
 
 public class PermissionCheckFragment extends Fragment {
 
     private AppCompatActivity mActivity;
 
     private TextView mCAMPermText;
+    private TextView mDevAdminText;
 
     private static final int CAMERA_REQCODE = 0;
+    private static final int DEVADMIN_REQCODE = 1;
 
     @Override
     public void onAttach(Context context) {
@@ -50,17 +57,30 @@ public class PermissionCheckFragment extends Fragment {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_permcheck, container, false);
 
-        View flashLayout = view.findViewById(R.id.torch_pref);
-        flashLayout.setOnClickListener(new View.OnClickListener() {
+        view.findViewById(R.id.torch_pref).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (ContextCompat.checkSelfPermission(mActivity, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+                if (!PhoneStatusHelper.isCameraPermissionEnabled(mActivity)) {
                     requestPermissions(new String[]{Manifest.permission.CAMERA}, CAMERA_REQCODE);
+                }
+            }
+        });
+        view.findViewById(R.id.deviceadmin_pref).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (!PhoneStatusHelper.isDeviceAdminEnabled(mActivity)) {
+                    ComponentName mScreenLockAdmin = new ComponentName(mActivity, ScreenLockAdminReceiver.class);
+
+                    // Launch the activity to have the user enable our admin.
+                    Intent intent = new Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN);
+                    intent.putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, mScreenLockAdmin);
+                    startActivityForResult(intent, DEVADMIN_REQCODE);
                 }
             }
         });
 
         mCAMPermText = view.findViewById(R.id.torch_pref_summary);
+        mDevAdminText = view.findViewById(R.id.deviceadmin_summary);
 
         return view;
     }
@@ -68,7 +88,11 @@ public class PermissionCheckFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        updateCamPermText(ContextCompat.checkSelfPermission(mActivity, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED);
+        updateCamPermText(PhoneStatusHelper.isCameraPermissionEnabled(mActivity));
+
+        DevicePolicyManager mDPM = (DevicePolicyManager) mActivity.getSystemService(Context.DEVICE_POLICY_SERVICE);
+        ComponentName mScreenLockAdmin = new ComponentName(mActivity, ScreenLockAdminReceiver.class);
+        updateDeviceAdminText(mDPM.isAdminActive(mScreenLockAdmin));
     }
 
     private void runOnUiThread(Runnable action) {
@@ -79,6 +103,20 @@ public class PermissionCheckFragment extends Fragment {
     private void updateCamPermText(boolean enabled) {
         mCAMPermText.setText(enabled ? R.string.permission_camera_enabled : R.string.permission_camera_disabled);
         mCAMPermText.setTextColor(enabled ? Color.GREEN : Color.RED);
+    }
+
+    private void updateDeviceAdminText(boolean enabled) {
+        mDevAdminText.setText(enabled ? R.string.permission_admin_enabled : R.string.permission_admin_disabled);
+        mDevAdminText.setTextColor(enabled ? Color.GREEN : Color.RED);
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        switch (requestCode) {
+            case DEVADMIN_REQCODE:
+                updateDeviceAdminText(resultCode == Activity.RESULT_OK);
+                break;
+        }
     }
 
     @Override

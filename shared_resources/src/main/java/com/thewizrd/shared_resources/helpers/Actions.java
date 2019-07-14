@@ -7,7 +7,8 @@ public enum Actions {
     BLUETOOTH(1),
     MOBILEDATA(2),
     LOCATION(3),
-    TORCH(4);
+    TORCH(4),
+    LOCKSCREEN(5);
 
     private final int value;
 

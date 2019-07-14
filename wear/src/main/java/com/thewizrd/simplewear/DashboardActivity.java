@@ -29,7 +29,6 @@ import com.thewizrd.shared_resources.AsyncTask;
 import com.thewizrd.shared_resources.BatteryStatus;
 import com.thewizrd.shared_resources.helpers.Action;
 import com.thewizrd.shared_resources.helpers.Actions;
-import com.thewizrd.shared_resources.helpers.ToggleAction;
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus;
 import com.thewizrd.shared_resources.helpers.WearableHelper;
 import com.thewizrd.shared_resources.utils.JSONParser;
@@ -138,16 +137,13 @@ public class DashboardActivity extends WearableListenerActivity {
                             openAppOnPhone();
                         }
 
-                        if (action instanceof ToggleAction)
-                            mAdapter.updateToggle((ToggleAction) action);
-                        //else if (action instanceof ValueAction)
-                        //    mAdapter.updateToggle((ValueAction) action);
+                        mAdapter.updateButton(action);
                     } else if (ACTION_CHANGED.equals(intent.getAction())) {
                         String jsonData = intent.getStringExtra(EXTRA_ACTIONDATA);
                         final Action action = JSONParser.deserializer(jsonData, Action.class);
                         requestAction(jsonData);
 
-                        CountDownTimer timer = new CountDownTimer(2500, 500) {
+                        CountDownTimer timer = new CountDownTimer(3000, 500) {
                             @Override
                             public void onTick(long millisUntilFinished) {
 

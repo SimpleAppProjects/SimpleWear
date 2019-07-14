@@ -49,9 +49,10 @@ public class ToggleActionButton extends FloatingActionButton {
         setLayoutParams(params);
         setCustomSize((int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 36, context.getResources().getDisplayMetrics()));
         //setUseCompatPadding(true);
-        setSupportBackgroundTintList(ColorStateList.valueOf(context.getColor(R.color.black)));
 
-        setImageDrawable(mIconOff);
+        isEnabled = true;
+        setSupportBackgroundTintList(ColorStateList.valueOf(context.getColor(R.color.colorPrimary)));
+        setImageDrawable(mIconOn);
 
         this.setOnClickListener(onClickListener);
     }
@@ -67,6 +68,12 @@ public class ToggleActionButton extends FloatingActionButton {
         isEnabled = !isEnabled;
         setImageDrawable(isEnabled ? mIconOn : mIconOff);
         setSupportBackgroundTintList(ColorStateList.valueOf(context.getColor(R.color.colorPrimaryDark)));
+    }
+
+    public void resetState() {
+        isEnabled = true;
+        setImageDrawable(mIconOn);
+        setSupportBackgroundTintList(ColorStateList.valueOf(context.getColor(R.color.colorPrimary)));
     }
 
     public boolean isActionEnabled() {
@@ -99,6 +106,9 @@ public class ToggleActionButton extends FloatingActionButton {
                 break;
             case TORCH:
                 setIcons(context.getDrawable(R.drawable.ic_lightbulb_outline_white_24dp));
+                break;
+            case LOCKSCREEN:
+                setIcons(context.getDrawable(R.drawable.ic_lock_outline_white_24dp));
                 break;
         }
     }

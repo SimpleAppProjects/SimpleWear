@@ -1,8 +1,10 @@
-package com.thewizrd.simplewear;
+package com.thewizrd.simplewear.helpers;
 
 import android.Manifest;
 import android.app.ActivityManager;
+import android.app.admin.DevicePolicyManager;
 import android.bluetooth.BluetoothAdapter;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -21,6 +23,7 @@ import androidx.core.content.ContextCompat;
 
 import com.thewizrd.shared_resources.BatteryStatus;
 import com.thewizrd.shared_resources.utils.Logger;
+import com.thewizrd.simplewear.ScreenLockAdminReceiver;
 import com.thewizrd.simplewear.services.TorchService;
 
 public class PhoneStatusHelper {
@@ -150,5 +153,23 @@ public class PhoneStatusHelper {
         }
 
         return success;
+    }
+
+    public static boolean isDeviceAdminEnabled(@NonNull Context context) {
+        DevicePolicyManager mDPM = (DevicePolicyManager) context.getApplicationContext().getSystemService(Context.DEVICE_POLICY_SERVICE);
+        ComponentName mScreenLockAdmin = new ComponentName(context.getApplicationContext(), ScreenLockAdminReceiver.class);
+        return mDPM.isAdminActive(mScreenLockAdmin);
+    }
+
+    public static boolean lockScreen(@NonNull Context context) {
+        try {
+            DevicePolicyManager mDPM = (DevicePolicyManager) context.getApplicationContext().getSystemService(Context.DEVICE_POLICY_SERVICE);
+            mDPM.lockNow();
+        } catch (Exception e) {
+            Logger.writeLine(Log.ERROR, e);
+            return false;
+        }
+
+        return true;
     }
 }

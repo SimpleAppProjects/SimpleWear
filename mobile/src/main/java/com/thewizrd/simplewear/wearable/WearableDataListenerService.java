@@ -26,14 +26,16 @@ import com.thewizrd.shared_resources.AsyncTask;
 import com.thewizrd.shared_resources.BatteryStatus;
 import com.thewizrd.shared_resources.helpers.Action;
 import com.thewizrd.shared_resources.helpers.Actions;
+import com.thewizrd.shared_resources.helpers.NormalAction;
 import com.thewizrd.shared_resources.helpers.ToggleAction;
+import com.thewizrd.shared_resources.helpers.ValueAction;
 import com.thewizrd.shared_resources.helpers.WearableHelper;
 import com.thewizrd.shared_resources.utils.JSONParser;
 import com.thewizrd.shared_resources.utils.Logger;
 import com.thewizrd.simplewear.App;
 import com.thewizrd.simplewear.MainActivity;
-import com.thewizrd.simplewear.PhoneStatusHelper;
 import com.thewizrd.simplewear.R;
+import com.thewizrd.simplewear.helpers.PhoneStatusHelper;
 
 import java.util.Collection;
 import java.util.concurrent.Callable;
@@ -296,31 +298,48 @@ public class WearableDataListenerService extends WearableListenerService {
                 action = new ToggleAction(act, PhoneStatusHelper.isTorchEnabled(this), true);
                 sendMessage(nodeID, WearableHelper.ActionsPath, stringToBytes(JSONParser.serializer(action, Action.class)));
                 break;
+            case LOCKSCREEN:
+                action = new NormalAction(act);
+                action.setActionSuccessful(true);
+                sendMessage(nodeID, WearableHelper.ActionsPath, stringToBytes(JSONParser.serializer(action, Action.class)));
+                break;
         }
     }
 
     private void performAction(String nodeID, Action action) {
-        ToggleAction tA = (ToggleAction) action;
+        ToggleAction tA;
+        NormalAction nA;
+        ValueAction vA;
         switch (action.getAction()) {
             case WIFI:
+                tA = (ToggleAction) action;
                 tA.setActionSuccessful(PhoneStatusHelper.setWifiEnabled(this, tA.isEnabled()));
                 sendMessage(nodeID, WearableHelper.ActionsPath, stringToBytes(JSONParser.serializer(tA, Action.class)));
                 break;
             case BLUETOOTH:
+                tA = (ToggleAction) action;
                 tA.setActionSuccessful(PhoneStatusHelper.setBluetoothEnabled(this, tA.isEnabled()));
                 sendMessage(nodeID, WearableHelper.ActionsPath, stringToBytes(JSONParser.serializer(tA, Action.class)));
                 break;
             case MOBILEDATA:
+                tA = (ToggleAction) action;
                 tA.setEnabled(PhoneStatusHelper.isMobileDataEnabled(this));
                 sendMessage(nodeID, WearableHelper.ActionsPath, stringToBytes(JSONParser.serializer(tA, Action.class)));
                 break;
             case LOCATION:
+                tA = (ToggleAction) action;
                 tA.setEnabled(PhoneStatusHelper.isLocationEnabled(this));
-                sendMessage(nodeID, WearableHelper.ActionsPath, stringToBytes(JSONParser.serializer(action, Action.class)));
+                sendMessage(nodeID, WearableHelper.ActionsPath, stringToBytes(JSONParser.serializer(tA, Action.class)));
                 break;
             case TORCH:
+                tA = (ToggleAction) action;
                 tA.setActionSuccessful(PhoneStatusHelper.setTorchEnabled(this, tA.isEnabled()));
-                sendMessage(nodeID, WearableHelper.ActionsPath, stringToBytes(JSONParser.serializer(action, Action.class)));
+                sendMessage(nodeID, WearableHelper.ActionsPath, stringToBytes(JSONParser.serializer(tA, Action.class)));
+                break;
+            case LOCKSCREEN:
+                nA = (NormalAction) action;
+                nA.setActionSuccessful(PhoneStatusHelper.lockScreen(this));
+                sendMessage(nodeID, WearableHelper.ActionsPath, stringToBytes(JSONParser.serializer(nA, Action.class)));
                 break;
         }
     }

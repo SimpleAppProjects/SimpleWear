@@ -2,7 +2,7 @@ package com.thewizrd.shared_resources.helpers;
 
 public abstract class Action {
     protected Actions action;
-    protected boolean actionSuccessful;
+    protected boolean actionSuccessful = true;
 
     public boolean isActionSuccessful() {
         return actionSuccessful;
