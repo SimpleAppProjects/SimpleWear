@@ -1,14 +1,18 @@
 package com.thewizrd.shared_resources.helpers;
 
 public final class ValueAction extends Action {
-    private int value = -1;
+    private ValueDirection direction;
 
-    public ValueAction(Actions action, int value) {
+    public ValueAction(Actions action, ValueDirection direction) {
         super(action);
-        this.value = value;
+        this.direction = direction;
     }
 
-    public int getValue() {
-        return value;
+    public ValueDirection getDirection() {
+        return direction;
+    }
+
+    public void setDirection(ValueDirection direction) {
+        this.direction = direction;
     }
 }

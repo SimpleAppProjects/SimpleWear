@@ -37,7 +37,8 @@ import com.thewizrd.shared_resources.helpers.WearableHelper;
 import com.thewizrd.shared_resources.utils.JSONParser;
 import com.thewizrd.shared_resources.utils.Logger;
 import com.thewizrd.shared_resources.utils.StringUtils;
-import com.thewizrd.simplewear.adapters.ToggleActionAdapter;
+import com.thewizrd.simplewear.adapters.ActionItemAdapter;
+import com.thewizrd.simplewear.controls.ActionButtonViewModel;
 import com.thewizrd.simplewear.helpers.ConfirmationResultReceiver;
 
 import java.util.Locale;
@@ -46,7 +47,7 @@ public class DashboardActivity extends WearableListenerActivity {
     private BroadcastReceiver mBroadcastReceiver;
     private IntentFilter intentFilter;
     private WearableRecyclerView mActionsList;
-    private ToggleActionAdapter mAdapter;
+    private ActionItemAdapter mAdapter;
     private SwipeRefreshLayout mSwipeLayout;
     private NestedScrollView mScrollView;
 
@@ -141,7 +142,7 @@ public class DashboardActivity extends WearableListenerActivity {
                             openAppOnPhone();
                         }
 
-                        mAdapter.updateButton(action);
+                        mAdapter.updateButton(new ActionButtonViewModel(action));
                     } else if (ACTION_CHANGED.equals(intent.getAction())) {
                         String jsonData = intent.getStringExtra(EXTRA_ACTIONDATA);
                         final Action action = JSONParser.deserializer(jsonData, Action.class);
@@ -201,7 +202,7 @@ public class DashboardActivity extends WearableListenerActivity {
         mActionsList.setFocusable(false);
         mActionsList.clearFocus();
 
-        mAdapter = new ToggleActionAdapter();
+        mAdapter = new ActionItemAdapter(this);
         mActionsList.setAdapter(mAdapter);
         mActionsList.setEnabled(false);
 

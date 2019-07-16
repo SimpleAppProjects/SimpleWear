@@ -10,8 +10,6 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.graphics.SurfaceTexture;
-import android.hardware.Camera;
 import android.hardware.camera2.CameraManager;
 import android.os.Build;
 import android.os.IBinder;
@@ -27,8 +25,6 @@ import com.thewizrd.simplewear.PhoneBroadcastReceiver;
 import com.thewizrd.simplewear.R;
 import com.thewizrd.simplewear.wearable.WearableDataListenerService;
 
-import java.util.List;
-
 public class TorchService extends Service {
 
     private static final int JOB_ID = 1001;
@@ -38,7 +34,6 @@ public class TorchService extends Service {
     public static final String ACTION_END_LIGHT = "SimpleWear.Droid.action.END_LIGHT";
 
     private boolean mFlashEnabled = false;
-    private Camera camera;
 
     public static void enqueueWork(Context context, Intent work) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -126,9 +121,7 @@ public class TorchService extends Service {
             turnOffFlashLight();
         }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            stopForeground(true);
-        }
+        stopForeground(true);
 
         super.onDestroy();
     }
@@ -147,42 +140,11 @@ public class TorchService extends Service {
         try {
             CameraManager cameraManager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
             String cameraId = cameraManager.getCameraIdList()[0];
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                cameraManager.setTorchMode(cameraId, true);
-            } else {
-                camera = Camera.open();
-                Camera.Parameters parameters = camera.getParameters();
-                parameters.setFlashMode(getFlashOnParameter(camera));
-                camera.setParameters(parameters);
-
-                camera.setPreviewTexture(new SurfaceTexture(0));
-
-                camera.startPreview();
-                camera.autoFocus(new Camera.AutoFocusCallback() {
-                    @Override
-                    public void onAutoFocus(boolean success, Camera camera) {
-
-                    }
-                });
-            }
+            cameraManager.setTorchMode(cameraId, true);
             mFlashEnabled = true;
         } catch (Exception e) {
             Logger.writeLine(Log.ERROR, e);
         }
-    }
-
-    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-    private String getFlashOnParameter(Camera camera) {
-        List<String> flashModes = camera.getParameters().getSupportedFlashModes();
-
-        if (flashModes.contains(Camera.Parameters.FLASH_MODE_TORCH)) {
-            return Camera.Parameters.FLASH_MODE_TORCH;
-        } else if (flashModes.contains(Camera.Parameters.FLASH_MODE_ON)) {
-            return Camera.Parameters.FLASH_MODE_ON;
-        } else if (flashModes.contains(Camera.Parameters.FLASH_MODE_AUTO)) {
-            return Camera.Parameters.FLASH_MODE_AUTO;
-        }
-        throw new RuntimeException();
     }
 
     private void turnOffFlashLight() {
@@ -200,13 +162,7 @@ public class TorchService extends Service {
         String cameraId = null;
         try {
             cameraId = cameraManager.getCameraIdList()[0];
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                cameraManager.setTorchMode(cameraId, false);
-            } else {
-                camera.stopPreview();
-                camera.release();
-                camera = null;
-            }
+            cameraManager.setTorchMode(cameraId, false);
             mFlashEnabled = false;
         } catch (Exception e) {
             Logger.writeLine(Log.ERROR, e);

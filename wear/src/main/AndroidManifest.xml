@@ -45,6 +45,9 @@
             android:name=".DashboardActivity"
             android:label="@string/title_activity_dashboard"
             android:theme="@style/WearAppTheme" />
+        <activity
+            android:name=".ValueActionActivity"
+            android:theme="@style/WearAppTheme" />
     </application>
 
 </manifest>

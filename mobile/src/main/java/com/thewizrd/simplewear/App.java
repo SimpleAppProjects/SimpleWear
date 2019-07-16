@@ -2,6 +2,7 @@ package com.thewizrd.simplewear;
 
 import android.app.Activity;
 import android.app.Application;
+import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
 import android.content.ContentResolver;
 import android.content.Context;
@@ -9,6 +10,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.database.ContentObserver;
 import android.location.LocationManager;
+import android.media.AudioManager;
 import android.net.ConnectivityManager;
 import android.net.Uri;
 import android.os.BatteryManager;
@@ -92,6 +94,14 @@ public class App extends Application implements ApplicationLib, Application.Acti
                     WearableDataListenerService.enqueueWork(context, new Intent(context, WearableDataListenerService.class)
                             .setAction(WearableDataListenerService.ACTION_SENDACTIONUPDATE)
                             .putExtra(WearableDataListenerService.EXTRA_ACTION_CHANGED, Actions.LOCATION));
+                } else if (AudioManager.RINGER_MODE_CHANGED_ACTION.equals(intent.getAction())) {
+                    WearableDataListenerService.enqueueWork(context, new Intent(context, WearableDataListenerService.class)
+                            .setAction(WearableDataListenerService.ACTION_SENDACTIONUPDATE)
+                            .putExtra(WearableDataListenerService.EXTRA_ACTION_CHANGED, Actions.RINGER));
+                } else if (NotificationManager.ACTION_INTERRUPTION_FILTER_CHANGED.equals(intent.getAction())) {
+                    WearableDataListenerService.enqueueWork(context, new Intent(context, WearableDataListenerService.class)
+                            .setAction(WearableDataListenerService.ACTION_SENDACTIONUPDATE)
+                            .putExtra(WearableDataListenerService.EXTRA_ACTION_CHANGED, Actions.DONOTDISTURB));
                 }
             }
         };
@@ -99,6 +109,8 @@ public class App extends Application implements ApplicationLib, Application.Acti
         actionsFilter.addAction(Intent.ACTION_BATTERY_CHANGED);
         actionsFilter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
         actionsFilter.addAction(LocationManager.PROVIDERS_CHANGED_ACTION);
+        actionsFilter.addAction(AudioManager.RINGER_MODE_CHANGED_ACTION);
+        actionsFilter.addAction(NotificationManager.ACTION_INTERRUPTION_FILTER_CHANGED);
 
         context.registerReceiver(mActionsReceiver, actionsFilter);
 

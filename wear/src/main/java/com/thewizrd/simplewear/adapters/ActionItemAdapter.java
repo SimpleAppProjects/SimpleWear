@@ -1,52 +1,54 @@
 package com.thewizrd.simplewear.adapters;
 
 import android.annotation.SuppressLint;
-import android.content.Context;
-import android.content.Intent;
+import android.app.Activity;
 import android.util.TypedValue;
 import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.thewizrd.shared_resources.helpers.Action;
 import com.thewizrd.shared_resources.helpers.Actions;
+import com.thewizrd.shared_resources.helpers.MultiChoiceAction;
 import com.thewizrd.shared_resources.helpers.NormalAction;
 import com.thewizrd.shared_resources.helpers.ToggleAction;
-import com.thewizrd.shared_resources.utils.JSONParser;
-import com.thewizrd.simplewear.WearableListenerActivity;
-import com.thewizrd.simplewear.controls.ToggleActionButton;
+import com.thewizrd.shared_resources.helpers.ValueAction;
+import com.thewizrd.shared_resources.helpers.ValueDirection;
+import com.thewizrd.simplewear.controls.ActionButton;
+import com.thewizrd.simplewear.controls.ActionButtonViewModel;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class ToggleActionAdapter extends RecyclerView.Adapter {
+public class ActionItemAdapter extends RecyclerView.Adapter {
     private static class ActionItemType {
         public final static int ACTION = 0;
         public final static int TOGGLE_ACTION = 1;
         public final static int VALUE_ACTION = 2;
         public final static int READONLY_ACTION = 3;
+        public final static int MULTICHOICE_ACTION = 4;
     }
 
-    private List<Action> mDataset;
+    private List<ActionButtonViewModel> mDataset;
+    private Activity mActivityContext;
 
     // Provide a reference to the views for each data item
     // Complex data items may need more than one view per item, and
     // you provide access to all the views for a data item in a view holder
     class ViewHolder extends RecyclerView.ViewHolder {
-        public ToggleActionButton mToggleButton;
+        public ActionButton mButton;
 
-        public ViewHolder(ToggleActionButton v) {
+        public ViewHolder(ActionButton v) {
             super(v);
-            mToggleButton = v;
+            mButton = v;
         }
     }
 
     // Provide a suitable constructor (depends on the kind of dataset)
-    public ToggleActionAdapter() {
+    public ActionItemAdapter(Activity activity) {
         mDataset = new ArrayList<>();
+        mActivityContext = activity;
 
         for (Actions action : Actions.values()) {
             switch (action) {
@@ -55,10 +57,17 @@ public class ToggleActionAdapter extends RecyclerView.Adapter {
                 case MOBILEDATA:
                 case LOCATION:
                 case TORCH:
-                    mDataset.add(new ToggleAction(action, true));
+                    mDataset.add(new ActionButtonViewModel(new ToggleAction(action, true)));
                     break;
                 case LOCKSCREEN:
-                    mDataset.add(new NormalAction(action));
+                    mDataset.add(new ActionButtonViewModel(new NormalAction(action)));
+                    break;
+                case VOLUME:
+                    mDataset.add(new ActionButtonViewModel(new ValueAction(action, ValueDirection.UP)));
+                    break;
+                case DONOTDISTURB:
+                case RINGER:
+                    mDataset.add(new ActionButtonViewModel(new MultiChoiceAction(action)));
                     break;
             }
         }
@@ -70,7 +79,7 @@ public class ToggleActionAdapter extends RecyclerView.Adapter {
     // Create new views (invoked by the layout manager)
     public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         // create a new view
-        ToggleActionButton v = new ToggleActionButton(parent.getContext());
+        ActionButton v = new ActionButton(parent.getContext());
 
         RecyclerView.LayoutParams vParams = new RecyclerView.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         int padding = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 6, parent.getContext().getResources().getDisplayMetrics());
@@ -81,52 +90,24 @@ public class ToggleActionAdapter extends RecyclerView.Adapter {
 
     @Override
     // Replace the contents of a view (invoked by the layout manager)
-    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
+    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, final int position) {
         // - get element from your dataset at this position
         // - replace the contents of the view with that element
         final ViewHolder vh = (ViewHolder) holder;
-        final Context context = vh.mToggleButton.getContext();
-        final Action action = mDataset.get(position);
+        final ActionButtonViewModel actionVM = mDataset.get(position);
+
+        vh.mButton.updateButton(actionVM);
 
         if (holder.getItemViewType() != ActionItemType.READONLY_ACTION) {
-            vh.mToggleButton.setOnClickListener(new View.OnClickListener() {
+            vh.mButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    Action actionData = action;
-
-                    if (action instanceof ToggleAction) {
-                        vh.mToggleButton.toggleState();
-                        actionData = new ToggleAction(action.getAction(), vh.mToggleButton.isActionEnabled());
-                    } else {
-                        vh.mToggleButton.resetState();
-                    }
-
-                    LocalBroadcastManager.getInstance(context)
-                            .sendBroadcast(new Intent(WearableListenerActivity.ACTION_CHANGED)
-                                    .putExtra(WearableListenerActivity.EXTRA_ACTIONDATA,
-                                            JSONParser.serializer(actionData, Action.class)));
+                    actionVM.onClick(mActivityContext);
+                    notifyItemChanged(position);
                 }
             });
         } else {
-            vh.mToggleButton.setOnClickListener(null);
-        }
-
-        vh.mToggleButton.setAction(action.getAction());
-        if (action instanceof ToggleAction && ((ToggleAction) action).isEnabled() != vh.mToggleButton.isActionEnabled())
-            vh.mToggleButton.toggleState();
-
-        switch (action.getAction()) {
-            case WIFI:
-            case BLUETOOTH:
-            case TORCH:
-            case LOCKSCREEN:
-            default:
-                vh.mToggleButton.setToggleSuccessful(action.isActionSuccessful());
-                break;
-            case MOBILEDATA:
-            case LOCATION:
-                vh.mToggleButton.setToggleSuccessful(true);
-                break;
+            vh.mButton.setOnClickListener(null);
         }
     }
 
@@ -134,7 +115,7 @@ public class ToggleActionAdapter extends RecyclerView.Adapter {
     public int getItemViewType(int position) {
         int type = -1;
 
-        switch (mDataset.get(position).getAction()) {
+        switch (mDataset.get(position).getActionType()) {
             case WIFI:
             case BLUETOOTH:
             case TORCH:
@@ -148,6 +129,13 @@ public class ToggleActionAdapter extends RecyclerView.Adapter {
             case LOCKSCREEN:
                 type = ActionItemType.ACTION;
                 break;
+            case VOLUME:
+                type = ActionItemType.VALUE_ACTION;
+                break;
+            case DONOTDISTURB:
+            case RINGER:
+                type = ActionItemType.MULTICHOICE_ACTION;
+                break;
         }
 
         return type;
@@ -159,8 +147,8 @@ public class ToggleActionAdapter extends RecyclerView.Adapter {
         return mDataset.size();
     }
 
-    public void updateButton(Action action) {
-        int idx = action.getAction().getValue();
+    public void updateButton(ActionButtonViewModel action) {
+        int idx = action.getActionType().getValue();
         mDataset.set(idx, action);
         notifyItemChanged(idx);
     }

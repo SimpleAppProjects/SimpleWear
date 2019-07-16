@@ -20,7 +20,7 @@ android {
     compileSdkVersion 28
     defaultConfig {
         applicationId "com.thewizrd.simplewear"
-        minSdkVersion 21
+        minSdkVersion 23
         targetSdkVersion 28
         // NOTE: Version Code Format (TargetSDK, Version Name, Build Number, Variant Code (Android: 00, WearOS: 01)
         versionCode 1

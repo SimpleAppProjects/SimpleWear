@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -28,6 +29,7 @@ public class PermissionCheckFragment extends Fragment {
 
     private TextView mCAMPermText;
     private TextView mDevAdminText;
+    private TextView mDNDText;
 
     private static final int CAMERA_REQCODE = 0;
     private static final int DEVADMIN_REQCODE = 1;
@@ -78,9 +80,18 @@ public class PermissionCheckFragment extends Fragment {
                 }
             }
         });
+        view.findViewById(R.id.dnd_pref).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (!PhoneStatusHelper.isNotificationAccessAllowed(mActivity)) {
+                    startActivity(new Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS));
+                }
+            }
+        });
 
         mCAMPermText = view.findViewById(R.id.torch_pref_summary);
         mDevAdminText = view.findViewById(R.id.deviceadmin_summary);
+        mDNDText = view.findViewById(R.id.dnd_summary);
 
         return view;
     }
@@ -93,6 +104,8 @@ public class PermissionCheckFragment extends Fragment {
         DevicePolicyManager mDPM = (DevicePolicyManager) mActivity.getSystemService(Context.DEVICE_POLICY_SERVICE);
         ComponentName mScreenLockAdmin = new ComponentName(mActivity, ScreenLockAdminReceiver.class);
         updateDeviceAdminText(mDPM.isAdminActive(mScreenLockAdmin));
+
+        updateDNDAccessText(PhoneStatusHelper.isNotificationAccessAllowed(mActivity));
     }
 
     private void runOnUiThread(Runnable action) {
@@ -108,6 +121,11 @@ public class PermissionCheckFragment extends Fragment {
     private void updateDeviceAdminText(boolean enabled) {
         mDevAdminText.setText(enabled ? R.string.permission_admin_enabled : R.string.permission_admin_disabled);
         mDevAdminText.setTextColor(enabled ? Color.GREEN : Color.RED);
+    }
+
+    private void updateDNDAccessText(boolean enabled) {
+        mDNDText.setText(enabled ? R.string.permission_dnd_enabled : R.string.permission_dnd_disabled);
+        mDNDText.setTextColor(enabled ? Color.GREEN : Color.RED);
     }
 
     @Override

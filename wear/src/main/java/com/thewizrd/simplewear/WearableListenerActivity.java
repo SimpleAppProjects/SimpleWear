@@ -50,6 +50,7 @@ public abstract class WearableListenerActivity extends WearableActivity implemen
 
     // Extras
     public static final String EXTRA_SUCCESS = "SimpleWear.Droid.Wear.extra.SUCCESS";
+    public static final String EXTRA_ACTION = "SimpleWear.Droid.Wear.extra.ACTION";
     public static final String EXTRA_ACTIONDATA = "SimpleWear.Droid.Wear.extra.ACTION_DATA";
 
     public static final String EXTRA_STATUS = "SimpleWear.Droid.Wear.extra.STATUS";

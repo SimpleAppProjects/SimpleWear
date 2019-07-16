@@ -10,6 +10,7 @@ import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
 import com.google.gson.typeadapters.RuntimeTypeAdapterFactory;
 import com.thewizrd.shared_resources.helpers.Action;
+import com.thewizrd.shared_resources.helpers.MultiChoiceAction;
 import com.thewizrd.shared_resources.helpers.NormalAction;
 import com.thewizrd.shared_resources.helpers.ToggleAction;
 import com.thewizrd.shared_resources.helpers.ValueAction;
@@ -33,7 +34,8 @@ public class JSONParser {
                         RuntimeTypeAdapterFactory.of(Action.class)
                                 .registerSubtype(ToggleAction.class)
                                 .registerSubtype(ValueAction.class)
-                                .registerSubtype(NormalAction.class))
+                                .registerSubtype(NormalAction.class)
+                                .registerSubtype(MultiChoiceAction.class))
                 .setDateFormat("dd.MM.yyyy HH:mm:ss ZZZZZ")
                 .serializeNulls().create();
     }

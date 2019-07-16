@@ -26,7 +26,10 @@ import com.thewizrd.shared_resources.AsyncTask;
 import com.thewizrd.shared_resources.BatteryStatus;
 import com.thewizrd.shared_resources.helpers.Action;
 import com.thewizrd.shared_resources.helpers.Actions;
+import com.thewizrd.shared_resources.helpers.DNDChoice;
+import com.thewizrd.shared_resources.helpers.MultiChoiceAction;
 import com.thewizrd.shared_resources.helpers.NormalAction;
+import com.thewizrd.shared_resources.helpers.RingerChoice;
 import com.thewizrd.shared_resources.helpers.ToggleAction;
 import com.thewizrd.shared_resources.helpers.ValueAction;
 import com.thewizrd.shared_resources.helpers.WearableHelper;
@@ -299,8 +302,15 @@ public class WearableDataListenerService extends WearableListenerService {
                 sendMessage(nodeID, WearableHelper.ActionsPath, stringToBytes(JSONParser.serializer(action, Action.class)));
                 break;
             case LOCKSCREEN:
-                action = new NormalAction(act);
-                action.setActionSuccessful(true);
+            case VOLUME:
+                // No-op since status is not needed
+                break;
+            case DONOTDISTURB:
+                action = new MultiChoiceAction(act, PhoneStatusHelper.getDNDState(this).getValue());
+                sendMessage(nodeID, WearableHelper.ActionsPath, stringToBytes(JSONParser.serializer(action, Action.class)));
+                break;
+            case RINGER:
+                action = new MultiChoiceAction(act, PhoneStatusHelper.getRingerState(this).getValue());
                 sendMessage(nodeID, WearableHelper.ActionsPath, stringToBytes(JSONParser.serializer(action, Action.class)));
                 break;
         }
@@ -310,6 +320,7 @@ public class WearableDataListenerService extends WearableListenerService {
         ToggleAction tA;
         NormalAction nA;
         ValueAction vA;
+        MultiChoiceAction mA;
         switch (action.getAction()) {
             case WIFI:
                 tA = (ToggleAction) action;
@@ -340,6 +351,21 @@ public class WearableDataListenerService extends WearableListenerService {
                 nA = (NormalAction) action;
                 nA.setActionSuccessful(PhoneStatusHelper.lockScreen(this));
                 sendMessage(nodeID, WearableHelper.ActionsPath, stringToBytes(JSONParser.serializer(nA, Action.class)));
+                break;
+            case VOLUME:
+                vA = (ValueAction) action;
+                vA.setActionSuccessful(PhoneStatusHelper.setVolume(this, vA.getDirection()));
+                sendMessage(nodeID, WearableHelper.ActionsPath, stringToBytes(JSONParser.serializer(vA, Action.class)));
+                break;
+            case DONOTDISTURB:
+                mA = (MultiChoiceAction) action;
+                mA.setActionSuccessful(PhoneStatusHelper.setDNDState(this, DNDChoice.valueOf(mA.getChoice())));
+                sendMessage(nodeID, WearableHelper.ActionsPath, stringToBytes(JSONParser.serializer(mA, Action.class)));
+                break;
+            case RINGER:
+                mA = (MultiChoiceAction) action;
+                mA.setActionSuccessful(PhoneStatusHelper.setRingerState(this, RingerChoice.valueOf(mA.getChoice())));
+                sendMessage(nodeID, WearableHelper.ActionsPath, stringToBytes(JSONParser.serializer(mA, Action.class)));
                 break;
         }
     }

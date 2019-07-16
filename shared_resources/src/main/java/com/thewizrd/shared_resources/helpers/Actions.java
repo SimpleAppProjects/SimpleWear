@@ -8,7 +8,10 @@ public enum Actions {
     MOBILEDATA(2),
     LOCATION(3),
     TORCH(4),
-    LOCKSCREEN(5);
+    LOCKSCREEN(5),
+    VOLUME(6),
+    DONOTDISTURB(7),
+    RINGER(8);
 
     private final int value;
 
