@@ -1,7 +1,6 @@
 <resources>
 
     <string name="action_setupfromphone">Setup from Phone</string>
-    <string name="action_changelocation">Change Location</string>
     <string name="action_openonphone">Open on Phone</string>
     <string name="message_openedonphone">Opened on Phone…</string>
 
@@ -19,17 +18,11 @@
 
     <!-- Activity -->
     <string name="title_activity_dashboard">Dashboard</string>
-    <string name="wifi_state_disabling">Disabling</string>
-    <string name="wifi_state_disabled">Disabled</string>
-    <string name="wifi_state_enabling">Enabling</string>
-    <string name="wifi_state_enabled">Enabled</string>
-    <string name="wifi_state_unknown">Unknown</string>
     <string name="batt_state_charging">Charging</string>
     <string name="batt_state_discharging">Discharging</string>
     <string name="state_unknown">Unknown</string>
     <string name="title_actions">Actions</string>
     <string name="state_syncing">Syncing…</string>
-    <string name="title_volume">Volume</string>
 
     <string name="error_torch_action">Camera permission disabled. Please check permission on phone app</string>
     <string name="error_sendmessage">No response. Please check connection</string>

@@ -278,42 +278,47 @@ public class WearableDataListenerService extends WearableListenerService {
         }
     }
 
-    private void sendActionsUpdate(String nodeID, Actions act) {
-        Action action;
-        switch (act) {
-            case WIFI:
-                action = new ToggleAction(act, PhoneStatusHelper.isWifiEnabled(this), true);
-                sendMessage(nodeID, WearableHelper.ActionsPath, stringToBytes(JSONParser.serializer(action, Action.class)));
-                break;
-            case BLUETOOTH:
-                action = new ToggleAction(act, PhoneStatusHelper.isBluetoothEnabled(this), true);
-                sendMessage(nodeID, WearableHelper.ActionsPath, stringToBytes(JSONParser.serializer(action, Action.class)));
-                break;
-            case MOBILEDATA:
-                action = new ToggleAction(act, PhoneStatusHelper.isMobileDataEnabled(this), true);
-                sendMessage(nodeID, WearableHelper.ActionsPath, stringToBytes(JSONParser.serializer(action, Action.class)));
-                break;
-            case LOCATION:
-                action = new ToggleAction(act, PhoneStatusHelper.isLocationEnabled(this), true);
-                sendMessage(nodeID, WearableHelper.ActionsPath, stringToBytes(JSONParser.serializer(action, Action.class)));
-                break;
-            case TORCH:
-                action = new ToggleAction(act, PhoneStatusHelper.isTorchEnabled(this), true);
-                sendMessage(nodeID, WearableHelper.ActionsPath, stringToBytes(JSONParser.serializer(action, Action.class)));
-                break;
-            case LOCKSCREEN:
-            case VOLUME:
-                // No-op since status is not needed
-                break;
-            case DONOTDISTURB:
-                action = new MultiChoiceAction(act, PhoneStatusHelper.getDNDState(this).getValue());
-                sendMessage(nodeID, WearableHelper.ActionsPath, stringToBytes(JSONParser.serializer(action, Action.class)));
-                break;
-            case RINGER:
-                action = new MultiChoiceAction(act, PhoneStatusHelper.getRingerState(this).getValue());
-                sendMessage(nodeID, WearableHelper.ActionsPath, stringToBytes(JSONParser.serializer(action, Action.class)));
-                break;
-        }
+    private void sendActionsUpdate(final String nodeID, final Actions act) {
+        AsyncTask.run(new Runnable() {
+            @Override
+            public void run() {
+                Action action;
+                switch (act) {
+                    case WIFI:
+                        action = new ToggleAction(act, PhoneStatusHelper.isWifiEnabled(WearableDataListenerService.this), true);
+                        sendMessage(nodeID, WearableHelper.ActionsPath, stringToBytes(JSONParser.serializer(action, Action.class)));
+                        break;
+                    case BLUETOOTH:
+                        action = new ToggleAction(act, PhoneStatusHelper.isBluetoothEnabled(WearableDataListenerService.this), true);
+                        sendMessage(nodeID, WearableHelper.ActionsPath, stringToBytes(JSONParser.serializer(action, Action.class)));
+                        break;
+                    case MOBILEDATA:
+                        action = new ToggleAction(act, PhoneStatusHelper.isMobileDataEnabled(WearableDataListenerService.this), true);
+                        sendMessage(nodeID, WearableHelper.ActionsPath, stringToBytes(JSONParser.serializer(action, Action.class)));
+                        break;
+                    case LOCATION:
+                        action = new ToggleAction(act, PhoneStatusHelper.isLocationEnabled(WearableDataListenerService.this), true);
+                        sendMessage(nodeID, WearableHelper.ActionsPath, stringToBytes(JSONParser.serializer(action, Action.class)));
+                        break;
+                    case TORCH:
+                        action = new ToggleAction(act, PhoneStatusHelper.isTorchEnabled(WearableDataListenerService.this), true);
+                        sendMessage(nodeID, WearableHelper.ActionsPath, stringToBytes(JSONParser.serializer(action, Action.class)));
+                        break;
+                    case LOCKSCREEN:
+                    case VOLUME:
+                        // No-op since status is not needed
+                        break;
+                    case DONOTDISTURB:
+                        action = new MultiChoiceAction(act, PhoneStatusHelper.getDNDState(WearableDataListenerService.this).getValue());
+                        sendMessage(nodeID, WearableHelper.ActionsPath, stringToBytes(JSONParser.serializer(action, Action.class)));
+                        break;
+                    case RINGER:
+                        action = new MultiChoiceAction(act, PhoneStatusHelper.getRingerState(WearableDataListenerService.this).getValue());
+                        sendMessage(nodeID, WearableHelper.ActionsPath, stringToBytes(JSONParser.serializer(action, Action.class)));
+                        break;
+                }
+            }
+        });
     }
 
     private void performAction(String nodeID, Action action) {

@@ -32,7 +32,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:padding="4dp"
-            app:backgroundColor="@color/colorPrimaryLight"
+            app:backgroundColor="@color/colorPrimary"
             app:colorSchemeColors="@color/white"
             app:indeterminate="true"
             app:layout_constraintBottom_toBottomOf="parent"

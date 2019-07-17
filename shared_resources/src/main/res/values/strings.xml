@@ -4,7 +4,29 @@
     <string name="not_channel_name_general">General notifications</string>
     <string name="not_channel_name_torch">Flashlight notification</string>
 
+    <string name="action_wifi">WiFi</string>
+    <string name="action_bt">Bluetooth</string>
+    <string name="action_mobiledata">Mobile Data</string>
+    <string name="action_location">Location</string>
+
     <string name="action_torch">Flashlight</string>
     <string name="not_torch_turnoff_summary">Tap to turn off</string>
+
+    <string name="action_lockscreen">Lock Screen</string>
+    <string name="action_volume">Volume</string>
+    <string name="action_dnd">Do not Disturb</string>
+
+    <string name="dndstate_off">Off</string>
+    <string name="dndstate_priority">Priority only</string>
+    <string name="dndstate_alarms">Alarms only</string>
+    <string name="dndstate_silence">Total silence</string>
+
+    <string name="action_ringer">Ringer</string>
+    <string name="ringerstate_vib">Vibrate</string>
+    <string name="ringerstate_sound">Sound</string>
+    <string name="ringerstate_silent">Silent</string>
+
+    <string name="state_off">Off</string>
+    <string name="state_on">On</string>
 
 </resources>

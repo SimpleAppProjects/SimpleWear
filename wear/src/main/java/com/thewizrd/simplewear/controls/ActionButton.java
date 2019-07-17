@@ -9,12 +9,10 @@ import android.view.ViewGroup;
 import android.widget.LinearLayout;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.thewizrd.shared_resources.helpers.Actions;
 import com.thewizrd.simplewear.R;
 
 public class ActionButton extends FloatingActionButton {
     private Context context;
-    private Actions action;
 
     public ActionButton(Context context) {
         super(context);

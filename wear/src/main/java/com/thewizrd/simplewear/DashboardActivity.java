@@ -75,101 +75,148 @@ public class DashboardActivity extends WearableListenerActivity {
         mBroadcastReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(@NonNull Context context, @NonNull final Intent intent) {
-                if (intent.getAction() != null) {
-                    if (ACTION_UPDATECONNECTIONSTATUS.equals(intent.getAction())) {
-                        WearConnectionStatus connStatus = WearConnectionStatus.valueOf(intent.getIntExtra(EXTRA_CONNECTIONSTATUS, 0));
-                        switch (connStatus) {
-                            case DISCONNECTED:
-                                mConnStatus.setText(R.string.status_disconnected);
+                AsyncTask.run(new Runnable() {
+                    @Override
+                    public void run() {
+                        Looper.prepare();
+                        if (intent.getAction() != null) {
+                            if (ACTION_UPDATECONNECTIONSTATUS.equals(intent.getAction())) {
+                                WearConnectionStatus connStatus = WearConnectionStatus.valueOf(intent.getIntExtra(EXTRA_CONNECTIONSTATUS, 0));
+                                switch (connStatus) {
+                                    case DISCONNECTED:
+                                        runOnUiThread(new Runnable() {
+                                            @Override
+                                            public void run() {
+                                                mConnStatus.setText(R.string.status_disconnected);
 
-                                // Navigate
-                                startActivity(new Intent(DashboardActivity.this, PhoneSyncActivity.class)
-                                        .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK));
-                                finishAffinity();
-                                break;
-                            case CONNECTING:
-                                mConnStatus.setText(R.string.status_connecting);
-                                if (mActionsList.isEnabled())
-                                    mActionsList.setEnabled(false);
-                                break;
-                            case APPNOTINSTALLED:
-                                mConnStatus.setText(R.string.error_notinstalled);
+                                                // Navigate
+                                                startActivity(new Intent(DashboardActivity.this, PhoneSyncActivity.class)
+                                                        .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK));
+                                                finishAffinity();
+                                            }
+                                        });
+                                        break;
+                                    case CONNECTING:
+                                        runOnUiThread(new Runnable() {
+                                            @Override
+                                            public void run() {
+                                                mConnStatus.setText(R.string.status_connecting);
+                                                if (mActionsList.isEnabled())
+                                                    mActionsList.setEnabled(false);
+                                            }
+                                        });
+                                        break;
+                                    case APPNOTINSTALLED:
+                                        runOnUiThread(new Runnable() {
+                                            @Override
+                                            public void run() {
+                                                mConnStatus.setText(R.string.error_notinstalled);
 
-                                // Open store on remote device
-                                Intent intentAndroid = new Intent(Intent.ACTION_VIEW)
-                                        .addCategory(Intent.CATEGORY_BROWSABLE)
-                                        .setData(WearableHelper.getPlayStoreURI());
+                                                // Open store on remote device
+                                                Intent intentAndroid = new Intent(Intent.ACTION_VIEW)
+                                                        .addCategory(Intent.CATEGORY_BROWSABLE)
+                                                        .setData(WearableHelper.getPlayStoreURI());
 
-                                RemoteIntent.startRemoteActivity(DashboardActivity.this, intentAndroid,
-                                        new ConfirmationResultReceiver(DashboardActivity.this));
+                                                RemoteIntent.startRemoteActivity(DashboardActivity.this, intentAndroid,
+                                                        new ConfirmationResultReceiver(DashboardActivity.this));
 
-                                if (mActionsList.isEnabled())
-                                    mActionsList.setEnabled(false);
-                                break;
-                            case CONNECTED:
-                                mConnStatus.setText(R.string.status_connected);
-                                if (!mActionsList.isEnabled())
-                                    mActionsList.setEnabled(true);
-                                break;
-                        }
-                    } else if (ACTION_OPENONPHONE.equals(intent.getAction())) {
-                        boolean success = intent.getBooleanExtra(EXTRA_SUCCESS, false);
+                                                if (mActionsList.isEnabled())
+                                                    mActionsList.setEnabled(false);
+                                            }
+                                        });
+                                        break;
+                                    case CONNECTED:
+                                        runOnUiThread(new Runnable() {
+                                            @Override
+                                            public void run() {
+                                                mConnStatus.setText(R.string.status_connected);
+                                                if (!mActionsList.isEnabled())
+                                                    mActionsList.setEnabled(true);
+                                            }
+                                        });
+                                        break;
+                                }
+                            } else if (ACTION_OPENONPHONE.equals(intent.getAction())) {
+                                final boolean success = intent.getBooleanExtra(EXTRA_SUCCESS, false);
 
-                        new ConfirmationOverlay()
-                                .setType(success ? ConfirmationOverlay.OPEN_ON_PHONE_ANIMATION : ConfirmationOverlay.FAILURE_ANIMATION)
-                                .showOn(DashboardActivity.this);
+                                runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        new ConfirmationOverlay()
+                                                .setType(success ? ConfirmationOverlay.OPEN_ON_PHONE_ANIMATION : ConfirmationOverlay.FAILURE_ANIMATION)
+                                                .showOn(DashboardActivity.this);
 
-                        if (!success) {
-                            mConnStatus.setText(R.string.error_syncing);
-                        }
-                    } else if (WearableHelper.BatteryPath.equals(intent.getAction())) {
-                        String jsonData = intent.getStringExtra(EXTRA_STATUS);
-                        String value = getString(R.string.state_unknown);
-                        if (!StringUtils.isNullOrWhitespace(jsonData)) {
-                            BatteryStatus status = JSONParser.deserializer(jsonData, BatteryStatus.class);
-                            value = String.format(Locale.ROOT, "%d%%, %s", status.batteryLevel,
-                                    status.isCharging ? getString(R.string.batt_state_charging) : getString(R.string.batt_state_discharging));
-                        }
-                        mBattStatus.setText(value);
-                    } else if (WearableHelper.ActionsPath.equals(intent.getAction())) {
-                        String jsonData = intent.getStringExtra(EXTRA_ACTIONDATA);
-                        Action action = JSONParser.deserializer(jsonData, Action.class);
+                                        if (!success) {
+                                            mConnStatus.setText(R.string.error_syncing);
+                                        }
+                                    }
+                                });
+                            } else if (WearableHelper.BatteryPath.equals(intent.getAction())) {
+                                final String jsonData = intent.getStringExtra(EXTRA_STATUS);
+                                runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        String value = getString(R.string.state_unknown);
+                                        if (!StringUtils.isNullOrWhitespace(jsonData)) {
+                                            BatteryStatus status = JSONParser.deserializer(jsonData, BatteryStatus.class);
+                                            value = String.format(Locale.ROOT, "%d%%, %s", status.batteryLevel,
+                                                    status.isCharging ? getString(R.string.batt_state_charging) : getString(R.string.batt_state_discharging));
+                                        }
 
-                        cancelTimer(action.getAction());
+                                        mBattStatus.setText(value);
+                                    }
+                                });
+                            } else if (WearableHelper.ActionsPath.equals(intent.getAction())) {
+                                final String jsonData = intent.getStringExtra(EXTRA_ACTIONDATA);
+                                final Action action = JSONParser.deserializer(jsonData, Action.class);
 
-                        if (!intent.hasExtra("TIMEOUT") && action.getAction() == Actions.TORCH && !action.isActionSuccessful()) {
-                            Toast.makeText(DashboardActivity.this, R.string.error_torch_action, Toast.LENGTH_SHORT).show();
-                            openAppOnPhone();
-                        }
+                                cancelTimer(action.getAction());
 
-                        mAdapter.updateButton(new ActionButtonViewModel(action));
-                    } else if (ACTION_CHANGED.equals(intent.getAction())) {
-                        String jsonData = intent.getStringExtra(EXTRA_ACTIONDATA);
-                        final Action action = JSONParser.deserializer(jsonData, Action.class);
-                        requestAction(jsonData);
+                                if (!intent.hasExtra("TIMEOUT") && action.getAction() == Actions.TORCH && !action.isActionSuccessful()) {
+                                    Toast.makeText(DashboardActivity.this, R.string.error_torch_action, Toast.LENGTH_SHORT).show();
+                                    openAppOnPhone();
+                                }
 
-                        CountDownTimer timer = new CountDownTimer(3000, 500) {
-                            @Override
-                            public void onTick(long millisUntilFinished) {
+                                runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        mAdapter.updateButton(new ActionButtonViewModel(action));
+                                    }
+                                });
+                            } else if (ACTION_CHANGED.equals(intent.getAction())) {
+                                String jsonData = intent.getStringExtra(EXTRA_ACTIONDATA);
+                                final Action action = JSONParser.deserializer(jsonData, Action.class);
+                                requestAction(jsonData);
 
+                                CountDownTimer timer = new CountDownTimer(3000, 500) {
+                                    @Override
+                                    public void onTick(long millisUntilFinished) {
+
+                                    }
+
+                                    @Override
+                                    public void onFinish() {
+                                        action.setActionSuccessful(false);
+                                        LocalBroadcastManager.getInstance(DashboardActivity.this)
+                                                .sendBroadcast(new Intent(WearableHelper.ActionsPath)
+                                                        .putExtra(EXTRA_ACTIONDATA, JSONParser.serializer(action, Action.class))
+                                                        .putExtra("TIMEOUT", true));
+                                        runOnUiThread(new Runnable() {
+                                            @Override
+                                            public void run() {
+                                                Toast.makeText(DashboardActivity.this, R.string.error_sendmessage, Toast.LENGTH_SHORT).show();
+                                            }
+                                        });
+                                    }
+                                };
+                                timer.start();
+                                activeTimers.append(action.getAction().getValue(), timer);
+                            } else {
+                                Logger.writeLine(Log.INFO, "%s: Unhandled action: %s", "DashboardActivity", intent.getAction());
                             }
-
-                            @Override
-                            public void onFinish() {
-                                action.setActionSuccessful(false);
-                                LocalBroadcastManager.getInstance(DashboardActivity.this)
-                                        .sendBroadcast(new Intent(WearableHelper.ActionsPath)
-                                                .putExtra(EXTRA_ACTIONDATA, JSONParser.serializer(action, Action.class))
-                                                .putExtra("TIMEOUT", true));
-                                Toast.makeText(DashboardActivity.this, R.string.error_sendmessage, Toast.LENGTH_SHORT).show();
-                            }
-                        };
-                        timer.start();
-                        activeTimers.append(action.getAction().getValue(), timer);
-                    } else {
-                        Logger.writeLine(Log.INFO, "%s: Unhandled action: %s", "DashboardActivity", intent.getAction());
+                        }
                     }
-                }
+                });
             }
         };
 
@@ -277,6 +324,11 @@ public class DashboardActivity extends WearableListenerActivity {
         AsyncTask.run(new Runnable() {
             @Override
             public void run() {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
                 updateConnectionStatus();
                 requestUpdate();
             }

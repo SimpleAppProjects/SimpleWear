@@ -4,14 +4,11 @@
     <string name="permission_camera_disabled">Camera permission disabled. Please click to enable controlling flashlight from WearOS device</string>
     <string name="not_title_wearservice">Syncing…</string>
 
-    <string name="action_lockscreen">Lock screen</string>
-
     <string name="cat_title_permissions">Permissions</string>
     <string name="device_admin_description">Allows you to turn of your screen and lock your device from your WearOS device</string>
     <string name="permission_admin_enabled">Device admin enabled</string>
     <string name="permission_admin_disabled">Not enabled as device admin. Please click to enable locking screen from your WearOS device</string>
 
-    <string name="action_dnd">Do not Disturb</string>
     <string name="permission_dnd_enabled">Do not Disturb access enabled</string>
     <string name="permission_dnd_disabled">Do not Disturb access disabled. Please click to enable changing Do not Disturb setting from your WearOS device</string>
 

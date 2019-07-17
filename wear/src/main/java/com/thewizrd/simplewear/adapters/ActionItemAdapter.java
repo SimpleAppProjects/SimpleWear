@@ -5,9 +5,12 @@ import android.app.Activity;
 import android.util.TypedValue;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.wear.widget.WearableRecyclerView;
 
 import com.thewizrd.shared_resources.helpers.Actions;
 import com.thewizrd.shared_resources.helpers.MultiChoiceAction;
@@ -15,6 +18,7 @@ import com.thewizrd.shared_resources.helpers.NormalAction;
 import com.thewizrd.shared_resources.helpers.ToggleAction;
 import com.thewizrd.shared_resources.helpers.ValueAction;
 import com.thewizrd.shared_resources.helpers.ValueDirection;
+import com.thewizrd.shared_resources.utils.StringUtils;
 import com.thewizrd.simplewear.controls.ActionButton;
 import com.thewizrd.simplewear.controls.ActionButtonViewModel;
 
@@ -81,13 +85,23 @@ public class ActionItemAdapter extends RecyclerView.Adapter {
         // create a new view
         ActionButton v = new ActionButton(parent.getContext());
 
+        int horizPadding = 0;
+        try {
+            RecyclerView recyclerView = (WearableRecyclerView) parent;
+            GridLayoutManager gLM = (GridLayoutManager) recyclerView.getLayoutManager();
+            int spanCount = gLM.getSpanCount();
+            int viewWidth = parent.getMeasuredWidth();
+            int colWidth = (viewWidth / spanCount);
+            horizPadding = colWidth - v.getCustomSize();
+        } catch (Exception ignored) {
+        }
+
         RecyclerView.LayoutParams vParams = new RecyclerView.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        int padding = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 6, parent.getContext().getResources().getDisplayMetrics());
-        vParams.setMargins(0, padding, 0, padding);
+        int vertPadding = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 6, parent.getContext().getResources().getDisplayMetrics());
+        vParams.setMargins(horizPadding / 2, vertPadding, horizPadding / 2, vertPadding);
         v.setLayoutParams(vParams);
         return new ViewHolder(v);
     }
-
     @Override
     // Replace the contents of a view (invoked by the layout manager)
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, final int position) {
@@ -109,6 +123,17 @@ public class ActionItemAdapter extends RecyclerView.Adapter {
         } else {
             vh.mButton.setOnClickListener(null);
         }
+        vh.mButton.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                String text = actionVM.getActionLabel();
+                if (!StringUtils.isNullOrWhitespace(actionVM.getStateLabel())) {
+                    text = String.format("%s: %s", text, actionVM.getStateLabel());
+                }
+                Toast.makeText(v.getContext(), text, Toast.LENGTH_SHORT).show();
+                return true;
+            }
+        });
     }
 
     @Override

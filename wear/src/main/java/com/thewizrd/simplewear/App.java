@@ -54,9 +54,6 @@ public class App extends Application implements ApplicationLib, Application.Acti
         // Start logger
         Logger.init(context);
 
-        // Init common action broadcast receiver
-        //registerCommonReceiver();
-
         final Thread.UncaughtExceptionHandler oldHandler = Thread.getDefaultUncaughtExceptionHandler();
 
         Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
@@ -72,36 +69,8 @@ public class App extends Application implements ApplicationLib, Application.Acti
         });
     }
 
-    /*
-    private void registerCommonReceiver() {
-        mCommonReceiver = new CommonActionsBroadcastReceiver();
-        IntentFilter filter = new IntentFilter();
-        filter.addAction(CommonActions.ACTION_SETTINGS_UPDATEAPI);
-        filter.addAction(CommonActions.ACTION_SETTINGS_UPDATEGPS);
-        filter.addAction(CommonActions.ACTION_SETTINGS_UPDATEUNIT);
-        filter.addAction(CommonActions.ACTION_SETTINGS_UPDATEREFRESH);
-        filter.addAction(CommonActions.ACTION_WEATHER_SENDLOCATIONUPDATE);
-        filter.addAction(CommonActions.ACTION_WEATHER_SENDWEATHERUPDATE);
-        filter.addAction(CommonActions.ACTION_WEATHER_UPDATEWIDGETLOCATION);
-        filter.addAction(CommonActions.ACTION_WEATHER_UPDATEWIDGETWEATHER);
-        filter.addAction(CommonActions.ACTION_WIDGET_REFRESHWIDGETS);
-        filter.addAction(CommonActions.ACTION_WIDGET_RESETWIDGETS);
-
-        LocalBroadcastManager.getInstance(this)
-                .registerReceiver(mCommonReceiver, filter);
-    }
-    */
-
-    /*
-    private void unregisterCommonReceiver() {
-        LocalBroadcastManager.getInstance(this)
-                .unregisterReceiver(mCommonReceiver);
-    }
-    */
-
     @Override
     public void onTerminate() {
-        //unregisterCommonReceiver();
         super.onTerminate();
         // Shutdown logger
         Logger.shutdown();

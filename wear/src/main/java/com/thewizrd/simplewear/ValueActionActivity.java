@@ -143,7 +143,7 @@ public class ValueActionActivity extends WearableListenerActivity {
 
         switch (mAction) {
             case VOLUME:
-                mTitleView.setText(R.string.title_volume);
+                mTitleView.setText(R.string.action_volume);
                 mIconView.setImageDrawable(getDrawable(R.drawable.ic_volume_up_white_24dp));
                 break;
         }
