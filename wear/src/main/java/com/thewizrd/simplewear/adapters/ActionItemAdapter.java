@@ -36,6 +36,7 @@ public class ActionItemAdapter extends RecyclerView.Adapter {
 
     private List<ActionButtonViewModel> mDataset;
     private Activity mActivityContext;
+    private boolean mItemsClickable = true;
 
     // Provide a reference to the views for each data item
     // Complex data items may need more than one view per item, and
@@ -47,6 +48,14 @@ public class ActionItemAdapter extends RecyclerView.Adapter {
             super(v);
             mButton = v;
         }
+    }
+
+    public boolean isItemsClickable() {
+        return mItemsClickable;
+    }
+
+    public void setItemsClickable(boolean itemsClickable) {
+        this.mItemsClickable = itemsClickable;
     }
 
     // Provide a suitable constructor (depends on the kind of dataset)
@@ -116,6 +125,8 @@ public class ActionItemAdapter extends RecyclerView.Adapter {
             vh.mButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
+                    if (!mItemsClickable) return;
+
                     actionVM.onClick(mActivityContext);
                     notifyItemChanged(position);
                 }

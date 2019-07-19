@@ -235,6 +235,14 @@ public class DashboardActivity extends WearableListenerActivity {
                                             break;
                                     }
                                 }
+
+                                runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        // Re-enable click action
+                                        mAdapter.setItemsClickable(true);
+                                    }
+                                });
                             } else if (ACTION_CHANGED.equals(intent.getAction())) {
                                 String jsonData = intent.getStringExtra(EXTRA_ACTIONDATA);
                                 final Action action = JSONParser.deserializer(jsonData, Action.class);
@@ -259,6 +267,9 @@ public class DashboardActivity extends WearableListenerActivity {
                                         };
                                         timer.start();
                                         activeTimers.append(action.getAction().getValue(), timer);
+
+                                        // Disable click action for all items until a response is received
+                                        mAdapter.setItemsClickable(false);
                                     }
                                 });
                             } else {
