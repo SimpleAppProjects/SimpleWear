@@ -20,11 +20,11 @@ import android.provider.Settings;
 import android.util.Log;
 
 import com.jakewharton.threetenabp.AndroidThreeTen;
-import com.thewizrd.shared_resources.AppState;
 import com.thewizrd.shared_resources.ApplicationLib;
-import com.thewizrd.shared_resources.BatteryStatus;
 import com.thewizrd.shared_resources.SimpleLibrary;
 import com.thewizrd.shared_resources.helpers.Actions;
+import com.thewizrd.shared_resources.helpers.AppState;
+import com.thewizrd.shared_resources.helpers.BatteryStatus;
 import com.thewizrd.shared_resources.utils.JSONParser;
 import com.thewizrd.shared_resources.utils.Logger;
 import com.thewizrd.simplewear.wearable.WearableDataListenerService;

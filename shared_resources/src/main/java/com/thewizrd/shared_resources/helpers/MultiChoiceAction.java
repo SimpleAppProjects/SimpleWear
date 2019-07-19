@@ -3,6 +3,10 @@ package com.thewizrd.shared_resources.helpers;
 public final class MultiChoiceAction extends Action {
     private int value;
 
+    private MultiChoiceAction() {
+        super();
+    }
+
     public MultiChoiceAction(Actions action) {
         super(action);
     }

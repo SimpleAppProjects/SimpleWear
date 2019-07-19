@@ -14,9 +14,9 @@ import androidx.annotation.Nullable;
 import androidx.wear.widget.CircularProgressLayout;
 
 import com.google.android.wearable.intent.RemoteIntent;
-import com.thewizrd.shared_resources.AsyncTask;
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus;
 import com.thewizrd.shared_resources.helpers.WearableHelper;
+import com.thewizrd.shared_resources.utils.AsyncTask;
 
 public class PhoneSyncActivity extends WearableListenerActivity {
     private CircularProgressLayout mCircularProgress;

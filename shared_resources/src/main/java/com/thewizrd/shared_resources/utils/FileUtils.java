@@ -4,8 +4,6 @@ import android.util.Log;
 
 import androidx.core.util.AtomicFile;
 
-import com.thewizrd.shared_resources.AsyncTask;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;

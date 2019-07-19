@@ -7,9 +7,9 @@ import android.os.Bundle;
 import android.util.Log;
 
 import com.jakewharton.threetenabp.AndroidThreeTen;
-import com.thewizrd.shared_resources.AppState;
 import com.thewizrd.shared_resources.ApplicationLib;
 import com.thewizrd.shared_resources.SimpleLibrary;
+import com.thewizrd.shared_resources.helpers.AppState;
 import com.thewizrd.shared_resources.utils.Logger;
 
 public class App extends Application implements ApplicationLib, Application.ActivityLifecycleCallbacks {

@@ -10,7 +10,6 @@ import android.net.NetworkCapabilities;
 import android.net.NetworkRequest;
 import android.os.Bundle;
 import android.os.CountDownTimer;
-import android.os.Handler;
 import android.os.Looper;
 import android.support.wearable.input.RotaryEncoder;
 import android.support.wearable.view.ConfirmationOverlay;
@@ -18,7 +17,6 @@ import android.util.Log;
 import android.util.SparseArray;
 import android.view.MotionEvent;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.core.widget.NestedScrollView;
@@ -28,17 +26,19 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import androidx.wear.widget.WearableRecyclerView;
 
 import com.google.android.wearable.intent.RemoteIntent;
-import com.thewizrd.shared_resources.AsyncTask;
-import com.thewizrd.shared_resources.BatteryStatus;
 import com.thewizrd.shared_resources.helpers.Action;
+import com.thewizrd.shared_resources.helpers.ActionStatus;
 import com.thewizrd.shared_resources.helpers.Actions;
+import com.thewizrd.shared_resources.helpers.BatteryStatus;
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus;
 import com.thewizrd.shared_resources.helpers.WearableHelper;
+import com.thewizrd.shared_resources.utils.AsyncTask;
 import com.thewizrd.shared_resources.utils.JSONParser;
 import com.thewizrd.shared_resources.utils.Logger;
 import com.thewizrd.shared_resources.utils.StringUtils;
 import com.thewizrd.simplewear.adapters.ActionItemAdapter;
 import com.thewizrd.simplewear.controls.ActionButtonViewModel;
+import com.thewizrd.simplewear.controls.CustomConfirmationOverlay;
 import com.thewizrd.simplewear.helpers.ConfirmationResultReceiver;
 
 import java.util.Locale;
@@ -138,19 +138,22 @@ public class DashboardActivity extends WearableListenerActivity {
                                 }
                             } else if (ACTION_OPENONPHONE.equals(intent.getAction())) {
                                 final boolean success = intent.getBooleanExtra(EXTRA_SUCCESS, false);
+                                final boolean showAni = intent.getBooleanExtra(EXTRA_SHOWANIMATION, false);
 
-                                runOnUiThread(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        new ConfirmationOverlay()
-                                                .setType(success ? ConfirmationOverlay.OPEN_ON_PHONE_ANIMATION : ConfirmationOverlay.FAILURE_ANIMATION)
-                                                .showOn(DashboardActivity.this);
+                                if (showAni) {
+                                    runOnUiThread(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            new ConfirmationOverlay()
+                                                    .setType(success ? ConfirmationOverlay.OPEN_ON_PHONE_ANIMATION : ConfirmationOverlay.FAILURE_ANIMATION)
+                                                    .showOn(DashboardActivity.this);
 
-                                        if (!success) {
-                                            mConnStatus.setText(R.string.error_syncing);
+                                            if (!success) {
+                                                mConnStatus.setText(R.string.error_syncing);
+                                            }
                                         }
-                                    }
-                                });
+                                    });
+                                }
                             } else if (WearableHelper.BatteryPath.equals(intent.getAction())) {
                                 final String jsonData = intent.getStringExtra(EXTRA_STATUS);
                                 runOnUiThread(new Runnable() {
@@ -172,45 +175,92 @@ public class DashboardActivity extends WearableListenerActivity {
 
                                 cancelTimer(action.getAction());
 
-                                if (!intent.hasExtra("TIMEOUT") && action.getAction() == Actions.TORCH && !action.isActionSuccessful()) {
-                                    Toast.makeText(DashboardActivity.this, R.string.error_torch_action, Toast.LENGTH_SHORT).show();
-                                    openAppOnPhone();
-                                }
-
                                 runOnUiThread(new Runnable() {
                                     @Override
                                     public void run() {
                                         mAdapter.updateButton(new ActionButtonViewModel(action));
                                     }
                                 });
+
+                                if (!action.isActionSuccessful()) {
+                                    switch (action.getActionStatus()) {
+                                        case UNKNOWN:
+                                        case FAILURE:
+                                            runOnUiThread(new Runnable() {
+                                                @Override
+                                                public void run() {
+                                                    new CustomConfirmationOverlay()
+                                                            .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
+                                                            .setCustomDrawable(DashboardActivity.this.getDrawable(R.drawable.ic_full_sad))
+                                                            .setMessage(DashboardActivity.this.getString(R.string.error_actionfailed))
+                                                            .showOn(DashboardActivity.this);
+                                                }
+                                            });
+                                            break;
+                                        case PERMISSION_DENIED:
+                                            runOnUiThread(new Runnable() {
+                                                @Override
+                                                public void run() {
+                                                    if (action.getAction() == Actions.TORCH)
+                                                        new CustomConfirmationOverlay()
+                                                                .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
+                                                                .setCustomDrawable(DashboardActivity.this.getDrawable(R.drawable.ic_full_sad))
+                                                                .setMessage(DashboardActivity.this.getString(R.string.error_torch_action))
+                                                                .showOn(DashboardActivity.this);
+                                                    else {
+                                                        new CustomConfirmationOverlay()
+                                                                .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
+                                                                .setCustomDrawable(DashboardActivity.this.getDrawable(R.drawable.ic_full_sad))
+                                                                .setMessage(DashboardActivity.this.getString(R.string.error_permissiondenied))
+                                                                .showOn(DashboardActivity.this);
+                                                    }
+                                                }
+                                            });
+
+                                            openAppOnPhone(false);
+                                            break;
+                                        case TIMEOUT:
+                                            runOnUiThread(new Runnable() {
+                                                @Override
+                                                public void run() {
+                                                    new CustomConfirmationOverlay()
+                                                            .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
+                                                            .setCustomDrawable(DashboardActivity.this.getDrawable(R.drawable.ic_full_sad))
+                                                            .setMessage(DashboardActivity.this.getString(R.string.error_sendmessage))
+                                                            .showOn(DashboardActivity.this);
+                                                }
+                                            });
+                                            break;
+                                        case SUCCESS:
+                                            break;
+                                    }
+                                }
                             } else if (ACTION_CHANGED.equals(intent.getAction())) {
                                 String jsonData = intent.getStringExtra(EXTRA_ACTIONDATA);
                                 final Action action = JSONParser.deserializer(jsonData, Action.class);
                                 requestAction(jsonData);
 
-                                CountDownTimer timer = new CountDownTimer(3000, 500) {
+                                runOnUiThread(new Runnable() {
                                     @Override
-                                    public void onTick(long millisUntilFinished) {
-
-                                    }
-
-                                    @Override
-                                    public void onFinish() {
-                                        action.setActionSuccessful(false);
-                                        LocalBroadcastManager.getInstance(DashboardActivity.this)
-                                                .sendBroadcast(new Intent(WearableHelper.ActionsPath)
-                                                        .putExtra(EXTRA_ACTIONDATA, JSONParser.serializer(action, Action.class))
-                                                        .putExtra("TIMEOUT", true));
-                                        runOnUiThread(new Runnable() {
+                                    public void run() {
+                                        CountDownTimer timer = new CountDownTimer(3000, 500) {
                                             @Override
-                                            public void run() {
-                                                Toast.makeText(DashboardActivity.this, R.string.error_sendmessage, Toast.LENGTH_SHORT).show();
+                                            public void onTick(long millisUntilFinished) {
+
                                             }
-                                        });
+
+                                            @Override
+                                            public void onFinish() {
+                                                action.setActionSuccessful(ActionStatus.TIMEOUT);
+                                                LocalBroadcastManager.getInstance(DashboardActivity.this)
+                                                        .sendBroadcast(new Intent(WearableHelper.ActionsPath)
+                                                                .putExtra(EXTRA_ACTIONDATA, JSONParser.serializer(action, Action.class)));
+                                            }
+                                        };
+                                        timer.start();
+                                        activeTimers.append(action.getAction().getValue(), timer);
                                     }
-                                };
-                                timer.start();
-                                activeTimers.append(action.getAction().getValue(), timer);
+                                });
                             } else {
                                 Logger.writeLine(Log.INFO, "%s: Unhandled action: %s", "DashboardActivity", intent.getAction());
                             }
@@ -262,7 +312,6 @@ public class DashboardActivity extends WearableListenerActivity {
 
         activeTimers = new SparseArray<>();
 
-        mMainHandler = new Handler(Looper.getMainLooper());
         connectivityManager =
                 (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
     }

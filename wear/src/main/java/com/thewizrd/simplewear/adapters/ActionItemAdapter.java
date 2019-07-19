@@ -27,11 +27,11 @@ import java.util.List;
 
 public class ActionItemAdapter extends RecyclerView.Adapter {
     private static class ActionItemType {
-        public final static int ACTION = 0;
-        public final static int TOGGLE_ACTION = 1;
-        public final static int VALUE_ACTION = 2;
-        public final static int READONLY_ACTION = 3;
-        public final static int MULTICHOICE_ACTION = 4;
+        final static int ACTION = 0;
+        final static int TOGGLE_ACTION = 1;
+        final static int VALUE_ACTION = 2;
+        final static int READONLY_ACTION = 3;
+        final static int MULTICHOICE_ACTION = 4;
     }
 
     private List<ActionButtonViewModel> mDataset;
@@ -41,9 +41,9 @@ public class ActionItemAdapter extends RecyclerView.Adapter {
     // Complex data items may need more than one view per item, and
     // you provide access to all the views for a data item in a view holder
     class ViewHolder extends RecyclerView.ViewHolder {
-        public ActionButton mButton;
+        ActionButton mButton;
 
-        public ViewHolder(ActionButton v) {
+        ViewHolder(ActionButton v) {
             super(v);
             mButton = v;
         }
@@ -123,6 +123,7 @@ public class ActionItemAdapter extends RecyclerView.Adapter {
         } else {
             vh.mButton.setOnClickListener(null);
         }
+
         vh.mButton.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {

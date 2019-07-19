@@ -21,11 +21,10 @@ import com.google.android.gms.wearable.MessageEvent;
 import com.google.android.gms.wearable.Node;
 import com.google.android.gms.wearable.Wearable;
 import com.google.android.gms.wearable.WearableListenerService;
-import com.thewizrd.shared_resources.AppState;
-import com.thewizrd.shared_resources.AsyncTask;
-import com.thewizrd.shared_resources.BatteryStatus;
 import com.thewizrd.shared_resources.helpers.Action;
 import com.thewizrd.shared_resources.helpers.Actions;
+import com.thewizrd.shared_resources.helpers.AppState;
+import com.thewizrd.shared_resources.helpers.BatteryStatus;
 import com.thewizrd.shared_resources.helpers.DNDChoice;
 import com.thewizrd.shared_resources.helpers.MultiChoiceAction;
 import com.thewizrd.shared_resources.helpers.NormalAction;
@@ -33,6 +32,7 @@ import com.thewizrd.shared_resources.helpers.RingerChoice;
 import com.thewizrd.shared_resources.helpers.ToggleAction;
 import com.thewizrd.shared_resources.helpers.ValueAction;
 import com.thewizrd.shared_resources.helpers.WearableHelper;
+import com.thewizrd.shared_resources.utils.AsyncTask;
 import com.thewizrd.shared_resources.utils.JSONParser;
 import com.thewizrd.shared_resources.utils.Logger;
 import com.thewizrd.simplewear.App;
@@ -285,23 +285,23 @@ public class WearableDataListenerService extends WearableListenerService {
                 Action action;
                 switch (act) {
                     case WIFI:
-                        action = new ToggleAction(act, PhoneStatusHelper.isWifiEnabled(WearableDataListenerService.this), true);
+                        action = new ToggleAction(act, PhoneStatusHelper.isWifiEnabled(WearableDataListenerService.this));
                         sendMessage(nodeID, WearableHelper.ActionsPath, stringToBytes(JSONParser.serializer(action, Action.class)));
                         break;
                     case BLUETOOTH:
-                        action = new ToggleAction(act, PhoneStatusHelper.isBluetoothEnabled(WearableDataListenerService.this), true);
+                        action = new ToggleAction(act, PhoneStatusHelper.isBluetoothEnabled(WearableDataListenerService.this));
                         sendMessage(nodeID, WearableHelper.ActionsPath, stringToBytes(JSONParser.serializer(action, Action.class)));
                         break;
                     case MOBILEDATA:
-                        action = new ToggleAction(act, PhoneStatusHelper.isMobileDataEnabled(WearableDataListenerService.this), true);
+                        action = new ToggleAction(act, PhoneStatusHelper.isMobileDataEnabled(WearableDataListenerService.this));
                         sendMessage(nodeID, WearableHelper.ActionsPath, stringToBytes(JSONParser.serializer(action, Action.class)));
                         break;
                     case LOCATION:
-                        action = new ToggleAction(act, PhoneStatusHelper.isLocationEnabled(WearableDataListenerService.this), true);
+                        action = new ToggleAction(act, PhoneStatusHelper.isLocationEnabled(WearableDataListenerService.this));
                         sendMessage(nodeID, WearableHelper.ActionsPath, stringToBytes(JSONParser.serializer(action, Action.class)));
                         break;
                     case TORCH:
-                        action = new ToggleAction(act, PhoneStatusHelper.isTorchEnabled(WearableDataListenerService.this), true);
+                        action = new ToggleAction(act, PhoneStatusHelper.isTorchEnabled(WearableDataListenerService.this));
                         sendMessage(nodeID, WearableHelper.ActionsPath, stringToBytes(JSONParser.serializer(action, Action.class)));
                         break;
                     case LOCKSCREEN:

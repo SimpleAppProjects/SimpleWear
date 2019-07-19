@@ -1,4 +1,4 @@
-package com.thewizrd.shared_resources;
+package com.thewizrd.shared_resources.helpers;
 
 public class BatteryStatus {
     public int batteryLevel;

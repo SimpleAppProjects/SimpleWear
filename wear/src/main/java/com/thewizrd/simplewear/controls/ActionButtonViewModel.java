@@ -78,6 +78,15 @@ public class ActionButtonViewModel {
 
             mButtonBackgroundColor = tA.isEnabled() ? R.color.colorPrimary : R.color.black;
             updateIconAndLabel();
+        } else if (action instanceof MultiChoiceAction) {
+            MultiChoiceAction mA = (MultiChoiceAction) action;
+
+            if (!mA.isActionSuccessful()) {
+                // Revert state
+                mA.setChoice((mA.getChoice() - 1) % mA.getNumberOfStates());
+            }
+
+            updateIconAndLabel();
         } else if (action != null) {
             updateIconAndLabel();
         } else {

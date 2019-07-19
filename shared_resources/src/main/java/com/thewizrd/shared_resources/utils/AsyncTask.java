@@ -1,8 +1,6 @@
-package com.thewizrd.shared_resources;
+package com.thewizrd.shared_resources.utils;
 
 import android.util.Log;
-
-import com.thewizrd.shared_resources.utils.Logger;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;

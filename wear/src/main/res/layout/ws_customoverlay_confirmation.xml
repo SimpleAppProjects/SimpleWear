@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/wearable_support_overlay_confirmation"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#cc000000"
+    android:orientation="vertical">
+
+    <ImageView
+        android:id="@+id/wearable_support_confirmation_overlay_image"
+        android:layout_width="@dimen/conf_overlay_image_size"
+        android:layout_height="@dimen/conf_overlay_image_size"
+        android:background="@android:color/transparent"
+        app:layout_constraintBottom_toTopOf="@id/wearable_support_confirmation_overlay_message"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="1.0"
+        tools:ignore="ContentDescription"
+        tools:src="@drawable/ic_phonelink_erase_white_24dp" />
+
+    <TextView
+        android:id="@+id/wearable_support_confirmation_overlay_message"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@android:color/transparent"
+        android:fontFamily="sans-serif-condensed-light"
+        android:gravity="center_horizontal"
+        android:textColor="@android:color/white"
+        android:textSize="@dimen/confirmation_overlay_text_size"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.6"
+        tools:text="Hello" />
+</androidx.constraintlayout.widget.ConstraintLayout>

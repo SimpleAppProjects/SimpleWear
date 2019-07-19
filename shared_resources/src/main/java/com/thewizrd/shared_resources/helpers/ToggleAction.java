@@ -1,16 +1,16 @@
 package com.thewizrd.shared_resources.helpers;
 
 public final class ToggleAction extends Action {
-    private boolean enabled = false;
+    private boolean enabled;
+
+    private ToggleAction() {
+        super();
+    }
 
     public ToggleAction(Actions action, boolean enabled) {
         super(action);
         this.enabled = enabled;
-    }
-
-    public ToggleAction(Actions action, boolean enabled, boolean isSuccess) {
-        this(action, enabled);
-        actionSuccessful = isSuccess;
+        actionSuccessful = true;
     }
 
     public boolean isEnabled() {

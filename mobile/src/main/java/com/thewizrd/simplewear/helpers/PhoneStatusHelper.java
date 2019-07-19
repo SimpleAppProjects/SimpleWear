@@ -23,7 +23,8 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 
-import com.thewizrd.shared_resources.BatteryStatus;
+import com.thewizrd.shared_resources.helpers.ActionStatus;
+import com.thewizrd.shared_resources.helpers.BatteryStatus;
 import com.thewizrd.shared_resources.helpers.DNDChoice;
 import com.thewizrd.shared_resources.helpers.RingerChoice;
 import com.thewizrd.shared_resources.helpers.ValueDirection;
@@ -68,13 +69,21 @@ public class PhoneStatusHelper {
         return false;
     }
 
-    public static boolean setWifiEnabled(@NonNull Context context, boolean enable) {
+    public static ActionStatus setWifiEnabled(@NonNull Context context, boolean enable) {
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_WIFI_STATE) == PackageManager.PERMISSION_GRANTED) {
-            WifiManager wifiMan = (WifiManager) context.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
-            return wifiMan.setWifiEnabled(enable);
+            ActionStatus status;
+            try {
+                WifiManager wifiMan = (WifiManager) context.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+                status = wifiMan.setWifiEnabled(enable) ? ActionStatus.SUCCESS : ActionStatus.FAILURE;
+            } catch (Exception e) {
+                Logger.writeLine(Log.ERROR, e);
+                status = ActionStatus.FAILURE;
+            }
+
+            return status;
         }
 
-        return false;
+        return ActionStatus.PERMISSION_DENIED;
     }
 
     public static boolean isBluetoothEnabled(@NonNull Context context) {
@@ -87,13 +96,14 @@ public class PhoneStatusHelper {
         return false;
     }
 
-    public static boolean setBluetoothEnabled(@NonNull Context context, boolean enable) {
+    public static ActionStatus setBluetoothEnabled(@NonNull Context context, boolean enable) {
         BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         if (mBluetoothAdapter != null) {
-            return enable ? mBluetoothAdapter.enable() : mBluetoothAdapter.disable();
+            return (enable ? mBluetoothAdapter.enable() : mBluetoothAdapter.disable()) ?
+                    ActionStatus.SUCCESS : ActionStatus.FAILURE;
         }
 
-        return false;
+        return ActionStatus.FAILURE;
     }
 
     public static boolean isMobileDataEnabled(@NonNull Context context) {
@@ -137,22 +147,22 @@ public class PhoneStatusHelper {
         return false;
     }
 
-    public static boolean setTorchEnabled(@NonNull Context context, boolean enable) {
-        boolean success = false;
-
+    public static ActionStatus setTorchEnabled(@NonNull Context context, boolean enable) {
         if (!isCameraPermissionEnabled(context))
-            return false;
+            return ActionStatus.PERMISSION_DENIED;
+
+        ActionStatus status;
 
         try {
             TorchService.enqueueWork(context.getApplicationContext(), new Intent(context.getApplicationContext(), TorchService.class)
                     .setAction(enable ? TorchService.ACTION_START_LIGHT : TorchService.ACTION_END_LIGHT));
-            success = true;
+            status = ActionStatus.SUCCESS;
         } catch (Exception e) {
             Logger.writeLine(Log.ERROR, e);
-            success = false;
+            status = ActionStatus.FAILURE;
         }
 
-        return success;
+        return status;
     }
 
     public static boolean isDeviceAdminEnabled(@NonNull Context context) {
@@ -161,19 +171,27 @@ public class PhoneStatusHelper {
         return mDPM.isAdminActive(mScreenLockAdmin);
     }
 
-    public static boolean lockScreen(@NonNull Context context) {
+    public static ActionStatus lockScreen(@NonNull Context context) {
+        if (!isDeviceAdminEnabled(context))
+            return ActionStatus.PERMISSION_DENIED;
+
+        ActionStatus status;
+
         try {
             DevicePolicyManager mDPM = (DevicePolicyManager) context.getApplicationContext().getSystemService(Context.DEVICE_POLICY_SERVICE);
             mDPM.lockNow();
+            status = ActionStatus.SUCCESS;
         } catch (Exception e) {
             Logger.writeLine(Log.ERROR, e);
-            return false;
+            status = ActionStatus.FAILURE;
         }
 
-        return true;
+        return status;
     }
 
-    public static boolean setVolume(@NonNull Context context, ValueDirection direction) {
+    public static ActionStatus setVolume(@NonNull Context context, ValueDirection direction) {
+        ActionStatus status;
+
         try {
             AudioManager audioMan = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
 
@@ -185,12 +203,14 @@ public class PhoneStatusHelper {
                     audioMan.adjustSuggestedStreamVolume(AudioManager.ADJUST_LOWER, AudioManager.USE_DEFAULT_STREAM_TYPE, AudioManager.FLAG_SHOW_UI);
                     break;
             }
+
+            status = ActionStatus.SUCCESS;
         } catch (Exception e) {
             Logger.writeLine(Log.ERROR, e);
-            return false;
+            status = ActionStatus.FAILURE;
         }
 
-        return true;
+        return status;
     }
 
     public static boolean isNotificationAccessAllowed(@NonNull Context context) {
@@ -216,9 +236,11 @@ public class PhoneStatusHelper {
         }
     }
 
-    public static boolean setDNDState(@NonNull Context context, DNDChoice dnd) {
+    public static ActionStatus setDNDState(@NonNull Context context, DNDChoice dnd) {
         if (!isNotificationAccessAllowed(context))
-            return false;
+            return ActionStatus.PERMISSION_DENIED;
+
+        ActionStatus status;
 
         try {
             NotificationManager notMan = (NotificationManager) context.getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
@@ -237,14 +259,16 @@ public class PhoneStatusHelper {
                     notMan.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_NONE);
                     break;
                 default:
-                    return false;
+                    return ActionStatus.FAILURE;
             }
+
+            status = ActionStatus.SUCCESS;
         } catch (Exception e) {
             Logger.writeLine(Log.ERROR, e);
-            return false;
+            status = ActionStatus.FAILURE;
         }
 
-        return true;
+        return status;
     }
 
     public static RingerChoice getRingerState(@NonNull Context context) {
@@ -267,7 +291,9 @@ public class PhoneStatusHelper {
         return ringerChoice;
     }
 
-    public static boolean setRingerState(@NonNull Context context, RingerChoice ringer) {
+    public static ActionStatus setRingerState(@NonNull Context context, RingerChoice ringer) {
+        ActionStatus status;
+
         try {
             AudioManager audioMan = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
 
@@ -283,11 +309,12 @@ public class PhoneStatusHelper {
                     audioMan.setRingerMode(AudioManager.RINGER_MODE_SILENT);
                     break;
             }
+            status = ActionStatus.SUCCESS;
         } catch (Exception e) {
             Logger.writeLine(Log.ERROR, e);
-            return false;
+            status = ActionStatus.FAILURE;
         }
 
-        return true;
+        return status;
     }
 }
