@@ -42,7 +42,7 @@ import static com.thewizrd.shared_resources.utils.SerializationUtils.bytesToStri
 import static com.thewizrd.shared_resources.utils.SerializationUtils.stringToBytes;
 
 public abstract class WearableListenerActivity extends WearableActivity implements MessageClient.OnMessageReceivedListener, CapabilityClient.OnCapabilityChangedListener {
-    protected Node mPhoneNodeWithApp;
+    protected volatile Node mPhoneNodeWithApp;
     protected WearConnectionStatus mConnectionStatus = WearConnectionStatus.DISCONNECTED;
     protected Handler mMainHandler;
 

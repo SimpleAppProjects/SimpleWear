@@ -42,6 +42,7 @@ import com.thewizrd.simplewear.controls.CustomConfirmationOverlay;
 import com.thewizrd.simplewear.helpers.ConfirmationResultReceiver;
 
 import java.util.Locale;
+import java.util.concurrent.Callable;
 
 public class DashboardActivity extends WearableListenerActivity {
     private BroadcastReceiver mBroadcastReceiver;
@@ -381,16 +382,12 @@ public class DashboardActivity extends WearableListenerActivity {
         connectivityManager.registerNetworkCallback(request, mNetCallback);
 
         // Update statuses
-        AsyncTask.run(new Runnable() {
+        new AsyncTask<Void>().await(new Callable<Void>() {
             @Override
-            public void run() {
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+            public Void call() throws Exception {
                 updateConnectionStatus();
                 requestUpdate();
+                return null;
             }
         });
     }

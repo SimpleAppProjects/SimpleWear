@@ -114,7 +114,7 @@ public class PhoneStatusHelper {
 
         NetworkCapabilities cap = cm.getNetworkCapabilities(cm.getActiveNetwork());
 
-        return cap.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) || mobileDataSettingEnabled;
+        return (cap != null && cap.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)) || mobileDataSettingEnabled;
     }
 
     public static boolean isLocationEnabled(@NonNull Context context) {
