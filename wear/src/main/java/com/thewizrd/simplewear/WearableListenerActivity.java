@@ -59,6 +59,11 @@ public abstract class WearableListenerActivity extends WearableActivity implemen
      * @see #ACTION_OPENONPHONE
      */
     public static final String EXTRA_SUCCESS = "SimpleWear.Droid.Wear.extra.SUCCESS";
+    /**
+     * Extra contains flag for whether or not to show the animation for the open on phone action.
+     *
+     * @see #ACTION_OPENONPHONE
+     */
     public static final String EXTRA_SHOWANIMATION = "SimpleWear.Droid.Wear.extra.SHOW_ANIMATION";
     /**
      * Extra contains Action type to be changed for ValueActionActivity
@@ -87,14 +92,6 @@ public abstract class WearableListenerActivity extends WearableActivity implemen
      * @see WearableListenerActivity
      */
     public static final String EXTRA_CONNECTIONSTATUS = "SimpleWear.Droid.Wear.extra.CONNECTION_STATUS";
-
-    /**
-     * Extra contains status for the performed action
-     *
-     * @see WearConnectionStatus
-     * @see WearableListenerActivity
-     */
-    public static final String EXTRA_ACTIONSTATUS = "SimpleWear.Droid.Wear.extra.ACTION_STATUS";
 
     protected abstract BroadcastReceiver getBroadcastReceiver();
 
