@@ -83,7 +83,7 @@ public class ActionButtonViewModel {
 
             if (!mA.isActionSuccessful()) {
                 // Revert state
-                mA.setChoice((mA.getChoice() - 1) % mA.getNumberOfStates());
+                mA.setChoice(mA.getChoice() - 1);
             }
 
             updateIconAndLabel();
@@ -109,7 +109,7 @@ public class ActionButtonViewModel {
             } else if (action instanceof MultiChoiceAction) {
                 MultiChoiceAction mA = (MultiChoiceAction) action;
                 int currentChoice = mA.getChoice();
-                int newChoice = (currentChoice + 1) % mA.getNumberOfStates();
+                int newChoice = currentChoice + 1;
                 mA.setChoice(newChoice);
                 updateIconAndLabel();
             }

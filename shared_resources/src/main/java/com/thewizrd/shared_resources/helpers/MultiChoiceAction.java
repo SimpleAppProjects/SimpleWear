@@ -21,7 +21,11 @@ public final class MultiChoiceAction extends Action {
     }
 
     public void setChoice(int value) {
-        this.value = value;
+        int maxStates = getNumberOfStates();
+        int choice = value % maxStates;
+        if (choice < 0) choice += maxStates;
+
+        this.value = choice;
     }
 
     public int getNumberOfStates() {
