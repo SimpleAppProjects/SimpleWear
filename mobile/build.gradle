@@ -20,6 +20,15 @@ android {
     compileSdkVersion 28
     defaultConfig {
         applicationId "com.thewizrd.simplewear"
+
+        testApplicationId "com.thewizrd.simpleweather.test"
+        // Specifies the fully-qualified class name of the test instrumentation runner.
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        // The following argument makes the Android Test Orchestrator run its
+        // "pm clear" command after each test invocation. This command ensures
+        // that the app's state is completely cleared between tests.
+        testInstrumentationRunnerArguments clearPackageData: 'true'
+
         minSdkVersion 23
         targetSdkVersion 28
         // NOTE: Version Code Format (TargetSDK, Version Name, Build Number, Variant Code (Android: 00, WearOS: 01)
@@ -48,6 +57,18 @@ dependencies {
     implementation project(":shared_resources")
     wearApp project(':wear')
     implementation fileTree(dir: 'libs', include: ['*.jar'])
+
+    // Core library
+    androidTestImplementation 'androidx.test:core:1.2.0'
+
+    // AndroidJUnitRunner and JUnit Rules
+    androidTestImplementation 'androidx.test:runner:1.2.0'
+    androidTestImplementation 'androidx.test:rules:1.2.0'
+
+    // Assertions
+    androidTestImplementation 'androidx.test.ext:junit:1.1.1'
+    androidTestImplementation 'androidx.test.ext:truth:1.2.0'
+    androidTestImplementation 'com.google.truth:truth:0.42'
 
     implementation 'com.google.android.gms:play-services-wearable:17.0.0'
 
