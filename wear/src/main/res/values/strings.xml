@@ -30,4 +30,8 @@
     <string name="error_actionfailed">Failed to perform action</string>
 
     <string name="prefix_playmusic">Play from</string>
+    <string name="pref_layout">Actions Layout</string>
+    <string name="option_grid">Grid</string>
+    <string name="option_list">List</string>
+
 </resources>

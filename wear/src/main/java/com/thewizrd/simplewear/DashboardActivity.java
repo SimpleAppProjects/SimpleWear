@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
@@ -11,11 +12,13 @@ import android.net.NetworkRequest;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.os.Looper;
+import android.preference.PreferenceManager;
 import android.support.wearable.input.RotaryEncoder;
 import android.support.wearable.view.ConfirmationOverlay;
 import android.util.Log;
 import android.util.SparseArray;
 import android.view.MotionEvent;
+import android.view.View;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -23,8 +26,11 @@ import androidx.core.widget.NestedScrollView;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
+import androidx.wear.widget.WearableLinearLayoutManager;
 import androidx.wear.widget.WearableRecyclerView;
+import androidx.wear.widget.drawer.WearableDrawerView;
 
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.wearable.intent.RemoteIntent;
 import com.thewizrd.shared_resources.helpers.Action;
 import com.thewizrd.shared_resources.helpers.ActionStatus;
@@ -40,17 +46,19 @@ import com.thewizrd.simplewear.adapters.ActionItemAdapter;
 import com.thewizrd.simplewear.controls.ActionButtonViewModel;
 import com.thewizrd.simplewear.controls.CustomConfirmationOverlay;
 import com.thewizrd.simplewear.helpers.ConfirmationResultReceiver;
+import com.thewizrd.simplewear.preferences.Settings;
 
 import java.util.Locale;
 import java.util.concurrent.Callable;
 
-public class DashboardActivity extends WearableListenerActivity {
+public class DashboardActivity extends WearableListenerActivity implements SharedPreferences.OnSharedPreferenceChangeListener {
     private BroadcastReceiver mBroadcastReceiver;
     private IntentFilter intentFilter;
     private WearableRecyclerView mActionsList;
     private ActionItemAdapter mAdapter;
     private SwipeRefreshLayout mSwipeLayout;
     private NestedScrollView mScrollView;
+    private WearableDrawerView mDrawerView;
 
     private TextView mConnStatus;
     private TextView mBattStatus;
@@ -287,6 +295,10 @@ public class DashboardActivity extends WearableListenerActivity {
         mBattStatus = findViewById(R.id.batt_stat_text);
         mActionsList = findViewById(R.id.actions_list);
 
+        mDrawerView = findViewById(R.id.bottom_action_drawer);
+        mDrawerView.setIsAutoPeekEnabled(true);
+        mDrawerView.setPeekOnScrollDownEnabled(true);
+
         mSwipeLayout.setColorSchemeColors(getColor(R.color.colorPrimary));
         mSwipeLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
@@ -305,7 +317,7 @@ public class DashboardActivity extends WearableListenerActivity {
 
         mActionsList.setEdgeItemsCenteringEnabled(false);
         mActionsList.setCircularScrollingGestureEnabled(false);
-        mActionsList.setLayoutManager(new GridLayoutManager(this, 3));
+        setLayoutManager();
 
         mScrollView = findViewById(R.id.scrollView);
         mActionsList.setFocusable(false);
@@ -314,6 +326,14 @@ public class DashboardActivity extends WearableListenerActivity {
         mAdapter = new ActionItemAdapter(this);
         mActionsList.setAdapter(mAdapter);
         mActionsList.setEnabled(false);
+
+        findViewById(R.id.layout_pref).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Settings.setGridLayout(!Settings.useGridLayout());
+            }
+        });
+        updateLayoutPref();
 
         intentFilter = new IntentFilter();
         intentFilter.addAction(ACTION_UPDATECONNECTIONSTATUS);
@@ -326,6 +346,23 @@ public class DashboardActivity extends WearableListenerActivity {
 
         connectivityManager =
                 (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+    }
+
+    private void updateLayoutPref() {
+        boolean useGridLayout = Settings.useGridLayout();
+        FloatingActionButton fab = findViewById(R.id.layout_pref_icon);
+        TextView prefSummary = findViewById(R.id.layout_pref_summary);
+        fab.setImageResource(useGridLayout ? R.drawable.ic_apps_white_24dp : R.drawable.ic_view_list_white_24dp);
+        prefSummary.setText(useGridLayout ? R.string.option_grid : R.string.option_list);
+    }
+
+    private void setLayoutManager() {
+        if (Settings.useGridLayout()) {
+            mActionsList.setLayoutManager(new GridLayoutManager(this, 3));
+        } else {
+            mActionsList.setLayoutManager(new WearableLinearLayoutManager(this, null));
+        }
+        mActionsList.setAdapter(mAdapter);
     }
 
     @Override
@@ -381,6 +418,9 @@ public class DashboardActivity extends WearableListenerActivity {
                 .build();
         connectivityManager.registerNetworkCallback(request, mNetCallback);
 
+        PreferenceManager.getDefaultSharedPreferences(this)
+                .registerOnSharedPreferenceChangeListener(this);
+
         // Update statuses
         new AsyncTask<Void>().await(new Callable<Void>() {
             @Override
@@ -394,7 +434,20 @@ public class DashboardActivity extends WearableListenerActivity {
 
     @Override
     protected void onPause() {
+        PreferenceManager.getDefaultSharedPreferences(this)
+                .unregisterOnSharedPreferenceChangeListener(this);
+
         connectivityManager.unregisterNetworkCallback(mNetCallback);
         super.onPause();
+    }
+
+    @Override
+    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+        switch (key) {
+            case Settings.KEY_LAYOUTMODE:
+                updateLayoutPref();
+                setLayoutManager();
+                break;
+        }
     }
 }

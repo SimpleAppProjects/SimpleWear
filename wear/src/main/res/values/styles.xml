@@ -16,4 +16,14 @@
         <item name="colorAccent">@color/colorPrimaryLight</item>
     </style>
 
+    <style name="SettingPrefLayoutStyle">
+        <item name="android:background">@drawable/button_noborder</item>
+        <item name="android:paddingBottom">8dp</item>
+        <item name="android:paddingTop">8dp</item>
+        <item name="android:paddingEnd">@dimen/inner_layout_padding</item>
+        <item name="android:paddingStart">@dimen/inner_layout_padding</item>
+        <item name="android:clipChildren">false</item>
+        <item name="android:clipToPadding">false</item>
+    </style>
+
 </resources>

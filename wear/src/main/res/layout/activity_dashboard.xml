@@ -1,104 +1,141 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.swiperefreshlayout.widget.SwipeRefreshLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.wear.widget.drawer.WearableDrawerLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/swipe_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/dark_grey"
     tools:context="com.thewizrd.simplewear.DashboardActivity"
     tools:deviceIds="wear">
 
-    <androidx.core.widget.NestedScrollView
-        android:id="@+id/scrollView"
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/swipe_layout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <androidx.core.widget.NestedScrollView
+            android:id="@+id/scrollView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@color/dark_grey"
+            android:fillViewport="true"
+            tools:context="com.thewizrd.simplewear.DashboardActivity"
+            tools:deviceIds="wear">
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <androidx.appcompat.widget.AppCompatImageView
+                    android:id="@+id/device_stat_icon"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/inner_layout_padding"
+                    android:layout_marginTop="@dimen/inner_layout_padding"
+                    android:padding="4dp"
+                    app:layout_constraintEnd_toStartOf="@id/device_stat_text"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:srcCompat="@drawable/ic_smartphone_white_24dp" />
+
+                <androidx.appcompat.widget.AppCompatTextView
+                    android:id="@+id/device_stat_text"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="@dimen/inner_layout_padding"
+                    android:ellipsize="marquee"
+                    android:gravity="center"
+                    android:marqueeRepeatLimit="marquee_forever"
+                    android:padding="4dp"
+                    android:text="@string/state_syncing"
+                    app:layout_constrainedHeight="true"
+                    app:layout_constrainedWidth="true"
+                    app:layout_constraintBottom_toBottomOf="@id/device_stat_icon"
+                    app:layout_constraintEnd_toEndOf="@+id/actions_list"
+                    app:layout_constraintHorizontal_bias="0.5"
+                    app:layout_constraintHorizontal_weight="1"
+                    app:layout_constraintStart_toEndOf="@id/device_stat_icon"
+                    app:layout_constraintTop_toTopOf="@+id/device_stat_icon"
+                    tools:text="Connected" />
+
+                <androidx.appcompat.widget.AppCompatImageView
+                    android:id="@+id/batt_stat_icon"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/inner_layout_padding"
+                    android:layout_marginEnd="@dimen/inner_layout_padding"
+                    android:padding="4dp"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/device_stat_icon"
+                    app:srcCompat="@drawable/ic_battery_std_white_24dp" />
+
+                <androidx.appcompat.widget.AppCompatTextView
+                    android:id="@+id/batt_stat_text"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="@dimen/inner_layout_padding"
+                    android:ellipsize="marquee"
+                    android:gravity="center"
+                    android:marqueeRepeatLimit="marquee_forever"
+                    android:padding="4dp"
+                    android:text="@string/state_syncing"
+                    app:layout_constrainedHeight="true"
+                    app:layout_constrainedWidth="true"
+                    app:layout_constraintBottom_toBottomOf="@id/batt_stat_icon"
+                    app:layout_constraintEnd_toEndOf="@+id/actions_list"
+                    app:layout_constraintHorizontal_bias="0.5"
+                    app:layout_constraintHorizontal_weight="1"
+                    app:layout_constraintStart_toEndOf="@id/batt_stat_icon"
+                    app:layout_constraintTop_toTopOf="@+id/batt_stat_icon"
+                    tools:text="99%, Charging" />
+
+                <androidx.appcompat.widget.AppCompatTextView
+                    android:id="@+id/actions_title"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/inner_layout_padding"
+                    android:layout_marginEnd="@dimen/inner_layout_padding"
+                    android:gravity="center"
+                    android:padding="4dp"
+                    android:text="@string/title_actions"
+                    android:textAppearance="@style/TextAppearance.AppCompat.Body2"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/batt_stat_icon" />
+
+                <androidx.wear.widget.WearableRecyclerView
+                    android:id="@+id/actions_list"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginBottom="@dimen/inner_layout_padding"
+                    android:clipChildren="false"
+                    android:clipToPadding="false"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/actions_title"
+                    app:layout_constraintVertical_bias="0.0"
+                    tools:listitem="@layout/control_fabtogglebutton">
+
+                </androidx.wear.widget.WearableRecyclerView>
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+        </androidx.core.widget.NestedScrollView>
+
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+
+    <androidx.wear.widget.drawer.WearableDrawerView
+        android:id="@+id/bottom_action_drawer"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:fillViewport="true"
-        android:background="@color/dark_grey"
-        tools:context="com.thewizrd.simplewear.DashboardActivity"
-        tools:deviceIds="wear">
+        android:layout_gravity="bottom"
+        android:background="@color/black"
+        app:drawerContent="@id/drawer_content">
 
-        <androidx.constraintlayout.widget.ConstraintLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:padding="@dimen/inner_layout_padding">
+        <include layout="@layout/dashboard_drawer_layout" />
 
-            <androidx.appcompat.widget.AppCompatImageView
-                android:id="@+id/device_stat_icon"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:padding="4dp"
-                app:srcCompat="@drawable/ic_smartphone_white_24dp"
-                app:layout_constraintTop_toTopOf="parent"
-                app:layout_constraintStart_toStartOf="parent" />
+    </androidx.wear.widget.drawer.WearableDrawerView>
 
-            <androidx.appcompat.widget.AppCompatTextView
-                android:id="@+id/device_stat_text"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:gravity="center"
-                android:padding="4dp"
-                android:ellipsize="marquee"
-                android:marqueeRepeatLimit="marquee_forever"
-                app:layout_constraintTop_toTopOf="@+id/device_stat_icon"
-                app:layout_constraintStart_toEndOf="@id/device_stat_icon"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintBottom_toBottomOf="@id/device_stat_icon"
-                android:text="@string/state_syncing"
-                tools:text="Connected" />
-
-            <androidx.appcompat.widget.AppCompatImageView
-                android:id="@+id/batt_stat_icon"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:padding="4dp"
-                app:srcCompat="@drawable/ic_battery_std_white_24dp"
-                app:layout_constraintTop_toBottomOf="@id/device_stat_icon"
-                app:layout_constraintStart_toStartOf="parent" />
-
-            <androidx.appcompat.widget.AppCompatTextView
-                android:id="@+id/batt_stat_text"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:gravity="center"
-                android:padding="4dp"
-                android:ellipsize="marquee"
-                android:marqueeRepeatLimit="marquee_forever"
-                app:layout_constraintTop_toTopOf="@+id/batt_stat_icon"
-                app:layout_constraintStart_toEndOf="@id/batt_stat_icon"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintBottom_toBottomOf="@id/batt_stat_icon"
-                android:text="@string/state_syncing"
-                tools:text="99%, Charging" />
-
-            <androidx.appcompat.widget.AppCompatTextView
-                android:id="@+id/actions_title"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center"
-                android:padding="4dp"
-                android:text="@string/title_actions"
-                android:textAppearance="@style/TextAppearance.AppCompat.Body2"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/batt_stat_icon" />
-
-            <androidx.wear.widget.WearableRecyclerView
-                android:id="@+id/actions_list"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/actions_title"
-                app:layout_constraintVertical_bias="0.0"
-                tools:listitem="@layout/control_fabtogglebutton">
-
-            </androidx.wear.widget.WearableRecyclerView>
-
-        </androidx.constraintlayout.widget.ConstraintLayout>
-
-    </androidx.core.widget.NestedScrollView>
-
-</androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+</androidx.wear.widget.drawer.WearableDrawerLayout>
 

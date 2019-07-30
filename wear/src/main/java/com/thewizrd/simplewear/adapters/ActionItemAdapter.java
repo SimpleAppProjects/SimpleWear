@@ -9,6 +9,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.wear.widget.WearableRecyclerView;
 
@@ -19,6 +20,7 @@ import com.thewizrd.shared_resources.helpers.ToggleAction;
 import com.thewizrd.shared_resources.helpers.ValueAction;
 import com.thewizrd.shared_resources.helpers.ValueDirection;
 import com.thewizrd.shared_resources.utils.StringUtils;
+import com.thewizrd.simplewear.R;
 import com.thewizrd.simplewear.controls.ActionButton;
 import com.thewizrd.simplewear.controls.ActionButtonViewModel;
 
@@ -94,21 +96,37 @@ public class ActionItemAdapter extends RecyclerView.Adapter {
     public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         // create a new view
         ActionButton v = new ActionButton(parent.getContext());
+        RecyclerView recyclerView = (WearableRecyclerView) parent;
+        RecyclerView.LayoutManager viewLayoutMgr = recyclerView.getLayoutManager();
 
-        int horizPadding = 0;
-        try {
-            RecyclerView recyclerView = (WearableRecyclerView) parent;
-            GridLayoutManager gLM = (GridLayoutManager) recyclerView.getLayoutManager();
-            int spanCount = gLM.getSpanCount();
-            int viewWidth = parent.getMeasuredWidth();
-            int colWidth = (viewWidth / spanCount);
-            horizPadding = colWidth - v.getCustomSize();
-        } catch (Exception ignored) {
+        RecyclerView.LayoutParams vParams = new RecyclerView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        int innerPadding = parent.getContext().getResources().getDimensionPixelSize(R.dimen.inner_layout_padding);
+
+        if (viewLayoutMgr instanceof GridLayoutManager) {
+            v.setExpanded(false);
+
+            GridLayoutManager gLM = (GridLayoutManager) viewLayoutMgr;
+
+            int horizPadding = 0;
+            try {
+                int spanCount = gLM.getSpanCount();
+                int viewWidth = parent.getMeasuredWidth() - innerPadding * 2;
+                int colWidth = (viewWidth / spanCount);
+                horizPadding = colWidth - v.getFabCustomSize();
+            } catch (Exception ignored) {
+            }
+
+            int vertPadding = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 6, parent.getContext().getResources().getDisplayMetrics());
+            v.setPaddingRelative(0, 0, 0, 0);
+            recyclerView.setPaddingRelative(innerPadding, 0, innerPadding, 0);
+            vParams.setMargins(horizPadding / 2, vertPadding, horizPadding / 2, vertPadding);
+        } else if (viewLayoutMgr instanceof LinearLayoutManager) {
+            v.setExpanded(true);
+
+            v.setPaddingRelative(innerPadding, 0, innerPadding, 0);
+            recyclerView.setPaddingRelative(0, 0, 0, 0);
         }
 
-        RecyclerView.LayoutParams vParams = new RecyclerView.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        int vertPadding = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 6, parent.getContext().getResources().getDisplayMetrics());
-        vParams.setMargins(horizPadding / 2, vertPadding, horizPadding / 2, vertPadding);
         v.setLayoutParams(vParams);
         return new ViewHolder(v);
     }
@@ -136,17 +154,21 @@ public class ActionItemAdapter extends RecyclerView.Adapter {
             vh.mButton.setOnClickListener(null);
         }
 
-        vh.mButton.setOnLongClickListener(new View.OnLongClickListener() {
-            @Override
-            public boolean onLongClick(View v) {
-                String text = actionVM.getActionLabel();
-                if (!StringUtils.isNullOrWhitespace(actionVM.getStateLabel())) {
-                    text = String.format("%s: %s", text, actionVM.getStateLabel());
+        if (vh.mButton.isExpanded()) {
+            vh.mButton.setOnLongClickListener(null);
+        } else {
+            vh.mButton.setOnLongClickListener(new View.OnLongClickListener() {
+                @Override
+                public boolean onLongClick(View v) {
+                    String text = actionVM.getActionLabel();
+                    if (!StringUtils.isNullOrWhitespace(actionVM.getStateLabel())) {
+                        text = String.format("%s: %s", text, actionVM.getStateLabel());
+                    }
+                    Toast.makeText(v.getContext(), text, Toast.LENGTH_SHORT).show();
+                    return true;
                 }
-                Toast.makeText(v.getContext(), text, Toast.LENGTH_SHORT).show();
-                return true;
-            }
-        });
+            });
+        }
     }
 
     @Override
