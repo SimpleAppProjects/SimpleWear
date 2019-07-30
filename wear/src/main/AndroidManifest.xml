@@ -48,6 +48,9 @@
         <activity
             android:name=".ValueActionActivity"
             android:theme="@style/WearAppTheme" />
+        <activity
+            android:name=".MusicPlayerActivity"
+            android:theme="@style/WearAppTheme" />
     </application>
 
 </manifest>

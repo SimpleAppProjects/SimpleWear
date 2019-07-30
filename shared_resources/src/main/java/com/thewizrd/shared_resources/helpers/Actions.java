@@ -11,7 +11,8 @@ public enum Actions {
     LOCKSCREEN(5),
     VOLUME(6),
     DONOTDISTURB(7),
-    RINGER(8);
+    RINGER(8),
+    MUSICPLAYBACK(9);
 
     private final int value;
 

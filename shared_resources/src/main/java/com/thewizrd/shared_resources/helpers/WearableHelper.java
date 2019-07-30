@@ -31,6 +31,15 @@ public class WearableHelper {
     public static final String BluetoothPath = "/status/bt";
     public static final String WifiPath = "/status/wifi";
     public static final String UpdatePath = "/update/all";
+    public static final String MusicPlayersPath = "/music-players";
+    public static final String PlayCommandPath = "/music/play";
+
+    // For Music Player DataMap
+    public static final String KEY_SUPPORTEDPLAYERS = "key_supported_players";
+    public static final String KEY_LABEL = "key_label";
+    public static final String KEY_ICON = "key_icon";
+    public static final String KEY_PKGNAME = "key_package_name";
+    public static final String KEY_ACTIVITYNAME = "key_activity_name";
 
     public static boolean isGooglePlayServicesInstalled() {
         int queryResult = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(SimpleLibrary.getInstance().getApp().getAppContext());

@@ -13,11 +13,13 @@ import com.thewizrd.shared_resources.helpers.Action;
 import com.thewizrd.shared_resources.helpers.Actions;
 import com.thewizrd.shared_resources.helpers.DNDChoice;
 import com.thewizrd.shared_resources.helpers.MultiChoiceAction;
+import com.thewizrd.shared_resources.helpers.NormalAction;
 import com.thewizrd.shared_resources.helpers.RingerChoice;
 import com.thewizrd.shared_resources.helpers.ToggleAction;
 import com.thewizrd.shared_resources.helpers.ValueAction;
 import com.thewizrd.shared_resources.utils.JSONParser;
 import com.thewizrd.simplewear.App;
+import com.thewizrd.simplewear.MusicPlayerActivity;
 import com.thewizrd.simplewear.R;
 import com.thewizrd.simplewear.ValueActionActivity;
 import com.thewizrd.simplewear.WearableListenerActivity;
@@ -100,7 +102,10 @@ public class ActionButtonViewModel {
         if (action instanceof ValueAction) {
             Intent intent = new Intent(activityContext, ValueActionActivity.class)
                     .putExtra(ValueActionActivity.EXTRA_ACTION, getActionType());
-            activityContext.startActivityForResult(intent, 2);
+            activityContext.startActivityForResult(intent, -1);
+        } else if (action instanceof NormalAction && action.getAction() == Actions.MUSICPLAYBACK) {
+            Intent intent = new Intent(activityContext, MusicPlayerActivity.class);
+            activityContext.startActivityForResult(intent, -1);
         } else {
             if (action instanceof ToggleAction) {
                 ToggleAction tA = (ToggleAction) action;
@@ -212,6 +217,11 @@ public class ActionButtonViewModel {
                         mStateLabel = context.getString(R.string.ringerstate_silent);
                         break;
                 }
+                break;
+            case MUSICPLAYBACK:
+                mDrawableID = R.drawable.ic_play_circle_filled_white_24dp;
+                mActionLabel = context.getString(R.string.action_musicplayback);
+                mStateLabel = null;
                 break;
         }
     }

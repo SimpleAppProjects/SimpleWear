@@ -29,4 +29,6 @@
     <string name="state_off">Off</string>
     <string name="state_on">On</string>
 
+    <string name="action_musicplayback">Play Music</string>
+
 </resources>

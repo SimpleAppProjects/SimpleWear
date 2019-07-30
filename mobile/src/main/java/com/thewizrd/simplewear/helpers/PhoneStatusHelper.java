@@ -19,6 +19,7 @@ import android.os.BatteryManager;
 import android.os.Build;
 import android.provider.Settings;
 import android.util.Log;
+import android.view.KeyEvent;
 
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
@@ -316,5 +317,20 @@ public class PhoneStatusHelper {
         }
 
         return status;
+    }
+
+    public static ActionStatus sendPlayMusicCommand(@NonNull Context context) {
+        // Add a minor delay before sending the command
+        try {
+            Thread.sleep(500);
+        } catch (InterruptedException ignored) {
+        }
+
+        AudioManager audioMan = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+
+        KeyEvent event = new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_MEDIA_PLAY);
+        audioMan.dispatchMediaKeyEvent(event);
+
+        return ActionStatus.SUCCESS;
     }
 }

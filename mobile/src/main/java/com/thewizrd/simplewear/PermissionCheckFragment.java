@@ -3,13 +3,21 @@ package com.thewizrd.simplewear;
 import android.Manifest;
 import android.app.Activity;
 import android.app.admin.DevicePolicyManager;
+import android.bluetooth.BluetoothDevice;
+import android.companion.AssociationRequest;
+import android.companion.BluetoothDeviceFilter;
+import android.companion.CompanionDeviceManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentSender;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.provider.Settings;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -21,6 +29,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 
+import com.thewizrd.shared_resources.utils.Logger;
 import com.thewizrd.simplewear.helpers.PhoneStatusHelper;
 
 public class PermissionCheckFragment extends Fragment {
@@ -30,9 +39,11 @@ public class PermissionCheckFragment extends Fragment {
     private TextView mCAMPermText;
     private TextView mDevAdminText;
     private TextView mDNDText;
+    private TextView mPairPermText;
 
     private static final int CAMERA_REQCODE = 0;
     private static final int DEVADMIN_REQCODE = 1;
+    private static final int SELECT_DEVICE_REQUEST_CODE = 42;
 
     @Override
     public void onAttach(Context context) {
@@ -88,10 +99,43 @@ public class PermissionCheckFragment extends Fragment {
                 }
             }
         });
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
+            view.findViewById(R.id.companion_pair_pref).setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    CompanionDeviceManager deviceManager = (CompanionDeviceManager) mActivity.getSystemService(Context.COMPANION_DEVICE_SERVICE);
+
+                    AssociationRequest request = new AssociationRequest.Builder()
+                            .addDeviceFilter(new BluetoothDeviceFilter.Builder().build())
+                            .setSingleDevice(false)
+                            .build();
+
+                    deviceManager.associate(request, new CompanionDeviceManager.Callback() {
+                        @Override
+                        public void onDeviceFound(IntentSender chooserLauncher) {
+                            try {
+                                startIntentSenderForResult(chooserLauncher,
+                                        SELECT_DEVICE_REQUEST_CODE, null, 0, 0, 0, null);
+                            } catch (IntentSender.SendIntentException e) {
+                                Logger.writeLine(Log.ERROR, e);
+                            }
+                        }
+
+                        @Override
+                        public void onFailure(CharSequence error) {
+                            Logger.writeLine(Log.ERROR, "PermissionCheckFragment: failed to find any devices; " + error);
+                        }
+                    }, null);
+                }
+            });
+        } else {
+            view.findViewById(R.id.companion_pair_pref).setVisibility(View.GONE);
+        }
 
         mCAMPermText = view.findViewById(R.id.torch_pref_summary);
         mDevAdminText = view.findViewById(R.id.deviceadmin_summary);
         mDNDText = view.findViewById(R.id.dnd_summary);
+        mPairPermText = view.findViewById(R.id.companion_pair_summary);
 
         return view;
     }
@@ -106,6 +150,11 @@ public class PermissionCheckFragment extends Fragment {
         updateDeviceAdminText(mDPM.isAdminActive(mScreenLockAdmin));
 
         updateDNDAccessText(PhoneStatusHelper.isNotificationAccessAllowed(mActivity));
+
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
+            CompanionDeviceManager deviceManager = (CompanionDeviceManager) mActivity.getSystemService(Context.COMPANION_DEVICE_SERVICE);
+            updatePairPermText(!deviceManager.getAssociations().isEmpty());
+        }
     }
 
     private void runOnUiThread(Runnable action) {
@@ -128,11 +177,27 @@ public class PermissionCheckFragment extends Fragment {
         mDNDText.setTextColor(enabled ? Color.GREEN : Color.RED);
     }
 
+    private void updatePairPermText(boolean enabled) {
+        mPairPermText.setText(enabled ? R.string.permission_pairdevice_enabled : R.string.permission_pairdevice_disabled);
+        mPairPermText.setTextColor(enabled ? Color.GREEN : Color.RED);
+    }
+
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         switch (requestCode) {
             case DEVADMIN_REQCODE:
                 updateDeviceAdminText(resultCode == Activity.RESULT_OK);
+                break;
+            case SELECT_DEVICE_REQUEST_CODE:
+                if (data != null && Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
+                    Parcelable parcel = data.getParcelableExtra(CompanionDeviceManager.EXTRA_DEVICE);
+                    if (parcel instanceof BluetoothDevice) {
+                        BluetoothDevice device = (BluetoothDevice) parcel;
+                        if (device.getBondState() != BluetoothDevice.BOND_BONDED) {
+                            device.createBond();
+                        }
+                    }
+                }
                 break;
         }
     }

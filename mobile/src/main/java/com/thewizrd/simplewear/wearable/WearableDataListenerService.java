@@ -4,24 +4,36 @@ import android.annotation.TargetApi;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.companion.CompanionDeviceManager;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
+import android.graphics.Bitmap;
+import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.util.Log;
+import android.view.KeyEvent;
 
 import androidx.annotation.NonNull;
 import androidx.core.app.NotificationCompat;
+import androidx.core.util.Pair;
 
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.android.gms.wearable.CapabilityClient;
 import com.google.android.gms.wearable.CapabilityInfo;
+import com.google.android.gms.wearable.DataMap;
 import com.google.android.gms.wearable.MessageEvent;
 import com.google.android.gms.wearable.Node;
+import com.google.android.gms.wearable.PutDataMapRequest;
 import com.google.android.gms.wearable.Wearable;
 import com.google.android.gms.wearable.WearableListenerService;
 import com.thewizrd.shared_resources.helpers.Action;
+import com.thewizrd.shared_resources.helpers.ActionStatus;
 import com.thewizrd.shared_resources.helpers.Actions;
 import com.thewizrd.shared_resources.helpers.AppState;
 import com.thewizrd.shared_resources.helpers.BatteryStatus;
@@ -33,14 +45,18 @@ import com.thewizrd.shared_resources.helpers.ToggleAction;
 import com.thewizrd.shared_resources.helpers.ValueAction;
 import com.thewizrd.shared_resources.helpers.WearableHelper;
 import com.thewizrd.shared_resources.utils.AsyncTask;
+import com.thewizrd.shared_resources.utils.ImageUtils;
 import com.thewizrd.shared_resources.utils.JSONParser;
 import com.thewizrd.shared_resources.utils.Logger;
+import com.thewizrd.shared_resources.utils.StringUtils;
 import com.thewizrd.simplewear.App;
 import com.thewizrd.simplewear.MainActivity;
 import com.thewizrd.simplewear.R;
 import com.thewizrd.simplewear.helpers.PhoneStatusHelper;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
@@ -183,6 +199,93 @@ public class WearableDataListenerService extends WearableListenerService {
             if (wearAppState == AppState.FOREGROUND) {
                 sendStatusUpdate(messageEvent.getSourceNodeId(), null);
                 sendActionsUpdate(messageEvent.getSourceNodeId());
+            }
+        } else if (messageEvent.getPath().startsWith(WearableHelper.MusicPlayersPath)) {
+            sendSupportedMusicPlayers();
+        } else if (messageEvent.getPath().equals(WearableHelper.PlayCommandPath)) {
+            String jsonData = bytesToString(messageEvent.getData());
+            Pair pair = JSONParser.deserializer(jsonData, Pair.class);
+            String pkgName = pair.first != null ? pair.first.toString() : null;
+            String activityName = pair.second != null ? pair.second.toString() : null;
+
+            startMusicPlayer(messageEvent.getSourceNodeId(), pkgName, activityName);
+        }
+    }
+
+    private void startMusicPlayer(String nodeID, String pkgName, String activityName) {
+        if (!StringUtils.isNullOrWhitespace(pkgName) && !StringUtils.isNullOrWhitespace(activityName)) {
+            Intent appIntent = new Intent();
+            appIntent.setAction(Intent.ACTION_MAIN)
+                    .addCategory(Intent.CATEGORY_APP_MUSIC)
+                    .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    .setComponent(new ComponentName(pkgName, activityName));
+
+            // Check if the app has a registered MediaButton BroadcastReceiver
+            List<ResolveInfo> infos = this.getPackageManager().queryBroadcastReceivers(
+                    new Intent(Intent.ACTION_MEDIA_BUTTON).setPackage(pkgName), PackageManager.GET_RESOLVED_FILTER);
+            Intent playKeyIntent = null;
+
+            for (ResolveInfo info : infos) {
+                if (pkgName.equals(info.activityInfo.packageName)) {
+                    KeyEvent event = new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_MEDIA_PLAY);
+
+                    playKeyIntent = new Intent();
+                    playKeyIntent.putExtra(Intent.EXTRA_KEY_EVENT, event);
+                    playKeyIntent.setAction(Intent.ACTION_MEDIA_BUTTON)
+                            .setComponent(new ComponentName(pkgName, info.activityInfo.name));
+                    break;
+                }
+            }
+
+            if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
+                this.startActivity(appIntent);
+
+                // Give the system enough time to start the app
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException ignored) {
+                }
+
+                // If the app has a registered MediaButton Broadcast receiver,
+                // Send the media keyevent directly to the app; Otherwise, send
+                // a broadcast to the most recent music session, which should be the
+                // app activity we just started
+                if (playKeyIntent != null) {
+                    this.sendBroadcast(playKeyIntent);
+                    sendMessage(nodeID, WearableHelper.PlayCommandPath, stringToBytes(ActionStatus.SUCCESS.name()));
+                } else {
+                    sendMessage(nodeID, WearableHelper.PlayCommandPath, stringToBytes(PhoneStatusHelper.sendPlayMusicCommand(this).name()));
+                }
+            } else { // Android Q+ Devices
+                // Android Q puts a limitation on starting activities from the background
+                // We are allowed to bypass this if we have a device registered as companion,
+                // which will be our WearOS device; Check if device is associated before we start
+                CompanionDeviceManager deviceManager = (CompanionDeviceManager) this.getSystemService(Context.COMPANION_DEVICE_SERVICE);
+                List<String> associated_devices = deviceManager.getAssociations();
+
+                if (associated_devices.isEmpty()) {
+                    // No devices associated; send message to user
+                    sendMessage(nodeID, WearableHelper.PlayCommandPath, stringToBytes(ActionStatus.PERMISSION_DENIED.name()));
+                } else {
+                    this.startActivity(appIntent);
+
+                    // Give the system enough time to start the app
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException ignored) {
+                    }
+
+                    // If the app has a registered MediaButton Broadcast receiver,
+                    // Send the media keyevent directly to the app; Otherwise, send
+                    // a broadcast to the most recent music session, which should be the
+                    // app activity we just started
+                    if (playKeyIntent != null) {
+                        this.sendBroadcast(playKeyIntent);
+                        sendMessage(nodeID, WearableHelper.PlayCommandPath, stringToBytes(ActionStatus.SUCCESS.name()));
+                    } else {
+                        sendMessage(nodeID, WearableHelper.PlayCommandPath, stringToBytes(PhoneStatusHelper.sendPlayMusicCommand(this).name()));
+                    }
+                }
             }
         }
     }
@@ -400,6 +503,51 @@ public class WearableDataListenerService extends WearableListenerService {
                     Logger.writeLine(Log.ERROR, e);
                 }
             }
+        }
+    }
+
+    private void sendSupportedMusicPlayers() {
+        final Context appContext = this.getApplicationContext();
+
+        List<ResolveInfo> infos = appContext.getPackageManager().queryIntentActivities(
+                new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_APP_MUSIC), PackageManager.GET_RESOLVED_FILTER);
+
+        PutDataMapRequest mapRequest = PutDataMapRequest.create(WearableHelper.MusicPlayersPath);
+        ArrayList<String> supportedPlayers = new ArrayList<>();
+
+        for (final ResolveInfo info : infos) {
+            ApplicationInfo appInfo = info.activityInfo.applicationInfo;
+            ComponentName activityCmpName = new ComponentName(appInfo.packageName, info.activityInfo.name);
+
+            String key = String.format("%s/%s", appInfo.packageName, info.activityInfo.name);
+            String label = appContext.getPackageManager().getApplicationLabel(appInfo).toString();
+
+            Bitmap iconBmp = null;
+            try {
+                Drawable iconDrwble = appContext.getPackageManager().getActivityIcon(activityCmpName);
+                iconBmp = ImageUtils.bitmapFromDrawable(appContext, iconDrwble);
+            } catch (PackageManager.NameNotFoundException ignored) {
+            }
+
+            DataMap map = new DataMap();
+            map.putString(WearableHelper.KEY_LABEL, label);
+            map.putString(WearableHelper.KEY_PKGNAME, appInfo.packageName);
+            map.putString(WearableHelper.KEY_ACTIVITYNAME, info.activityInfo.name);
+            map.putAsset(WearableHelper.KEY_ICON, iconBmp != null ? ImageUtils.createAssetFromBitmap(iconBmp) : null);
+
+            mapRequest.getDataMap().putDataMap(key, map);
+            supportedPlayers.add(key);
+        }
+
+        mapRequest.getDataMap().putStringArrayList(WearableHelper.KEY_SUPPORTEDPLAYERS, supportedPlayers);
+        mapRequest.setUrgent();
+
+        try {
+            Tasks.await(Wearable.getDataClient(this).deleteDataItems(
+                    WearableHelper.getWearDataUri("*", WearableHelper.MusicPlayersPath)));
+            Tasks.await(Wearable.getDataClient(this).putDataItem(mapRequest.asPutDataRequest()));
+        } catch (ExecutionException | InterruptedException e) {
+            Logger.writeLine(Log.ERROR, e);
         }
     }
 }

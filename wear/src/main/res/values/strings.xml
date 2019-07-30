@@ -28,4 +28,6 @@
     <string name="error_permissiondenied">Permission denied for action. Please check permission on phone app</string>
     <string name="error_sendmessage">No response. Please check connection</string>
     <string name="error_actionfailed">Failed to perform action</string>
+
+    <string name="prefix_playmusic">Play from</string>
 </resources>

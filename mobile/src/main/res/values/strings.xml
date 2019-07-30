@@ -12,4 +12,8 @@
     <string name="permission_dnd_enabled">Do not Disturb access enabled</string>
     <string name="permission_dnd_disabled">Do not Disturb access disabled. Please click to enable changing Do not Disturb setting from your WearOS device</string>
 
+    <string name="permission_title_pairdevice">Pair with WearOS device</string>
+    <string name="permission_pairdevice_enabled">App is paired with WearOS device</string>
+    <string name="permission_pairdevice_disabled">WearOS device not paired with app. Please click to pair device. This is needed to start the music player</string>
+
 </resources>
