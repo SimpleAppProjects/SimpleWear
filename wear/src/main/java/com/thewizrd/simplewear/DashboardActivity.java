@@ -5,10 +5,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
-import android.net.ConnectivityManager;
-import android.net.Network;
-import android.net.NetworkCapabilities;
-import android.net.NetworkRequest;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.os.Looper;
@@ -63,7 +59,6 @@ public class DashboardActivity extends WearableListenerActivity implements Share
     private TextView mConnStatus;
     private TextView mBattStatus;
 
-    private ConnectivityManager connectivityManager;
     private SparseArray<CountDownTimer> activeTimers;
 
     @Override
@@ -343,9 +338,6 @@ public class DashboardActivity extends WearableListenerActivity implements Share
         intentFilter.addAction(WearableHelper.ActionsPath);
 
         activeTimers = new SparseArray<>();
-
-        connectivityManager =
-                (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
     }
 
     private void updateLayoutPref() {
@@ -390,33 +382,9 @@ public class DashboardActivity extends WearableListenerActivity implements Share
         }
     }
 
-    private ConnectivityManager.NetworkCallback mNetCallback = new ConnectivityManager.NetworkCallback() {
-        @Override
-        public void onCapabilitiesChanged(Network network, NetworkCapabilities networkCapabilities) {
-            super.onCapabilitiesChanged(network, networkCapabilities);
-        }
-
-        @Override
-        public void onLost(Network network) {
-            super.onLost(network);
-        }
-    };
-
     @Override
     protected void onResume() {
         super.onResume();
-
-        NetworkRequest request = new NetworkRequest.Builder()
-                .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
-                .addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR)
-                .addTransportType(NetworkCapabilities.TRANSPORT_BLUETOOTH)
-                .addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED)
-                .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-                .addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_RESTRICTED)
-                .addCapability(NetworkCapabilities.NET_CAPABILITY_TRUSTED)
-                .addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_VPN)
-                .build();
-        connectivityManager.registerNetworkCallback(request, mNetCallback);
 
         PreferenceManager.getDefaultSharedPreferences(this)
                 .registerOnSharedPreferenceChangeListener(this);
@@ -436,8 +404,6 @@ public class DashboardActivity extends WearableListenerActivity implements Share
     protected void onPause() {
         PreferenceManager.getDefaultSharedPreferences(this)
                 .unregisterOnSharedPreferenceChangeListener(this);
-
-        connectivityManager.unregisterNetworkCallback(mNetCallback);
         super.onPause();
     }
 
