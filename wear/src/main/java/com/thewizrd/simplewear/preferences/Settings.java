@@ -9,6 +9,7 @@ public class Settings {
     public static final String TAG = "Settings";
 
     public static final String KEY_LAYOUTMODE = "key_layoutmode";
+    public static final String KEY_AUTOLAUNCH = "key_autolaunchmediactrls";
 
     public static boolean useGridLayout() {
         SharedPreferences preferences =
@@ -21,6 +22,20 @@ public class Settings {
                 PreferenceManager.getDefaultSharedPreferences(App.getInstance().getAppContext())
                         .edit();
         editor.putBoolean(KEY_LAYOUTMODE, value);
+        editor.apply();
+    }
+
+    public static boolean isAutoLaunchMediaCtrlsEnabled() {
+        SharedPreferences preferences =
+                PreferenceManager.getDefaultSharedPreferences(App.getInstance().getAppContext());
+        return preferences.getBoolean(KEY_AUTOLAUNCH, true);
+    }
+
+    public static void setAutoLaunchMediaCtrls(boolean enabled) {
+        SharedPreferences.Editor editor =
+                PreferenceManager.getDefaultSharedPreferences(App.getInstance().getAppContext())
+                        .edit();
+        editor.putBoolean(KEY_AUTOLAUNCH, enabled);
         editor.apply();
     }
 }

@@ -7,16 +7,16 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.support.wearable.input.RotaryEncoder;
 import android.util.Log;
-import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.Switch;
 
 import androidx.annotation.NonNull;
 import androidx.core.util.Pair;
 import androidx.wear.widget.WearableLinearLayoutManager;
 import androidx.wear.widget.WearableRecyclerView;
+import androidx.wear.widget.drawer.WearableDrawerView;
 
 import com.google.android.gms.wearable.DataClient;
 import com.google.android.gms.wearable.DataEvent;
@@ -39,6 +39,7 @@ import com.thewizrd.simplewear.adapters.MusicPlayerListAdapter;
 import com.thewizrd.simplewear.controls.CustomConfirmationOverlay;
 import com.thewizrd.simplewear.controls.MusicPlayerViewModel;
 import com.thewizrd.simplewear.helpers.ConfirmationResultReceiver;
+import com.thewizrd.simplewear.preferences.Settings;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -55,6 +56,7 @@ public class MusicPlayerActivity extends WearableListenerActivity implements Dat
     private MusicPlayerListAdapter mAdapter;
     private ImageView mMediaCtrlIcon;
     private View mMediaCtrlBtn;
+    private WearableDrawerView mDrawerView;
 
     @Override
     protected BroadcastReceiver getBroadcastReceiver() {
@@ -108,14 +110,26 @@ public class MusicPlayerActivity extends WearableListenerActivity implements Dat
             }
         };
 
-        mMediaCtrlIcon = findViewById(R.id.media_ctrl_icon);
-        mMediaCtrlBtn = findViewById(R.id.ctrl_launcher);
+        mDrawerView = findViewById(R.id.bottom_action_drawer);
+        mMediaCtrlIcon = findViewById(R.id.launch_mediacontrols_icon);
+        mMediaCtrlBtn = findViewById(R.id.launch_mediacontrols_ctrl);
+
+        final Switch mSwitch = findViewById(R.id.autolaunch_pref_switch);
+        mSwitch.setChecked(Settings.isAutoLaunchMediaCtrlsEnabled());
+        findViewById(R.id.autolaunch_pref).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                boolean state = !Settings.isAutoLaunchMediaCtrlsEnabled();
+                Settings.setAutoLaunchMediaCtrls(state);
+                mSwitch.setChecked(state);
+            }
+        });
 
         mRecyclerView = findViewById(R.id.player_list);
-        mRecyclerView.setEdgeItemsCenteringEnabled(false);
-        mRecyclerView.setCircularScrollingGestureEnabled(false);
+        mRecyclerView.setEdgeItemsCenteringEnabled(true);
+        mRecyclerView.setCircularScrollingGestureEnabled(true);
 
-        mRecyclerView.setLayoutManager(new WearableLinearLayoutManager(this, null));
+        mRecyclerView.setLayoutManager(new WearableLinearLayoutManager(this));
         mAdapter = new MusicPlayerListAdapter(this);
         mAdapter.setOnClickListener(new RecyclerOnClickListenerInterface() {
             @Override
@@ -137,22 +151,6 @@ public class MusicPlayerActivity extends WearableListenerActivity implements Dat
     }
 
     @Override
-    public boolean onGenericMotionEvent(MotionEvent event) {
-        if (event.getAction() == MotionEvent.ACTION_SCROLL && RotaryEncoder.isFromRotaryEncoder(event)) {
-            // Don't forget the negation here
-            float delta = -RotaryEncoder.getRotaryAxisValue(event) * RotaryEncoder.getScaledScrollFactor(
-                    MusicPlayerActivity.this);
-
-            // Swap these axes if you want to do horizontal scrolling instead
-            mRecyclerView.scrollBy(0, Math.round(delta));
-
-            return true;
-        }
-
-        return super.onGenericMotionEvent(event);
-    }
-
-    @Override
     public void onMessageReceived(@NonNull MessageEvent messageEvent) {
         super.onMessageReceived(messageEvent);
 
@@ -161,22 +159,24 @@ public class MusicPlayerActivity extends WearableListenerActivity implements Dat
 
             switch (status) {
                 case SUCCESS:
-                    final ComponentName mediaCtrlCmpName = new ComponentName("com.google.android.wearable.app",
-                            "com.google.android.clockwork.home.media.MediaControlActivity");
+                    if (Settings.isAutoLaunchMediaCtrlsEnabled()) {
+                        final ComponentName mediaCtrlCmpName = new ComponentName("com.google.android.wearable.app",
+                                "com.google.android.clockwork.home.media.MediaControlActivity");
 
-                    try {
-                        // Check if activity exists
-                        getPackageManager().getActivityInfo(mediaCtrlCmpName, 0);
+                        try {
+                            // Check if activity exists
+                            getPackageManager().getActivityInfo(mediaCtrlCmpName, 0);
 
-                        Intent mediaCtrlIntent = new Intent();
-                        mediaCtrlIntent
-                                .setAction(Intent.ACTION_MAIN)
-                                .addCategory(Intent.CATEGORY_LAUNCHER)
-                                .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                .setComponent(mediaCtrlCmpName);
-                        startActivity(mediaCtrlIntent);
-                    } catch (PackageManager.NameNotFoundException e) {
-                        // Do nothing
+                            Intent mediaCtrlIntent = new Intent();
+                            mediaCtrlIntent
+                                    .setAction(Intent.ACTION_MAIN)
+                                    .addCategory(Intent.CATEGORY_LAUNCHER)
+                                    .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                    .setComponent(mediaCtrlCmpName);
+                            startActivity(mediaCtrlIntent);
+                        } catch (PackageManager.NameNotFoundException e) {
+                            // Do nothing
+                        }
                     }
                     break;
                 case PERMISSION_DENIED:
@@ -187,6 +187,18 @@ public class MusicPlayerActivity extends WearableListenerActivity implements Dat
                                     .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
                                     .setCustomDrawable(MusicPlayerActivity.this.getDrawable(R.drawable.ic_full_sad))
                                     .setMessage(MusicPlayerActivity.this.getString(R.string.error_permissiondenied))
+                                    .showOn(MusicPlayerActivity.this);
+                        }
+                    });
+                    break;
+                case FAILURE:
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            new CustomConfirmationOverlay()
+                                    .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
+                                    .setCustomDrawable(MusicPlayerActivity.this.getDrawable(R.drawable.ic_full_sad))
+                                    .setMessage(MusicPlayerActivity.this.getString(R.string.action_failed_playmusic))
                                     .showOn(MusicPlayerActivity.this);
                         }
                     });
@@ -257,9 +269,17 @@ public class MusicPlayerActivity extends WearableListenerActivity implements Dat
                     startActivity(mediaCtrlIntent);
                 }
             });
+            mDrawerView.setVisibility(View.VISIBLE);
+            mDrawerView.setPeekOnScrollDownEnabled(true);
+            mDrawerView.setIsAutoPeekEnabled(true);
+            mDrawerView.setIsLocked(false);
         } catch (PackageManager.NameNotFoundException e) {
             mMediaCtrlBtn.setOnClickListener(null);
             mMediaCtrlBtn.setVisibility(View.GONE);
+            mDrawerView.setVisibility(View.GONE);
+            mDrawerView.setPeekOnScrollDownEnabled(false);
+            mDrawerView.setIsAutoPeekEnabled(false);
+            mDrawerView.setIsLocked(true);
         }
 
         // Update statuses

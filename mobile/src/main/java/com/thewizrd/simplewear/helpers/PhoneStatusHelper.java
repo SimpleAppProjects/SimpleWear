@@ -29,9 +29,12 @@ import com.thewizrd.shared_resources.helpers.BatteryStatus;
 import com.thewizrd.shared_resources.helpers.DNDChoice;
 import com.thewizrd.shared_resources.helpers.RingerChoice;
 import com.thewizrd.shared_resources.helpers.ValueDirection;
+import com.thewizrd.shared_resources.utils.AsyncTask;
 import com.thewizrd.shared_resources.utils.Logger;
 import com.thewizrd.simplewear.ScreenLockAdminReceiver;
 import com.thewizrd.simplewear.services.TorchService;
+
+import java.util.concurrent.Callable;
 
 public class PhoneStatusHelper {
 
@@ -326,11 +329,58 @@ public class PhoneStatusHelper {
         } catch (InterruptedException ignored) {
         }
 
-        AudioManager audioMan = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+        final AudioManager audioMan = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
 
         KeyEvent event = new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_MEDIA_PLAY);
         audioMan.dispatchMediaKeyEvent(event);
 
-        return ActionStatus.SUCCESS;
+        // Wait for a second to see if music plays
+        boolean musicActive = new AsyncTask<Boolean>().await(new Callable<Boolean>() {
+            @Override
+            public Boolean call() throws Exception {
+                Thread.sleep(1000);
+                return audioMan.isMusicActive();
+            }
+        });
+
+        return musicActive ? ActionStatus.SUCCESS : ActionStatus.FAILURE;
+    }
+
+    public static ActionStatus sendPlayMusicCommand(@NonNull Context context, @NonNull Intent playIntent) {
+        // Add a minor delay before sending the command
+        try {
+            Thread.sleep(500);
+        } catch (InterruptedException ignored) {
+        }
+
+        final AudioManager audioMan = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+
+        context.sendBroadcast(playIntent);
+
+        // Wait for a second to see if music plays
+        boolean musicActive = new AsyncTask<Boolean>().await(new Callable<Boolean>() {
+            @Override
+            public Boolean call() throws Exception {
+                Thread.sleep(1000);
+                return audioMan.isMusicActive();
+            }
+        });
+
+        return musicActive ? ActionStatus.SUCCESS : ActionStatus.FAILURE;
+    }
+
+    public static ActionStatus isMusicActive(@NonNull Context context) {
+        final AudioManager audioMan = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+
+        // Wait for a second to see if music plays
+        boolean musicActive = new AsyncTask<Boolean>().await(new Callable<Boolean>() {
+            @Override
+            public Boolean call() throws Exception {
+                Thread.sleep(1000);
+                return audioMan.isMusicActive();
+            }
+        });
+
+        return musicActive ? ActionStatus.SUCCESS : ActionStatus.FAILURE;
     }
 }

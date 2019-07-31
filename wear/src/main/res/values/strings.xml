@@ -33,5 +33,8 @@
     <string name="pref_layout">Actions Layout</string>
     <string name="option_grid">Grid</string>
     <string name="option_list">List</string>
+    <string name="title_launchmediacontrols">Launch Media Controls</string>
+    <string name="title_autolaunchmediactrls">Autolaunch media controls</string>
+    <string name="action_failed_playmusic">Failed to play music. Try again.</string>
 
 </resources>

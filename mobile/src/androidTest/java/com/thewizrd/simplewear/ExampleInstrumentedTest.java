@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.media.AudioManager;
 import android.os.Handler;
 import android.os.Looper;
 
@@ -15,6 +16,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.thewizrd.shared_resources.utils.AsyncTask;
 import com.thewizrd.simplewear.wearable.WearableDataListenerService;
 
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -101,5 +103,14 @@ public class ExampleInstrumentedTest {
             // First one only
             break;
         }
+    }
+
+    @Test
+    public void isMusicActive() {
+        // Context of the app under test.
+        final Context appContext = ApplicationProvider.getApplicationContext();
+
+        AudioManager audioManager = appContext.getSystemService(AudioManager.class);
+        Assert.assertTrue(audioManager.isMusicActive());
     }
 }

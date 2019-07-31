@@ -21,7 +21,6 @@
         android:ellipsize="marquee"
         android:marqueeRepeatLimit="marquee_forever"
         android:padding="4dp"
-        android:textSize="12sp"
         tools:text="Music Player" />
 
 </LinearLayout>

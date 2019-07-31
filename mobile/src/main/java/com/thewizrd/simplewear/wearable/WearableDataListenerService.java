@@ -251,8 +251,7 @@ public class WearableDataListenerService extends WearableListenerService {
                 // a broadcast to the most recent music session, which should be the
                 // app activity we just started
                 if (playKeyIntent != null) {
-                    this.sendBroadcast(playKeyIntent);
-                    sendMessage(nodeID, WearableHelper.PlayCommandPath, stringToBytes(ActionStatus.SUCCESS.name()));
+                    sendMessage(nodeID, WearableHelper.PlayCommandPath, stringToBytes(PhoneStatusHelper.sendPlayMusicCommand(this, playKeyIntent).name()));
                 } else {
                     sendMessage(nodeID, WearableHelper.PlayCommandPath, stringToBytes(PhoneStatusHelper.sendPlayMusicCommand(this).name()));
                 }
@@ -280,8 +279,7 @@ public class WearableDataListenerService extends WearableListenerService {
                     // a broadcast to the most recent music session, which should be the
                     // app activity we just started
                     if (playKeyIntent != null) {
-                        this.sendBroadcast(playKeyIntent);
-                        sendMessage(nodeID, WearableHelper.PlayCommandPath, stringToBytes(ActionStatus.SUCCESS.name()));
+                        sendMessage(nodeID, WearableHelper.PlayCommandPath, stringToBytes(PhoneStatusHelper.sendPlayMusicCommand(this, playKeyIntent).name()));
                     } else {
                         sendMessage(nodeID, WearableHelper.PlayCommandPath, stringToBytes(PhoneStatusHelper.sendPlayMusicCommand(this).name()));
                     }
