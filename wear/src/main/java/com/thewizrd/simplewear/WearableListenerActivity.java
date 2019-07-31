@@ -16,6 +16,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
+import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.tasks.Tasks;
 import com.google.android.gms.wearable.CapabilityClient;
 import com.google.android.gms.wearable.CapabilityInfo;
@@ -23,6 +24,7 @@ import com.google.android.gms.wearable.MessageClient;
 import com.google.android.gms.wearable.MessageEvent;
 import com.google.android.gms.wearable.Node;
 import com.google.android.gms.wearable.Wearable;
+import com.google.android.gms.wearable.WearableStatusCodes;
 import com.thewizrd.shared_resources.helpers.Action;
 import com.thewizrd.shared_resources.helpers.Actions;
 import com.thewizrd.shared_resources.helpers.AppState;
@@ -355,7 +357,20 @@ public abstract class WearableListenerActivity extends WearableActivity implemen
 
     protected void sendMessage(String nodeID, String path, byte[] data) {
         try {
-            int ret = Tasks.await(Wearable.getMessageClient(this).sendMessage(nodeID, path, data));
+            Tasks.await(Wearable.getMessageClient(this).sendMessage(nodeID, path, data));
+        } catch (ExecutionException ex) {
+            if (ex.getCause() instanceof ApiException) {
+                ApiException apiEx = (ApiException) ex.getCause();
+                if (apiEx.getStatusCode() == WearableStatusCodes.TARGET_NODE_NOT_CONNECTED) {
+                    mConnectionStatus = WearConnectionStatus.DISCONNECTED;
+
+                    LocalBroadcastManager.getInstance(WearableListenerActivity.this)
+                            .sendBroadcast(new Intent(ACTION_UPDATECONNECTIONSTATUS)
+                                    .putExtra(EXTRA_CONNECTIONSTATUS, mConnectionStatus.getValue()));
+                }
+            }
+
+            Logger.writeLine(Log.ERROR, ex);
         } catch (Exception e) {
             Logger.writeLine(Log.ERROR, e);
         }
