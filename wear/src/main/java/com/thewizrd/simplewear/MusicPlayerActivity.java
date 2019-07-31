@@ -46,7 +46,6 @@ import com.thewizrd.simplewear.preferences.Settings;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 
 import static com.thewizrd.shared_resources.utils.SerializationUtils.bytesToString;
@@ -176,6 +175,7 @@ public class MusicPlayerActivity extends WearableListenerActivity implements Dat
                                     updateMusicPlayers(dataMap);
                                 }
                             }
+                            buff.release();
                         } catch (ExecutionException | InterruptedException e) {
                             Logger.writeLine(Log.ERROR, e);
                         }
