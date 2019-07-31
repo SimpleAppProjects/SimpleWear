@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.os.CountDownTimer;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
@@ -18,10 +19,12 @@ import androidx.wear.widget.WearableLinearLayoutManager;
 import androidx.wear.widget.WearableRecyclerView;
 import androidx.wear.widget.drawer.WearableDrawerView;
 
+import com.google.android.gms.tasks.Tasks;
 import com.google.android.gms.wearable.DataClient;
 import com.google.android.gms.wearable.DataEvent;
 import com.google.android.gms.wearable.DataEventBuffer;
 import com.google.android.gms.wearable.DataItem;
+import com.google.android.gms.wearable.DataItemBuffer;
 import com.google.android.gms.wearable.DataMap;
 import com.google.android.gms.wearable.DataMapItem;
 import com.google.android.gms.wearable.MessageEvent;
@@ -44,6 +47,7 @@ import com.thewizrd.simplewear.preferences.Settings;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 
 import static com.thewizrd.shared_resources.utils.SerializationUtils.bytesToString;
 import static com.thewizrd.shared_resources.utils.SerializationUtils.stringToBytes;
@@ -57,6 +61,7 @@ public class MusicPlayerActivity extends WearableListenerActivity implements Dat
     private ImageView mMediaCtrlIcon;
     private View mMediaCtrlBtn;
     private WearableDrawerView mDrawerView;
+    private CountDownTimer timer;
 
     @Override
     protected BroadcastReceiver getBroadcastReceiver() {
@@ -148,6 +153,36 @@ public class MusicPlayerActivity extends WearableListenerActivity implements Dat
 
         intentFilter = new IntentFilter();
         intentFilter.addAction(ACTION_UPDATECONNECTIONSTATUS);
+
+        // Set timer for retrieving music player data
+        timer = new CountDownTimer(3000, 1000) {
+            @Override
+            public void onTick(long millisUntilFinished) {
+
+            }
+
+            @Override
+            public void onFinish() {
+                AsyncTask.run(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            DataItemBuffer buff = Tasks.await(Wearable.getDataClient(MusicPlayerActivity.this)
+                                    .getDataItems(WearableHelper.getWearDataUri("*", WearableHelper.MusicPlayersPath)));
+                            for (int i = 0; i < buff.getCount(); i++) {
+                                DataItem item = buff.get(i);
+                                if (WearableHelper.MusicPlayersPath.equals(item.getUri().getPath())) {
+                                    DataMap dataMap = DataMapItem.fromDataItem(item).getDataMap();
+                                    updateMusicPlayers(dataMap);
+                                }
+                            }
+                        } catch (ExecutionException | InterruptedException e) {
+                            Logger.writeLine(Log.ERROR, e);
+                        }
+                    }
+                });
+            }
+        };
     }
 
     @Override
@@ -211,6 +246,9 @@ public class MusicPlayerActivity extends WearableListenerActivity implements Dat
 
     @Override
     public void onDataChanged(@NonNull DataEventBuffer dataEventBuffer) {
+        // Cancel timer
+        timer.cancel();
+
         for (DataEvent event : dataEventBuffer) {
             if (event.getType() == DataEvent.TYPE_CHANGED) {
                 DataItem item = event.getDataItem();
@@ -224,7 +262,7 @@ public class MusicPlayerActivity extends WearableListenerActivity implements Dat
 
     private void updateMusicPlayers(DataMap dataMap) {
         List<String> supported_players = dataMap.getStringArrayList(WearableHelper.KEY_SUPPORTEDPLAYERS);
-        List<MusicPlayerViewModel> viewModels = new ArrayList<>();
+        final List<MusicPlayerViewModel> viewModels = new ArrayList<>();
         for (String key : supported_players) {
             DataMap map = dataMap.getDataMap(key);
 
@@ -238,7 +276,12 @@ public class MusicPlayerActivity extends WearableListenerActivity implements Dat
             viewModels.add(model);
         }
 
-        mAdapter.updateItems(viewModels);
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mAdapter.updateItems(viewModels);
+            }
+        });
     }
 
     private void requestPlayersUpdate() {
@@ -291,6 +334,9 @@ public class MusicPlayerActivity extends WearableListenerActivity implements Dat
                 return null;
             }
         });
+
+        // Wait for music player update
+        timer.start();
     }
 
     @Override
