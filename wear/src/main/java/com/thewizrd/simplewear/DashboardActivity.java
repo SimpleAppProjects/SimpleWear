@@ -11,10 +11,11 @@ import android.os.Looper;
 import android.preference.PreferenceManager;
 import android.support.wearable.input.RotaryEncoder;
 import android.support.wearable.view.ConfirmationOverlay;
+import android.util.ArrayMap;
 import android.util.Log;
-import android.util.SparseArray;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -45,7 +46,6 @@ import com.thewizrd.simplewear.helpers.ConfirmationResultReceiver;
 import com.thewizrd.simplewear.preferences.Settings;
 
 import java.util.Locale;
-import java.util.concurrent.Callable;
 
 public class DashboardActivity extends WearableListenerActivity implements SharedPreferences.OnSharedPreferenceChangeListener {
     private BroadcastReceiver mBroadcastReceiver;
@@ -55,11 +55,14 @@ public class DashboardActivity extends WearableListenerActivity implements Share
     private SwipeRefreshLayout mSwipeLayout;
     private NestedScrollView mScrollView;
     private WearableDrawerView mDrawerView;
+    private ProgressBar mProgressBar;
 
     private TextView mConnStatus;
     private TextView mBattStatus;
 
-    private SparseArray<CountDownTimer> activeTimers;
+    private static final String TIMER_SYNC = "key_synctimer";
+    private static final String TIMER_SYNC_NORESPONSE = "key_synctimer_noresponse";
+    private ArrayMap<String, CountDownTimer> activeTimers;
 
     @Override
     protected BroadcastReceiver getBroadcastReceiver() {
@@ -159,6 +162,10 @@ public class DashboardActivity extends WearableListenerActivity implements Share
                                     });
                                 }
                             } else if (WearableHelper.BatteryPath.equals(intent.getAction())) {
+                                showProgressBar(false);
+                                cancelTimer(TIMER_SYNC);
+                                cancelTimer(TIMER_SYNC_NORESPONSE);
+
                                 final String jsonData = intent.getStringExtra(EXTRA_STATUS);
                                 runOnUiThread(new Runnable() {
                                     @Override
@@ -270,7 +277,7 @@ public class DashboardActivity extends WearableListenerActivity implements Share
                                             }
                                         };
                                         timer.start();
-                                        activeTimers.append(action.getAction().getValue(), timer);
+                                        activeTimers.put(action.getAction().name(), timer);
 
                                         // Disable click action for all items until a response is received
                                         mAdapter.setItemsClickable(false);
@@ -289,6 +296,7 @@ public class DashboardActivity extends WearableListenerActivity implements Share
         mConnStatus = findViewById(R.id.device_stat_text);
         mBattStatus = findViewById(R.id.batt_stat_text);
         mActionsList = findViewById(R.id.actions_list);
+        mProgressBar = findViewById(R.id.progressBar);
 
         mDrawerView = findViewById(R.id.bottom_action_drawer);
         mDrawerView.setIsAutoPeekEnabled(true);
@@ -337,7 +345,58 @@ public class DashboardActivity extends WearableListenerActivity implements Share
         intentFilter.addAction(WearableHelper.BatteryPath);
         intentFilter.addAction(WearableHelper.ActionsPath);
 
-        activeTimers = new SparseArray<>();
+        activeTimers = new ArrayMap<>();
+        activeTimers.put(TIMER_SYNC, new CountDownTimer(3000, 1000) {
+            @Override
+            public void onTick(long millisUntilFinished) {
+            }
+
+            @Override
+            public void onFinish() {
+                AsyncTask.run(new Runnable() {
+                    @Override
+                    public void run() {
+                        updateConnectionStatus();
+                        requestUpdate();
+                        startTimer(TIMER_SYNC_NORESPONSE);
+                    }
+                });
+            }
+        });
+
+        activeTimers.put(TIMER_SYNC_NORESPONSE, new CountDownTimer(2000, 1000) {
+            @Override
+            public void onTick(long millisUntilFinished) {
+            }
+
+            @Override
+            public void onFinish() {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                new CustomConfirmationOverlay()
+                                        .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
+                                        .setCustomDrawable(DashboardActivity.this.getDrawable(R.drawable.ic_full_sad))
+                                        .setMessage(DashboardActivity.this.getString(R.string.error_sendmessage))
+                                        .showOn(DashboardActivity.this);
+                            }
+                        });
+                    }
+                });
+            }
+        });
+    }
+
+    private void showProgressBar(final boolean show) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mProgressBar.setVisibility(show ? View.VISIBLE : View.GONE);
+            }
+        });
     }
 
     private void updateLayoutPref() {
@@ -374,12 +433,32 @@ public class DashboardActivity extends WearableListenerActivity implements Share
     }
 
     private void cancelTimer(Actions action) {
-        CountDownTimer timer = activeTimers.get(action.getValue());
+        CountDownTimer timer = activeTimers.get(action.name());
         if (timer != null) {
             timer.cancel();
-            activeTimers.delete(action.getValue());
+            activeTimers.remove(action.name());
             timer = null;
         }
+    }
+
+    private void cancelTimer(String timerKey) {
+        cancelTimer(timerKey, false);
+    }
+
+    private void cancelTimer(String timerKey, boolean remove) {
+        CountDownTimer timer = activeTimers.get(timerKey);
+        if (timer != null) {
+            timer.cancel();
+            if (remove) {
+                activeTimers.remove(timerKey);
+                timer = null;
+            }
+        }
+    }
+
+    private void startTimer(String timerKey) {
+        CountDownTimer timer = activeTimers.get(timerKey);
+        if (timer != null) timer.start();
     }
 
     @Override
@@ -390,12 +469,14 @@ public class DashboardActivity extends WearableListenerActivity implements Share
                 .registerOnSharedPreferenceChangeListener(this);
 
         // Update statuses
-        new AsyncTask<Void>().await(new Callable<Void>() {
+        mBattStatus.setText(R.string.state_syncing);
+        showProgressBar(true);
+        AsyncTask.run(new Runnable() {
             @Override
-            public Void call() throws Exception {
+            public void run() {
                 updateConnectionStatus();
                 requestUpdate();
-                return null;
+                startTimer(TIMER_SYNC);
             }
         });
     }

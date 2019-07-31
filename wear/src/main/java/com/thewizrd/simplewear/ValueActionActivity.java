@@ -29,8 +29,6 @@ import com.thewizrd.shared_resources.utils.Logger;
 import com.thewizrd.simplewear.controls.CustomConfirmationOverlay;
 import com.thewizrd.simplewear.helpers.ConfirmationResultReceiver;
 
-import java.util.concurrent.Callable;
-
 import static com.thewizrd.shared_resources.helpers.Actions.VOLUME;
 
 public class ValueActionActivity extends WearableListenerActivity {
@@ -240,11 +238,10 @@ public class ValueActionActivity extends WearableListenerActivity {
         super.onResume();
 
         // Update statuses
-        new AsyncTask<Void>().await(new Callable<Void>() {
+        AsyncTask.run(new Runnable() {
             @Override
-            public Void call() throws Exception {
+            public void run() {
                 updateConnectionStatus();
-                return null;
             }
         });
     }

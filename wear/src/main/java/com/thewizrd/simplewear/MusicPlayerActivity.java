@@ -11,6 +11,7 @@ import android.os.CountDownTimer;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.Switch;
 
 import androidx.annotation.NonNull;
@@ -59,6 +60,7 @@ public class MusicPlayerActivity extends WearableListenerActivity implements Dat
     private MusicPlayerListAdapter mAdapter;
     private ImageView mMediaCtrlIcon;
     private View mMediaCtrlBtn;
+    private ProgressBar mProgressBar;
     private WearableDrawerView mDrawerView;
     private CountDownTimer timer;
 
@@ -114,6 +116,7 @@ public class MusicPlayerActivity extends WearableListenerActivity implements Dat
             }
         };
 
+        mProgressBar = findViewById(R.id.progressBar);
         mDrawerView = findViewById(R.id.bottom_action_drawer);
         mMediaCtrlIcon = findViewById(R.id.launch_mediacontrols_icon);
         mMediaCtrlBtn = findViewById(R.id.launch_mediacontrols_ctrl);
@@ -173,6 +176,7 @@ public class MusicPlayerActivity extends WearableListenerActivity implements Dat
                                 if (WearableHelper.MusicPlayersPath.equals(item.getUri().getPath())) {
                                     DataMap dataMap = DataMapItem.fromDataItem(item).getDataMap();
                                     updateMusicPlayers(dataMap);
+                                    showProgressBar(false);
                                 }
                             }
                             buff.release();
@@ -183,6 +187,15 @@ public class MusicPlayerActivity extends WearableListenerActivity implements Dat
                 });
             }
         };
+    }
+
+    private void showProgressBar(final boolean show) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mProgressBar.setVisibility(show ? View.VISIBLE : View.GONE);
+            }
+        });
     }
 
     @Override
@@ -248,6 +261,7 @@ public class MusicPlayerActivity extends WearableListenerActivity implements Dat
     public void onDataChanged(@NonNull DataEventBuffer dataEventBuffer) {
         // Cancel timer
         timer.cancel();
+        showProgressBar(false);
 
         for (DataEvent event : dataEventBuffer) {
             if (event.getType() == DataEvent.TYPE_CHANGED) {
@@ -326,17 +340,15 @@ public class MusicPlayerActivity extends WearableListenerActivity implements Dat
         }
 
         // Update statuses
-        new AsyncTask<Void>().await(new Callable<Void>() {
+        AsyncTask.run(new Runnable() {
             @Override
-            public Void call() throws Exception {
+            public void run() {
                 updateConnectionStatus();
                 requestPlayersUpdate();
-                return null;
+                // Wait for music player update
+                timer.start();
             }
         });
-
-        // Wait for music player update
-        timer.start();
     }
 
     @Override

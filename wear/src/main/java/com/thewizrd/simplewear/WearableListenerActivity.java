@@ -263,14 +263,19 @@ public abstract class WearableListenerActivity extends WearableActivity implemen
     }
 
     protected void updateConnectionStatus() {
-        AsyncTask.run(new Runnable() {
+        // Make sure we're not on the main thread
+        if (Looper.getMainLooper() == Looper.myLooper())
+            throw new IllegalStateException("This task should not be called on the main thread");
+
+        new AsyncTask<Void>().await(new Callable<Void>() {
             @Override
-            public void run() {
+            public Void call() throws Exception {
                 checkConnectionStatus();
 
                 LocalBroadcastManager.getInstance(WearableListenerActivity.this)
                         .sendBroadcast(new Intent(ACTION_UPDATECONNECTIONSTATUS)
                                 .putExtra(EXTRA_CONNECTIONSTATUS, mConnectionStatus.getValue()));
+                return null;
             }
         });
     }
