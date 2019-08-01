@@ -553,8 +553,6 @@ public class WearableDataListenerService extends WearableListenerService {
         mapRequest.setUrgent();
 
         try {
-            Tasks.await(Wearable.getDataClient(this).deleteDataItems(
-                    WearableHelper.getWearDataUri("*", WearableHelper.MusicPlayersPath)));
             Tasks.await(Wearable.getDataClient(this).putDataItem(mapRequest.asPutDataRequest()));
         } catch (ExecutionException | InterruptedException e) {
             Logger.writeLine(Log.ERROR, e);

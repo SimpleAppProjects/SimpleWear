@@ -16,6 +16,7 @@ import com.google.android.gms.wearable.DataClient;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 
 public class ImageUtils {
     public static Bitmap bitmapFromDrawable(Context context, int resDrawable) {
@@ -48,7 +49,7 @@ public class ImageUtils {
 
     public static Asset createAssetFromBitmap(Bitmap bitmap) {
         final ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-        bitmap.compress(Bitmap.CompressFormat.PNG, 100, byteStream);
+        bitmap.compress(Bitmap.CompressFormat.WEBP, 100, byteStream);
         return Asset.createFromBytes(byteStream.toByteArray());
     }
 
@@ -60,19 +61,20 @@ public class ImageUtils {
                     throw new IllegalArgumentException("Asset must be non-null");
                 }
 
-                // Check if data is available before continuing
-                if (asset.getData() == null)
-                    return null;
+                try {
+                    // convert asset into a file descriptor and block until it's ready
+                    InputStream assetInputStream = Tasks.await(client.getFdForAsset(asset)).getInputStream();
+                    if (assetInputStream == null) {
+                        Logger.writeLine(Log.INFO, "ImageUtils: bitmapFromAssetStream: Unknown asset requested");
+                        return null;
+                    }
 
-                // convert asset into a file descriptor and block until it's ready
-                InputStream assetInputStream = Tasks.await(client.getFdForAsset(asset)).getInputStream();
-                if (assetInputStream == null) {
-                    Logger.writeLine(Log.INFO, "ImageUtils: bitmapFromAssetStream: Unknown asset requested");
+                    // decode the stream into a bitmap
+                    return BitmapFactory.decodeStream(assetInputStream);
+                } catch (ExecutionException | InterruptedException e) {
+                    Logger.writeLine(Log.ERROR, "ImageUtils: bitmapFromAssetStream: Failed to get asset");
                     return null;
                 }
-
-                // decode the stream into a bitmap
-                return BitmapFactory.decodeStream(assetInputStream);
             }
         });
     }
