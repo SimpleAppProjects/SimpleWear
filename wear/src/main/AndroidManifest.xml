@@ -4,6 +4,7 @@
     package="com.thewizrd.simplewear">
 
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.BLUETOOTH" />
 
     <uses-feature android:name="android.hardware.type.watch" />
 
@@ -50,6 +51,24 @@
         <activity
             android:name=".MusicPlayerActivity"
             android:theme="@style/WearAppTheme" />
+
+        <service
+            android:name=".wearable.WearableDataListenerService"
+            android:enabled="true">
+            <intent-filter>
+                <action android:name="com.google.android.gms.wearable.MESSAGE_RECEIVED" />
+
+                <data
+                    android:host="*"
+                    android:scheme="wear"
+                    android:path="/bluetooth/discoverable" />
+                <data
+                    android:host="*"
+                    android:scheme="wear"
+                    android:path="/start-activity" />
+            </intent-filter>
+        </service>
+
     </application>
 
 </manifest>

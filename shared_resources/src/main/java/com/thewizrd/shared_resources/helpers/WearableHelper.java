@@ -33,6 +33,8 @@ public class WearableHelper {
     public static final String UpdatePath = "/update/all";
     public static final String MusicPlayersPath = "/music-players";
     public static final String PlayCommandPath = "/music/play";
+    public static final String BtDiscoverPath = "/bluetooth/discoverable";
+    public static final String PingPath = "/ping";
 
     // For Music Player DataMap
     public static final String KEY_SUPPORTEDPLAYERS = "key_supported_players";

@@ -80,23 +80,19 @@ public class App extends Application implements ApplicationLib, Application.Acti
 
     @Override
     public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
-        if (activity.getLocalClassName().contains("LaunchActivity") ||
-                activity.getLocalClassName().contains("DashboardActivity")) {
-            applicationState = AppState.FOREGROUND;
-        }
+
     }
 
     @Override
     public void onActivityStarted(Activity activity) {
-        if (mActivitiesStarted == 0)
-            applicationState = AppState.FOREGROUND;
-
         mActivitiesStarted++;
     }
 
     @Override
     public void onActivityResumed(Activity activity) {
-
+        if (activity instanceof WearableListenerActivity && applicationState != AppState.FOREGROUND) {
+            applicationState = AppState.FOREGROUND;
+        }
     }
 
     @Override

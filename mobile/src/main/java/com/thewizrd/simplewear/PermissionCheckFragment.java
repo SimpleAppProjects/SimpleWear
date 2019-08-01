@@ -1,20 +1,24 @@
 package com.thewizrd.simplewear;
 
 import android.Manifest;
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.admin.DevicePolicyManager;
 import android.bluetooth.BluetoothDevice;
 import android.companion.AssociationRequest;
 import android.companion.BluetoothDeviceFilter;
 import android.companion.CompanionDeviceManager;
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.IntentSender;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.Parcelable;
 import android.provider.Settings;
 import android.util.Log;
@@ -28,9 +32,13 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.thewizrd.shared_resources.utils.Logger;
 import com.thewizrd.simplewear.helpers.PhoneStatusHelper;
+import com.thewizrd.simplewear.wearable.WearableDataListenerService;
+
+import java.util.regex.Pattern;
 
 public class PermissionCheckFragment extends Fragment {
 
@@ -103,29 +111,12 @@ public class PermissionCheckFragment extends Fragment {
             view.findViewById(R.id.companion_pair_pref).setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    CompanionDeviceManager deviceManager = (CompanionDeviceManager) mActivity.getSystemService(Context.COMPANION_DEVICE_SERVICE);
+                    LocalBroadcastManager.getInstance(mActivity)
+                            .registerReceiver(mReceiver, new IntentFilter(WearableDataListenerService.ACTION_GETCONNECTEDNODE));
 
-                    AssociationRequest request = new AssociationRequest.Builder()
-                            .addDeviceFilter(new BluetoothDeviceFilter.Builder().build())
-                            .setSingleDevice(false)
-                            .build();
-
-                    deviceManager.associate(request, new CompanionDeviceManager.Callback() {
-                        @Override
-                        public void onDeviceFound(IntentSender chooserLauncher) {
-                            try {
-                                startIntentSenderForResult(chooserLauncher,
-                                        SELECT_DEVICE_REQUEST_CODE, null, 0, 0, 0, null);
-                            } catch (IntentSender.SendIntentException e) {
-                                Logger.writeLine(Log.ERROR, e);
-                            }
-                        }
-
-                        @Override
-                        public void onFailure(CharSequence error) {
-                            Logger.writeLine(Log.ERROR, "PermissionCheckFragment: failed to find any devices; " + error);
-                        }
-                    }, null);
+                    WearableDataListenerService.enqueueWork(mActivity,
+                            new Intent(mActivity, WearableDataListenerService.class)
+                                    .setAction(WearableDataListenerService.ACTION_REQUESTBTDISCOVERABLE));
                 }
             });
         } else {
@@ -138,6 +129,55 @@ public class PermissionCheckFragment extends Fragment {
         mPairPermText = view.findViewById(R.id.companion_pair_summary);
 
         return view;
+    }
+
+    // Android Q+
+    private BroadcastReceiver mReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (WearableDataListenerService.ACTION_GETCONNECTEDNODE.equals(intent.getAction())) {
+                pairDevice(intent.getStringExtra(WearableDataListenerService.EXTRA_NODEDEVICENAME));
+
+                LocalBroadcastManager.getInstance(mActivity)
+                        .unregisterReceiver(mReceiver);
+            }
+        }
+    };
+
+    @TargetApi(29)
+    private void pairDevice(String deviceName) {
+        CompanionDeviceManager deviceManager = (CompanionDeviceManager) mActivity.getSystemService(Context.COMPANION_DEVICE_SERVICE);
+
+        for (String assoc : deviceManager.getAssociations()) {
+            deviceManager.disassociate(assoc);
+        }
+        updatePairPermText(false);
+
+        AssociationRequest request = new AssociationRequest.Builder()
+                .addDeviceFilter(new BluetoothDeviceFilter.Builder()
+                        .setNamePattern(Pattern.compile(deviceName + ".*", Pattern.DOTALL))
+                        .build())
+                .setSingleDevice(true)
+                .build();
+
+        Toast.makeText(mActivity, R.string.message_watchbtdiscover, Toast.LENGTH_LONG).show();
+
+        deviceManager.associate(request, new CompanionDeviceManager.Callback() {
+            @Override
+            public void onDeviceFound(IntentSender chooserLauncher) {
+                try {
+                    startIntentSenderForResult(chooserLauncher,
+                            SELECT_DEVICE_REQUEST_CODE, null, 0, 0, 0, null);
+                } catch (IntentSender.SendIntentException e) {
+                    Logger.writeLine(Log.ERROR, e);
+                }
+            }
+
+            @Override
+            public void onFailure(CharSequence error) {
+                Logger.writeLine(Log.ERROR, "PermissionCheckFragment: failed to find any devices; " + error);
+            }
+        }, new Handler());
     }
 
     @Override

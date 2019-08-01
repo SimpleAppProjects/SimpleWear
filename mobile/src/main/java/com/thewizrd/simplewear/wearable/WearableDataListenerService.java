@@ -20,6 +20,7 @@ import android.view.KeyEvent;
 import androidx.annotation.NonNull;
 import androidx.core.app.NotificationCompat;
 import androidx.core.util.Pair;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
@@ -74,10 +75,13 @@ public class WearableDataListenerService extends WearableListenerService {
     public static final String ACTION_SENDBTUPDATE = "SimpleWear.Droid.action.SEND_BT_UPDATE";
     public static final String ACTION_SENDMOBILEDATAUPDATE = "SimpleWear.Droid.action.SEND_MOBILEDATA_UPDATE";
     public static final String ACTION_SENDACTIONUPDATE = "SimpleWear.Droid.action.SEND_ACTION_UPDATE";
+    public static final String ACTION_REQUESTBTDISCOVERABLE = "SimpleWear.Droid.action.REQUEST_BT_DISCOVERABLE";
+    public static final String ACTION_GETCONNECTEDNODE = "SimpleWear.Droid.action.GET_CONNECTED_NODE";
 
     // Extras
     public static final String EXTRA_STATUS = "SimpleWear.Droid.extra.STATUS";
     public static final String EXTRA_ACTION_CHANGED = "SimpleWear.Droid.extra.ACTION_CHANGED";
+    public static final String EXTRA_NODEDEVICENAME = "SimpleWear.Droid.extra.NODE_DEVICE_NAME";
 
     private Collection<Node> mWearNodesWithApp;
     private boolean mLoaded = false;
@@ -209,6 +213,11 @@ public class WearableDataListenerService extends WearableListenerService {
             String activityName = pair.second != null ? pair.second.toString() : null;
 
             startMusicPlayer(messageEvent.getSourceNodeId(), pkgName, activityName);
+        } else if (messageEvent.getPath().equals(WearableHelper.BtDiscoverPath)) {
+            String deviceName = bytesToString(messageEvent.getData());
+            LocalBroadcastManager.getInstance(this)
+                    .sendBroadcast(new Intent(ACTION_GETCONNECTEDNODE)
+                            .putExtra(EXTRA_NODEDEVICENAME, deviceName));
         }
     }
 
@@ -322,6 +331,9 @@ public class WearableDataListenerService extends WearableListenerService {
                 } else if (intent != null && ACTION_SENDACTIONUPDATE.equals(intent.getAction())) {
                     Actions action = (Actions) intent.getSerializableExtra(EXTRA_ACTION_CHANGED);
                     sendActionsUpdate(null, action);
+                } else if (intent != null && ACTION_REQUESTBTDISCOVERABLE.equals(intent.getAction())) {
+                    sendMessage(null, WearableHelper.PingPath, null);
+                    sendMessage(null, WearableHelper.BtDiscoverPath, null);
                 } else if (intent != null) {
                     Logger.writeLine(Log.INFO, "%s: Unhandled action: %s", TAG, intent.getAction());
                 }

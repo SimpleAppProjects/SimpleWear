@@ -43,8 +43,8 @@
                 <action android:name="com.google.android.gms.wearable.CAPABILITY_CHANGED" />
 
                 <data
-                    android:host="*"
-                    android:scheme="wear" />
+                    android:scheme="wear"
+                    android:host="*" />
             </intent-filter>
         </service>
 
