@@ -133,8 +133,8 @@ public class MusicPlayerActivity extends WearableListenerActivity implements Dat
         });
 
         mRecyclerView = findViewById(R.id.player_list);
+        mRecyclerView.setHasFixedSize(true);
         mRecyclerView.setEdgeItemsCenteringEnabled(true);
-        mRecyclerView.setCircularScrollingGestureEnabled(true);
 
         mRecyclerView.setLayoutManager(new WearableLinearLayoutManager(this));
         mAdapter = new MusicPlayerListAdapter(this);

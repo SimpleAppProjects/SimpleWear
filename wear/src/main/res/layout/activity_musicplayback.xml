@@ -19,7 +19,6 @@
         android:id="@+id/player_list"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:nestedScrollingEnabled="true"
         tools:listitem="@layout/musicplayer_item" />
 
     <androidx.wear.widget.drawer.WearableDrawerView

@@ -319,7 +319,6 @@ public class DashboardActivity extends WearableListenerActivity implements Share
         mConnStatus.setText(R.string.message_gettingstatus);
 
         mActionsList.setEdgeItemsCenteringEnabled(false);
-        mActionsList.setCircularScrollingGestureEnabled(false);
         setLayoutManager();
 
         mScrollView = findViewById(R.id.scrollView);
