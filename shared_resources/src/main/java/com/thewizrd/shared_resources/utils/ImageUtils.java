@@ -60,6 +60,10 @@ public class ImageUtils {
                     throw new IllegalArgumentException("Asset must be non-null");
                 }
 
+                // Check if data is available before continuing
+                if (asset.getData() == null)
+                    return null;
+
                 // convert asset into a file descriptor and block until it's ready
                 InputStream assetInputStream = Tasks.await(client.getFdForAsset(asset)).getInputStream();
                 if (assetInputStream == null) {
