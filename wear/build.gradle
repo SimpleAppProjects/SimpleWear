@@ -1,21 +1,5 @@
 apply plugin: 'com.android.application'
 
-def buildType = ""
-
-def getCurrentBuildType() {
-    Gradle gradle = getGradle()
-    String tskReqStr = gradle.getStartParameter().getTaskRequests().toString()
-    println(tskReqStr)
-
-    if (tskReqStr.contains("Release")) {
-        return "release"
-    } else if (tskReqStr.contains("assembleDebug") || tskReqStr.contains("generateDebug")) {
-        return "debug"
-    }
-
-    return ""
-}
-
 android {
     compileSdkVersion 28
     defaultConfig {
@@ -23,7 +7,7 @@ android {
         minSdkVersion 23
         targetSdkVersion 28
         // NOTE: Version Code Format (TargetSDK, Version Name, Build Number, Variant Code (Android: 00, WearOS: 01)
-        versionCode 281100001
+        versionCode 281100101
         versionName "1.1.0"
 
         vectorDrawables.useSupportLibrary = true
