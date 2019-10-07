@@ -22,7 +22,7 @@
             android:paddingEnd="?android:attr/listPreferredItemPaddingRight"
             android:text="@string/cat_title_permissions"
             android:textAlignment="viewStart"
-            android:textAppearance="@style/Preference_TextAppearanceMaterialBody2"
+            android:textAppearance="@style/TextAppearance.MaterialComponents.Body2"
             android:textColor="@color/colorPrimary" />
 
     </LinearLayout>

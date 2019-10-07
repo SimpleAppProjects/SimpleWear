@@ -1,7 +1,7 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 28
+    compileSdkVersion 29
     defaultConfig {
         applicationId "com.thewizrd.simplewear"
 
@@ -14,7 +14,7 @@ android {
         testInstrumentationRunnerArguments clearPackageData: 'true'
 
         minSdkVersion 23
-        targetSdkVersion 28
+        targetSdkVersion 29
         // NOTE: Version Code Format (TargetSDK, Version Name, Build Number, Variant Code (Android: 00, WearOS: 01)
         versionCode 281100100
         versionName "1.1.0"
