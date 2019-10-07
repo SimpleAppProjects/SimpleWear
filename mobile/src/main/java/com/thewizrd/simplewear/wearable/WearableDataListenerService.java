@@ -148,21 +148,6 @@ public class WearableDataListenerService extends WearableListenerService {
                 mLoaded = true;
             }
         });
-
-        final Thread.UncaughtExceptionHandler oldHandler = Thread.getDefaultUncaughtExceptionHandler();
-
-        Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
-            @Override
-            public void uncaughtException(Thread t, Throwable e) {
-                Logger.writeLine(Log.ERROR, e, "SimpleWear: %s: UncaughtException", TAG);
-
-                if (oldHandler != null) {
-                    oldHandler.uncaughtException(t, e);
-                } else {
-                    System.exit(2);
-                }
-            }
-        });
     }
 
     @Override
