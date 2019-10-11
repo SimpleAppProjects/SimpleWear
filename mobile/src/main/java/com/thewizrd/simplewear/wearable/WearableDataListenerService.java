@@ -22,8 +22,6 @@ import androidx.core.app.NotificationCompat;
 import androidx.core.util.Pair;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.android.gms.wearable.CapabilityClient;
 import com.google.android.gms.wearable.CapabilityInfo;
@@ -60,7 +58,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executors;
 
 import static com.thewizrd.shared_resources.utils.SerializationUtils.bytesToString;
 import static com.thewizrd.shared_resources.utils.SerializationUtils.stringToBytes;
@@ -83,8 +80,9 @@ public class WearableDataListenerService extends WearableListenerService {
     public static final String EXTRA_ACTION_CHANGED = "SimpleWear.Droid.extra.ACTION_CHANGED";
     public static final String EXTRA_NODEDEVICENAME = "SimpleWear.Droid.extra.NODE_DEVICE_NAME";
 
+    private Context mContext;
+
     private Collection<Node> mWearNodesWithApp;
-    private boolean mLoaded = false;
 
     private static final int JOB_ID = 1000;
     private static final String NOT_CHANNEL_ID = "SimpleWear.generalnotif";
@@ -136,6 +134,10 @@ public class WearableDataListenerService extends WearableListenerService {
     public void onCreate() {
         super.onCreate();
 
+        mContext = this.getApplicationContext();
+
+        Logger.writeLine(Log.INFO, "%s: onCreate", TAG);
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             initChannel();
             startForeground(JOB_ID, getForegroundNotification());
@@ -145,18 +147,17 @@ public class WearableDataListenerService extends WearableListenerService {
             @Override
             public void run() {
                 mWearNodesWithApp = findWearDevicesWithApp();
-                mLoaded = true;
             }
         });
     }
 
     @Override
     public void onDestroy() {
-        mLoaded = false;
-
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             stopForeground(true);
         }
+
+        Logger.writeLine(Log.INFO, "%s: onDestroy", TAG);
 
         super.onDestroy();
     }
@@ -164,7 +165,7 @@ public class WearableDataListenerService extends WearableListenerService {
     @Override
     public void onMessageReceived(final MessageEvent messageEvent) {
         if (messageEvent.getPath().equals(WearableHelper.StartActivityPath)) {
-            Intent startIntent = new Intent(this, MainActivity.class)
+            Intent startIntent = new Intent(mContext, MainActivity.class)
                     .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             startActivity(startIntent);
         } else if (messageEvent.getPath().startsWith(WearableHelper.StatusPath)) {
@@ -175,32 +176,56 @@ public class WearableDataListenerService extends WearableListenerService {
                 }
             });
         } else if (messageEvent.getPath().startsWith(WearableHelper.ActionsPath)) {
-            String jsonData = bytesToString(messageEvent.getData());
+            final String jsonData = bytesToString(messageEvent.getData());
 
-            Action action = JSONParser.deserializer(jsonData, Action.class);
-
-            performAction(messageEvent.getSourceNodeId(), action);
+            AsyncTask.run(new Runnable() {
+                @Override
+                public void run() {
+                    Action action = JSONParser.deserializer(jsonData, Action.class);
+                    performAction(messageEvent.getSourceNodeId(), action);
+                }
+            });
         } else if (messageEvent.getPath().startsWith(WearableHelper.UpdatePath)) {
-            sendStatusUpdate(messageEvent.getSourceNodeId(), null);
-            sendActionsUpdate(messageEvent.getSourceNodeId());
+            AsyncTask.run(new Runnable() {
+                @Override
+                public void run() {
+                    sendStatusUpdate(messageEvent.getSourceNodeId(), null);
+                    sendActionsUpdate(messageEvent.getSourceNodeId());
+                }
+            });
         } else if (messageEvent.getPath().equals(WearableHelper.AppStatePath)) {
             AppState wearAppState = AppState.valueOf(bytesToString(messageEvent.getData()));
             if (wearAppState == AppState.FOREGROUND) {
-                sendStatusUpdate(messageEvent.getSourceNodeId(), null);
-                sendActionsUpdate(messageEvent.getSourceNodeId());
+                AsyncTask.run(new Runnable() {
+                    @Override
+                    public void run() {
+                        sendStatusUpdate(messageEvent.getSourceNodeId(), null);
+                        sendActionsUpdate(messageEvent.getSourceNodeId());
+                    }
+                });
             }
         } else if (messageEvent.getPath().startsWith(WearableHelper.MusicPlayersPath)) {
-            sendSupportedMusicPlayers();
+            AsyncTask.run(new Runnable() {
+                @Override
+                public void run() {
+                    sendSupportedMusicPlayers();
+                }
+            });
         } else if (messageEvent.getPath().equals(WearableHelper.PlayCommandPath)) {
-            String jsonData = bytesToString(messageEvent.getData());
-            Pair pair = JSONParser.deserializer(jsonData, Pair.class);
-            String pkgName = pair.first != null ? pair.first.toString() : null;
-            String activityName = pair.second != null ? pair.second.toString() : null;
+            final String jsonData = bytesToString(messageEvent.getData());
+            AsyncTask.run(new Runnable() {
+                @Override
+                public void run() {
+                    Pair pair = JSONParser.deserializer(jsonData, Pair.class);
+                    String pkgName = pair.first != null ? pair.first.toString() : null;
+                    String activityName = pair.second != null ? pair.second.toString() : null;
 
-            startMusicPlayer(messageEvent.getSourceNodeId(), pkgName, activityName);
+                    startMusicPlayer(messageEvent.getSourceNodeId(), pkgName, activityName);
+                }
+            });
         } else if (messageEvent.getPath().equals(WearableHelper.BtDiscoverPath)) {
             String deviceName = bytesToString(messageEvent.getData());
-            LocalBroadcastManager.getInstance(this)
+            LocalBroadcastManager.getInstance(mContext)
                     .sendBroadcast(new Intent(ACTION_GETCONNECTEDNODE)
                             .putExtra(EXTRA_NODEDEVICENAME, deviceName));
         }
@@ -215,7 +240,7 @@ public class WearableDataListenerService extends WearableListenerService {
                     .setComponent(new ComponentName(pkgName, activityName));
 
             // Check if the app has a registered MediaButton BroadcastReceiver
-            List<ResolveInfo> infos = this.getPackageManager().queryBroadcastReceivers(
+            List<ResolveInfo> infos = mContext.getPackageManager().queryBroadcastReceivers(
                     new Intent(Intent.ACTION_MEDIA_BUTTON).setPackage(pkgName), PackageManager.GET_RESOLVED_FILTER);
             Intent playKeyIntent = null;
 
@@ -232,7 +257,7 @@ public class WearableDataListenerService extends WearableListenerService {
             }
 
             if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
-                this.startActivity(appIntent);
+                mContext.startActivity(appIntent);
 
                 // Give the system enough time to start the app
                 try {
@@ -245,22 +270,22 @@ public class WearableDataListenerService extends WearableListenerService {
                 // a broadcast to the most recent music session, which should be the
                 // app activity we just started
                 if (playKeyIntent != null) {
-                    sendMessage(nodeID, WearableHelper.PlayCommandPath, stringToBytes(PhoneStatusHelper.sendPlayMusicCommand(this, playKeyIntent).name()));
+                    sendMessage(nodeID, WearableHelper.PlayCommandPath, stringToBytes(PhoneStatusHelper.sendPlayMusicCommand(mContext, playKeyIntent).name()));
                 } else {
-                    sendMessage(nodeID, WearableHelper.PlayCommandPath, stringToBytes(PhoneStatusHelper.sendPlayMusicCommand(this).name()));
+                    sendMessage(nodeID, WearableHelper.PlayCommandPath, stringToBytes(PhoneStatusHelper.sendPlayMusicCommand(mContext).name()));
                 }
             } else { // Android Q+ Devices
                 // Android Q puts a limitation on starting activities from the background
                 // We are allowed to bypass this if we have a device registered as companion,
                 // which will be our WearOS device; Check if device is associated before we start
-                CompanionDeviceManager deviceManager = (CompanionDeviceManager) this.getSystemService(Context.COMPANION_DEVICE_SERVICE);
+                CompanionDeviceManager deviceManager = (CompanionDeviceManager) mContext.getSystemService(Context.COMPANION_DEVICE_SERVICE);
                 List<String> associated_devices = deviceManager.getAssociations();
 
                 if (associated_devices.isEmpty()) {
                     // No devices associated; send message to user
                     sendMessage(nodeID, WearableHelper.PlayCommandPath, stringToBytes(ActionStatus.PERMISSION_DENIED.name()));
                 } else {
-                    this.startActivity(appIntent);
+                    mContext.startActivity(appIntent);
 
                     // Give the system enough time to start the app
                     try {
@@ -273,9 +298,9 @@ public class WearableDataListenerService extends WearableListenerService {
                     // a broadcast to the most recent music session, which should be the
                     // app activity we just started
                     if (playKeyIntent != null) {
-                        sendMessage(nodeID, WearableHelper.PlayCommandPath, stringToBytes(PhoneStatusHelper.sendPlayMusicCommand(this, playKeyIntent).name()));
+                        sendMessage(nodeID, WearableHelper.PlayCommandPath, stringToBytes(PhoneStatusHelper.sendPlayMusicCommand(mContext, playKeyIntent).name()));
                     } else {
-                        sendMessage(nodeID, WearableHelper.PlayCommandPath, stringToBytes(PhoneStatusHelper.sendPlayMusicCommand(this).name()));
+                        sendMessage(nodeID, WearableHelper.PlayCommandPath, stringToBytes(PhoneStatusHelper.sendPlayMusicCommand(mContext).name()));
                     }
                 }
             }
@@ -298,48 +323,86 @@ public class WearableDataListenerService extends WearableListenerService {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
             startForeground(JOB_ID, getForegroundNotification());
 
-        Tasks.call(Executors.newSingleThreadExecutor(), new Callable<Void>() {
-            @Override
-            public Void call() throws Exception {
-                if (intent != null && ACTION_SENDSTATUSUPDATE.equals(intent.getAction())) {
-                    // Check if any devices are running and send an update
-                    requestWearAppState();
-                } else if (intent != null && ACTION_SENDBATTERYUPDATE.equals(intent.getAction())) {
-                    String jsonData = intent.getStringExtra(EXTRA_STATUS);
-                    sendMessage(null, WearableHelper.BatteryPath, stringToBytes(jsonData));
-                } else if (intent != null && ACTION_SENDWIFIUPDATE.equals(intent.getAction())) {
-                    sendMessage(null, WearableHelper.WifiPath, new byte[]{(byte) intent.getIntExtra(EXTRA_STATUS, -1)});
-                } else if (intent != null && ACTION_SENDBTUPDATE.equals(intent.getAction())) {
-                    sendMessage(null, WearableHelper.BluetoothPath, new byte[]{(byte) intent.getIntExtra(EXTRA_STATUS, -1)});
-                } else if (intent != null && ACTION_SENDMOBILEDATAUPDATE.equals(intent.getAction())) {
-                    sendActionsUpdate(null, Actions.MOBILEDATA);
-                } else if (intent != null && ACTION_SENDACTIONUPDATE.equals(intent.getAction())) {
-                    Actions action = (Actions) intent.getSerializableExtra(EXTRA_ACTION_CHANGED);
-                    sendActionsUpdate(null, action);
-                } else if (intent != null && ACTION_REQUESTBTDISCOVERABLE.equals(intent.getAction())) {
-                    sendMessage(null, WearableHelper.PingPath, null);
-                    sendMessage(null, WearableHelper.BtDiscoverPath, null);
-                } else if (intent != null) {
-                    Logger.writeLine(Log.INFO, "%s: Unhandled action: %s", TAG, intent.getAction());
-                }
-                return null;
-            }
-        }).addOnCompleteListener(new OnCompleteListener<Void>() {
-            @Override
-            public void onComplete(@NonNull Task<Void> task) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
-                    stopForeground(true);
-            }
-        });
+        try {
+            AsyncTask.awaitTask(new Callable<Void>() {
+                @Override
+                public Void call() throws Exception {
+                    if (intent != null) {
+                        if (ACTION_SENDSTATUSUPDATE.equals(intent.getAction())) {
+                            // Check if any devices are running and send an update
+                            AsyncTask.run(new Runnable() {
+                                @Override
+                                public void run() {
+                                    requestWearAppState();
+                                }
+                            });
+                        } else if (ACTION_SENDBATTERYUPDATE.equals(intent.getAction())) {
+                            final String jsonData = intent.getStringExtra(EXTRA_STATUS);
+                            AsyncTask.run(new Runnable() {
+                                @Override
+                                public void run() {
+                                    sendMessage(null, WearableHelper.BatteryPath, stringToBytes(jsonData));
+                                }
+                            });
+                        } else if (ACTION_SENDWIFIUPDATE.equals(intent.getAction())) {
+                            AsyncTask.run(new Runnable() {
+                                @Override
+                                public void run() {
+                                    sendMessage(null, WearableHelper.WifiPath, new byte[]{(byte) intent.getIntExtra(EXTRA_STATUS, -1)});
+                                }
+                            });
+                        } else if (ACTION_SENDBTUPDATE.equals(intent.getAction())) {
+                            AsyncTask.run(new Runnable() {
+                                @Override
+                                public void run() {
+                                    sendMessage(null, WearableHelper.BluetoothPath, new byte[]{(byte) intent.getIntExtra(EXTRA_STATUS, -1)});
+                                }
+                            });
+                        } else if (ACTION_SENDMOBILEDATAUPDATE.equals(intent.getAction())) {
+                            AsyncTask.run(new Runnable() {
+                                @Override
+                                public void run() {
+                                    sendActionsUpdate(null, Actions.MOBILEDATA);
+                                }
+                            });
+                        } else if (ACTION_SENDACTIONUPDATE.equals(intent.getAction())) {
+                            final Actions action = (Actions) intent.getSerializableExtra(EXTRA_ACTION_CHANGED);
+                            AsyncTask.run(new Runnable() {
+                                @Override
+                                public void run() {
+                                    sendActionsUpdate(null, action);
+                                }
+                            });
+                        } else if (ACTION_REQUESTBTDISCOVERABLE.equals(intent.getAction())) {
+                            AsyncTask.run(new Runnable() {
+                                @Override
+                                public void run() {
+                                    sendMessage(null, WearableHelper.PingPath, null);
+                                    sendMessage(null, WearableHelper.BtDiscoverPath, null);
+                                }
+                            });
+                        }
 
-        return START_NOT_STICKY;
+                        Logger.writeLine(Log.INFO, "%s: Intent Action: %s", TAG, intent.getAction());
+                    }
+                    return null;
+                }
+            });
+        } catch (ExecutionException ex) {
+            Logger.writeLine(Log.ERROR, ex.getCause());
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+            stopForeground(true);
+
+        return super.onStartCommand(intent, flags, startId);
     }
 
     private Collection<Node> findWearDevicesWithApp() {
         CapabilityInfo capabilityInfo = null;
 
         try {
-            capabilityInfo = Tasks.await(Wearable.getCapabilityClient(this)
+            capabilityInfo = Tasks.await(Wearable.getCapabilityClient(mContext)
                     .getCapability(WearableHelper.CAPABILITY_WEAR_APP, CapabilityClient.FILTER_REACHABLE));
         } catch (ExecutionException | InterruptedException e) {
             Logger.writeLine(Log.ERROR, e);
@@ -353,6 +416,8 @@ public class WearableDataListenerService extends WearableListenerService {
     }
 
     private void requestWearAppState() {
+        if (mWearNodesWithApp == null) return;
+
         for (Node node : mWearNodesWithApp) {
             sendMessage(node.getId(), WearableHelper.AppStatePath, null);
         }
@@ -360,63 +425,63 @@ public class WearableDataListenerService extends WearableListenerService {
 
     private void sendStatusUpdate(String nodeID, String path) {
         if (path != null && path.contains(WearableHelper.WifiPath)) {
-            sendMessage(nodeID, path, new byte[]{(byte) PhoneStatusHelper.getWifiState(this.getApplicationContext())});
+            sendMessage(nodeID, path, new byte[]{(byte) PhoneStatusHelper.getWifiState(mContext)});
         } else if (path != null && path.contains(WearableHelper.BatteryPath)) {
-            sendMessage(nodeID, path, stringToBytes(JSONParser.serializer(PhoneStatusHelper.getBatteryLevel(this), BatteryStatus.class)));
+            sendMessage(nodeID, path, stringToBytes(JSONParser.serializer(PhoneStatusHelper.getBatteryLevel(mContext), BatteryStatus.class)));
         } else if (path == null || WearableHelper.StatusPath.equals(path)) {
             // Status dump
-            sendMessage(nodeID, WearableHelper.WifiPath, new byte[]{(byte) PhoneStatusHelper.getWifiState(this.getApplicationContext())});
-            sendMessage(nodeID, WearableHelper.BatteryPath, stringToBytes(JSONParser.serializer(PhoneStatusHelper.getBatteryLevel(this), BatteryStatus.class)));
+            sendMessage(nodeID, WearableHelper.WifiPath, new byte[]{(byte) PhoneStatusHelper.getWifiState(mContext)});
+            sendMessage(nodeID, WearableHelper.BatteryPath, stringToBytes(JSONParser.serializer(PhoneStatusHelper.getBatteryLevel(mContext), BatteryStatus.class)));
         }
     }
 
-    private void sendActionsUpdate(String nodeID) {
-        for (Actions act : Actions.values()) {
-            sendActionsUpdate(nodeID, act);
+    private void sendActionsUpdate(final String nodeID) {
+        for (final Actions act : Actions.values()) {
+            AsyncTask.run(new Runnable() {
+                @Override
+                public void run() {
+                    sendActionsUpdate(nodeID, act);
+                }
+            });
         }
     }
 
     private void sendActionsUpdate(final String nodeID, final Actions act) {
-        AsyncTask.run(new Runnable() {
-            @Override
-            public void run() {
-                Action action;
-                switch (act) {
-                    case WIFI:
-                        action = new ToggleAction(act, PhoneStatusHelper.isWifiEnabled(WearableDataListenerService.this));
-                        sendMessage(nodeID, WearableHelper.ActionsPath, stringToBytes(JSONParser.serializer(action, Action.class)));
-                        break;
-                    case BLUETOOTH:
-                        action = new ToggleAction(act, PhoneStatusHelper.isBluetoothEnabled(WearableDataListenerService.this));
-                        sendMessage(nodeID, WearableHelper.ActionsPath, stringToBytes(JSONParser.serializer(action, Action.class)));
-                        break;
-                    case MOBILEDATA:
-                        action = new ToggleAction(act, PhoneStatusHelper.isMobileDataEnabled(WearableDataListenerService.this));
-                        sendMessage(nodeID, WearableHelper.ActionsPath, stringToBytes(JSONParser.serializer(action, Action.class)));
-                        break;
-                    case LOCATION:
-                        action = new ToggleAction(act, PhoneStatusHelper.isLocationEnabled(WearableDataListenerService.this));
-                        sendMessage(nodeID, WearableHelper.ActionsPath, stringToBytes(JSONParser.serializer(action, Action.class)));
-                        break;
-                    case TORCH:
-                        action = new ToggleAction(act, PhoneStatusHelper.isTorchEnabled(WearableDataListenerService.this));
-                        sendMessage(nodeID, WearableHelper.ActionsPath, stringToBytes(JSONParser.serializer(action, Action.class)));
-                        break;
-                    case LOCKSCREEN:
-                    case VOLUME:
-                        // No-op since status is not needed
-                        break;
-                    case DONOTDISTURB:
-                        action = new MultiChoiceAction(act, PhoneStatusHelper.getDNDState(WearableDataListenerService.this).getValue());
-                        sendMessage(nodeID, WearableHelper.ActionsPath, stringToBytes(JSONParser.serializer(action, Action.class)));
-                        break;
-                    case RINGER:
-                        action = new MultiChoiceAction(act, PhoneStatusHelper.getRingerState(WearableDataListenerService.this).getValue());
-                        sendMessage(nodeID, WearableHelper.ActionsPath, stringToBytes(JSONParser.serializer(action, Action.class)));
-                        break;
-                }
-            }
-        });
+        Action action;
+        switch (act) {
+            case WIFI:
+                action = new ToggleAction(act, PhoneStatusHelper.isWifiEnabled(mContext));
+                sendMessage(nodeID, WearableHelper.ActionsPath, stringToBytes(JSONParser.serializer(action, Action.class)));
+                break;
+            case BLUETOOTH:
+                action = new ToggleAction(act, PhoneStatusHelper.isBluetoothEnabled(mContext));
+                sendMessage(nodeID, WearableHelper.ActionsPath, stringToBytes(JSONParser.serializer(action, Action.class)));
+                break;
+            case MOBILEDATA:
+                action = new ToggleAction(act, PhoneStatusHelper.isMobileDataEnabled(mContext));
+                sendMessage(nodeID, WearableHelper.ActionsPath, stringToBytes(JSONParser.serializer(action, Action.class)));
+                break;
+            case LOCATION:
+                action = new ToggleAction(act, PhoneStatusHelper.isLocationEnabled(mContext));
+                sendMessage(nodeID, WearableHelper.ActionsPath, stringToBytes(JSONParser.serializer(action, Action.class)));
+                break;
+            case TORCH:
+                action = new ToggleAction(act, PhoneStatusHelper.isTorchEnabled(mContext));
+                sendMessage(nodeID, WearableHelper.ActionsPath, stringToBytes(JSONParser.serializer(action, Action.class)));
+                break;
+            case LOCKSCREEN:
+            case VOLUME:
+                // No-op since status is not needed
+                break;
+            case DONOTDISTURB:
+                action = new MultiChoiceAction(act, PhoneStatusHelper.getDNDState(mContext).getValue());
+                sendMessage(nodeID, WearableHelper.ActionsPath, stringToBytes(JSONParser.serializer(action, Action.class)));
+                break;
+            case RINGER:
+                action = new MultiChoiceAction(act, PhoneStatusHelper.getRingerState(mContext).getValue());
+                sendMessage(nodeID, WearableHelper.ActionsPath, stringToBytes(JSONParser.serializer(action, Action.class)));
+                break;
+        }
     }
 
     private void performAction(String nodeID, Action action) {
@@ -427,47 +492,47 @@ public class WearableDataListenerService extends WearableListenerService {
         switch (action.getAction()) {
             case WIFI:
                 tA = (ToggleAction) action;
-                tA.setActionSuccessful(PhoneStatusHelper.setWifiEnabled(this, tA.isEnabled()));
+                tA.setActionSuccessful(PhoneStatusHelper.setWifiEnabled(mContext, tA.isEnabled()));
                 sendMessage(nodeID, WearableHelper.ActionsPath, stringToBytes(JSONParser.serializer(tA, Action.class)));
                 break;
             case BLUETOOTH:
                 tA = (ToggleAction) action;
-                tA.setActionSuccessful(PhoneStatusHelper.setBluetoothEnabled(this, tA.isEnabled()));
+                tA.setActionSuccessful(PhoneStatusHelper.setBluetoothEnabled(mContext, tA.isEnabled()));
                 sendMessage(nodeID, WearableHelper.ActionsPath, stringToBytes(JSONParser.serializer(tA, Action.class)));
                 break;
             case MOBILEDATA:
                 tA = (ToggleAction) action;
-                tA.setEnabled(PhoneStatusHelper.isMobileDataEnabled(this));
+                tA.setEnabled(PhoneStatusHelper.isMobileDataEnabled(mContext));
                 sendMessage(nodeID, WearableHelper.ActionsPath, stringToBytes(JSONParser.serializer(tA, Action.class)));
                 break;
             case LOCATION:
                 tA = (ToggleAction) action;
-                tA.setEnabled(PhoneStatusHelper.isLocationEnabled(this));
+                tA.setEnabled(PhoneStatusHelper.isLocationEnabled(mContext));
                 sendMessage(nodeID, WearableHelper.ActionsPath, stringToBytes(JSONParser.serializer(tA, Action.class)));
                 break;
             case TORCH:
                 tA = (ToggleAction) action;
-                tA.setActionSuccessful(PhoneStatusHelper.setTorchEnabled(this, tA.isEnabled()));
+                tA.setActionSuccessful(PhoneStatusHelper.setTorchEnabled(mContext, tA.isEnabled()));
                 sendMessage(nodeID, WearableHelper.ActionsPath, stringToBytes(JSONParser.serializer(tA, Action.class)));
                 break;
             case LOCKSCREEN:
                 nA = (NormalAction) action;
-                nA.setActionSuccessful(PhoneStatusHelper.lockScreen(this));
+                nA.setActionSuccessful(PhoneStatusHelper.lockScreen(mContext));
                 sendMessage(nodeID, WearableHelper.ActionsPath, stringToBytes(JSONParser.serializer(nA, Action.class)));
                 break;
             case VOLUME:
                 vA = (ValueAction) action;
-                vA.setActionSuccessful(PhoneStatusHelper.setVolume(this, vA.getDirection()));
+                vA.setActionSuccessful(PhoneStatusHelper.setVolume(mContext, vA.getDirection()));
                 sendMessage(nodeID, WearableHelper.ActionsPath, stringToBytes(JSONParser.serializer(vA, Action.class)));
                 break;
             case DONOTDISTURB:
                 mA = (MultiChoiceAction) action;
-                mA.setActionSuccessful(PhoneStatusHelper.setDNDState(this, DNDChoice.valueOf(mA.getChoice())));
+                mA.setActionSuccessful(PhoneStatusHelper.setDNDState(mContext, DNDChoice.valueOf(mA.getChoice())));
                 sendMessage(nodeID, WearableHelper.ActionsPath, stringToBytes(JSONParser.serializer(mA, Action.class)));
                 break;
             case RINGER:
                 mA = (MultiChoiceAction) action;
-                mA.setActionSuccessful(PhoneStatusHelper.setRingerState(this, RingerChoice.valueOf(mA.getChoice())));
+                mA.setActionSuccessful(PhoneStatusHelper.setRingerState(mContext, RingerChoice.valueOf(mA.getChoice())));
                 sendMessage(nodeID, WearableHelper.ActionsPath, stringToBytes(JSONParser.serializer(mA, Action.class)));
                 break;
         }
@@ -486,14 +551,14 @@ public class WearableDataListenerService extends WearableListenerService {
 
         if (nodeID != null) {
             try {
-                Tasks.await(Wearable.getMessageClient(this).sendMessage(nodeID, path, data));
+                Tasks.await(Wearable.getMessageClient(mContext).sendMessage(nodeID, path, data));
             } catch (ExecutionException | InterruptedException e) {
                 Logger.writeLine(Log.ERROR, e);
             }
         } else {
             for (Node node : mWearNodesWithApp) {
                 try {
-                    Tasks.await(Wearable.getMessageClient(this).sendMessage(node.getId(), path, data));
+                    Tasks.await(Wearable.getMessageClient(mContext).sendMessage(node.getId(), path, data));
                 } catch (ExecutionException | InterruptedException e) {
                     Logger.writeLine(Log.ERROR, e);
                 }
@@ -502,9 +567,7 @@ public class WearableDataListenerService extends WearableListenerService {
     }
 
     private void sendSupportedMusicPlayers() {
-        final Context appContext = this.getApplicationContext();
-
-        List<ResolveInfo> infos = appContext.getPackageManager().queryIntentActivities(
+        List<ResolveInfo> infos = mContext.getPackageManager().queryIntentActivities(
                 new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_APP_MUSIC), PackageManager.GET_RESOLVED_FILTER);
 
         PutDataMapRequest mapRequest = PutDataMapRequest.create(WearableHelper.MusicPlayersPath);
@@ -515,12 +578,12 @@ public class WearableDataListenerService extends WearableListenerService {
             ComponentName activityCmpName = new ComponentName(appInfo.packageName, info.activityInfo.name);
 
             String key = String.format("%s/%s", appInfo.packageName, info.activityInfo.name);
-            String label = appContext.getPackageManager().getApplicationLabel(appInfo).toString();
+            String label = mContext.getPackageManager().getApplicationLabel(appInfo).toString();
 
             Bitmap iconBmp = null;
             try {
-                Drawable iconDrwble = appContext.getPackageManager().getActivityIcon(activityCmpName);
-                iconBmp = ImageUtils.bitmapFromDrawable(appContext, iconDrwble);
+                Drawable iconDrwble = mContext.getPackageManager().getActivityIcon(activityCmpName);
+                iconBmp = ImageUtils.bitmapFromDrawable(mContext, iconDrwble);
             } catch (PackageManager.NameNotFoundException ignored) {
             }
 
@@ -538,7 +601,7 @@ public class WearableDataListenerService extends WearableListenerService {
         mapRequest.setUrgent();
 
         try {
-            Tasks.await(Wearable.getDataClient(this).putDataItem(mapRequest.asPutDataRequest()));
+            Tasks.await(Wearable.getDataClient(mContext).putDataItem(mapRequest.asPutDataRequest()));
         } catch (ExecutionException | InterruptedException e) {
             Logger.writeLine(Log.ERROR, e);
         }
