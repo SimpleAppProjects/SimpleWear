@@ -85,7 +85,7 @@ public class DashboardActivity extends WearableListenerActivity implements Share
                 AsyncTask.run(new Runnable() {
                     @Override
                     public void run() {
-                        Looper.prepare();
+                        if (Looper.myLooper() == null) Looper.prepare();
                         if (intent.getAction() != null) {
                             if (ACTION_UPDATECONNECTIONSTATUS.equals(intent.getAction())) {
                                 WearConnectionStatus connStatus = WearConnectionStatus.valueOf(intent.getIntExtra(EXTRA_CONNECTIONSTATUS, 0));
