@@ -62,7 +62,7 @@ public class ActionButtonViewModel {
     public ActionButtonViewModel(@NonNull Action action) {
         this.action = action;
         mDrawableID = R.drawable.ic_cc_clear;
-        mButtonBackgroundColor = R.color.colorPrimary;
+        mButtonBackgroundColor = R.color.buttonDisabled;
         initialize(action);
     }
 
@@ -78,7 +78,7 @@ public class ActionButtonViewModel {
                 tA.setEnabled(!tA.isEnabled());
             }
 
-            mButtonBackgroundColor = tA.isEnabled() ? R.color.colorPrimary : R.color.black;
+            mButtonBackgroundColor = tA.isEnabled() ? R.color.buttonEnabled : R.color.buttonDisabled;
             updateIconAndLabel();
         } else if (action instanceof MultiChoiceAction) {
             MultiChoiceAction mA = (MultiChoiceAction) action;

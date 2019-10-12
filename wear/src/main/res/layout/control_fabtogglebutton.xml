@@ -5,7 +5,8 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:clipChildren="false"
-    android:clipToPadding="false">
+    android:clipToPadding="false"
+    tools:context=".controls.ActionButton">
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fab"
@@ -14,7 +15,7 @@
         android:layout_gravity="center"
         android:clickable="false"
         android:focusable="false"
-        app:backgroundTint="@color/black"
+        app:backgroundTint="@color/buttonDisabled"
         app:fabCustomSize="36dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@id/button_label"

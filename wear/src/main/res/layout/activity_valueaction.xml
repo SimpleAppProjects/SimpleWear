@@ -4,7 +4,7 @@
     android:layout_height="match_parent"
     xmlns:tools="http://schemas.android.com/tools"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:background="@color/dark_grey"
+    android:background="@android:color/black"
     android:padding="@dimen/box_inset_layout_padding"
     tools:context=".ValueActionActivity"
     tools:deviceIds="wear">

@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/dark_grey"
+    android:background="@android:color/black"
     tools:context=".DashboardActivity"
     tools:deviceIds="wear">
 
@@ -17,21 +17,19 @@
             android:id="@+id/scrollView"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:background="@color/dark_grey"
-            android:fillViewport="true"
-            tools:context="com.thewizrd.simplewear.DashboardActivity"
-            tools:deviceIds="wear">
+            android:fillViewport="true">
 
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content">
+                android:layout_height="wrap_content"
+                android:paddingTop="@dimen/inner_frame_layout_padding"
+                android:paddingBottom="@dimen/inner_frame_layout_padding">
 
                 <androidx.appcompat.widget.AppCompatImageView
                     android:id="@+id/device_stat_icon"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="@dimen/inner_layout_padding"
-                    android:layout_marginTop="@dimen/inner_layout_padding"
                     android:padding="4dp"
                     app:layout_constraintEnd_toStartOf="@id/device_stat_text"
                     app:layout_constraintStart_toStartOf="parent"
@@ -122,7 +120,6 @@
                     android:id="@+id/actions_list"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:layout_marginBottom="@dimen/inner_layout_padding"
                     android:clipChildren="false"
                     android:clipToPadding="false"
                     app:layout_constraintBottom_toBottomOf="parent"
@@ -145,7 +142,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_gravity="bottom"
-        android:background="@color/black"
+        android:background="@color/buttonDisabled"
         app:drawerContent="@id/drawer_content">
 
         <include layout="@layout/dashboard_drawer_layout" />

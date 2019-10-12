@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.content.res.Resources;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.os.Looper;
@@ -15,6 +16,7 @@ import android.util.ArrayMap;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewTreeObserver;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
@@ -387,6 +389,52 @@ public class DashboardActivity extends WearableListenerActivity implements Share
                 });
             }
         });
+    }
+
+    @Override
+    public void onAttachedToWindow() {
+        super.onAttachedToWindow();
+
+        if (mSwipeLayout != null) {
+            mSwipeLayout.getViewTreeObserver().addOnWindowAttachListener(new ViewTreeObserver.OnWindowAttachListener() {
+                /* BoxInsetLayout impl */
+                private static final float FACTOR = 0.146447f; //(1 - sqrt(2)/2)/2
+                private final boolean mIsRound = getResources().getConfiguration().isScreenRound();
+
+                @Override
+                public void onWindowAttached() {
+                    mSwipeLayout.getViewTreeObserver().removeOnWindowAttachListener(this);
+
+                    final View constrLayout = mScrollView.getChildAt(0);
+                    final View peekContainer = mDrawerView.findViewById(R.id.ws_drawer_view_peek_container);
+
+                    constrLayout.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            int verticalPadding = getResources().getDimensionPixelSize(R.dimen.inner_frame_layout_padding);
+
+                            int mScreenHeight = Resources.getSystem().getDisplayMetrics().heightPixels;
+                            int mScreenWidth = Resources.getSystem().getDisplayMetrics().widthPixels;
+
+                            int rightEdge = Math.min(mSwipeLayout.getMeasuredWidth(), mScreenWidth);
+                            int bottomEdge = Math.min(mSwipeLayout.getMeasuredHeight(), mScreenHeight);
+                            int verticalInset = (int) (FACTOR * Math.max(rightEdge, bottomEdge));
+
+                            constrLayout.setPaddingRelative(
+                                    constrLayout.getPaddingStart(),
+                                    mIsRound ? verticalInset : verticalPadding,
+                                    constrLayout.getPaddingEnd(),
+                                    mIsRound ? verticalInset : peekContainer.getHeight());
+                        }
+                    });
+                }
+
+                @Override
+                public void onWindowDetached() {
+
+                }
+            });
+        }
     }
 
     private void showProgressBar(final boolean show) {
