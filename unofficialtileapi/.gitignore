@@ -1,0 +1,14 @@
+.gradle
+/local.properties
+/.idea/workspace.xml
+/.idea/libraries
+.DS_Store
+/build
+/*/build
+/Project
+desktop.ini
+*.keystore
+*.jks
+*.iml
+*.apk
+*.hprof

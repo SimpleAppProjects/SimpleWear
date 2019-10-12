@@ -13,7 +13,7 @@ public final class MultiChoiceAction extends Action {
 
     public MultiChoiceAction(Actions action, int choice) {
         super(action);
-        this.value = choice;
+        setChoice(choice);
     }
 
     public int getChoice() {

@@ -5,4 +5,7 @@
     <color name="colorPrimaryMedium">#007dd6</color>
     <color name="colorText">#FFFFFF</color>
     <color name="colorTextHint">#D0FFFFFF</color>
+
+    <color name="buttonEnabled">@color/colorPrimary</color>
+    <color name="buttonDisabled">#242424</color>
 </resources>

@@ -29,6 +29,7 @@ android {
 
 dependencies {
     implementation project(":shared_resources")
+    implementation project(":unofficialtileapi")
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
     implementation 'com.google.android.support:wearable:2.5.0'

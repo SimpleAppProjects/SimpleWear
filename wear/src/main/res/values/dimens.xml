@@ -13,7 +13,7 @@
     -->
     <dimen name="inner_frame_layout_padding">5dp</dimen>
 
-    <dimen name="inner_layout_padding">16dp</dimen>
+    <dimen name="inner_layout_padding">8dp</dimen>
     <dimen name="conf_overlay_image_size">32dp</dimen>
 
 </resources>

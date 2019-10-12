@@ -69,6 +69,17 @@
             </intent-filter>
         </service>
 
+        <service
+            android:icon="@mipmap/ic_launcher"
+            android:label="Dashboard"
+            android:permission="com.google.android.wearable.permission.BIND_TILE_PROVIDER"
+            android:exported="true"
+            android:name=".wearable.DashboardTileProviderService">
+            <intent-filter>
+                <action android:name="com.google.android.clockwork.ACTION_TILE_UPDATE_REQUEST" />
+            </intent-filter>
+        </service>
+
     </application>
 
 </manifest>
