@@ -19,6 +19,8 @@ import android.os.Handler;
 import android.provider.Settings;
 import android.util.Log;
 
+import androidx.annotation.NonNull;
+
 import com.jakewharton.threetenabp.AndroidThreeTen;
 import com.thewizrd.shared_resources.ApplicationLib;
 import com.thewizrd.shared_resources.SimpleLibrary;
@@ -139,8 +141,8 @@ public class App extends Application implements ApplicationLib, Application.Acti
 
         Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
             @Override
-            public void uncaughtException(Thread t, Throwable e) {
-                Logger.writeLine(Log.ERROR, e);
+            public void uncaughtException(@NonNull Thread t, @NonNull Throwable e) {
+                Logger.writeLine(Log.ERROR, e, "Uncaught exception!");
 
                 if (oldHandler != null)
                     oldHandler.uncaughtException(t, e);
