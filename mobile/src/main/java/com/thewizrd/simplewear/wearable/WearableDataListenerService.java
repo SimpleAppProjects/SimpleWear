@@ -140,7 +140,6 @@ public class WearableDataListenerService extends WearableListenerService {
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             initChannel();
-            startForeground(JOB_ID, getForegroundNotification());
         }
 
         AsyncTask.run(new Runnable() {
@@ -153,12 +152,7 @@ public class WearableDataListenerService extends WearableListenerService {
 
     @Override
     public void onDestroy() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            stopForeground(true);
-        }
-
         Logger.writeLine(Log.INFO, "%s: onDestroy", TAG);
-
         super.onDestroy();
     }
 
