@@ -86,6 +86,7 @@ public class WearableDataListenerService extends WearableListenerService {
 
     private static final int JOB_ID = 1000;
     private static final String NOT_CHANNEL_ID = "SimpleWear.generalnotif";
+    private static Notification mForegroundNotification = null;
 
     public static void enqueueWork(Context context, Intent work) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -117,17 +118,21 @@ public class WearableDataListenerService extends WearableListenerService {
 
     @TargetApi(Build.VERSION_CODES.O)
     private static Notification getForegroundNotification() {
-        Context context = App.getInstance().getAppContext();
-        NotificationCompat.Builder mBuilder =
-                new NotificationCompat.Builder(context, NOT_CHANNEL_ID)
-                        .setSmallIcon(R.drawable.ic_icon)
-                        .setContentTitle(context.getString(R.string.not_title_wearservice))
-                        .setProgress(0, 0, true)
-                        .setColor(context.getColor(R.color.colorPrimary))
-                        .setOnlyAlertOnce(true)
-                        .setPriority(NotificationManager.IMPORTANCE_LOW);
+        if (mForegroundNotification == null) {
+            Context context = App.getInstance().getAppContext();
+            NotificationCompat.Builder mBuilder =
+                    new NotificationCompat.Builder(context, NOT_CHANNEL_ID)
+                            .setSmallIcon(R.drawable.ic_icon)
+                            .setContentTitle(context.getString(R.string.not_title_wearservice))
+                            .setProgress(0, 0, true)
+                            .setColor(context.getColor(R.color.colorPrimary))
+                            .setOnlyAlertOnce(true)
+                            .setPriority(NotificationManager.IMPORTANCE_LOW);
 
-        return mBuilder.build();
+            mForegroundNotification = mBuilder.build();
+        }
+
+        return mForegroundNotification;
     }
 
     @Override
@@ -140,6 +145,7 @@ public class WearableDataListenerService extends WearableListenerService {
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             initChannel();
+            startForeground(JOB_ID, getForegroundNotification());
         }
 
         AsyncTask.run(new Runnable() {
@@ -154,6 +160,29 @@ public class WearableDataListenerService extends WearableListenerService {
     public void onDestroy() {
         Logger.writeLine(Log.INFO, "%s: onDestroy", TAG);
         super.onDestroy();
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+            stopForeground(true);
+    }
+
+    @Override
+    public void onRebind(Intent intent) {
+        super.onRebind(intent);
+
+        // Background restrictions don't apply to bound services
+        // We can remove the notification now
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+            stopForeground(true);
+    }
+
+    @Override
+    public boolean onUnbind(Intent intent) {
+        // Since service is unbound, background restrictions now apply
+        // Start foreground to notify system
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+            startForeground(JOB_ID, getForegroundNotification());
+
+        return super.onUnbind(intent);
     }
 
     @Override
@@ -386,10 +415,7 @@ public class WearableDataListenerService extends WearableListenerService {
             Logger.writeLine(Log.ERROR, ex.getCause());
         }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
-            stopForeground(true);
-
-        return super.onStartCommand(intent, flags, startId);
+        return START_NOT_STICKY;
     }
 
     private Collection<Node> findWearDevicesWithApp() {
