@@ -225,21 +225,46 @@ public class DashboardTileProviderService extends TileProviderService
             Actions action = Actions.valueOf(intent.getAction());
             switch (action) {
                 case WIFI:
+                    if (wifiAction == null) {
+                        requestUpdate();
+                        break;
+                    }
+
                     requestAction(new ToggleAction(Actions.WIFI, !wifiAction.isEnabled()));
                     break;
                 case BLUETOOTH:
+                    if (btAction == null) {
+                        requestUpdate();
+                        break;
+                    }
+
                     requestAction(new ToggleAction(Actions.BLUETOOTH, !btAction.isEnabled()));
                     break;
                 case LOCKSCREEN:
                     requestAction(new NormalAction(Actions.LOCKSCREEN));
                     break;
                 case DONOTDISTURB:
+                    if (dndAction == null) {
+                        requestUpdate();
+                        break;
+                    }
+
                     requestAction(new MultiChoiceAction(Actions.DONOTDISTURB, dndAction.getChoice() + 1));
                     break;
                 case RINGER:
+                    if (ringerAction == null) {
+                        requestUpdate();
+                        break;
+                    }
+
                     requestAction(new MultiChoiceAction(Actions.RINGER, ringerAction.getChoice() + 1));
                     break;
                 case TORCH:
+                    if (torchAction == null) {
+                        requestUpdate();
+                        break;
+                    }
+
                     requestAction(new ToggleAction(Actions.TORCH, !torchAction.isEnabled()));
                     break;
             }
@@ -259,11 +284,13 @@ public class DashboardTileProviderService extends TileProviderService
 
     @Override
     public void onMessageReceived(@NonNull final MessageEvent messageEvent) {
+        final byte[] data = messageEvent.getData();
+        if (data == null) return;
+
         AsyncTask.run(new Runnable() {
             @Override
             public void run() {
                 if (messageEvent.getPath().contains(WearableHelper.WifiPath)) {
-                    byte[] data = messageEvent.getData();
                     int wifiStatus = data[0];
                     boolean enabled = false;
                     switch (wifiStatus) {
@@ -280,7 +307,6 @@ public class DashboardTileProviderService extends TileProviderService
 
                     wifiAction = new ToggleAction(Actions.BLUETOOTH, enabled);
                 } else if (messageEvent.getPath().contains(WearableHelper.BluetoothPath)) {
-                    byte[] data = messageEvent.getData();
                     int bt_status = data[0];
                     boolean enabled = false;
 
@@ -297,11 +323,9 @@ public class DashboardTileProviderService extends TileProviderService
 
                     btAction = new ToggleAction(Actions.BLUETOOTH, enabled);
                 } else if (messageEvent.getPath().equals(WearableHelper.BatteryPath)) {
-                    byte[] data = messageEvent.getData();
                     String jsonData = bytesToString(data);
                     battStatus = JSONParser.deserializer(jsonData, BatteryStatus.class);
                 } else if (messageEvent.getPath().equals(WearableHelper.ActionsPath)) {
-                    byte[] data = messageEvent.getData();
                     String jsonData = bytesToString(data);
                     final Action action = JSONParser.deserializer(jsonData, Action.class);
                     switch (action.getAction()) {

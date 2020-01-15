@@ -254,7 +254,18 @@ public abstract class WearableListenerActivity extends WearableActivity implemen
                 if (mPhoneNodeWithApp == null) {
                     mConnectionStatus = WearConnectionStatus.DISCONNECTED;
                 } else {
-                    mConnectionStatus = WearConnectionStatus.CONNECTED;
+                    if (mPhoneNodeWithApp.isNearby()) {
+                        mConnectionStatus = WearConnectionStatus.CONNECTED;
+                    } else {
+                        try {
+                            sendPing(mPhoneNodeWithApp.getId());
+                            mConnectionStatus = WearConnectionStatus.CONNECTED;
+                        } catch (ApiException e) {
+                            if (e.getStatusCode() == WearableStatusCodes.TARGET_NODE_NOT_CONNECTED) {
+                                mConnectionStatus = WearConnectionStatus.DISCONNECTED;
+                            }
+                        }
+                    }
                 }
 
                 LocalBroadcastManager.getInstance(WearableListenerActivity.this)
@@ -288,7 +299,18 @@ public abstract class WearableListenerActivity extends WearableActivity implemen
         if (mPhoneNodeWithApp == null) {
             mConnectionStatus = WearConnectionStatus.DISCONNECTED;
         } else {
-            mConnectionStatus = WearConnectionStatus.CONNECTED;
+            if (mPhoneNodeWithApp.isNearby()) {
+                mConnectionStatus = WearConnectionStatus.CONNECTED;
+            } else {
+                try {
+                    sendPing(mPhoneNodeWithApp.getId());
+                    mConnectionStatus = WearConnectionStatus.CONNECTED;
+                } catch (ApiException e) {
+                    if (e.getStatusCode() == WearableStatusCodes.TARGET_NODE_NOT_CONNECTED) {
+                        mConnectionStatus = WearConnectionStatus.DISCONNECTED;
+                    }
+                }
+            }
         }
     }
 
@@ -370,6 +392,19 @@ public abstract class WearableListenerActivity extends WearableActivity implemen
                 }
             }
 
+            Logger.writeLine(Log.ERROR, ex);
+        } catch (Exception e) {
+            Logger.writeLine(Log.ERROR, e);
+        }
+    }
+
+    private void sendPing(String nodeID) throws ApiException {
+        try {
+            Tasks.await(Wearable.getMessageClient(this).sendMessage(nodeID, WearableHelper.PingPath, null));
+        } catch (ExecutionException ex) {
+            if (ex.getCause() instanceof ApiException) {
+                throw (ApiException) ex.getCause();
+            }
             Logger.writeLine(Log.ERROR, ex);
         } catch (Exception e) {
             Logger.writeLine(Log.ERROR, e);
