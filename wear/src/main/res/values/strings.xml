@@ -36,6 +36,7 @@
     <string name="title_launchmediacontrols">Launch Media Controls</string>
     <string name="title_autolaunchmediactrls">Autolaunch media controls</string>
     <string name="action_failed_playmusic">Failed to play music. Try again.</string>
+    <string name="error_nomusicplayers">Unable to find any music players</string>
 
     <string name="shortcut_label_playmusic">Play Music on Phone</string>
 

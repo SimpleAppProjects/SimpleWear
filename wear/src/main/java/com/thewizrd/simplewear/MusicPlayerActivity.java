@@ -13,6 +13,7 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.Switch;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.core.util.Pair;
@@ -63,6 +64,7 @@ public class MusicPlayerActivity extends WearableListenerActivity implements Dat
     private ProgressBar mProgressBar;
     private WearableDrawerView mDrawerView;
     private CountDownTimer timer;
+    private TextView mNoPlayerTextView;
 
     @Override
     protected BroadcastReceiver getBroadcastReceiver() {
@@ -120,6 +122,7 @@ public class MusicPlayerActivity extends WearableListenerActivity implements Dat
         mDrawerView = findViewById(R.id.bottom_action_drawer);
         mMediaCtrlIcon = findViewById(R.id.launch_mediacontrols_icon);
         mMediaCtrlBtn = findViewById(R.id.launch_mediacontrols_ctrl);
+        mNoPlayerTextView = findViewById(R.id.noplayers_messageview);
 
         final Switch mSwitch = findViewById(R.id.autolaunch_pref_switch);
         mSwitch.setChecked(Settings.isAutoLaunchMediaCtrlsEnabled());
@@ -294,6 +297,9 @@ public class MusicPlayerActivity extends WearableListenerActivity implements Dat
             @Override
             public void run() {
                 mAdapter.updateItems(viewModels);
+
+                mNoPlayerTextView.setVisibility(viewModels.size() > 0 ? View.GONE : View.VISIBLE);
+                mRecyclerView.setVisibility(viewModels.size() > 0 ? View.VISIBLE : View.GONE);
             }
         });
     }

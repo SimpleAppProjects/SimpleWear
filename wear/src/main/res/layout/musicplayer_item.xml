@@ -1,5 +1,6 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/player_item"
     android:layout_width="match_parent"
     android:layout_height="wrap_content">
 
@@ -12,7 +13,7 @@
         android:scaleType="fitStart"
         android:src="@drawable/ic_play_circle_filled_white_24dp" />
 
-    <androidx.appcompat.widget.AppCompatTextView
+    <TextView
         android:id="@+id/player_name"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
