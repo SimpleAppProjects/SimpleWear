@@ -49,6 +49,7 @@ import com.thewizrd.shared_resources.utils.JSONParser;
 import com.thewizrd.shared_resources.utils.Logger;
 import com.thewizrd.shared_resources.utils.StringUtils;
 import com.thewizrd.simplewear.App;
+import com.thewizrd.simplewear.BuildConfig;
 import com.thewizrd.simplewear.MainActivity;
 import com.thewizrd.simplewear.R;
 import com.thewizrd.simplewear.helpers.PhoneStatusHelper;
@@ -141,7 +142,7 @@ public class WearableDataListenerService extends WearableListenerService {
 
         mContext = this.getApplicationContext();
 
-        Logger.writeLine(Log.INFO, "%s: onCreate", TAG);
+        Logger.writeLine(Log.DEBUG, "%s: onCreate", TAG);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             initChannel();
@@ -158,7 +159,7 @@ public class WearableDataListenerService extends WearableListenerService {
 
     @Override
     public void onDestroy() {
-        Logger.writeLine(Log.INFO, "%s: onDestroy", TAG);
+        Logger.writeLine(Log.DEBUG, "%s: onDestroy", TAG);
         super.onDestroy();
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
@@ -168,6 +169,7 @@ public class WearableDataListenerService extends WearableListenerService {
     @Override
     public void onRebind(Intent intent) {
         super.onRebind(intent);
+        Logger.writeLine(Log.DEBUG, "%s: onRebind", TAG);
 
         // Background restrictions don't apply to bound services
         // We can remove the notification now
@@ -182,6 +184,7 @@ public class WearableDataListenerService extends WearableListenerService {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
             startForeground(JOB_ID, getForegroundNotification());
 
+        Logger.writeLine(Log.DEBUG, "%s: onUnbind", TAG);
         return super.onUnbind(intent);
     }
 
@@ -406,7 +409,9 @@ public class WearableDataListenerService extends WearableListenerService {
                             });
                         }
 
-                        Logger.writeLine(Log.INFO, "%s: Intent Action: %s", TAG, intent.getAction());
+                        if (BuildConfig.DEBUG)
+                            Logger.writeLine(Log.DEBUG, "%s: Intent Action: %s", TAG, intent.getAction());
+                        stopSelf();
                     }
                     return null;
                 }
