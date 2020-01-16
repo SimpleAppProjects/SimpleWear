@@ -37,4 +37,6 @@
     <string name="title_autolaunchmediactrls">Autolaunch media controls</string>
     <string name="action_failed_playmusic">Failed to play music. Try again.</string>
 
+    <string name="shortcut_label_playmusic">Play Music on Phone</string>
+
 </resources>
