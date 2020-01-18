@@ -26,6 +26,7 @@ public class WearableDataListenerService extends WearableListenerService {
             this.startActivity(startIntent);
         } else if (messageEvent.getPath().equals(WearableHelper.BtDiscoverPath)) {
             this.startActivity(new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE)
+                    .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     .putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 30));
 
             sendMessage(messageEvent.getSourceNodeId(), messageEvent.getPath(), stringToBytes(Build.MODEL));
