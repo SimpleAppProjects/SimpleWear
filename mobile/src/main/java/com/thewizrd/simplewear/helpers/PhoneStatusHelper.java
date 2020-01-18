@@ -17,6 +17,7 @@ import android.net.NetworkCapabilities;
 import android.net.wifi.WifiManager;
 import android.os.BatteryManager;
 import android.os.Build;
+import android.os.PowerManager;
 import android.provider.Settings;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -198,13 +199,18 @@ public class PhoneStatusHelper {
 
         try {
             AudioManager audioMan = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+            PowerManager powerMan = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
+
+            boolean isInteractive = powerMan.isInteractive();
+            int flags = AudioManager.FLAG_PLAY_SOUND;
+            if (isInteractive) flags |= AudioManager.FLAG_SHOW_UI;
 
             switch (direction) {
                 case UP:
-                    audioMan.adjustSuggestedStreamVolume(AudioManager.ADJUST_RAISE, AudioManager.USE_DEFAULT_STREAM_TYPE, AudioManager.FLAG_SHOW_UI);
+                    audioMan.adjustSuggestedStreamVolume(AudioManager.ADJUST_RAISE, AudioManager.USE_DEFAULT_STREAM_TYPE, flags);
                     break;
                 case DOWN:
-                    audioMan.adjustSuggestedStreamVolume(AudioManager.ADJUST_LOWER, AudioManager.USE_DEFAULT_STREAM_TYPE, AudioManager.FLAG_SHOW_UI);
+                    audioMan.adjustSuggestedStreamVolume(AudioManager.ADJUST_LOWER, AudioManager.USE_DEFAULT_STREAM_TYPE, flags);
                     break;
             }
 
