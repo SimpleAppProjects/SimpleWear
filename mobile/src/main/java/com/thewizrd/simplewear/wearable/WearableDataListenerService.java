@@ -287,7 +287,7 @@ public class WearableDataListenerService extends WearableListenerService {
 
                 // Give the system enough time to start the app
                 try {
-                    Thread.sleep(1000);
+                    Thread.sleep(4500);
                 } catch (InterruptedException ignored) {
                 }
 
@@ -315,7 +315,7 @@ public class WearableDataListenerService extends WearableListenerService {
 
                     // Give the system enough time to start the app
                     try {
-                        Thread.sleep(1000);
+                        Thread.sleep(4500);
                     } catch (InterruptedException ignored) {
                     }
 
@@ -592,34 +592,39 @@ public class WearableDataListenerService extends WearableListenerService {
     }
 
     private void sendSupportedMusicPlayers() {
-        List<ResolveInfo> infos = mContext.getPackageManager().queryIntentActivities(
-                new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_APP_MUSIC), PackageManager.GET_RESOLVED_FILTER);
+        List<ResolveInfo> infos = mContext.getPackageManager().queryBroadcastReceivers(
+                new Intent(Intent.ACTION_MEDIA_BUTTON), PackageManager.GET_RESOLVED_FILTER);
 
         PutDataMapRequest mapRequest = PutDataMapRequest.create(WearableHelper.MusicPlayersPath);
         ArrayList<String> supportedPlayers = new ArrayList<>();
 
         for (final ResolveInfo info : infos) {
             ApplicationInfo appInfo = info.activityInfo.applicationInfo;
-            ComponentName activityCmpName = new ComponentName(appInfo.packageName, info.activityInfo.name);
+            Intent launchIntent = mContext.getPackageManager().getLaunchIntentForPackage(appInfo.packageName);
+            ResolveInfo activityInfo = mContext.getPackageManager().resolveActivity(launchIntent, PackageManager.MATCH_DEFAULT_ONLY);
+            ComponentName activityCmpName = new ComponentName(appInfo.packageName, activityInfo.activityInfo.name);
 
-            String key = String.format("%s/%s", appInfo.packageName, info.activityInfo.name);
-            String label = mContext.getPackageManager().getApplicationLabel(appInfo).toString();
+            String key = String.format("%s/%s", appInfo.packageName, activityInfo.activityInfo.name);
 
-            Bitmap iconBmp = null;
-            try {
-                Drawable iconDrwble = mContext.getPackageManager().getActivityIcon(activityCmpName);
-                iconBmp = ImageUtils.bitmapFromDrawable(mContext, iconDrwble);
-            } catch (PackageManager.NameNotFoundException ignored) {
+            if (!supportedPlayers.contains(key)) {
+                String label = mContext.getPackageManager().getApplicationLabel(appInfo).toString();
+
+                Bitmap iconBmp = null;
+                try {
+                    Drawable iconDrwble = mContext.getPackageManager().getActivityIcon(activityCmpName);
+                    iconBmp = ImageUtils.bitmapFromDrawable(mContext, iconDrwble);
+                } catch (PackageManager.NameNotFoundException ignored) {
+                }
+
+                DataMap map = new DataMap();
+                map.putString(WearableHelper.KEY_LABEL, label);
+                map.putString(WearableHelper.KEY_PKGNAME, appInfo.packageName);
+                map.putString(WearableHelper.KEY_ACTIVITYNAME, activityInfo.activityInfo.name);
+                map.putAsset(WearableHelper.KEY_ICON, iconBmp != null ? ImageUtils.createAssetFromBitmap(iconBmp) : null);
+
+                mapRequest.getDataMap().putDataMap(key, map);
+                supportedPlayers.add(key);
             }
-
-            DataMap map = new DataMap();
-            map.putString(WearableHelper.KEY_LABEL, label);
-            map.putString(WearableHelper.KEY_PKGNAME, appInfo.packageName);
-            map.putString(WearableHelper.KEY_ACTIVITYNAME, info.activityInfo.name);
-            map.putAsset(WearableHelper.KEY_ICON, iconBmp != null ? ImageUtils.createAssetFromBitmap(iconBmp) : null);
-
-            mapRequest.getDataMap().putDataMap(key, map);
-            supportedPlayers.add(key);
         }
 
         mapRequest.getDataMap().putStringArrayList(WearableHelper.KEY_SUPPORTEDPLAYERS, supportedPlayers);

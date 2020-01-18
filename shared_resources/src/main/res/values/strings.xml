@@ -29,7 +29,7 @@
     <string name="state_off">Off</string>
     <string name="state_on">On</string>
 
-    <string name="action_musicplayback">Play Music</string>
+    <string name="action_musicplayback">Play Media</string>
     <string name="title_settings">Settings</string>
 
 </resources>
