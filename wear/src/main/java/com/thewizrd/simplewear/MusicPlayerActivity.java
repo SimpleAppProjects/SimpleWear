@@ -300,6 +300,9 @@ public class MusicPlayerActivity extends WearableListenerActivity implements Dat
 
                 mNoPlayerTextView.setVisibility(viewModels.size() > 0 ? View.GONE : View.VISIBLE);
                 mRecyclerView.setVisibility(viewModels.size() > 0 ? View.VISIBLE : View.GONE);
+                if (mRecyclerView.getVisibility() == View.VISIBLE && !mRecyclerView.hasFocus()) {
+                    mRecyclerView.requestFocus();
+                }
             }
         });
     }
