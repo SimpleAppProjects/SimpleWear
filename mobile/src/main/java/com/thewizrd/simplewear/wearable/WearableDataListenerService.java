@@ -352,7 +352,7 @@ public class WearableDataListenerService extends WearableListenerService {
         try {
             AsyncTask.awaitTask(new Callable<Void>() {
                 @Override
-                public Void call() throws Exception {
+                public Void call() {
                     if (intent != null) {
                         if (ACTION_SENDSTATUSUPDATE.equals(intent.getAction())) {
                             // Check if any devices are running and send an update

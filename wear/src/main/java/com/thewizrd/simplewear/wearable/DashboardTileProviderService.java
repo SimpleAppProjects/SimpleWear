@@ -424,7 +424,7 @@ public class DashboardTileProviderService extends TileProviderService
     protected boolean connect() {
         return new AsyncTask<Boolean>().await(new Callable<Boolean>() {
             @Override
-            public Boolean call() throws Exception {
+            public Boolean call() {
                 if (mPhoneNodeWithApp == null)
                     mPhoneNodeWithApp = checkIfPhoneHasApp();
 

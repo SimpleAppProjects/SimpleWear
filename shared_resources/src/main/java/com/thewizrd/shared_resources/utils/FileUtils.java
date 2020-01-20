@@ -24,7 +24,7 @@ public class FileUtils {
     public static String readFile(final File file) {
         return new AsyncTask<String>().await(new Callable<String>() {
             @Override
-            public String call() throws Exception {
+            public String call() {
                 AtomicFile mFile = new AtomicFile(file);
 
                 while (isFileLocked(file)) {

@@ -54,7 +54,7 @@ public class PermissionCheckFragment extends Fragment {
     private static final int SELECT_DEVICE_REQUEST_CODE = 42;
 
     @Override
-    public void onAttach(Context context) {
+    public void onAttach(@NonNull Context context) {
         super.onAttach(context);
         mActivity = (AppCompatActivity) context;
     }

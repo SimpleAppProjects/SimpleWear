@@ -282,7 +282,7 @@ public abstract class WearableListenerActivity extends WearableActivity implemen
 
         new AsyncTask<Void>().await(new Callable<Void>() {
             @Override
-            public Void call() throws Exception {
+            public Void call() {
                 checkConnectionStatus();
 
                 LocalBroadcastManager.getInstance(WearableListenerActivity.this)
@@ -349,7 +349,7 @@ public abstract class WearableListenerActivity extends WearableActivity implemen
     protected boolean connect() {
         return new AsyncTask<Boolean>().await(new Callable<Boolean>() {
             @Override
-            public Boolean call() throws Exception {
+            public Boolean call() {
                 if (mPhoneNodeWithApp == null)
                     mPhoneNodeWithApp = checkIfPhoneHasApp();
 

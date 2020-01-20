@@ -56,7 +56,7 @@ public class ImageUtils {
     public static Bitmap bitmapFromAssetStream(final DataClient client, final Asset asset) {
         return new AsyncTask<Bitmap>().await(new Callable<Bitmap>() {
             @Override
-            public Bitmap call() throws Exception {
+            public Bitmap call() {
                 if (asset == null) {
                     throw new IllegalArgumentException("Asset must be non-null");
                 }
