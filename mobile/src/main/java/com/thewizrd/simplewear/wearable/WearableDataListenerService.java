@@ -601,29 +601,33 @@ public class WearableDataListenerService extends WearableListenerService {
         for (final ResolveInfo info : infos) {
             ApplicationInfo appInfo = info.activityInfo.applicationInfo;
             Intent launchIntent = mContext.getPackageManager().getLaunchIntentForPackage(appInfo.packageName);
-            ResolveInfo activityInfo = mContext.getPackageManager().resolveActivity(launchIntent, PackageManager.MATCH_DEFAULT_ONLY);
-            ComponentName activityCmpName = new ComponentName(appInfo.packageName, activityInfo.activityInfo.name);
+            if (launchIntent != null) {
+                ResolveInfo activityInfo = mContext.getPackageManager().resolveActivity(launchIntent, PackageManager.MATCH_DEFAULT_ONLY);
 
-            String key = String.format("%s/%s", appInfo.packageName, activityInfo.activityInfo.name);
+                if (activityInfo == null) return;
 
-            if (!supportedPlayers.contains(key)) {
-                String label = mContext.getPackageManager().getApplicationLabel(appInfo).toString();
+                ComponentName activityCmpName = new ComponentName(appInfo.packageName, activityInfo.activityInfo.name);
+                String key = String.format("%s/%s", appInfo.packageName, activityInfo.activityInfo.name);
 
-                Bitmap iconBmp = null;
-                try {
-                    Drawable iconDrwble = mContext.getPackageManager().getActivityIcon(activityCmpName);
-                    iconBmp = ImageUtils.bitmapFromDrawable(mContext, iconDrwble);
-                } catch (PackageManager.NameNotFoundException ignored) {
+                if (!supportedPlayers.contains(key)) {
+                    String label = mContext.getPackageManager().getApplicationLabel(appInfo).toString();
+
+                    Bitmap iconBmp = null;
+                    try {
+                        Drawable iconDrwble = mContext.getPackageManager().getActivityIcon(activityCmpName);
+                        iconBmp = ImageUtils.bitmapFromDrawable(mContext, iconDrwble);
+                    } catch (PackageManager.NameNotFoundException ignored) {
+                    }
+
+                    DataMap map = new DataMap();
+                    map.putString(WearableHelper.KEY_LABEL, label);
+                    map.putString(WearableHelper.KEY_PKGNAME, appInfo.packageName);
+                    map.putString(WearableHelper.KEY_ACTIVITYNAME, activityInfo.activityInfo.name);
+                    map.putAsset(WearableHelper.KEY_ICON, iconBmp != null ? ImageUtils.createAssetFromBitmap(iconBmp) : null);
+
+                    mapRequest.getDataMap().putDataMap(key, map);
+                    supportedPlayers.add(key);
                 }
-
-                DataMap map = new DataMap();
-                map.putString(WearableHelper.KEY_LABEL, label);
-                map.putString(WearableHelper.KEY_PKGNAME, appInfo.packageName);
-                map.putString(WearableHelper.KEY_ACTIVITYNAME, activityInfo.activityInfo.name);
-                map.putAsset(WearableHelper.KEY_ICON, iconBmp != null ? ImageUtils.createAssetFromBitmap(iconBmp) : null);
-
-                mapRequest.getDataMap().putDataMap(key, map);
-                supportedPlayers.add(key);
             }
         }
 
