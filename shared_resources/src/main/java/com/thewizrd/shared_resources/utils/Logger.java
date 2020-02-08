@@ -10,9 +10,11 @@ public class Logger {
     public static void init(Context context) {
         if (BuildConfig.DEBUG) {
             Timber.plant(new Timber.DebugTree());
+            Timber.plant(new FileLoggingTree(context));
+        } else {
+            cleanupLogs(context);
+            Timber.plant(new CrashlyticsLoggingTree());
         }
-
-        Timber.plant(new FileLoggingTree(context));
     }
 
     public static void shutdown() {
@@ -30,5 +32,14 @@ public class Logger {
 
     public static void writeLine(int priority, Throwable t) {
         Timber.log(priority, t);
+    }
+
+    private static void cleanupLogs(final Context context) {
+        AsyncTask.run(new Runnable() {
+            @Override
+            public void run() {
+                FileUtils.deleteDirectory(context.getExternalFilesDir(null) + "/logs");
+            }
+        });
     }
 }

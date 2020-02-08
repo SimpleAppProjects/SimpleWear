@@ -20,7 +20,7 @@ import java.util.Locale;
 
 import timber.log.Timber;
 
-public class FileLoggingTree extends Timber.DebugTree {
+public class FileLoggingTree extends Timber.Tree {
 
     private static final String TAG = FileLoggingTree.class.getSimpleName();
     private static boolean ranCleanup = false;

@@ -117,6 +117,36 @@ public class FileUtils {
         });
     }
 
+    public static boolean deleteDirectory(final String path) {
+        return new AsyncTask<Boolean>().await(new Callable<Boolean>() {
+            @Override
+            public Boolean call() {
+                boolean success = false;
+                File directory = new File(path);
+
+                if (directory.exists() && directory.isDirectory()) {
+                    File[] files = directory.listFiles();
+                    if (files != null) {
+                        for (File file : files) {
+                            while (FileUtils.isFileLocked(file)) {
+                                try {
+                                    Thread.sleep(100);
+                                } catch (InterruptedException ignored) {
+                                }
+                            }
+
+                            file.delete();
+                        }
+                    }
+
+                    success = directory.delete();
+                }
+
+                return success;
+            }
+        });
+    }
+
     public static boolean isFileLocked(File file) {
         if (!file.exists())
             return false;
