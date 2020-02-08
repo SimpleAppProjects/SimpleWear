@@ -18,13 +18,14 @@ import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
+import android.os.CountDownTimer;
 import android.os.Parcelable;
 import android.provider.Settings;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -34,6 +35,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
+import com.thewizrd.shared_resources.utils.AsyncTask;
 import com.thewizrd.shared_resources.utils.Logger;
 import com.thewizrd.simplewear.helpers.PhoneStatusHelper;
 import com.thewizrd.simplewear.wearable.WearableDataListenerService;
@@ -41,6 +43,7 @@ import com.thewizrd.simplewear.wearable.WearableDataListenerService;
 import java.util.regex.Pattern;
 
 public class PermissionCheckFragment extends Fragment {
+    private static final String TAG = "PermissionCheckFragment";
 
     private AppCompatActivity mActivity;
 
@@ -48,6 +51,9 @@ public class PermissionCheckFragment extends Fragment {
     private TextView mDevAdminText;
     private TextView mDNDText;
     private TextView mPairPermText;
+
+    private ProgressBar mCompanionProgress;
+    private CountDownTimer timer;
 
     private static final int CAMERA_REQCODE = 0;
     private static final int DEVADMIN_REQCODE = 1;
@@ -107,20 +113,40 @@ public class PermissionCheckFragment extends Fragment {
                 }
             }
         });
-        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
-            view.findViewById(R.id.companion_pair_pref).setOnClickListener(new View.OnClickListener() {
+        View companionPref = view.findViewById(R.id.companion_pair_pref);
+        if (companionPref != null) {
+            mCompanionProgress = view.findViewById(R.id.companion_pair_progress);
+
+            companionPref.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     LocalBroadcastManager.getInstance(mActivity)
                             .registerReceiver(mReceiver, new IntentFilter(WearableDataListenerService.ACTION_GETCONNECTEDNODE));
 
+                    if (timer == null) {
+                        timer = new CountDownTimer(5000, 1000) {
+                            @Override
+                            public void onTick(long millisUntilFinished) {
+                            }
+
+                            @Override
+                            public void onFinish() {
+                                Toast.makeText(mActivity, R.string.message_watchbttimeout, Toast.LENGTH_LONG).show();
+                                mCompanionProgress.setVisibility(View.GONE);
+                                Logger.writeLine(Log.INFO, "%s: BT Request Timeout", TAG);
+                            }
+                        };
+                    }
+                    timer.start();
+                    mCompanionProgress.setVisibility(View.VISIBLE);
+
                     WearableDataListenerService.enqueueWork(mActivity,
                             new Intent(mActivity, WearableDataListenerService.class)
                                     .setAction(WearableDataListenerService.ACTION_REQUESTBTDISCOVERABLE));
+
+                    Logger.writeLine(Log.INFO, "%s: ACTION_REQUESTBTDISCOVERABLE", TAG);
                 }
             });
-        } else {
-            view.findViewById(R.id.companion_pair_pref).setVisibility(View.GONE);
         }
 
         mCAMPermText = view.findViewById(R.id.torch_pref_summary);
@@ -136,6 +162,11 @@ public class PermissionCheckFragment extends Fragment {
         @Override
         public void onReceive(Context context, Intent intent) {
             if (WearableDataListenerService.ACTION_GETCONNECTEDNODE.equals(intent.getAction())) {
+                if (timer != null) timer.cancel();
+                if (mCompanionProgress != null) mCompanionProgress.setVisibility(View.GONE);
+
+                Logger.writeLine(Log.INFO, "%s: node received", TAG);
+
                 pairDevice(intent.getStringExtra(WearableDataListenerService.EXTRA_NODEDEVICENAME));
 
                 LocalBroadcastManager.getInstance(mActivity)
@@ -144,16 +175,16 @@ public class PermissionCheckFragment extends Fragment {
         }
     };
 
-    @TargetApi(29)
-    private void pairDevice(String deviceName) {
-        CompanionDeviceManager deviceManager = (CompanionDeviceManager) mActivity.getSystemService(Context.COMPANION_DEVICE_SERVICE);
+    @TargetApi(Build.VERSION_CODES.Q)
+    private void pairDevice(final String deviceName) {
+        final CompanionDeviceManager deviceManager = (CompanionDeviceManager) mActivity.getSystemService(Context.COMPANION_DEVICE_SERVICE);
 
         for (String assoc : deviceManager.getAssociations()) {
             deviceManager.disassociate(assoc);
         }
         updatePairPermText(false);
 
-        AssociationRequest request = new AssociationRequest.Builder()
+        final AssociationRequest request = new AssociationRequest.Builder()
                 .addDeviceFilter(new BluetoothDeviceFilter.Builder()
                         .setNamePattern(Pattern.compile(deviceName + ".*", Pattern.DOTALL))
                         .build())
@@ -162,22 +193,29 @@ public class PermissionCheckFragment extends Fragment {
 
         Toast.makeText(mActivity, R.string.message_watchbtdiscover, Toast.LENGTH_LONG).show();
 
-        deviceManager.associate(request, new CompanionDeviceManager.Callback() {
+        AsyncTask.run(new Runnable() {
             @Override
-            public void onDeviceFound(IntentSender chooserLauncher) {
-                try {
-                    startIntentSenderForResult(chooserLauncher,
-                            SELECT_DEVICE_REQUEST_CODE, null, 0, 0, 0, null);
-                } catch (IntentSender.SendIntentException e) {
-                    Logger.writeLine(Log.ERROR, e);
-                }
-            }
+            public void run() {
+                Logger.writeLine(Log.INFO, "%s: sending pair request", TAG);
 
-            @Override
-            public void onFailure(CharSequence error) {
-                Logger.writeLine(Log.ERROR, "PermissionCheckFragment: failed to find any devices; " + error);
+                deviceManager.associate(request, new CompanionDeviceManager.Callback() {
+                    @Override
+                    public void onDeviceFound(IntentSender chooserLauncher) {
+                        try {
+                            startIntentSenderForResult(chooserLauncher,
+                                    SELECT_DEVICE_REQUEST_CODE, null, 0, 0, 0, null);
+                        } catch (IntentSender.SendIntentException e) {
+                            Logger.writeLine(Log.ERROR, e);
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(CharSequence error) {
+                        Logger.writeLine(Log.ERROR, "%s: failed to find any devices; " + error, TAG);
+                    }
+                }, null);
             }
-        }, new Handler());
+        }, 5000);
     }
 
     @Override
