@@ -14,12 +14,15 @@ import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 
 import com.thewizrd.shared_resources.utils.AsyncTask;
+import com.thewizrd.shared_resources.utils.FileUtils;
 import com.thewizrd.simplewear.wearable.WearableDataListenerService;
 
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.Callable;
 
@@ -112,5 +115,26 @@ public class ExampleInstrumentedTest {
 
         AudioManager audioManager = appContext.getSystemService(AudioManager.class);
         Assert.assertTrue(audioManager.isMusicActive());
+    }
+
+    @Test
+    public void logCleanupTest() throws IOException {
+        // Context of the app under test.
+        final Context appContext = ApplicationProvider.getApplicationContext();
+
+        String filePath = appContext.getExternalFilesDir(null) + "/logs";
+
+        File directory = new File(filePath);
+
+        if (!directory.exists()) {
+            Assert.assertTrue(directory.mkdir());
+        }
+
+        for (int i = 0; i < 4; i++) {
+            File file = new File(filePath + File.separator + "Log." + i + ".log");
+            Assert.assertTrue(file.createNewFile());
+        }
+
+        Assert.assertTrue(FileUtils.deleteDirectory(filePath));
     }
 }
