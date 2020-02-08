@@ -23,7 +23,7 @@
             android:text="@string/cat_title_permissions"
             android:textAlignment="viewStart"
             android:textAppearance="@style/TextAppearance.MaterialComponents.Body2"
-            android:textColor="@color/colorPrimary" />
+            android:textColor="?attr/colorPrimary" />
 
     </LinearLayout>
 
@@ -61,7 +61,7 @@
     <View
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:background="#50AAAAAA" />
+        android:background="@drawable/abc_list_divider_material" />
 
     <RelativeLayout
         android:id="@+id/deviceadmin_pref"
@@ -97,7 +97,7 @@
     <View
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:background="#50AAAAAA" />
+        android:background="@drawable/abc_list_divider_material" />
 
     <RelativeLayout
         android:id="@+id/dnd_pref"

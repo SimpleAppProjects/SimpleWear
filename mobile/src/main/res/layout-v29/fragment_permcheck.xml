@@ -23,7 +23,7 @@
             android:text="@string/cat_title_permissions"
             android:textAlignment="viewStart"
             android:textAppearance="@style/TextAppearance.MaterialComponents.Body2"
-            android:textColor="@color/colorPrimary" />
+            android:textColor="?attr/colorPrimary" />
 
     </LinearLayout>
 
@@ -61,7 +61,7 @@
     <View
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:background="#50AAAAAA" />
+        android:background="@drawable/abc_list_divider_material" />
 
     <RelativeLayout
         android:id="@+id/deviceadmin_pref"
@@ -97,7 +97,7 @@
     <View
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:background="#50AAAAAA" />
+        android:background="@drawable/abc_list_divider_material" />
 
     <RelativeLayout
         android:id="@+id/dnd_pref"
@@ -133,7 +133,7 @@
     <View
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:background="#50AAAAAA" />
+        android:background="@drawable/abc_list_divider_material" />
 
     <RelativeLayout
         android:id="@+id/companion_pair_pref"
@@ -148,7 +148,6 @@
             android:layout_height="wrap_content"
             android:layout_alignParentStart="true"
             android:layout_alignParentTop="true"
-            android:layout_toStartOf="@id/companion_pair_progress"
             android:ellipsize="marquee"
             android:fadingEdge="horizontal"
             android:singleLine="true"
@@ -162,16 +161,16 @@
             android:layout_height="wrap_content"
             android:layout_below="@+id/companion_pair_title"
             android:layout_alignStart="@+id/companion_pair_title"
-            android:layout_toStartOf="@id/companion_pair_progress"
             android:maxLines="4"
             android:textAppearance="@style/TextAppearance.AppCompat.Small" />
 
         <ProgressBar
             android:id="@+id/companion_pair_progress"
-            android:layout_width="wrap_content"
+            style="@android:style/Widget.Material.ProgressBar.Horizontal"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_alignTop="@id/companion_pair_title"
-            android:layout_alignBottom="@id/companion_pair_summary"
+            android:layout_below="@id/companion_pair_summary"
+            android:layout_alignParentStart="true"
             android:layout_alignParentEnd="true"
             android:indeterminate="true"
             android:visibility="gone"
