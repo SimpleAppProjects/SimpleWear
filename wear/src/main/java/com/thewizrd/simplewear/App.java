@@ -8,6 +8,7 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 
+import com.google.firebase.crashlytics.FirebaseCrashlytics;
 import com.jakewharton.threetenabp.AndroidThreeTen;
 import com.thewizrd.shared_resources.ApplicationLib;
 import com.thewizrd.shared_resources.SimpleLibrary;
@@ -55,6 +56,8 @@ public class App extends Application implements ApplicationLib, Application.Acti
 
         // Start logger
         Logger.init(context);
+        FirebaseCrashlytics.getInstance().setCrashlyticsCollectionEnabled(true);
+        FirebaseCrashlytics.getInstance().sendUnsentReports();
 
         final Thread.UncaughtExceptionHandler oldHandler = Thread.getDefaultUncaughtExceptionHandler();
 

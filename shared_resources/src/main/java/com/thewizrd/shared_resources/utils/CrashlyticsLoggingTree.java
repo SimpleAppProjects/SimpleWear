@@ -2,7 +2,7 @@ package com.thewizrd.shared_resources.utils;
 
 import android.util.Log;
 
-import com.crashlytics.android.Crashlytics;
+import com.google.firebase.crashlytics.FirebaseCrashlytics;
 
 import timber.log.Timber;
 
@@ -12,6 +12,13 @@ public class CrashlyticsLoggingTree extends Timber.Tree {
     private static final String KEY_MESSAGE = "message";
 
     private static final String TAG = CrashlyticsLoggingTree.class.getSimpleName();
+
+    private FirebaseCrashlytics crashlytics;
+
+    public CrashlyticsLoggingTree() {
+        super();
+        crashlytics = FirebaseCrashlytics.getInstance();
+    }
 
     @Override
     protected void log(int priority, String tag, String message, Throwable t) {
@@ -36,14 +43,14 @@ public class CrashlyticsLoggingTree extends Timber.Tree {
                     break;
             }
 
-            Crashlytics.setString(KEY_PRIORITY, priorityTAG);
-            Crashlytics.setString(KEY_TAG, tag);
-            Crashlytics.setString(KEY_MESSAGE, message);
+            crashlytics.setCustomKey(KEY_PRIORITY, priorityTAG);
+            crashlytics.setCustomKey(KEY_TAG, tag);
+            crashlytics.setCustomKey(KEY_MESSAGE, message);
 
             if (t != null) {
-                Crashlytics.logException(t);
+                crashlytics.recordException(t);
             } else {
-                Crashlytics.log(priority, tag, message);
+                crashlytics.log(String.format("%s/%s: %s", priority, tag, message));
             }
         } catch (Exception e) {
             Log.e(TAG, "Error while logging into file : " + e);
