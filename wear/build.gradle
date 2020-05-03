@@ -4,6 +4,7 @@ apply plugin: 'com.google.firebase.crashlytics'
 
 android {
     compileSdkVersion 29
+
     defaultConfig {
         applicationId "com.thewizrd.simplewear"
         minSdkVersion 23
@@ -14,6 +15,7 @@ android {
 
         vectorDrawables.useSupportLibrary = true
     }
+
     buildTypes {
         debug {
             applicationIdSuffix ".debug"
@@ -24,14 +26,24 @@ android {
         release {
             minifyEnabled true
             shrinkResources true
+            crunchPngs true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
+    }
+
+    dataBinding {
+        enabled = true
+    }
+
+    viewBinding {
+        enabled = true
     }
 }
 
 dependencies {
     implementation project(":shared_resources")
     implementation project(":unofficialtileapi")
+    implementation project(":circularseekbar")
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
     implementation 'com.google.firebase:firebase-analytics:17.4.0'

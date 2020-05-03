@@ -76,6 +76,7 @@ public class ActionItemAdapter extends RecyclerView.Adapter {
                     break;
                 case LOCKSCREEN:
                 case MUSICPLAYBACK:
+                case SLEEPTIMER:
                     mDataset.add(new ActionButtonViewModel(new NormalAction(action)));
                     break;
                 case VOLUME:
@@ -188,6 +189,7 @@ public class ActionItemAdapter extends RecyclerView.Adapter {
                 break;
             case LOCKSCREEN:
             case MUSICPLAYBACK:
+            case SLEEPTIMER:
                 type = ActionItemType.ACTION;
                 break;
             case VOLUME:

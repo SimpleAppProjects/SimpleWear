@@ -8,12 +8,12 @@ import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.support.wearable.activity.WearableActivity;
 import android.support.wearable.phone.PhoneDeviceType;
 import android.util.Log;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.google.android.gms.common.api.ApiException;
@@ -43,7 +43,7 @@ import java.util.concurrent.ExecutionException;
 import static com.thewizrd.shared_resources.utils.SerializationUtils.bytesToString;
 import static com.thewizrd.shared_resources.utils.SerializationUtils.stringToBytes;
 
-public abstract class WearableListenerActivity extends WearableActivity implements MessageClient.OnMessageReceivedListener, CapabilityClient.OnCapabilityChangedListener {
+public abstract class WearableListenerActivity extends AppCompatActivity implements MessageClient.OnMessageReceivedListener, CapabilityClient.OnCapabilityChangedListener {
     protected volatile Node mPhoneNodeWithApp;
     protected WearConnectionStatus mConnectionStatus = WearConnectionStatus.DISCONNECTED;
     protected Handler mMainHandler;

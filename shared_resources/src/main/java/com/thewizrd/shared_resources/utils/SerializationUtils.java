@@ -1,5 +1,8 @@
 package com.thewizrd.shared_resources.utils;
 
+import android.os.Build;
+
+import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 
 public class SerializationUtils {
@@ -17,5 +20,33 @@ public class SerializationUtils {
 
     public static String bytesToString(byte[] data) {
         return new String(data);
+    }
+
+    public static byte[] intToBytes(int value) {
+        ByteBuffer buf;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            buf = ByteBuffer.allocate(Integer.BYTES);
+        } else {
+            buf = ByteBuffer.allocate(4);
+        }
+        return buf.putInt(value).array();
+    }
+
+    public static int bytesToInt(byte[] data) {
+        return ByteBuffer.wrap(data).getInt();
+    }
+
+    public static byte[] longToBytes(long value) {
+        ByteBuffer buf;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            buf = ByteBuffer.allocate(Long.BYTES);
+        } else {
+            buf = ByteBuffer.allocate(8);
+        }
+        return buf.putLong(value).array();
+    }
+
+    public static long bytesToLong(byte[] data) {
+        return ByteBuffer.wrap(data).getLong();
     }
 }

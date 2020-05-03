@@ -23,6 +23,7 @@ import com.thewizrd.simplewear.MusicPlayerActivity;
 import com.thewizrd.simplewear.R;
 import com.thewizrd.simplewear.ValueActionActivity;
 import com.thewizrd.simplewear.WearableListenerActivity;
+import com.thewizrd.simplewear.sleeptimer.SleepTimerActivity;
 
 public class ActionButtonViewModel {
     private Action action;
@@ -105,6 +106,9 @@ public class ActionButtonViewModel {
             activityContext.startActivityForResult(intent, -1);
         } else if (action instanceof NormalAction && action.getAction() == Actions.MUSICPLAYBACK) {
             Intent intent = new Intent(activityContext, MusicPlayerActivity.class);
+            activityContext.startActivityForResult(intent, -1);
+        } else if (action instanceof NormalAction && action.getAction() == Actions.SLEEPTIMER) {
+            Intent intent = new Intent(activityContext, SleepTimerActivity.class);
             activityContext.startActivityForResult(intent, -1);
         } else {
             if (action instanceof ToggleAction) {
@@ -221,6 +225,11 @@ public class ActionButtonViewModel {
             case MUSICPLAYBACK:
                 mDrawableID = R.drawable.ic_play_circle_filled_white_24dp;
                 mActionLabel = context.getString(R.string.action_musicplayback);
+                mStateLabel = null;
+                break;
+            case SLEEPTIMER:
+                mDrawableID = R.drawable.ic_sleep_timer;
+                mActionLabel = context.getString(R.string.action_sleeptimer);
                 mStateLabel = null;
                 break;
         }

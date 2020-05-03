@@ -12,7 +12,8 @@ public enum Actions {
     VOLUME(6),
     DONOTDISTURB(7),
     RINGER(8),
-    MUSICPLAYBACK(9);
+    MUSICPLAYBACK(9),
+    SLEEPTIMER(10);
 
     private final int value;
 

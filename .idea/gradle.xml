@@ -11,6 +11,7 @@
         <option name="modules">
           <set>
             <option value="$PROJECT_DIR$" />
+            <option value="$PROJECT_DIR$/circularseekbar" />
             <option value="$PROJECT_DIR$/mobile" />
             <option value="$PROJECT_DIR$/shared_resources" />
             <option value="$PROJECT_DIR$/unofficialtileapi" />

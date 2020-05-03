@@ -2,11 +2,21 @@ package com.thewizrd.simplewear.controls;
 
 import android.graphics.Bitmap;
 
+import java.util.Locale;
+
 public class MusicPlayerViewModel {
     private Bitmap mBitmapIcon;
     private String mAppLabel;
     private String mPackageName;
     private String mActivityName;
+
+    public String getKey() {
+        if (mPackageName != null && mActivityName != null) {
+            return String.format(Locale.ROOT, "%s/%s", mPackageName, mActivityName);
+        }
+
+        return null;
+    }
 
     public Bitmap getBitmapIcon() {
         return mBitmapIcon;

@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/SimpleWear.iml" filepath="$PROJECT_DIR$/SimpleWear.iml" group="SimpleWear" />
+      <module fileurl="file://$PROJECT_DIR$/circularseekbar/circularseekbar.iml" filepath="$PROJECT_DIR$/circularseekbar/circularseekbar.iml" group="SimpleWear/circularseekbar" />
       <module fileurl="file://$PROJECT_DIR$/mobile/mobile.iml" filepath="$PROJECT_DIR$/mobile/mobile.iml" group="SimpleWear/mobile" />
       <module fileurl="file://$PROJECT_DIR$/shared_resources/shared_resources.iml" filepath="$PROJECT_DIR$/shared_resources/shared_resources.iml" group="SimpleWear/shared_resources" />
       <module fileurl="file://$PROJECT_DIR$/unofficialtileapi/unofficialtileapi.iml" filepath="$PROJECT_DIR$/unofficialtileapi/unofficialtileapi.iml" group="SimpleWear/unofficialtileapi" />

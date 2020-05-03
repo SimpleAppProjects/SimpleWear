@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.wear.widget.drawer.WearableDrawerLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".sleeptimer.TimerStartFragment"
+    tools:deviceIds="wear">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/main_layout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="16dp">
+
+        <com.devadvance.circularseekbar.CircularSeekBar
+            android:id="@+id/timerProgressScroller"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_gravity="center"
+            android:focusable="true"
+            android:focusableInTouchMode="true"
+            app:circle_color="?attr/colorOnBackground"
+            app:circle_progress_color="?attr/colorAccent"
+            app:circle_stroke_width="4dp"
+            app:pointer_halo_width="0dp"
+            app:end_angle="45"
+            app:lock_enabled="true"
+            app:move_outside_circle="true"
+            app:pointer_color="?attr/colorAccent"
+            app:pointer_halo_color="?attr/colorAccent"
+            app:pointer_halo_color_ontouch="?attr/colorAccent"
+            app:start_angle="135"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            tools:max="120"
+            tools:progress="5" />
+
+        <androidx.appcompat.widget.AppCompatTextView
+            android:id="@+id/progress_text"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="36dp"
+            android:gravity="center"
+            android:maxLines="1"
+            android:textAlignment="center"
+            android:textColor="?attr/colorAccent"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            app:autoSizeMinTextSize="16sp"
+            app:autoSizeMaxTextSize="36sp"
+            app:autoSizeTextType="uniform"
+            app:autoSizeStepGranularity="2sp"
+            app:layout_constraintVertical_chainStyle="spread"
+            app:layout_constraintVertical_bias="0.0"
+            app:layout_constraintBottom_toTopOf="@id/minus_5minbtn"
+            app:layout_constraintEnd_toEndOf="@id/right_guide"
+            app:layout_constraintStart_toStartOf="@id/left_guide"
+            app:layout_constraintTop_toTopOf="@id/timerProgressScroller"
+            tools:text="00:00:00" />
+
+        <Button
+            android:id="@+id/minus_5minbtn"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:gravity="center"
+            android:text="-5M"
+            android:textColor="?attr/colorAccent"
+            android:textSize="12sp"
+            app:layout_constraintBottom_toTopOf="@id/plus_1minbtn"
+            app:layout_constraintTop_toBottomOf="@id/progress_text"
+            app:layout_constraintEnd_toStartOf="@id/minus_1minbtn"
+            app:layout_constraintStart_toStartOf="@id/left_guide" />
+
+        <Button
+            android:id="@+id/minus_1minbtn"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:gravity="center"
+            android:text="-1M"
+            android:textColor="?attr/colorAccent"
+            android:textSize="12sp"
+            app:layout_constraintBottom_toBottomOf="@id/minus_5minbtn"
+            app:layout_constraintTop_toTopOf="@id/minus_5minbtn"
+            app:layout_constraintStart_toEndOf="@id/minus_5minbtn"
+            app:layout_constraintEnd_toEndOf="@id/right_guide" />
+
+        <Button
+            android:id="@+id/plus_1minbtn"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:gravity="center"
+            android:text="+1M"
+            android:textColor="?attr/colorAccent"
+            android:textSize="12sp"
+            app:layout_goneMarginBottom="48dp"
+            app:layout_constraintBottom_toTopOf="@id/fab"
+            app:layout_constraintTop_toBottomOf="@id/minus_5minbtn"
+            app:layout_constraintEnd_toStartOf="@id/plus_5minbtn"
+            app:layout_constraintStart_toStartOf="@id/left_guide" />
+
+        <Button
+            android:id="@+id/plus_5minbtn"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:gravity="center"
+            android:text="+5M"
+            android:textColor="?attr/colorAccent"
+            android:textSize="12sp"
+            app:layout_constraintBottom_toBottomOf="@id/plus_1minbtn"
+            app:layout_constraintTop_toTopOf="@id/plus_1minbtn"
+            app:layout_constraintStart_toEndOf="@id/plus_1minbtn"
+            app:layout_constraintEnd_toEndOf="@id/right_guide" />
+
+        <androidx.constraintlayout.widget.Guideline
+            android:id="@+id/left_guide"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            app:layout_constraintGuide_percent="0.2" />
+
+        <androidx.constraintlayout.widget.Guideline
+            android:id="@+id/right_guide"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            app:layout_constraintGuide_percent="0.8" />
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/fab"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp"
+            app:fabCustomSize="36dp"
+            app:srcCompat="@drawable/ic_play_arrow_white_24dp"
+            app:layout_constraintVertical_bias="0.9"
+            app:layout_constraintBottom_toBottomOf="@id/timerProgressScroller"
+            app:layout_constraintEnd_toEndOf="@id/timerProgressScroller"
+            app:layout_constraintStart_toStartOf="@id/timerProgressScroller"
+            app:layout_constraintTop_toBottomOf="@id/plus_1minbtn" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <FrameLayout
+        android:id="@+id/bottom_action_drawer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:background="@color/buttonDisabled">
+
+        <ImageView
+            android:id="@+id/audioplayer_icon"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_gravity="center_horizontal"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"
+            android:src="@drawable/ic_music_note_white_24dp" />
+
+    </FrameLayout>
+
+    <androidx.wear.widget.SwipeDismissFrameLayout
+        android:id="@+id/fragment_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@android:color/black"
+        android:visibility="gone" />
+
+</androidx.wear.widget.drawer.WearableDrawerLayout>

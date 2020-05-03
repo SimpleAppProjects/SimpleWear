@@ -16,7 +16,7 @@ public class WearableHelper {
     public static final String CAPABILITY_WEAR_APP = "com.thewizrd.simplewear_wear_app";
 
     // Link to Play Store listing
-    public static final String PLAY_STORE_APP_URI = "market://details?id=com.thewizrd.simplewear";
+    private static final String PLAY_STORE_APP_URI = "market://details?id=com.thewizrd.simplewear";
 
     public static Uri getPlayStoreURI() {
         return Uri.parse(PLAY_STORE_APP_URI);
@@ -33,6 +33,7 @@ public class WearableHelper {
     public static final String UpdatePath = "/update/all";
     public static final String MusicPlayersPath = "/music-players";
     public static final String PlayCommandPath = "/music/play";
+    public static final String OpenMusicPlayerPath = "/music/start-activity";
     public static final String BtDiscoverPath = "/bluetooth/discoverable";
     public static final String PingPath = "/ping";
 

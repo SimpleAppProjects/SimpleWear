@@ -30,6 +30,7 @@
     <string name="state_on">On</string>
 
     <string name="action_musicplayback">Play Media</string>
+    <string name="action_sleeptimer">Sleep Timer</string>
     <string name="title_settings">Settings</string>
 
 </resources>

@@ -12,6 +12,7 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
+    <uses-permission android:name="com.thewizrd.simplesleeptimer.permission.SLEEP_TIMER" />
 
     <uses-feature
         android:name="android.software.companion_device_setup"
@@ -74,6 +75,18 @@
 
             <intent-filter>
                 <action android:name="android.app.action.DEVICE_ADMIN_ENABLED" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
+            android:name="com.thewizrd.simplesleeptimer.SleepTimerBroadcastReceiver"
+            android:enabled="true"
+            android:exported="true"
+            android:permission="com.thewizrd.simplesleeptimer.permission.SLEEP_TIMER">
+            <intent-filter>
+                <action android:name="SimpleSleepTimer.action.START_TIMER" />
+                <action android:name="SimpleSleepTimer.action.CANCEL_TIMER" />
+                <action android:name="SimpleSleepTimer.action.TIME_UPDATED" />
             </intent-filter>
         </receiver>
 
