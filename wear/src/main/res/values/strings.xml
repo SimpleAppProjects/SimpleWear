@@ -43,5 +43,6 @@
     <string name="error_sleeptimer_notinstalled">SleepTimer app not installed.\nPlease install to continue.</string>
     <string name="title_audioplayer">Audio Player</string>
     <string name="prompt_select_audioplayer">Select an audio source to pause</string>
+    <string name="shortcut_label_sleeptimer">Sleep Timer</string>
 
 </resources>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="oval">
+            <solid android:color="@color/colorPrimary" />
+            <size
+                android:height="48dp"
+                android:width="48dp" />
+        </shape>
+    </item>
+    <item android:drawable="@drawable/ic_sleep_timer_logo" />
+</layer-list>
