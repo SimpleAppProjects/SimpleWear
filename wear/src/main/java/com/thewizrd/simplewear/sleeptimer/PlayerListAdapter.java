@@ -5,7 +5,6 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
-import androidx.core.view.ViewCompat;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.lifecycle.ViewModelStoreOwner;
 import androidx.recyclerview.widget.AsyncListDiffer;
@@ -117,8 +116,6 @@ public class PlayerListAdapter extends RecyclerView.Adapter<PlayerListAdapter.Vi
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         LayoutInflater inflater = LayoutInflater.from(parent.getContext());
         View view = inflater.inflate(R.layout.musicplayer_item_sleeptimer, parent, false);
-        int innerPadding = parent.getContext().getResources().getDimensionPixelSize(R.dimen.inner_layout_padding);
-        ViewCompat.setPaddingRelative(view, innerPadding, 0, innerPadding, 0);
         return new ViewHolder(view);
     }
 

@@ -1,6 +1,8 @@
 package com.thewizrd.simplewear.sleeptimer;
 
+import android.content.Context;
 import android.content.Intent;
+import android.content.res.Resources;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.util.Log;
@@ -10,6 +12,8 @@ import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.view.ViewCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
@@ -33,6 +37,7 @@ import com.thewizrd.shared_resources.sleeptimer.SleepTimerHelper;
 import com.thewizrd.shared_resources.utils.AsyncTask;
 import com.thewizrd.shared_resources.utils.ImageUtils;
 import com.thewizrd.shared_resources.utils.Logger;
+import com.thewizrd.simplewear.R;
 import com.thewizrd.simplewear.controls.MusicPlayerViewModel;
 import com.thewizrd.simplewear.databinding.FragmentMusicplayersSleepBinding;
 
@@ -43,12 +48,20 @@ import java.util.concurrent.ExecutionException;
 
 public class MusicPlayersFragment extends Fragment
         implements DataClient.OnDataChangedListener {
+    private AppCompatActivity mActivity;
+
     private FragmentMusicplayersSleepBinding binding;
     private PlayerListAdapter mAdapter;
     private CountDownTimer timer;
     private RecyclerOnClickListenerInterface onClickListener;
 
     private SelectedPlayerViewModel selectedPlayer;
+
+    @Override
+    public void onAttach(@NonNull Context context) {
+        super.onAttach(context);
+        mActivity = (AppCompatActivity) context;
+    }
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -67,7 +80,7 @@ public class MusicPlayersFragment extends Fragment
                     @Override
                     public void run() {
                         try {
-                            DataItemBuffer buff = Tasks.await(Wearable.getDataClient(requireContext())
+                            DataItemBuffer buff = Tasks.await(Wearable.getDataClient(mActivity)
                                     .getDataItems(WearableHelper.getWearDataUri("*", WearableHelper.MusicPlayersPath)));
                             for (int i = 0; i < buff.getCount(); i++) {
                                 DataItem item = buff.get(i);
@@ -86,14 +99,14 @@ public class MusicPlayersFragment extends Fragment
             }
         };
 
-        selectedPlayer = new ViewModelProvider(requireActivity(), new ViewModelProvider.NewInstanceFactory())
+        selectedPlayer = new ViewModelProvider(mActivity, new ViewModelProvider.NewInstanceFactory())
                 .get(SelectedPlayerViewModel.class);
         selectedPlayer.getKey().observe(this, new Observer<String>() {
             @Override
             public void onChanged(String s) {
                 PutDataMapRequest mapRequest = PutDataMapRequest.create(SleepTimerHelper.SleepTimerAudioPlayerPath);
                 mapRequest.getDataMap().putString(SleepTimerHelper.KEY_SELECTEDPLAYER, s);
-                Wearable.getDataClient(requireActivity()).putDataItem(
+                Wearable.getDataClient(mActivity).putDataItem(
                         mapRequest.asPutDataRequest()).addOnFailureListener(
                         new OnFailureListener() {
                             @Override
@@ -113,9 +126,40 @@ public class MusicPlayersFragment extends Fragment
 
         binding.playerList.setHasFixedSize(true);
         binding.playerList.setEdgeItemsCenteringEnabled(false);
-        binding.playerList.setLayoutManager(new WearableLinearLayoutManager(requireContext(), null));
+        binding.playerList.setLayoutManager(new WearableLinearLayoutManager(mActivity, null));
+        binding.playerList.addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
+            /* BoxInsetLayout impl */
+            private static final float FACTOR = 0.146447f; //(1 - sqrt(2)/2)/2
+            private final boolean mIsRound = getResources().getConfiguration().isScreenRound();
+            private final int paddingTop = binding.playerList.getPaddingTop();
+            private final int paddingBottom = binding.playerList.getPaddingBottom();
+            private final int paddingStart = ViewCompat.getPaddingStart(binding.playerList);
+            private final int paddingEnd = ViewCompat.getPaddingEnd(binding.playerList);
 
-        mAdapter = new PlayerListAdapter(requireActivity());
+            @Override
+            public void onLayoutChange(View v, int left, int top, int right, int bottom,
+                                       int oldLeft, int oldTop, int oldRight, int oldBottom) {
+                binding.playerList.removeOnLayoutChangeListener(this);
+
+                int verticalPadding = getResources().getDimensionPixelSize(R.dimen.inner_frame_layout_padding);
+
+                int mScreenHeight = Resources.getSystem().getDisplayMetrics().heightPixels;
+                int mScreenWidth = Resources.getSystem().getDisplayMetrics().widthPixels;
+
+                int rightEdge = Math.min(binding.playerList.getMeasuredWidth(), mScreenWidth);
+                int bottomEdge = Math.min(binding.playerList.getMeasuredHeight(), mScreenHeight);
+                int verticalInset = (int) (FACTOR * Math.max(rightEdge, bottomEdge));
+
+                binding.playerList.setPaddingRelative(
+                        paddingStart,
+                        (mIsRound ? verticalInset : verticalPadding),
+                        paddingEnd,
+                        paddingBottom + (mIsRound ? verticalInset : verticalPadding)
+                );
+            }
+        });
+
+        mAdapter = new PlayerListAdapter(mActivity);
         mAdapter.setOnClickListener(new RecyclerOnClickListenerInterface() {
             @Override
             public void onClick(View view, int position) {
@@ -157,9 +201,9 @@ public class MusicPlayersFragment extends Fragment
     @Override
     public void onResume() {
         super.onResume();
-        Wearable.getDataClient(requireContext()).addListener(this);
+        Wearable.getDataClient(mActivity).addListener(this);
 
-        LocalBroadcastManager.getInstance(requireContext())
+        LocalBroadcastManager.getInstance(mActivity)
                 .sendBroadcast(new Intent(WearableHelper.MusicPlayersPath));
         timer.start();
         getSelectedPlayerData();
@@ -171,7 +215,7 @@ public class MusicPlayersFragment extends Fragment
             public void run() {
                 String prefKey = null;
                 try {
-                    DataItemBuffer buff = Tasks.await(Wearable.getDataClient(requireContext())
+                    DataItemBuffer buff = Tasks.await(Wearable.getDataClient(mActivity)
                             .getDataItems(WearableHelper.getWearDataUri("*", SleepTimerHelper.SleepTimerAudioPlayerPath)));
                     for (int i = 0; i < buff.getCount(); i++) {
                         DataItem item = buff.get(i);
@@ -194,12 +238,21 @@ public class MusicPlayersFragment extends Fragment
     @Override
     public void onPause() {
         super.onPause();
-        Wearable.getDataClient(requireContext()).removeListener(this);
+        timer.cancel();
+        Wearable.getDataClient(mActivity).removeListener(this);
     }
 
     @Override
     public void onDestroy() {
+        timer.cancel();
         super.onDestroy();
+        mActivity = null;
+    }
+
+    @Override
+    public void onDetach() {
+        super.onDetach();
+        mActivity = null;
     }
 
     @Override
@@ -232,7 +285,7 @@ public class MusicPlayersFragment extends Fragment
             model.setPackageName(map.getString(WearableHelper.KEY_PKGNAME));
             model.setActivityName(map.getString(WearableHelper.KEY_ACTIVITYNAME));
             model.setBitmapIcon(ImageUtils.bitmapFromAssetStream(
-                    Wearable.getDataClient(requireContext()), map.getAsset(WearableHelper.KEY_ICON)));
+                    Wearable.getDataClient(mActivity), map.getAsset(WearableHelper.KEY_ICON)));
 
             viewModels.add(model);
 
