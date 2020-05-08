@@ -158,6 +158,7 @@ public class MusicPlayersFragment extends Fragment
                 );
             }
         });
+        binding.playerList.requestFocus();
 
         mAdapter = new PlayerListAdapter(mActivity);
         mAdapter.setOnClickListener(new RecyclerOnClickListenerInterface() {
@@ -202,6 +203,8 @@ public class MusicPlayersFragment extends Fragment
     public void onResume() {
         super.onResume();
         Wearable.getDataClient(mActivity).addListener(this);
+
+        binding.playerList.requestFocus();
 
         LocalBroadcastManager.getInstance(mActivity)
                 .sendBroadcast(new Intent(WearableHelper.MusicPlayersPath));

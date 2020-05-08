@@ -172,6 +172,7 @@ public class TimerStartFragment extends Fragment {
                             .commit();
                     musicPlayersFragment = null;
                 }
+                binding.timerProgressScroller.requestFocus();
             }
         });
 
@@ -198,6 +199,7 @@ public class TimerStartFragment extends Fragment {
                                 .commit();
                         musicPlayersFragment = null;
                     }
+                    binding.timerProgressScroller.requestFocus();
                 }
             });
             binding.fragmentContainer.setVisibility(View.VISIBLE);
@@ -212,6 +214,7 @@ public class TimerStartFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
+        binding.timerProgressScroller.requestFocus();
     }
 
     @Override

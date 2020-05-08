@@ -27,6 +27,7 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import androidx.wear.widget.WearableLinearLayoutManager;
 import androidx.wear.widget.WearableRecyclerView;
+import androidx.wear.widget.drawer.WearableDrawerLayout;
 import androidx.wear.widget.drawer.WearableDrawerView;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -54,6 +55,7 @@ public class DashboardActivity extends WearableListenerActivity implements Share
     private IntentFilter intentFilter;
     private WearableRecyclerView mActionsList;
     private ActionItemAdapter mAdapter;
+    private WearableDrawerLayout mDrawerLayout;
     private SwipeRefreshLayout mSwipeLayout;
     private NestedScrollView mScrollView;
     private WearableDrawerView mDrawerView;
@@ -300,6 +302,21 @@ public class DashboardActivity extends WearableListenerActivity implements Share
         mActionsList = findViewById(R.id.actions_list);
         mProgressBar = findViewById(R.id.progressBar);
 
+        mDrawerLayout = findViewById(R.id.drawer_layout);
+        mDrawerLayout.setDrawerStateCallback(new WearableDrawerLayout.DrawerStateCallback() {
+            @Override
+            public void onDrawerOpened(WearableDrawerLayout layout, WearableDrawerView drawerView) {
+                super.onDrawerOpened(layout, drawerView);
+                drawerView.requestFocus();
+            }
+
+            @Override
+            public void onDrawerClosed(WearableDrawerLayout layout, WearableDrawerView drawerView) {
+                super.onDrawerClosed(layout, drawerView);
+                drawerView.clearFocus();
+            }
+        });
+
         mDrawerView = findViewById(R.id.bottom_action_drawer);
         mDrawerView.setIsAutoPeekEnabled(true);
         mDrawerView.setPeekOnScrollDownEnabled(true);
@@ -514,6 +531,8 @@ public class DashboardActivity extends WearableListenerActivity implements Share
 
         PreferenceManager.getDefaultSharedPreferences(this)
                 .registerOnSharedPreferenceChangeListener(this);
+
+        mScrollView.requestFocus();
 
         // Update statuses
         mBattStatus.setText(R.string.state_syncing);

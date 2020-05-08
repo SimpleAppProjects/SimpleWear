@@ -19,6 +19,7 @@ import androidx.annotation.NonNull;
 import androidx.core.util.Pair;
 import androidx.wear.widget.WearableLinearLayoutManager;
 import androidx.wear.widget.WearableRecyclerView;
+import androidx.wear.widget.drawer.WearableDrawerLayout;
 import androidx.wear.widget.drawer.WearableDrawerView;
 
 import com.google.android.gms.tasks.Tasks;
@@ -62,6 +63,7 @@ public class MusicPlayerActivity extends WearableListenerActivity implements Dat
     private ImageView mMediaCtrlIcon;
     private View mMediaCtrlBtn;
     private ProgressBar mProgressBar;
+    private WearableDrawerLayout mDrawerLayout;
     private WearableDrawerView mDrawerView;
     private CountDownTimer timer;
     private TextView mNoPlayerTextView;
@@ -117,6 +119,22 @@ public class MusicPlayerActivity extends WearableListenerActivity implements Dat
                 });
             }
         };
+
+        mDrawerLayout = findViewById(R.id.drawer_layout);
+        mDrawerLayout.setDrawerStateCallback(new WearableDrawerLayout.DrawerStateCallback() {
+            @Override
+            public void onDrawerOpened(WearableDrawerLayout layout, WearableDrawerView drawerView) {
+                super.onDrawerOpened(layout, drawerView);
+                drawerView.requestFocus();
+            }
+
+            @Override
+            public void onDrawerClosed(WearableDrawerLayout layout, WearableDrawerView drawerView) {
+                super.onDrawerClosed(layout, drawerView);
+                drawerView.clearFocus();
+                mRecyclerView.requestFocus();
+            }
+        });
 
         mProgressBar = findViewById(R.id.progressBar);
         mDrawerView = findViewById(R.id.bottom_action_drawer);
@@ -318,6 +336,8 @@ public class MusicPlayerActivity extends WearableListenerActivity implements Dat
         super.onResume();
         Wearable.getMessageClient(this).addListener(this);
         Wearable.getDataClient(this).addListener(this);
+
+        mRecyclerView.requestFocus();
 
         final ComponentName mediaCtrlCmpName = new ComponentName("com.google.android.wearable.app",
                 "com.google.android.clockwork.home.media.MediaControlActivity");
