@@ -73,9 +73,9 @@ public class TorchService extends Service {
                         .setContentText(context.getString(R.string.not_torch_turnoff_summary))
                         .setContentIntent(PendingIntent.getBroadcast(context, JOB_ID,
                                 new Intent(context, PhoneBroadcastReceiver.class).setAction(ACTION_END_LIGHT), PendingIntent.FLAG_UPDATE_CURRENT))
-                        .setColor(context.getColor(R.color.colorPrimary))
+                        .setColor(ContextCompat.getColor(context, R.color.colorPrimary))
                         .setOnlyAlertOnce(true)
-                        .setPriority(NotificationManager.IMPORTANCE_LOW);
+                        .setPriority(NotificationCompat.PRIORITY_HIGH);
 
         return mBuilder.build();
     }
