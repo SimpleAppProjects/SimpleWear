@@ -8,15 +8,15 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
-import androidx.wear.widget.SwipeDismissFrameLayout;
 
 import com.devadvance.circularseekbar.CircularSeekBar;
-import com.thewizrd.shared_resources.helpers.RecyclerOnClickListenerInterface;
 import com.thewizrd.shared_resources.sleeptimer.SleepTimerHelper;
 import com.thewizrd.simplewear.R;
 import com.thewizrd.simplewear.controls.SleepTimerViewModel;
@@ -28,7 +28,7 @@ public class TimerStartFragment extends Fragment {
 
     private FragmentSleeptimerStartBinding binding;
     private SleepTimerViewModel viewModel;
-    private MusicPlayersFragment musicPlayersFragment;
+    private OnBackPressedCallback backPressedCallback;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -155,26 +155,27 @@ public class TimerStartFragment extends Fragment {
         binding.bottomActionDrawer.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                getChildFragmentManager().beginTransaction()
-                        .replace(R.id.fragment_container, new MusicPlayersFragment())
-                        .commit();
+                if (getFragmentManager() != null) {
+                    getFragmentManager().beginTransaction()
+                            .add(R.id.fragment_container, new MusicPlayersFragment())
+                            .hide(TimerStartFragment.this)
+                            .addToBackStack("players")
+                            .commit();
+                    backPressedCallback.setEnabled(true);
+                }
             }
         });
 
-        binding.fragmentContainer.addCallback(new SwipeDismissFrameLayout.Callback() {
+        backPressedCallback = new OnBackPressedCallback(false) {
             @Override
-            public void onDismissed(SwipeDismissFrameLayout layout) {
-                super.onDismissed(layout);
-                if (musicPlayersFragment != null) {
-                    binding.fragmentContainer.setVisibility(View.GONE);
-                    getChildFragmentManager().beginTransaction()
-                            .remove(musicPlayersFragment)
-                            .commit();
-                    musicPlayersFragment = null;
+            public void handleOnBackPressed() {
+                if (getFragmentManager() != null) {
+                    getFragmentManager().popBackStack("players", FragmentManager.POP_BACK_STACK_INCLUSIVE);
                 }
-                binding.timerProgressScroller.requestFocus();
+                this.setEnabled(false);
             }
-        });
+        };
+        requireActivity().getOnBackPressedDispatcher().addCallback(this, backPressedCallback);
 
         return binding.getRoot();
     }
@@ -182,28 +183,6 @@ public class TimerStartFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-    }
-
-    @Override
-    public void onAttachFragment(@NonNull Fragment childFragment) {
-        super.onAttachFragment(childFragment);
-        if (childFragment instanceof MusicPlayersFragment) {
-            musicPlayersFragment = (MusicPlayersFragment) childFragment;
-            musicPlayersFragment.setOnClickListener(new RecyclerOnClickListenerInterface() {
-                @Override
-                public void onClick(View view, int position) {
-                    if (musicPlayersFragment != null) {
-                        binding.fragmentContainer.setVisibility(View.GONE);
-                        getChildFragmentManager().beginTransaction()
-                                .remove(musicPlayersFragment)
-                                .commit();
-                        musicPlayersFragment = null;
-                    }
-                    binding.timerProgressScroller.requestFocus();
-                }
-            });
-            binding.fragmentContainer.setVisibility(View.VISIBLE);
-        }
     }
 
     @Override

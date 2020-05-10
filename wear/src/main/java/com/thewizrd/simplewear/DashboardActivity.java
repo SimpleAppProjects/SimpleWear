@@ -315,6 +315,16 @@ public class DashboardActivity extends WearableListenerActivity implements Share
                 super.onDrawerClosed(layout, drawerView);
                 drawerView.clearFocus();
             }
+
+            @Override
+            public void onDrawerStateChanged(WearableDrawerLayout layout, int newState) {
+                super.onDrawerStateChanged(layout, newState);
+
+                if (newState == WearableDrawerView.STATE_IDLE &&
+                        mDrawerView.isPeeking() && mDrawerView.hasFocus()) {
+                    mDrawerView.clearFocus();
+                }
+            }
         });
 
         mDrawerView = findViewById(R.id.bottom_action_drawer);

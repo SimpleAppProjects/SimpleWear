@@ -1,20 +1,19 @@
 package com.thewizrd.simplewear.sleeptimer;
 
-import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
 import android.os.Bundle;
 import android.os.CountDownTimer;
+import android.support.wearable.input.RotaryEncoder;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.view.ViewCompat;
-import androidx.fragment.app.Fragment;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
@@ -40,15 +39,15 @@ import com.thewizrd.shared_resources.utils.Logger;
 import com.thewizrd.simplewear.R;
 import com.thewizrd.simplewear.controls.MusicPlayerViewModel;
 import com.thewizrd.simplewear.databinding.FragmentMusicplayersSleepBinding;
+import com.thewizrd.simplewear.fragments.SwipeDismissFragment;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 
-public class MusicPlayersFragment extends Fragment
+public class MusicPlayersFragment extends SwipeDismissFragment
         implements DataClient.OnDataChangedListener {
-    private AppCompatActivity mActivity;
 
     private FragmentMusicplayersSleepBinding binding;
     private PlayerListAdapter mAdapter;
@@ -56,12 +55,6 @@ public class MusicPlayersFragment extends Fragment
     private RecyclerOnClickListenerInterface onClickListener;
 
     private SelectedPlayerViewModel selectedPlayer;
-
-    @Override
-    public void onAttach(@NonNull Context context) {
-        super.onAttach(context);
-        mActivity = (AppCompatActivity) context;
-    }
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -122,7 +115,8 @@ public class MusicPlayersFragment extends Fragment
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        binding = FragmentMusicplayersSleepBinding.inflate(inflater, container, false);
+        View outerView = super.onCreateView(inflater, container, savedInstanceState);
+        binding = FragmentMusicplayersSleepBinding.inflate(inflater, (ViewGroup) outerView, true);
 
         binding.playerList.setHasFixedSize(true);
         binding.playerList.setEdgeItemsCenteringEnabled(false);
@@ -158,6 +152,23 @@ public class MusicPlayersFragment extends Fragment
                 );
             }
         });
+        binding.playerList.setOnGenericMotionListener(new View.OnGenericMotionListener() {
+            @Override
+            public boolean onGenericMotion(View v, MotionEvent event) {
+                if (mActivity != null && event.getAction() == MotionEvent.ACTION_SCROLL && RotaryEncoder.isFromRotaryEncoder(event)) {
+
+                    // Don't forget the negation here
+                    float delta = -RotaryEncoder.getRotaryAxisValue(event) * RotaryEncoder.getScaledScrollFactor(mActivity);
+
+                    // Swap these axes if you want to do horizontal scrolling instead
+                    v.scrollBy(0, Math.round(delta));
+
+                    return true;
+                }
+
+                return false;
+            }
+        });
         binding.playerList.requestFocus();
 
         mAdapter = new PlayerListAdapter(mActivity);
@@ -172,7 +183,7 @@ public class MusicPlayersFragment extends Fragment
 
         binding.playerGroup.setVisibility(View.GONE);
 
-        return binding.getRoot();
+        return outerView;
     }
 
     public void setOnClickListener(RecyclerOnClickListenerInterface listener) {
@@ -249,13 +260,6 @@ public class MusicPlayersFragment extends Fragment
     public void onDestroy() {
         timer.cancel();
         super.onDestroy();
-        mActivity = null;
-    }
-
-    @Override
-    public void onDetach() {
-        super.onDetach();
-        mActivity = null;
     }
 
     @Override

@@ -134,6 +134,16 @@ public class MusicPlayerActivity extends WearableListenerActivity implements Dat
                 drawerView.clearFocus();
                 mRecyclerView.requestFocus();
             }
+
+            @Override
+            public void onDrawerStateChanged(WearableDrawerLayout layout, int newState) {
+                super.onDrawerStateChanged(layout, newState);
+
+                if (newState == WearableDrawerView.STATE_IDLE &&
+                        mDrawerView.isPeeking() && mDrawerView.hasFocus()) {
+                    mDrawerView.clearFocus();
+                }
+            }
         });
 
         mProgressBar = findViewById(R.id.progressBar);
