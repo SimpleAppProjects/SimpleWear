@@ -131,9 +131,11 @@ public class PermissionCheckFragment extends Fragment {
 
                             @Override
                             public void onFinish() {
-                                Toast.makeText(mActivity, R.string.message_watchbttimeout, Toast.LENGTH_LONG).show();
-                                mCompanionProgress.setVisibility(View.GONE);
-                                Logger.writeLine(Log.INFO, "%s: BT Request Timeout", TAG);
+                                if (mActivity != null) {
+                                    Toast.makeText(mActivity, R.string.message_watchbttimeout, Toast.LENGTH_LONG).show();
+                                    mCompanionProgress.setVisibility(View.GONE);
+                                    Logger.writeLine(Log.INFO, "%s: BT Request Timeout", TAG);
+                                }
                             }
                         };
                     }
@@ -157,6 +159,13 @@ public class PermissionCheckFragment extends Fragment {
         return view;
     }
 
+    @Override
+    public void onPause() {
+        LocalBroadcastManager.getInstance(mActivity)
+                .unregisterReceiver(mReceiver);
+        super.onPause();
+    }
+
     // Android Q+
     private BroadcastReceiver mReceiver = new BroadcastReceiver() {
         @Override
@@ -177,6 +186,8 @@ public class PermissionCheckFragment extends Fragment {
 
     @TargetApi(Build.VERSION_CODES.Q)
     private void pairDevice(final String deviceName) {
+        if (mActivity == null) return;
+
         final CompanionDeviceManager deviceManager = (CompanionDeviceManager) mActivity.getSystemService(Context.COMPANION_DEVICE_SERVICE);
 
         for (String assoc : deviceManager.getAssociations()) {
@@ -201,6 +212,7 @@ public class PermissionCheckFragment extends Fragment {
                 deviceManager.associate(request, new CompanionDeviceManager.Callback() {
                     @Override
                     public void onDeviceFound(IntentSender chooserLauncher) {
+                        if (mActivity == null) return;
                         try {
                             startIntentSenderForResult(chooserLauncher,
                                     SELECT_DEVICE_REQUEST_CODE, null, 0, 0, 0, null);
