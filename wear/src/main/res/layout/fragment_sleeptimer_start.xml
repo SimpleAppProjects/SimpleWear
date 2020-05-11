@@ -11,7 +11,7 @@
         android:id="@+id/main_layout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="@dimen/timer_top_margin"
         android:layout_marginBottom="16dp">
 
         <com.devadvance.circularseekbar.CircularSeekBar
@@ -165,12 +165,5 @@
             android:src="@drawable/ic_music_note_white_24dp" />
 
     </FrameLayout>
-
-    <androidx.wear.widget.SwipeDismissFrameLayout
-        android:id="@+id/fragment_container"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="@android:color/black"
-        android:visibility="gone" />
 
 </androidx.wear.widget.drawer.WearableDrawerLayout>

@@ -16,4 +16,6 @@
     <dimen name="inner_layout_padding">8dp</dimen>
     <dimen name="conf_overlay_image_size">32dp</dimen>
 
+    <dimen name="timer_top_margin">0dp</dimen>
+
 </resources>
