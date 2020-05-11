@@ -253,7 +253,7 @@ public class MusicPlayerActivity extends WearableListenerActivity implements Dat
                                     .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                                     .setComponent(mediaCtrlCmpName);
                             startActivity(mediaCtrlIntent);
-                        } catch (PackageManager.NameNotFoundException e) {
+                        } catch (Exception e) {
                             // Do nothing
                         }
                     }
