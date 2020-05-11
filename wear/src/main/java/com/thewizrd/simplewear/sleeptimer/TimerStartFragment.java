@@ -197,6 +197,15 @@ public class TimerStartFragment extends Fragment {
     }
 
     @Override
+    public void onHiddenChanged(boolean hidden) {
+        super.onHiddenChanged(hidden);
+
+        if (!hidden) {
+            binding.timerProgressScroller.requestFocus();
+        }
+    }
+
+    @Override
     public void onPause() {
         super.onPause();
     }

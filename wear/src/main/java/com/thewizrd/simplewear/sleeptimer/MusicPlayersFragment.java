@@ -314,9 +314,14 @@ public class MusicPlayersFragment extends SwipeDismissFragment
 
                 binding.noplayersMessageview.setVisibility(viewModels.size() > 0 ? View.GONE : View.VISIBLE);
                 binding.playerGroup.setVisibility(viewModels.size() > 0 ? View.VISIBLE : View.GONE);
-                if (binding.playerList.getVisibility() == View.VISIBLE && !binding.playerList.hasFocus()) {
-                    binding.playerList.requestFocus();
-                }
+                binding.playerList.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (binding.playerList.getVisibility() == View.VISIBLE && !binding.playerList.hasFocus()) {
+                            binding.playerList.requestFocus();
+                        }
+                    }
+                });
             }
         });
     }
