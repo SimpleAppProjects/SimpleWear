@@ -447,7 +447,9 @@ public class DashboardTileProviderService extends TileProviderService
         AsyncTask.run(new Runnable() {
             @Override
             public void run() {
-                sendMessage(mPhoneNodeWithApp.getId(), WearableHelper.ActionsPath, stringToBytes(actionJSONString));
+                if (connect()) {
+                    sendMessage(mPhoneNodeWithApp.getId(), WearableHelper.ActionsPath, stringToBytes(actionJSONString));
+                }
             }
         });
     }

@@ -372,7 +372,9 @@ public abstract class WearableListenerActivity extends AppCompatActivity impleme
         AsyncTask.run(new Runnable() {
             @Override
             public void run() {
-                sendMessage(mPhoneNodeWithApp.getId(), WearableHelper.ActionsPath, stringToBytes(actionJSONString));
+                if (connect()) {
+                    sendMessage(mPhoneNodeWithApp.getId(), WearableHelper.ActionsPath, stringToBytes(actionJSONString));
+                }
             }
         });
     }
