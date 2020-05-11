@@ -15,6 +15,7 @@ import android.graphics.Bitmap;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.KeyEvent;
 
 import androidx.annotation.NonNull;
@@ -701,7 +702,8 @@ public class WearableDataListenerService extends WearableListenerService {
                     Bitmap iconBmp = null;
                     try {
                         Drawable iconDrwble = mContext.getPackageManager().getActivityIcon(activityCmpName);
-                        iconBmp = ImageUtils.bitmapFromDrawable(mContext, iconDrwble);
+                        int size = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 36, mContext.getResources().getDisplayMetrics());
+                        iconBmp = ImageUtils.bitmapFromDrawable(iconDrwble, size, size);
                     } catch (PackageManager.NameNotFoundException ignored) {
                     }
 

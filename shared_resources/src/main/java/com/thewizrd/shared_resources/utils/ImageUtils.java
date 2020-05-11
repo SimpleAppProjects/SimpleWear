@@ -28,17 +28,26 @@ public class ImageUtils {
         return bitmapFromDrawable(drawable);
     }
 
-    public static Bitmap bitmapFromDrawable(Context context, Drawable drawable) {
-        return bitmapFromDrawable(drawable);
+    public static Bitmap bitmapFromDrawable(Drawable drawable) {
+        return bitmapFromDrawable(drawable, drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight());
     }
 
-    private static Bitmap bitmapFromDrawable(Drawable drawable) {
+    public static Bitmap bitmapFromDrawable(Drawable drawable, int maxWidth, int maxHeight) {
         Bitmap bitmap;
+
+        if (maxWidth <= 0 || maxHeight <= 0) {
+            maxWidth = 1;
+            maxHeight = 1;
+        }
 
         if (drawable.getIntrinsicHeight() <= 0 || drawable.getIntrinsicWidth() <= 0) {
             bitmap = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888);
         } else {
-            bitmap = Bitmap.createBitmap(drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight(), Bitmap.Config.ARGB_8888);
+            bitmap = Bitmap.createBitmap(
+                    Math.min(drawable.getIntrinsicWidth(), maxWidth),
+                    Math.min(drawable.getIntrinsicHeight(), maxHeight),
+                    Bitmap.Config.ARGB_8888
+            );
         }
 
         Canvas canvas = new Canvas(bitmap);
