@@ -38,7 +38,7 @@ import com.thewizrd.shared_resources.helpers.Actions;
 import com.thewizrd.shared_resources.helpers.BatteryStatus;
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus;
 import com.thewizrd.shared_resources.helpers.WearableHelper;
-import com.thewizrd.shared_resources.utils.AsyncTask;
+import com.thewizrd.shared_resources.tasks.AsyncTask;
 import com.thewizrd.shared_resources.utils.JSONParser;
 import com.thewizrd.shared_resources.utils.Logger;
 import com.thewizrd.shared_resources.utils.StringUtils;

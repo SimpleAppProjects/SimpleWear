@@ -13,7 +13,7 @@ import android.os.Looper;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 
-import com.thewizrd.shared_resources.utils.AsyncTask;
+import com.thewizrd.shared_resources.tasks.AsyncTask;
 import com.thewizrd.shared_resources.utils.FileUtils;
 import com.thewizrd.simplewear.wearable.WearableDataListenerService;
 
@@ -60,7 +60,7 @@ public class ExampleInstrumentedTest {
             }
         });
 
-        new AsyncTask<Void>().await(new Callable<Void>() {
+        AsyncTask.await(new Callable<Void>() {
             @Override
             public Void call() throws Exception {
                 Thread.sleep(7500);

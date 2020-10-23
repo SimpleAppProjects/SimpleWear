@@ -4,6 +4,8 @@ import android.util.Log;
 
 import androidx.core.util.AtomicFile;
 
+import com.thewizrd.shared_resources.tasks.AsyncTask;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -22,7 +24,7 @@ public class FileUtils {
     }
 
     public static String readFile(final File file) {
-        return new AsyncTask<String>().await(new Callable<String>() {
+        return AsyncTask.await(new Callable<String>() {
             @Override
             public String call() {
                 AtomicFile mFile = new AtomicFile(file);
@@ -118,7 +120,7 @@ public class FileUtils {
     }
 
     public static boolean deleteDirectory(final String path) {
-        return new AsyncTask<Boolean>().await(new Callable<Boolean>() {
+        return AsyncTask.await(new Callable<Boolean>() {
             @Override
             public Boolean call() {
                 boolean success = false;

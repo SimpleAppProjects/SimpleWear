@@ -33,7 +33,7 @@ import com.google.android.gms.wearable.Wearable;
 import com.thewizrd.shared_resources.helpers.RecyclerOnClickListenerInterface;
 import com.thewizrd.shared_resources.helpers.WearableHelper;
 import com.thewizrd.shared_resources.sleeptimer.SleepTimerHelper;
-import com.thewizrd.shared_resources.utils.AsyncTask;
+import com.thewizrd.shared_resources.tasks.AsyncTask;
 import com.thewizrd.shared_resources.utils.ImageUtils;
 import com.thewizrd.shared_resources.utils.Logger;
 import com.thewizrd.simplewear.R;

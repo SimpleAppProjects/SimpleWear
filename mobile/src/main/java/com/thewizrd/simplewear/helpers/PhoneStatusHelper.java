@@ -30,7 +30,7 @@ import com.thewizrd.shared_resources.helpers.BatteryStatus;
 import com.thewizrd.shared_resources.helpers.DNDChoice;
 import com.thewizrd.shared_resources.helpers.RingerChoice;
 import com.thewizrd.shared_resources.helpers.ValueDirection;
-import com.thewizrd.shared_resources.utils.AsyncTask;
+import com.thewizrd.shared_resources.tasks.AsyncTask;
 import com.thewizrd.shared_resources.utils.Logger;
 import com.thewizrd.simplewear.ScreenLockAdminReceiver;
 import com.thewizrd.simplewear.services.TorchService;
@@ -341,7 +341,7 @@ public class PhoneStatusHelper {
         audioMan.dispatchMediaKeyEvent(event);
 
         // Wait for a second to see if music plays
-        boolean musicActive = new AsyncTask<Boolean>().await(new Callable<Boolean>() {
+        boolean musicActive = AsyncTask.await(new Callable<Boolean>() {
             @Override
             public Boolean call() throws Exception {
                 Thread.sleep(1000);
@@ -364,7 +364,7 @@ public class PhoneStatusHelper {
         context.sendBroadcast(playIntent);
 
         // Wait for a second to see if music plays
-        boolean musicActive = new AsyncTask<Boolean>().await(new Callable<Boolean>() {
+        boolean musicActive = AsyncTask.await(new Callable<Boolean>() {
             @Override
             public Boolean call() throws Exception {
                 Thread.sleep(1000);
@@ -379,7 +379,7 @@ public class PhoneStatusHelper {
         final AudioManager audioMan = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
 
         // Wait for a second to see if music plays
-        boolean musicActive = new AsyncTask<Boolean>().await(new Callable<Boolean>() {
+        boolean musicActive = AsyncTask.await(new Callable<Boolean>() {
             @Override
             public Boolean call() throws Exception {
                 Thread.sleep(1000);

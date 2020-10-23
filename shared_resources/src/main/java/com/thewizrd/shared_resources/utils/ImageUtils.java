@@ -12,6 +12,7 @@ import androidx.core.content.ContextCompat;
 import com.google.android.gms.tasks.Tasks;
 import com.google.android.gms.wearable.Asset;
 import com.google.android.gms.wearable.DataClient;
+import com.thewizrd.shared_resources.tasks.AsyncTask;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -63,7 +64,7 @@ public class ImageUtils {
     }
 
     public static Bitmap bitmapFromAssetStream(final DataClient client, final Asset asset) {
-        return new AsyncTask<Bitmap>().await(new Callable<Bitmap>() {
+        return AsyncTask.await(new Callable<Bitmap>() {
             @Override
             public Bitmap call() {
                 if (asset == null) {

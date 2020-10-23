@@ -32,7 +32,7 @@ import com.thewizrd.shared_resources.helpers.BatteryStatus;
 import com.thewizrd.shared_resources.helpers.ToggleAction;
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus;
 import com.thewizrd.shared_resources.helpers.WearableHelper;
-import com.thewizrd.shared_resources.utils.AsyncTask;
+import com.thewizrd.shared_resources.tasks.AsyncTask;
 import com.thewizrd.shared_resources.utils.JSONParser;
 import com.thewizrd.shared_resources.utils.Logger;
 
@@ -133,7 +133,7 @@ public abstract class WearableListenerActivity extends AppCompatActivity impleme
         AsyncTask.run(new Runnable() {
             @Override
             public void run() {
-                new AsyncTask<Void>().await(new Callable<Void>() {
+                AsyncTask.await(new Callable<Void>() {
                     @Override
                     public Void call() throws Exception {
                         connect();
@@ -280,7 +280,7 @@ public abstract class WearableListenerActivity extends AppCompatActivity impleme
         if (Looper.getMainLooper() == Looper.myLooper())
             throw new IllegalStateException("This task should not be called on the main thread");
 
-        new AsyncTask<Void>().await(new Callable<Void>() {
+        AsyncTask.await(new Callable<Void>() {
             @Override
             public Void call() {
                 checkConnectionStatus();
@@ -347,7 +347,7 @@ public abstract class WearableListenerActivity extends AppCompatActivity impleme
     }
 
     protected boolean connect() {
-        return new AsyncTask<Boolean>().await(new Callable<Boolean>() {
+        return AsyncTask.await(new Callable<Boolean>() {
             @Override
             public Boolean call() {
                 if (mPhoneNodeWithApp == null)
