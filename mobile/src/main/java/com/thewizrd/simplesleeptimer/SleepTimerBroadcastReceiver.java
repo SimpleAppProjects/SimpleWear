@@ -5,23 +5,24 @@ import android.content.Context;
 import android.content.Intent;
 
 import com.thewizrd.shared_resources.sleeptimer.SleepTimerHelper;
-import com.thewizrd.simplewear.wearable.WearableDataListenerService;
+import com.thewizrd.simplewear.wearable.WearableWorker;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class SleepTimerBroadcastReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
         if (intent != null) {
             if (SleepTimerHelper.ACTION_START_TIMER.equals(intent.getAction())) {
-                WearableDataListenerService.enqueueWork(context, new Intent(context, WearableDataListenerService.class)
-                        .setAction(SleepTimerHelper.ACTION_START_TIMER));
+                WearableWorker.enqueueAction(context, SleepTimerHelper.ACTION_START_TIMER);
             } else if (SleepTimerHelper.ACTION_CANCEL_TIMER.equals(intent.getAction())) {
-                WearableDataListenerService.enqueueWork(context, new Intent(context, WearableDataListenerService.class)
-                        .setAction(SleepTimerHelper.ACTION_CANCEL_TIMER));
+                WearableWorker.enqueueAction(context, SleepTimerHelper.ACTION_CANCEL_TIMER);
             } else if (SleepTimerHelper.ACTION_TIME_UPDATED.equals(intent.getAction())) {
-                WearableDataListenerService.enqueueWork(context, new Intent(context, WearableDataListenerService.class)
-                        .setAction(SleepTimerHelper.ACTION_TIME_UPDATED)
-                        .putExtra(SleepTimerHelper.EXTRA_START_TIME_IN_MS, intent.getLongExtra(SleepTimerHelper.EXTRA_START_TIME_IN_MS, 0))
-                        .putExtra(SleepTimerHelper.EXTRA_TIME_IN_MS, intent.getLongExtra(SleepTimerHelper.EXTRA_TIME_IN_MS, 0)));
+                Map<String, Object> map = new HashMap<>();
+                map.put(SleepTimerHelper.EXTRA_START_TIME_IN_MS, intent.getLongExtra(SleepTimerHelper.EXTRA_START_TIME_IN_MS, 0));
+                map.put(SleepTimerHelper.EXTRA_TIME_IN_MS, intent.getLongExtra(SleepTimerHelper.EXTRA_TIME_IN_MS, 0));
+                WearableWorker.enqueueAction(context, SleepTimerHelper.ACTION_TIME_UPDATED, map);
             }
         }
     }

@@ -23,7 +23,7 @@ import com.thewizrd.shared_resources.utils.Logger;
 import com.thewizrd.simplewear.App;
 import com.thewizrd.simplewear.PhoneBroadcastReceiver;
 import com.thewizrd.simplewear.R;
-import com.thewizrd.simplewear.wearable.WearableDataListenerService;
+import com.thewizrd.simplewear.wearable.WearableWorker;
 
 public class TorchService extends Service {
 
@@ -107,10 +107,7 @@ public class TorchService extends Service {
             stopSelf();
         }
 
-        WearableDataListenerService.enqueueWork(getApplicationContext(),
-                new Intent(getApplicationContext(), WearableDataListenerService.class)
-                        .setAction(WearableDataListenerService.ACTION_SENDACTIONUPDATE)
-                        .putExtra(WearableDataListenerService.EXTRA_ACTION_CHANGED, Actions.TORCH));
+        WearableWorker.sendActionUpdate(getApplicationContext(), Actions.TORCH);
 
         return START_STICKY;
     }

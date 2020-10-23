@@ -15,7 +15,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 
 import com.thewizrd.shared_resources.tasks.AsyncTask;
 import com.thewizrd.shared_resources.utils.FileUtils;
-import com.thewizrd.simplewear.wearable.WearableDataListenerService;
+import com.thewizrd.simplewear.wearable.WearableWorker;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -42,20 +42,13 @@ public class ExampleInstrumentedTest {
             @Override
             public void run() {
                 for (int i = 0; i < 8; i++) {
-                    WearableDataListenerService.enqueueWork(appContext, new Intent(appContext, WearableDataListenerService.class)
-                            .setAction(WearableDataListenerService.ACTION_SENDWIFIUPDATE));
-                    WearableDataListenerService.enqueueWork(appContext, new Intent(appContext, WearableDataListenerService.class)
-                            .setAction(WearableDataListenerService.ACTION_SENDBTUPDATE));
-                    WearableDataListenerService.enqueueWork(appContext, new Intent(appContext, WearableDataListenerService.class)
-                            .setAction(WearableDataListenerService.ACTION_SENDMOBILEDATAUPDATE));
-                    WearableDataListenerService.enqueueWork(appContext, new Intent(appContext, WearableDataListenerService.class)
-                            .setAction(""));
-                    WearableDataListenerService.enqueueWork(appContext, new Intent(appContext, WearableDataListenerService.class)
-                            .setAction(WearableDataListenerService.ACTION_SENDBTUPDATE));
-                    WearableDataListenerService.enqueueWork(appContext, new Intent(appContext, WearableDataListenerService.class)
-                            .setAction(WearableDataListenerService.ACTION_SENDWIFIUPDATE));
-                    WearableDataListenerService.enqueueWork(appContext, new Intent(appContext, WearableDataListenerService.class)
-                            .setAction(WearableDataListenerService.ACTION_SENDMOBILEDATAUPDATE));
+                    WearableWorker.enqueueAction(appContext, WearableWorker.ACTION_SENDWIFIUPDATE);
+                    WearableWorker.enqueueAction(appContext, WearableWorker.ACTION_SENDBTUPDATE);
+                    WearableWorker.enqueueAction(appContext, WearableWorker.ACTION_SENDMOBILEDATAUPDATE);
+                    WearableWorker.enqueueAction(appContext, "");
+                    WearableWorker.enqueueAction(appContext, WearableWorker.ACTION_SENDBTUPDATE);
+                    WearableWorker.enqueueAction(appContext, WearableWorker.ACTION_SENDWIFIUPDATE);
+                    WearableWorker.enqueueAction(appContext, WearableWorker.ACTION_SENDMOBILEDATAUPDATE);
                 }
             }
         });

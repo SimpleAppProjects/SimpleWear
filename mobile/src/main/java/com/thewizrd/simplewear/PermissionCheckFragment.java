@@ -39,6 +39,7 @@ import com.thewizrd.shared_resources.tasks.AsyncTask;
 import com.thewizrd.shared_resources.utils.Logger;
 import com.thewizrd.simplewear.helpers.PhoneStatusHelper;
 import com.thewizrd.simplewear.wearable.WearableDataListenerService;
+import com.thewizrd.simplewear.wearable.WearableWorker;
 
 import java.util.regex.Pattern;
 
@@ -142,9 +143,7 @@ public class PermissionCheckFragment extends Fragment {
                     timer.start();
                     mCompanionProgress.setVisibility(View.VISIBLE);
 
-                    WearableDataListenerService.enqueueWork(mActivity,
-                            new Intent(mActivity, WearableDataListenerService.class)
-                                    .setAction(WearableDataListenerService.ACTION_REQUESTBTDISCOVERABLE));
+                    WearableWorker.enqueueAction(mActivity, WearableWorker.ACTION_REQUESTBTDISCOVERABLE);
 
                     Logger.writeLine(Log.INFO, "%s: ACTION_REQUESTBTDISCOVERABLE", TAG);
                 }

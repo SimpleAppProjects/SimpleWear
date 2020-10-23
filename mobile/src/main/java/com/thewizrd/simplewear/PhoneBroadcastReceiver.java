@@ -9,7 +9,7 @@ import android.util.Log;
 
 import com.thewizrd.shared_resources.utils.Logger;
 import com.thewizrd.simplewear.services.TorchService;
-import com.thewizrd.simplewear.wearable.WearableDataListenerService;
+import com.thewizrd.simplewear.wearable.WearableWorker;
 
 public class PhoneBroadcastReceiver extends BroadcastReceiver {
     private static final String TAG = "PhoneBroadcastReceiver";
@@ -17,18 +17,13 @@ public class PhoneBroadcastReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
         if (Intent.ACTION_MY_PACKAGE_REPLACED.equals(intent.getAction())) {
-            WearableDataListenerService.enqueueWork(context, new Intent(context, WearableDataListenerService.class)
-                    .setAction(WearableDataListenerService.ACTION_SENDSTATUSUPDATE));
+            WearableWorker.sendStatusUpdate(context);
         } else if (WifiManager.WIFI_STATE_CHANGED_ACTION.equals(intent.getAction())) {
-            WearableDataListenerService.enqueueWork(context, new Intent(context, WearableDataListenerService.class)
-                    .setAction(WearableDataListenerService.ACTION_SENDWIFIUPDATE)
-                    .putExtra(WearableDataListenerService.EXTRA_STATUS,
-                            intent.getIntExtra(WifiManager.EXTRA_WIFI_STATE, WifiManager.WIFI_STATE_UNKNOWN)));
+            WearableWorker.sendStatusUpdate(context, WearableWorker.ACTION_SENDWIFIUPDATE,
+                    intent.getIntExtra(WifiManager.EXTRA_WIFI_STATE, WifiManager.WIFI_STATE_UNKNOWN));
         } else if (BluetoothAdapter.ACTION_STATE_CHANGED.equals(intent.getAction())) {
-            WearableDataListenerService.enqueueWork(context, new Intent(context, WearableDataListenerService.class)
-                    .setAction(WearableDataListenerService.ACTION_SENDBTUPDATE)
-                    .putExtra(WearableDataListenerService.EXTRA_STATUS,
-                            intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.STATE_ON)));
+            WearableWorker.sendStatusUpdate(context, WearableWorker.ACTION_SENDBTUPDATE,
+                    intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.STATE_ON));
         } else if (TorchService.ACTION_END_LIGHT.equals(intent.getAction())) {
             TorchService.enqueueWork(context, new Intent(context, TorchService.class)
                     .setAction(TorchService.ACTION_END_LIGHT));

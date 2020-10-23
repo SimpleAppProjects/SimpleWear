@@ -30,7 +30,7 @@ import com.thewizrd.shared_resources.helpers.AppState;
 import com.thewizrd.shared_resources.helpers.BatteryStatus;
 import com.thewizrd.shared_resources.utils.JSONParser;
 import com.thewizrd.shared_resources.utils.Logger;
-import com.thewizrd.simplewear.wearable.WearableDataListenerService;
+import com.thewizrd.simplewear.wearable.WearableWorker;
 
 public class App extends Application implements ApplicationLib, Application.ActivityLifecycleCallbacks {
     private static ApplicationLib sInstance = null;
@@ -89,24 +89,15 @@ public class App extends Application implements ApplicationLib, Application.Acti
                     boolean isCharging = (batStatus == BatteryManager.BATTERY_STATUS_CHARGING) || (batStatus == BatteryManager.BATTERY_STATUS_FULL);
 
                     String jsonData = JSONParser.serializer(new BatteryStatus(battPct, isCharging), BatteryStatus.class);
-                    WearableDataListenerService.enqueueWork(context, new Intent(context, WearableDataListenerService.class)
-                            .setAction(WearableDataListenerService.ACTION_SENDBATTERYUPDATE)
-                            .putExtra(WearableDataListenerService.EXTRA_STATUS, jsonData));
+                    WearableWorker.sendStatusUpdate(context, WearableWorker.ACTION_SENDBATTERYUPDATE, jsonData);
                 } else if (ConnectivityManager.CONNECTIVITY_ACTION.equals(intent.getAction())) {
-                    WearableDataListenerService.enqueueWork(context, new Intent(context, WearableDataListenerService.class)
-                            .setAction(WearableDataListenerService.ACTION_SENDMOBILEDATAUPDATE));
+                    WearableWorker.sendActionUpdate(context, Actions.MOBILEDATA);
                 } else if (LocationManager.PROVIDERS_CHANGED_ACTION.equals(intent.getAction())) {
-                    WearableDataListenerService.enqueueWork(context, new Intent(context, WearableDataListenerService.class)
-                            .setAction(WearableDataListenerService.ACTION_SENDACTIONUPDATE)
-                            .putExtra(WearableDataListenerService.EXTRA_ACTION_CHANGED, Actions.LOCATION));
+                    WearableWorker.sendActionUpdate(context, Actions.LOCATION);
                 } else if (AudioManager.RINGER_MODE_CHANGED_ACTION.equals(intent.getAction())) {
-                    WearableDataListenerService.enqueueWork(context, new Intent(context, WearableDataListenerService.class)
-                            .setAction(WearableDataListenerService.ACTION_SENDACTIONUPDATE)
-                            .putExtra(WearableDataListenerService.EXTRA_ACTION_CHANGED, Actions.RINGER));
+                    WearableWorker.sendActionUpdate(context, Actions.RINGER);
                 } else if (NotificationManager.ACTION_INTERRUPTION_FILTER_CHANGED.equals(intent.getAction())) {
-                    WearableDataListenerService.enqueueWork(context, new Intent(context, WearableDataListenerService.class)
-                            .setAction(WearableDataListenerService.ACTION_SENDACTIONUPDATE)
-                            .putExtra(WearableDataListenerService.EXTRA_ACTION_CHANGED, Actions.DONOTDISTURB));
+                    WearableWorker.sendActionUpdate(context, Actions.DONOTDISTURB);
                 }
             }
         };
@@ -133,8 +124,7 @@ public class App extends Application implements ApplicationLib, Application.Acti
                 super.onChange(selfChange, uri);
 
                 if (uri.toString().contains("mobile_data")) {
-                    WearableDataListenerService.enqueueWork(context, new Intent(context, WearableDataListenerService.class)
-                            .setAction(WearableDataListenerService.ACTION_SENDMOBILEDATAUPDATE));
+                    WearableWorker.sendActionUpdate(context, Actions.MOBILEDATA);
                 }
             }
         };
@@ -154,8 +144,7 @@ public class App extends Application implements ApplicationLib, Application.Acti
             }
         });
 
-        WearableDataListenerService.enqueueWork(context, new Intent(context, WearableDataListenerService.class)
-                .setAction(WearableDataListenerService.ACTION_SENDSTATUSUPDATE));
+        WearableWorker.sendStatusUpdate(context);
     }
 
     @Override
