@@ -451,7 +451,7 @@ public class DashboardActivity extends WearableListenerActivity implements Share
                                     constrLayout.getPaddingStart(),
                                     mIsRound ? verticalInset : verticalPadding,
                                     constrLayout.getPaddingEnd(),
-                                    mIsRound ? verticalInset : peekContainer.getHeight());
+                                    peekContainer.getHeight());
                         }
                     });
                 }
