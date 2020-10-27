@@ -1,4 +1,6 @@
 apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-kapt'
 apply plugin: 'com.google.gms.google-services'
 apply plugin: 'com.google.firebase.crashlytics'
 
@@ -37,6 +39,11 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+
+    buildFeatures {
+        dataBinding = true
+        viewBinding = true
+    }
 }
 
 dependencies {
@@ -56,13 +63,18 @@ dependencies {
     androidTestImplementation 'androidx.test.ext:truth:1.3.0'
     androidTestImplementation 'com.google.truth:truth:1.1'
 
+    // Kotlin
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.4.10"
+    implementation "androidx.core:core-ktx:1.3.2"
+    implementation 'androidx.preference:preference-ktx:1.1.1'
+    implementation "androidx.lifecycle:lifecycle-runtime-ktx:2.2.0"
+
     implementation 'com.google.android.gms:play-services-wearable:17.0.0'
 
     implementation 'com.google.firebase:firebase-analytics:17.6.0'
     implementation 'com.google.firebase:firebase-crashlytics:17.2.2'
 
     implementation 'androidx.appcompat:appcompat:1.2.0'
-    implementation 'androidx.preference:preference:1.1.1'
     implementation 'androidx.constraintlayout:constraintlayout:2.0.2'
     implementation 'androidx.work:work-runtime:2.4.0'
     implementation 'com.google.android.material:material:1.2.1'
