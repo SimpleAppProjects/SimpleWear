@@ -10,10 +10,10 @@ import android.widget.ImageView
 import android.widget.Switch
 import androidx.core.content.ContextCompat
 import androidx.core.util.Pair
+import androidx.lifecycle.lifecycleScope
 import androidx.wear.widget.WearableLinearLayoutManager
 import androidx.wear.widget.drawer.WearableDrawerLayout
 import androidx.wear.widget.drawer.WearableDrawerView
-import com.google.android.gms.tasks.Tasks
 import com.google.android.gms.wearable.*
 import com.google.android.gms.wearable.DataClient.OnDataChangedListener
 import com.google.android.wearable.intent.RemoteIntent
@@ -24,7 +24,6 @@ import com.thewizrd.shared_resources.helpers.WearConnectionStatus.Companion.valu
 import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.shared_resources.helpers.WearableHelper.getWearDataUri
 import com.thewizrd.shared_resources.helpers.WearableHelper.playStoreURI
-import com.thewizrd.shared_resources.tasks.AsyncTask
 import com.thewizrd.shared_resources.utils.ImageUtils
 import com.thewizrd.shared_resources.utils.JSONParser.serializer
 import com.thewizrd.shared_resources.utils.Logger.writeLine
@@ -37,6 +36,9 @@ import com.thewizrd.simplewear.databinding.ActivityMusicplaybackBinding
 import com.thewizrd.simplewear.helpers.ConfirmationResultReceiver
 import com.thewizrd.simplewear.preferences.Settings.isAutoLaunchMediaCtrlsEnabled
 import com.thewizrd.simplewear.preferences.Settings.setAutoLaunchMediaCtrls
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import java.util.*
 import java.util.concurrent.ExecutionException
 
@@ -60,7 +62,7 @@ class MusicPlayerActivity : WearableListenerActivity(), OnDataChangedListener {
 
         broadcastReceiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context, intent: Intent) {
-                AsyncTask.run {
+                lifecycleScope.launch {
                     if (intent.action != null) {
                         if (ACTION_UPDATECONNECTIONSTATUS == intent.action) {
                             val connStatus = valueOf(intent.getIntExtra(EXTRA_CONNECTIONSTATUS, 0))
@@ -131,7 +133,7 @@ class MusicPlayerActivity : WearableListenerActivity(), OnDataChangedListener {
         mAdapter.setOnClickListener(object : RecyclerOnClickListenerInterface {
             override fun onClick(view: View, position: Int) {
                 val vm = mAdapter.dataset[position]
-                AsyncTask.run {
+                lifecycleScope.launch {
                     sendMessage(mPhoneNodeWithApp!!.id, WearableHelper.PlayCommandPath,
                             serializer(Pair.create(vm.packageName, vm.activityName), Pair::class.java).stringToBytes())
                 }
@@ -146,10 +148,11 @@ class MusicPlayerActivity : WearableListenerActivity(), OnDataChangedListener {
         timer = object : CountDownTimer(3000, 1000) {
             override fun onTick(millisUntilFinished: Long) {}
             override fun onFinish() {
-                AsyncTask.run {
+                lifecycleScope.launch(Dispatchers.IO) {
                     try {
-                        val buff = Tasks.await(Wearable.getDataClient(this@MusicPlayerActivity)
-                                .getDataItems(getWearDataUri("*", WearableHelper.MusicPlayersPath)))
+                        val buff = Wearable.getDataClient(this@MusicPlayerActivity)
+                                .getDataItems(getWearDataUri("*", WearableHelper.MusicPlayersPath))
+                                .await()
 
                         for (i in 0 until buff.count) {
                             val item = buff[i]
@@ -172,7 +175,7 @@ class MusicPlayerActivity : WearableListenerActivity(), OnDataChangedListener {
     }
 
     private fun showProgressBar(show: Boolean) {
-        runOnUiThread {
+        lifecycleScope.launch(Dispatchers.Main) {
             binding.progressBar.visibility = if (show) View.VISIBLE else View.GONE
         }
     }
@@ -203,7 +206,7 @@ class MusicPlayerActivity : WearableListenerActivity(), OnDataChangedListener {
                     }
                 }
                 ActionStatus.PERMISSION_DENIED ->
-                    runOnUiThread {
+                    lifecycleScope.launch(Dispatchers.Main) {
                         CustomConfirmationOverlay()
                                 .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
                                 .setCustomDrawable(ContextCompat.getDrawable(this@MusicPlayerActivity, R.drawable.ic_full_sad))
@@ -211,7 +214,7 @@ class MusicPlayerActivity : WearableListenerActivity(), OnDataChangedListener {
                                 .showOn(this@MusicPlayerActivity)
                     }
                 ActionStatus.FAILURE ->
-                    runOnUiThread {
+                    lifecycleScope.launch(Dispatchers.Main) {
                         CustomConfirmationOverlay()
                                 .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
                                 .setCustomDrawable(ContextCompat.getDrawable(this@MusicPlayerActivity, R.drawable.ic_full_sad))
@@ -234,13 +237,15 @@ class MusicPlayerActivity : WearableListenerActivity(), OnDataChangedListener {
                 val item = event.dataItem
                 if (WearableHelper.MusicPlayersPath == item.uri.path) {
                     val dataMap = DataMapItem.fromDataItem(item).dataMap
-                    updateMusicPlayers(dataMap)
+                    lifecycleScope.launch {
+                        updateMusicPlayers(dataMap)
+                    }
                 }
             }
         }
     }
 
-    private fun updateMusicPlayers(dataMap: DataMap) {
+    private suspend fun updateMusicPlayers(dataMap: DataMap) {
         val supported_players: List<String> = dataMap.getStringArrayList(WearableHelper.KEY_SUPPORTEDPLAYERS)
         val viewModels: MutableList<MusicPlayerViewModel> = ArrayList()
         for (key in supported_players) {
@@ -255,11 +260,11 @@ class MusicPlayerActivity : WearableListenerActivity(), OnDataChangedListener {
             viewModels.add(model)
         }
 
-        runOnUiThread {
+        lifecycleScope.launch(Dispatchers.Main) {
             mAdapter.updateItems(viewModels)
             binding.noplayersMessageview.visibility = if (viewModels.size > 0) View.GONE else View.VISIBLE
             binding.playerList.visibility = if (viewModels.size > 0) View.VISIBLE else View.GONE
-            binding.playerList.post {
+            lifecycleScope.launch(Dispatchers.Main) {
                 if (binding.playerList.visibility == View.VISIBLE && !binding.playerList.hasFocus()) {
                     binding.playerList.requestFocus()
                 }
@@ -268,8 +273,10 @@ class MusicPlayerActivity : WearableListenerActivity(), OnDataChangedListener {
     }
 
     private fun requestPlayersUpdate() {
-        if (connect()) {
-            sendMessage(mPhoneNodeWithApp!!.id, WearableHelper.MusicPlayersPath, null)
+        lifecycleScope.launch {
+            if (connect()) {
+                sendMessage(mPhoneNodeWithApp!!.id, WearableHelper.MusicPlayersPath, null)
+            }
         }
     }
 
@@ -306,7 +313,7 @@ class MusicPlayerActivity : WearableListenerActivity(), OnDataChangedListener {
         }
 
         // Update statuses
-        AsyncTask.run {
+        lifecycleScope.launch {
             updateConnectionStatus()
             requestPlayersUpdate()
             // Wait for music player update

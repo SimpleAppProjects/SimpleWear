@@ -23,8 +23,9 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
-import com.thewizrd.shared_resources.tasks.AsyncTask
+import com.thewizrd.shared_resources.tasks.delayLaunch
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.simplewear.databinding.FragmentPermcheckBinding
 import com.thewizrd.simplewear.helpers.PhoneStatusHelper.isCameraPermissionEnabled
@@ -33,6 +34,7 @@ import com.thewizrd.simplewear.helpers.PhoneStatusHelper.isNotificationAccessAll
 import com.thewizrd.simplewear.wearable.WearableDataListenerService
 import com.thewizrd.simplewear.wearable.WearableWorker
 import com.thewizrd.simplewear.wearable.WearableWorker.Companion.enqueueAction
+import kotlinx.coroutines.launch
 import java.util.regex.Pattern
 
 class PermissionCheckFragment : Fragment() {
@@ -114,42 +116,42 @@ class PermissionCheckFragment : Fragment() {
 
     @TargetApi(Build.VERSION_CODES.Q)
     private fun pairDevice(deviceName: String) {
-        if (activity == null) return
+        viewLifecycleOwner.lifecycleScope.launch {
+            val deviceManager = requireContext().getSystemService(Context.COMPANION_DEVICE_SERVICE) as CompanionDeviceManager
 
-        val deviceManager = requireContext().getSystemService(Context.COMPANION_DEVICE_SERVICE) as CompanionDeviceManager
+            for (assoc in deviceManager.associations) {
+                deviceManager.disassociate(assoc)
+            }
+            updatePairPermText(false)
 
-        for (assoc in deviceManager.associations) {
-            deviceManager.disassociate(assoc)
-        }
-        updatePairPermText(false)
+            val request = AssociationRequest.Builder()
+                    .addDeviceFilter(BluetoothDeviceFilter.Builder()
+                            .setNamePattern(Pattern.compile("$deviceName.*", Pattern.DOTALL))
+                            .build())
+                    .setSingleDevice(true)
+                    .build()
 
-        val request = AssociationRequest.Builder()
-                .addDeviceFilter(BluetoothDeviceFilter.Builder()
-                        .setNamePattern(Pattern.compile("$deviceName.*", Pattern.DOTALL))
-                        .build())
-                .setSingleDevice(true)
-                .build()
+            Toast.makeText(requireContext(), R.string.message_watchbtdiscover, Toast.LENGTH_LONG).show()
 
-        Toast.makeText(requireContext(), R.string.message_watchbtdiscover, Toast.LENGTH_LONG).show()
-
-        AsyncTask.run({
-            Logger.writeLine(Log.INFO, "%s: sending pair request", TAG)
-            deviceManager.associate(request, object : CompanionDeviceManager.Callback() {
-                override fun onDeviceFound(chooserLauncher: IntentSender) {
-                    if (context == null) return
-                    try {
-                        startIntentSenderForResult(chooserLauncher,
-                                SELECT_DEVICE_REQUEST_CODE, null, 0, 0, 0, null)
-                    } catch (e: SendIntentException) {
-                        Logger.writeLine(Log.ERROR, e)
+            viewLifecycleOwner.lifecycleScope.delayLaunch(timeMillis = 5000) {
+                Logger.writeLine(Log.INFO, "%s: sending pair request", TAG)
+                deviceManager.associate(request, object : CompanionDeviceManager.Callback() {
+                    override fun onDeviceFound(chooserLauncher: IntentSender) {
+                        if (context == null) return
+                        try {
+                            startIntentSenderForResult(chooserLauncher,
+                                    SELECT_DEVICE_REQUEST_CODE, null, 0, 0, 0, null)
+                        } catch (e: SendIntentException) {
+                            Logger.writeLine(Log.ERROR, e)
+                        }
                     }
-                }
 
-                override fun onFailure(error: CharSequence) {
-                    Logger.writeLine(Log.ERROR, "%s: failed to find any devices; $error", TAG)
-                }
-            }, null)
-        }, 5000)
+                    override fun onFailure(error: CharSequence) {
+                        Logger.writeLine(Log.ERROR, "%s: failed to find any devices; $error", TAG)
+                    }
+                }, null)
+            }
+        }
     }
 
     override fun onResume() {

@@ -2,8 +2,10 @@ package com.thewizrd.shared_resources.utils
 
 import android.util.Log
 import androidx.core.util.AtomicFile
-import com.thewizrd.shared_resources.tasks.AsyncTask
 import com.thewizrd.shared_resources.utils.Logger.writeLine
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 import java.io.*
 
 object FileUtils {
@@ -12,16 +14,12 @@ object FileUtils {
         return file.exists() && file.length() > 0
     }
 
-    fun readFile(file: File): String? {
-        return AsyncTask.await<String> {
+    suspend fun readFile(file: File): String? {
+        return withContext(Dispatchers.IO) {
             val mFile = AtomicFile(file)
 
             while (isFileLocked(file)) {
-                try {
-                    Thread.sleep(100)
-                } catch (e: InterruptedException) {
-                    e.printStackTrace()
-                }
+                delay(100)
             }
 
             var reader: BufferedReader? = null
@@ -54,16 +52,12 @@ object FileUtils {
         }
     }
 
-    fun writeToFile(data: String, file: File) {
-        AsyncTask.run {
+    suspend fun writeToFile(data: String, file: File) {
+        return withContext(Dispatchers.IO) {
             val mFile = AtomicFile(file)
 
             while (isFileLocked(file)) {
-                try {
-                    Thread.sleep(100)
-                } catch (e: InterruptedException) {
-                    e.printStackTrace()
-                }
+                delay(100)
             }
 
             var outputStream: FileOutputStream? = null
@@ -97,8 +91,8 @@ object FileUtils {
         }
     }
 
-    fun deleteDirectory(path: String): Boolean {
-        return AsyncTask.await<Boolean> {
+    suspend fun deleteDirectory(path: String): Boolean {
+        return withContext(Dispatchers.IO) {
             var success = false
             val directory = File(path)
 

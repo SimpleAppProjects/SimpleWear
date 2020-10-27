@@ -7,16 +7,13 @@ import android.content.Intent
 import android.net.wifi.WifiManager
 import android.util.Log
 import android.widget.RemoteViews
-import androidx.annotation.WorkerThread
 import com.google.android.clockwork.tiles.TileData
 import com.google.android.clockwork.tiles.TileProviderService
 import com.google.android.gms.common.api.ApiException
-import com.google.android.gms.tasks.Tasks
 import com.google.android.gms.wearable.*
 import com.google.android.gms.wearable.CapabilityClient.OnCapabilityChangedListener
 import com.google.android.gms.wearable.MessageClient.OnMessageReceivedListener
 import com.thewizrd.shared_resources.helpers.*
-import com.thewizrd.shared_resources.tasks.AsyncTask
 import com.thewizrd.shared_resources.utils.JSONParser.deserializer
 import com.thewizrd.shared_resources.utils.JSONParser.serializer
 import com.thewizrd.shared_resources.utils.Logger.writeLine
@@ -24,6 +21,8 @@ import com.thewizrd.shared_resources.utils.bytesToString
 import com.thewizrd.shared_resources.utils.stringToBytes
 import com.thewizrd.simplewear.LaunchActivity
 import com.thewizrd.simplewear.R
+import kotlinx.coroutines.*
+import kotlinx.coroutines.tasks.await
 import java.util.*
 import java.util.concurrent.ExecutionException
 
@@ -49,11 +48,14 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
         }
     }
 
+    private val scope = CoroutineScope(Job() + Dispatchers.Default)
+
     private var mInFocus = false
     private var id = -1
 
     override fun onDestroy() {
         Log.d(TAG, "destroying service...")
+        scope.cancel()
         super.onDestroy()
     }
 
@@ -78,7 +80,7 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
             Wearable.getCapabilityClient(applicationContext).addListener(this, WearableHelper.CAPABILITY_PHONE_APP)
             Wearable.getMessageClient(applicationContext).addListener(this)
 
-            AsyncTask.run {
+            scope.launch {
                 checkConnectionStatus()
                 requestUpdate()
             }
@@ -99,7 +101,7 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
 
     private fun sendRemoteViews() {
         Log.d(TAG, "sendRemoteViews")
-        AsyncTask.run {
+        scope.launch {
             val updateViews = buildUpdate()
 
             val tileData = TileData.Builder()
@@ -253,7 +255,7 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
     override fun onMessageReceived(messageEvent: MessageEvent) {
         val data = messageEvent.data ?: return
 
-        AsyncTask.run {
+        scope.launch {
             if (messageEvent.path.contains(WearableHelper.WifiPath)) {
                 val wifiStatus = data[0].toInt()
                 var enabled = false
@@ -301,7 +303,7 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
     }
 
     override fun onCapabilityChanged(capabilityInfo: CapabilityInfo) {
-        AsyncTask.run {
+        scope.launch {
             mPhoneNodeWithApp = pickBestNodeId(capabilityInfo.nodes)
 
             mConnectionStatus = if (mPhoneNodeWithApp == null) {
@@ -316,7 +318,7 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
         }
     }
 
-    protected fun checkConnectionStatus() {
+    protected suspend fun checkConnectionStatus() {
         mPhoneNodeWithApp = checkIfPhoneHasApp()
 
         mConnectionStatus = if (mPhoneNodeWithApp == null) {
@@ -330,14 +332,13 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
         }
     }
 
-    @WorkerThread
-    protected fun checkIfPhoneHasApp(): Node? {
+    protected suspend fun checkIfPhoneHasApp(): Node? {
         var node: Node? = null
 
         try {
-            val capabilityInfo = Tasks.await(Wearable.getCapabilityClient(this@DashboardTileProviderService)
-                    .getCapability(WearableHelper.CAPABILITY_PHONE_APP,
-                            CapabilityClient.FILTER_REACHABLE))
+            val capabilityInfo = Wearable.getCapabilityClient(this@DashboardTileProviderService)
+                    .getCapability(WearableHelper.CAPABILITY_PHONE_APP, CapabilityClient.FILTER_REACHABLE)
+                    .await()
             node = pickBestNodeId(capabilityInfo.nodes)
         } catch (e: ExecutionException) {
             writeLine(Log.ERROR, e)
@@ -348,19 +349,18 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
         return node
     }
 
-    @WorkerThread
-    protected fun connect(): Boolean {
-        return AsyncTask.await<Boolean> {
-            if (mPhoneNodeWithApp == null)
-                mPhoneNodeWithApp = checkIfPhoneHasApp()
+    protected suspend fun connect(): Boolean {
+        if (mPhoneNodeWithApp == null)
+            mPhoneNodeWithApp = checkIfPhoneHasApp()
 
-            mPhoneNodeWithApp != null
-        }
+        return mPhoneNodeWithApp != null
     }
 
     protected fun requestUpdate() {
-        if (connect()) {
-            sendMessage(mPhoneNodeWithApp!!.id, WearableHelper.UpdatePath, null)
+        scope.launch {
+            if (connect()) {
+                sendMessage(mPhoneNodeWithApp!!.id, WearableHelper.UpdatePath, null)
+            }
         }
     }
 
@@ -369,17 +369,18 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
     }
 
     protected fun requestAction(actionJSONString: String) {
-        AsyncTask.run {
+        scope.launch {
             if (connect()) {
                 sendMessage(mPhoneNodeWithApp!!.id, WearableHelper.ActionsPath, actionJSONString.stringToBytes())
             }
         }
     }
 
-    protected fun sendMessage(nodeID: String, path: String, data: ByteArray?) {
+    protected suspend fun sendMessage(nodeID: String, path: String, data: ByteArray?) {
         try {
-            Tasks.await(Wearable.getMessageClient(this@DashboardTileProviderService)
-                    .sendMessage(nodeID, path, data))
+            Wearable.getMessageClient(this@DashboardTileProviderService)
+                    .sendMessage(nodeID, path, data)
+                    .await()
         } catch (ex: ExecutionException) {
             if (ex.cause is ApiException) {
                 val apiEx = ex.cause as ApiException

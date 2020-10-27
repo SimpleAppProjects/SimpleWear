@@ -2,7 +2,9 @@ package com.thewizrd.shared_resources.utils
 
 import android.content.Context
 import com.thewizrd.shared_resources.BuildConfig
-import com.thewizrd.shared_resources.tasks.AsyncTask
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import timber.log.Timber
 import timber.log.Timber.DebugTree
 
@@ -39,7 +41,7 @@ object Logger {
     }
 
     private fun cleanupLogs(context: Context) {
-        AsyncTask.run {
+        GlobalScope.launch(Dispatchers.IO) {
             FileUtils.deleteDirectory(context.getExternalFilesDir(null).toString() + "/logs")
         }
     }

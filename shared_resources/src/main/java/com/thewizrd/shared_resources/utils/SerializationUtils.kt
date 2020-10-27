@@ -1,3 +1,5 @@
+@file:JvmName("SerializationUtils")
+
 package com.thewizrd.shared_resources.utils
 
 import android.os.Build

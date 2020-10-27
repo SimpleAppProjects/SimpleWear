@@ -11,20 +11,21 @@ import android.os.Looper
 import android.support.wearable.phone.PhoneDeviceType
 import android.util.Log
 import android.widget.Toast
-import androidx.annotation.WorkerThread
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.google.android.gms.common.api.ApiException
-import com.google.android.gms.tasks.Tasks
 import com.google.android.gms.wearable.*
 import com.google.android.gms.wearable.CapabilityClient.OnCapabilityChangedListener
 import com.google.android.gms.wearable.MessageClient.OnMessageReceivedListener
 import com.thewizrd.shared_resources.helpers.*
-import com.thewizrd.shared_resources.tasks.AsyncTask
 import com.thewizrd.shared_resources.utils.JSONParser.serializer
 import com.thewizrd.shared_resources.utils.Logger.writeLine
 import com.thewizrd.shared_resources.utils.bytesToString
 import com.thewizrd.shared_resources.utils.stringToBytes
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import java.util.concurrent.ExecutionException
 
 abstract class WearableListenerActivity : AppCompatActivity(), OnMessageReceivedListener, OnCapabilityChangedListener {
@@ -134,50 +135,47 @@ abstract class WearableListenerActivity : AppCompatActivity(), OnMessageReceived
     }
 
     protected fun openAppOnPhone(showAnimation: Boolean = true) {
-        AsyncTask.run {
-            AsyncTask.await<Void> {
-                connect()
+        lifecycleScope.launch {
+            connect()
 
-                if (mPhoneNodeWithApp == null) {
-                    mMainHandler.post {
-                        Toast.makeText(this@WearableListenerActivity, "Device is not connected or app is not installed on device...", Toast.LENGTH_SHORT).show()
-                    }
-
-                    val deviceType = PhoneDeviceType.getPhoneDeviceType(this@WearableListenerActivity)
-                    when (deviceType) {
-                        PhoneDeviceType.DEVICE_TYPE_ANDROID -> {
-                            LocalBroadcastManager.getInstance(this@WearableListenerActivity).sendBroadcast(
-                                    Intent(ACTION_SHOWSTORELISTING))
-                        }
-                        PhoneDeviceType.DEVICE_TYPE_IOS -> {
-                            mMainHandler.post {
-                                Toast.makeText(this@WearableListenerActivity, "Connected device is not supported", Toast.LENGTH_SHORT).show()
-                            }
-                        }
-                        else -> {
-                            mMainHandler.post {
-                                Toast.makeText(this@WearableListenerActivity, "Connected device is not supported", Toast.LENGTH_SHORT).show()
-                            }
-                        }
-                    }
-                } else {
-                    // Send message to device to start activity
-                    val result = Tasks.await(Wearable.getMessageClient(this@WearableListenerActivity)
-                            .sendMessage(mPhoneNodeWithApp!!.id, WearableHelper.StartActivityPath, ByteArray(0)))
-
-                    LocalBroadcastManager.getInstance(this@WearableListenerActivity)
-                            .sendBroadcast(Intent(ACTION_OPENONPHONE)
-                                    .putExtra(EXTRA_SUCCESS, result != -1)
-                                    .putExtra(EXTRA_SHOWANIMATION, showAnimation))
+            if (mPhoneNodeWithApp == null) {
+                lifecycleScope.launch(Dispatchers.Main) {
+                    Toast.makeText(this@WearableListenerActivity, "Device is not connected or app is not installed on device...", Toast.LENGTH_SHORT).show()
                 }
 
-                null
+                val deviceType = PhoneDeviceType.getPhoneDeviceType(this@WearableListenerActivity)
+                when (deviceType) {
+                    PhoneDeviceType.DEVICE_TYPE_ANDROID -> {
+                        LocalBroadcastManager.getInstance(this@WearableListenerActivity).sendBroadcast(
+                                Intent(ACTION_SHOWSTORELISTING))
+                    }
+                    PhoneDeviceType.DEVICE_TYPE_IOS -> {
+                        lifecycleScope.launch(Dispatchers.Main) {
+                            Toast.makeText(this@WearableListenerActivity, "Connected device is not supported", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                    else -> {
+                        lifecycleScope.launch(Dispatchers.Main) {
+                            Toast.makeText(this@WearableListenerActivity, "Connected device is not supported", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
+            } else {
+                // Send message to device to start activity
+                val result = Wearable.getMessageClient(this@WearableListenerActivity)
+                        .sendMessage(mPhoneNodeWithApp!!.id, WearableHelper.StartActivityPath, ByteArray(0))
+                        .await()
+
+                LocalBroadcastManager.getInstance(this@WearableListenerActivity)
+                        .sendBroadcast(Intent(ACTION_OPENONPHONE)
+                                .putExtra(EXTRA_SUCCESS, result != -1)
+                                .putExtra(EXTRA_SHOWANIMATION, showAnimation))
             }
         }
     }
 
     override fun onMessageReceived(messageEvent: MessageEvent) {
-        AsyncTask.run {
+        lifecycleScope.launch {
             if (messageEvent.path.contains(WearableHelper.WifiPath)) {
                 val data = messageEvent.data
                 val wifiStatus = data[0].toInt()
@@ -238,7 +236,7 @@ abstract class WearableListenerActivity : AppCompatActivity(), OnMessageReceived
     }
 
     override fun onCapabilityChanged(capabilityInfo: CapabilityInfo) {
-        AsyncTask.run {
+        lifecycleScope.launch {
             mPhoneNodeWithApp = pickBestNodeId(capabilityInfo.nodes)
 
             if (mPhoneNodeWithApp == null) {
@@ -264,25 +262,15 @@ abstract class WearableListenerActivity : AppCompatActivity(), OnMessageReceived
         }
     }
 
-    @WorkerThread
-    protected fun updateConnectionStatus() {
-        // Make sure we're not on the main thread
-        check(Looper.getMainLooper() != Looper.myLooper()) {
-            "This task should not be called on the main thread"
-        }
+    protected suspend fun updateConnectionStatus() {
+        checkConnectionStatus()
 
-        AsyncTask.await<Void> {
-            checkConnectionStatus()
-
-            LocalBroadcastManager.getInstance(this@WearableListenerActivity)
-                    .sendBroadcast(Intent(ACTION_UPDATECONNECTIONSTATUS)
-                            .putExtra(EXTRA_CONNECTIONSTATUS, mConnectionStatus.value))
-            null
-        }
+        LocalBroadcastManager.getInstance(this@WearableListenerActivity)
+                .sendBroadcast(Intent(ACTION_UPDATECONNECTIONSTATUS)
+                        .putExtra(EXTRA_CONNECTIONSTATUS, mConnectionStatus.value))
     }
 
-    @WorkerThread
-    protected fun checkConnectionStatus() {
+    protected suspend fun checkConnectionStatus() {
         mPhoneNodeWithApp = checkIfPhoneHasApp()
 
         if (mPhoneNodeWithApp == null) {
@@ -303,14 +291,13 @@ abstract class WearableListenerActivity : AppCompatActivity(), OnMessageReceived
         }
     }
 
-    @WorkerThread
-    protected fun checkIfPhoneHasApp(): Node? {
+    protected suspend fun checkIfPhoneHasApp(): Node? {
         var node: Node? = null
 
         try {
-            val capabilityInfo = Tasks.await(Wearable.getCapabilityClient(this@WearableListenerActivity)
-                    .getCapability(WearableHelper.CAPABILITY_PHONE_APP,
-                            CapabilityClient.FILTER_REACHABLE))
+            val capabilityInfo = Wearable.getCapabilityClient(this@WearableListenerActivity)
+                    .getCapability(WearableHelper.CAPABILITY_PHONE_APP, CapabilityClient.FILTER_REACHABLE)
+                    .await()
             node = pickBestNodeId(capabilityInfo.nodes)
         } catch (e: ExecutionException) {
             writeLine(Log.ERROR, e)
@@ -321,39 +308,37 @@ abstract class WearableListenerActivity : AppCompatActivity(), OnMessageReceived
         return node
     }
 
-    @WorkerThread
-    protected fun connect(): Boolean {
-        return AsyncTask.await<Boolean> {
-            if (mPhoneNodeWithApp == null)
-                mPhoneNodeWithApp = checkIfPhoneHasApp()
+    protected suspend fun connect(): Boolean {
+        if (mPhoneNodeWithApp == null)
+            mPhoneNodeWithApp = checkIfPhoneHasApp()
 
-            mPhoneNodeWithApp != null
-        }
+        return mPhoneNodeWithApp != null
     }
 
-    @WorkerThread
     protected fun requestUpdate() {
-        if (connect()) {
-            sendMessage(mPhoneNodeWithApp!!.id, WearableHelper.UpdatePath, null)
+        lifecycleScope.launch {
+            if (connect()) {
+                sendMessage(mPhoneNodeWithApp!!.id, WearableHelper.UpdatePath, null)
+            }
         }
     }
 
-    @WorkerThread
     protected fun requestAction(action: Action?) {
         requestAction(serializer(action, Action::class.java))
     }
 
-    @WorkerThread
     protected fun requestAction(actionJSONString: String?) {
-        if (connect()) {
-            sendMessage(mPhoneNodeWithApp!!.id, WearableHelper.ActionsPath, actionJSONString?.stringToBytes())
+        lifecycleScope.launch {
+            if (connect()) {
+                sendMessage(mPhoneNodeWithApp!!.id, WearableHelper.ActionsPath, actionJSONString?.stringToBytes())
+            }
         }
     }
 
-    @WorkerThread
-    protected fun sendMessage(nodeID: String, path: String, data: ByteArray?) {
+    protected suspend fun sendMessage(nodeID: String, path: String, data: ByteArray?) {
         try {
-            Tasks.await(Wearable.getMessageClient(this@WearableListenerActivity).sendMessage(nodeID, path, data))
+            Wearable.getMessageClient(this@WearableListenerActivity)
+                    .sendMessage(nodeID, path, data).await()
         } catch (ex: ExecutionException) {
             if (ex.cause is ApiException) {
                 val apiEx = ex.cause as ApiException?
@@ -373,11 +358,10 @@ abstract class WearableListenerActivity : AppCompatActivity(), OnMessageReceived
     }
 
     @Throws(ApiException::class)
-    @WorkerThread
-    private fun sendPing(nodeID: String) {
+    private suspend fun sendPing(nodeID: String) {
         try {
-            Tasks.await(Wearable.getMessageClient(this@WearableListenerActivity)
-                    .sendMessage(nodeID, WearableHelper.PingPath, null))
+            Wearable.getMessageClient(this@WearableListenerActivity)
+                    .sendMessage(nodeID, WearableHelper.PingPath, null).await()
         } catch (ex: ExecutionException) {
             if (ex.cause is ApiException) {
                 throw ex.cause as ApiException

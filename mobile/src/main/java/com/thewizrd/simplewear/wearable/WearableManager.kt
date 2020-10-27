@@ -11,15 +11,14 @@ import android.util.Log
 import android.util.TypedValue
 import android.view.KeyEvent
 import androidx.annotation.RestrictTo
-import androidx.annotation.WorkerThread
-import com.google.android.gms.tasks.Tasks
 import com.google.android.gms.wearable.*
 import com.google.android.gms.wearable.CapabilityClient.OnCapabilityChangedListener
 import com.thewizrd.shared_resources.helpers.*
 import com.thewizrd.shared_resources.sleeptimer.SleepTimerHelper
-import com.thewizrd.shared_resources.tasks.AsyncTask
 import com.thewizrd.shared_resources.utils.*
 import com.thewizrd.simplewear.helpers.PhoneStatusHelper
+import kotlinx.coroutines.*
+import kotlinx.coroutines.tasks.await
 import java.util.*
 import java.util.concurrent.ExecutionException
 
@@ -29,7 +28,9 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
         init()
     }
 
+    private val scope = CoroutineScope(Job() + Dispatchers.Default)
     private var mWearNodesWithApp: Collection<Node>? = null
+
     private fun init() {
         val mCapabilityClient = Wearable.getCapabilityClient(mContext)
         mCapabilityClient.addListener(this, WearableHelper.CAPABILITY_WEAR_APP)
@@ -38,28 +39,27 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
     fun unregister() {
         val mCapabilityClient = Wearable.getCapabilityClient(mContext)
         mCapabilityClient.removeListener(this)
+        scope.cancel()
     }
 
-    @get:WorkerThread
-    val isWearNodesAvailable: Boolean
-        get() {
-            if (mWearNodesWithApp == null) {
-                mWearNodesWithApp = findWearDevicesWithApp()
-            }
-            return mWearNodesWithApp != null && !mWearNodesWithApp!!.isEmpty()
+    suspend fun isWearNodesAvailable(): Boolean {
+        if (mWearNodesWithApp == null) {
+            mWearNodesWithApp = findWearDevicesWithApp()
         }
+        return mWearNodesWithApp != null && !mWearNodesWithApp!!.isEmpty()
+    }
 
     override fun onCapabilityChanged(capabilityInfo: CapabilityInfo) {
         mWearNodesWithApp = capabilityInfo.nodes
-        AsyncTask.run { requestWearAppState() }
+        scope.launch { requestWearAppState() }
     }
 
-    @WorkerThread
-    private fun findWearDevicesWithApp(): Collection<Node>? {
+    private suspend fun findWearDevicesWithApp(): Collection<Node>? {
         var capabilityInfo: CapabilityInfo? = null
         try {
-            capabilityInfo = Tasks.await(Wearable.getCapabilityClient(mContext)
-                    .getCapability(WearableHelper.CAPABILITY_WEAR_APP, CapabilityClient.FILTER_REACHABLE))
+            capabilityInfo = Wearable.getCapabilityClient(mContext)
+                    .getCapability(WearableHelper.CAPABILITY_WEAR_APP, CapabilityClient.FILTER_REACHABLE)
+                    .await()
         } catch (e: ExecutionException) {
             Logger.writeLine(Log.ERROR, e)
         } catch (e: InterruptedException) {
@@ -68,8 +68,7 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
         return capabilityInfo?.nodes
     }
 
-    @WorkerThread
-    fun startMusicPlayer(nodeID: String?, pkgName: String, activityName: String?, playMusic: Boolean) {
+    suspend fun startMusicPlayer(nodeID: String?, pkgName: String, activityName: String?, playMusic: Boolean) {
         if (!String.isNullOrWhitespace(pkgName) && !String.isNullOrWhitespace(activityName)) {
             val appIntent = Intent()
             appIntent.setAction(Intent.ACTION_MAIN)
@@ -93,10 +92,7 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
                 mContext.startActivity(appIntent)
                 if (playMusic) {
                     // Give the system enough time to start the app
-                    try {
-                        Thread.sleep(4500)
-                    } catch (ignored: InterruptedException) {
-                    }
+                    delay(4500)
 
                     // If the app has a registered MediaButton Broadcast receiver,
                     // Send the media keyevent directly to the app; Otherwise, send
@@ -121,10 +117,7 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
                     mContext.startActivity(appIntent)
                     if (playMusic) {
                         // Give the system enough time to start the app
-                        try {
-                            Thread.sleep(4500)
-                        } catch (ignored: InterruptedException) {
-                        }
+                        delay(4500)
 
                         // If the app has a registered MediaButton Broadcast receiver,
                         // Send the media keyevent directly to the app; Otherwise, send
@@ -141,8 +134,7 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
         }
     }
 
-    @WorkerThread
-    fun sendSupportedMusicPlayers() {
+    suspend fun sendSupportedMusicPlayers() {
         val infos = mContext.packageManager.queryBroadcastReceivers(
                 Intent(Intent.ACTION_MEDIA_BUTTON), PackageManager.GET_RESOLVED_FILTER)
         val mapRequest = PutDataMapRequest.create(WearableHelper.MusicPlayersPath)
@@ -177,7 +169,9 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
         mapRequest.dataMap.putStringArrayList(WearableHelper.KEY_SUPPORTEDPLAYERS, supportedPlayers)
         mapRequest.setUrgent()
         try {
-            Tasks.await(Wearable.getDataClient(mContext).putDataItem(mapRequest.asPutDataRequest()))
+            Wearable.getDataClient(mContext)
+                    .putDataItem(mapRequest.asPutDataRequest())
+                    .await()
         } catch (e: ExecutionException) {
             Logger.writeLine(Log.ERROR, e)
         } catch (e: InterruptedException) {
@@ -185,16 +179,14 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
         }
     }
 
-    @WorkerThread
-    fun requestWearAppState() {
+    suspend fun requestWearAppState() {
         if (mWearNodesWithApp == null) return
         for (node in mWearNodesWithApp!!) {
             sendMessage(node.id, WearableHelper.AppStatePath, null)
         }
     }
 
-    @WorkerThread
-    fun sendStatusUpdate(nodeID: String?, path: String?) {
+    suspend fun sendStatusUpdate(nodeID: String?, path: String?) {
         if (path != null && path.contains(WearableHelper.WifiPath)) {
             sendMessage(nodeID, path, byteArrayOf(PhoneStatusHelper.getWifiState(mContext).toByte()))
         } else if (path != null && path.contains(WearableHelper.BatteryPath)) {
@@ -207,13 +199,14 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
     }
 
     fun sendActionsUpdate(nodeID: String?) {
-        for (act in Actions.values()) {
-            AsyncTask.run { sendActionsUpdate(nodeID, act) }
+        scope.launch {
+            for (act in Actions.values()) {
+                async { sendActionsUpdate(nodeID, act) }
+            }
         }
     }
 
-    @WorkerThread
-    fun sendActionsUpdate(nodeID: String?, act: Actions?) {
+    suspend fun sendActionsUpdate(nodeID: String?, act: Actions?) {
         val action: Action
         when (act) {
             Actions.WIFI -> {
@@ -249,8 +242,7 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
         }
     }
 
-    @WorkerThread
-    fun performAction(nodeID: String?, action: Action) {
+    suspend fun performAction(nodeID: String?, action: Action) {
         val tA: ToggleAction
         val nA: NormalAction
         val vA: ValueAction
@@ -304,14 +296,12 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
         }
     }
 
-    @WorkerThread
-    fun sendSleepTimerUpdate(nodeID: String?, timeStartInMillis: Long, timeInMillis: Long) {
+    suspend fun sendSleepTimerUpdate(nodeID: String?, timeStartInMillis: Long, timeInMillis: Long) {
         sendMessage(nodeID, SleepTimerHelper.SleepTimerStatusPath,
                 String.format(Locale.ROOT, "%d;%d", timeStartInMillis, timeInMillis).stringToBytes())
     }
 
-    @WorkerThread
-    fun sendMessage(nodeID: String?, path: String, data: ByteArray?) {
+    suspend fun sendMessage(nodeID: String?, path: String, data: ByteArray?) {
         if (nodeID == null) {
             if (mWearNodesWithApp == null) {
                 // Create requests if nodes exist with app support
@@ -321,7 +311,9 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
         }
         if (nodeID != null) {
             try {
-                Tasks.await(Wearable.getMessageClient(mContext).sendMessage(nodeID, path, data))
+                Wearable.getMessageClient(mContext)
+                        .sendMessage(nodeID, path, data)
+                        .await()
             } catch (e: ExecutionException) {
                 Logger.writeLine(Log.ERROR, e)
             } catch (e: InterruptedException) {
@@ -330,7 +322,9 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
         } else {
             for (node in mWearNodesWithApp!!) {
                 try {
-                    Tasks.await(Wearable.getMessageClient(mContext).sendMessage(node.id, path, data))
+                    Wearable.getMessageClient(mContext)
+                            .sendMessage(node.id, path, data)
+                            .await()
                 } catch (e: ExecutionException) {
                     Logger.writeLine(Log.ERROR, e)
                 } catch (e: InterruptedException) {

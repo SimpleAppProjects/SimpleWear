@@ -11,7 +11,7 @@ import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.shared_resources.utils.stringToBytes
 import java.util.*
 
-class WearableWorker(context: Context, workerParams: WorkerParameters) : Worker(context, workerParams) {
+class WearableWorker(context: Context, workerParams: WorkerParameters) : CoroutineWorker(context, workerParams) {
     companion object {
         private const val TAG = "WearableWorker"
 
@@ -96,14 +96,15 @@ class WearableWorker(context: Context, workerParams: WorkerParameters) : Worker(
     @Retention(AnnotationRetention.SOURCE)
     annotation class StatusAction
 
-    private lateinit var mWearMgr: WearableManager
-
-    override fun doWork(): Result {
+    override suspend fun doWork(): Result {
         Logger.writeLine(Log.INFO, "%s: Work started", TAG)
+
         val intentAction = inputData.getString(KEY_ACTION)
         Logger.writeLine(Log.INFO, "%s: Action: %s", TAG, intentAction)
-        mWearMgr = WearableManager(applicationContext)
-        if (mWearMgr.isWearNodesAvailable) {
+
+        val mWearMgr = WearableManager(applicationContext)
+
+        if (mWearMgr.isWearNodesAvailable()) {
             if (ACTION_SENDSTATUSUPDATE == intentAction) {
                 // Check if any devices are running and send an update
                 mWearMgr.requestWearAppState()
@@ -130,11 +131,9 @@ class WearableWorker(context: Context, workerParams: WorkerParameters) : Worker(
                 mWearMgr.sendSleepTimerUpdate(null, timeStartMs, timeProgMs)
             }
         }
-        return Result.success()
-    }
 
-    override fun onStopped() {
-        super.onStopped()
         mWearMgr.unregister()
+
+        return Result.success()
     }
 }

@@ -7,11 +7,12 @@ import android.graphics.Canvas
 import android.graphics.drawable.Drawable
 import android.util.Log
 import androidx.core.content.ContextCompat
-import com.google.android.gms.tasks.Tasks
 import com.google.android.gms.wearable.Asset
 import com.google.android.gms.wearable.DataClient
-import com.thewizrd.shared_resources.tasks.AsyncTask
 import com.thewizrd.shared_resources.utils.Logger.writeLine
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import java.util.concurrent.ExecutionException
 
@@ -54,26 +55,26 @@ object ImageUtils {
         return Asset.createFromBytes(byteStream.toByteArray())
     }
 
-    fun bitmapFromAssetStream(client: DataClient, asset: Asset?): Bitmap? {
-        return AsyncTask.await<Bitmap> {
+    suspend fun bitmapFromAssetStream(client: DataClient, asset: Asset?): Bitmap? {
+        return withContext(Dispatchers.IO) {
             requireNotNull(asset) { "Asset must be non-null" }
 
             try {
                 // convert asset into a file descriptor and block until it's ready
-                val assetInputStream = Tasks.await(client.getFdForAsset(asset)).inputStream
+                val assetInputStream = client.getFdForAsset(asset).await().inputStream
                 if (assetInputStream == null) {
                     writeLine(Log.INFO, "ImageUtils: bitmapFromAssetStream: Unknown asset requested")
-                    return@await null
+                    return@withContext null
                 }
 
                 // decode the stream into a bitmap
-                return@await BitmapFactory.decodeStream(assetInputStream)
+                return@withContext BitmapFactory.decodeStream(assetInputStream)
             } catch (e: ExecutionException) {
                 writeLine(Log.ERROR, "ImageUtils: bitmapFromAssetStream: Failed to get asset")
-                return@await null
+                return@withContext null
             } catch (e: InterruptedException) {
                 writeLine(Log.ERROR, "ImageUtils: bitmapFromAssetStream: Failed to get asset")
-                return@await null
+                return@withContext null
             }
         }
     }

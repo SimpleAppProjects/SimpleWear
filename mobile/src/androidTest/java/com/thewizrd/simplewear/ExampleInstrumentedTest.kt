@@ -5,14 +5,15 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.media.AudioManager
-import android.os.Handler
-import android.os.Looper
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.thewizrd.shared_resources.tasks.AsyncTask
 import com.thewizrd.shared_resources.utils.FileUtils.deleteDirectory
 import com.thewizrd.simplewear.wearable.WearableWorker
 import com.thewizrd.simplewear.wearable.WearableWorker.Companion.enqueueAction
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -30,7 +31,7 @@ class ExampleInstrumentedTest {
     fun wearableServiceSpam() {
         // Context of the app under test.
         val appContext = ApplicationProvider.getApplicationContext<Context>()
-        AsyncTask.run {
+        GlobalScope.launch {
             for (i in 0..7) {
                 enqueueAction(appContext, WearableWorker.ACTION_SENDWIFIUPDATE)
                 enqueueAction(appContext, WearableWorker.ACTION_SENDBTUPDATE)
@@ -40,10 +41,8 @@ class ExampleInstrumentedTest {
                 enqueueAction(appContext, WearableWorker.ACTION_SENDWIFIUPDATE)
                 enqueueAction(appContext, WearableWorker.ACTION_SENDMOBILEDATAUPDATE)
             }
-        }
-        AsyncTask.await<Void> {
-            Thread.sleep(7500)
-            null
+
+            delay(7500)
         }
     }
 
@@ -54,7 +53,7 @@ class ExampleInstrumentedTest {
         val infos = appContext.packageManager.queryIntentActivities(
                 Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_APP_MUSIC), PackageManager.GET_RESOLVED_FILTER)
         for (info in infos) {
-            Handler(Looper.getMainLooper()).post {
+            GlobalScope.launch(Dispatchers.Main) {
                 val appInfo = info.activityInfo.applicationInfo
                 val label = appContext.packageManager.getApplicationLabel(appInfo).toString()
                 val appIntent = Intent()
@@ -63,11 +62,9 @@ class ExampleInstrumentedTest {
                         .addCategory(Intent.CATEGORY_LAUNCHER)
                         .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK).component = ComponentName(appInfo.packageName, info.activityInfo.name)
                 appContext.startActivity(appIntent)
-                try {
-                    Thread.sleep(500)
-                } catch (e: InterruptedException) {
-                    e.printStackTrace()
-                }
+
+                delay(500)
+
                 val i = Intent("com.android.music.musicservicecommand")
                 i.putExtra("command", "play")
                 appContext.sendBroadcast(i)
@@ -90,17 +87,19 @@ class ExampleInstrumentedTest {
     @Test
     @Throws(IOException::class)
     fun logCleanupTest() {
-        // Context of the app under test.
-        val appContext = ApplicationProvider.getApplicationContext<Context>()
-        val filePath = appContext.getExternalFilesDir(null).toString() + "/logs"
-        val directory = File(filePath)
-        if (!directory.exists()) {
-            Assert.assertTrue(directory.mkdir())
+        GlobalScope.launch(Dispatchers.IO) {
+            // Context of the app under test.
+            val appContext = ApplicationProvider.getApplicationContext<Context>()
+            val filePath = appContext.getExternalFilesDir(null).toString() + "/logs"
+            val directory = File(filePath)
+            if (!directory.exists()) {
+                Assert.assertTrue(directory.mkdir())
+            }
+            for (i in 0..3) {
+                val file = File(filePath + File.separator + "Log." + i + ".log")
+                Assert.assertTrue(file.createNewFile())
+            }
+            Assert.assertTrue(deleteDirectory(filePath))
         }
-        for (i in 0..3) {
-            val file = File(filePath + File.separator + "Log." + i + ".log")
-            Assert.assertTrue(file.createNewFile())
-        }
-        Assert.assertTrue(deleteDirectory(filePath))
     }
 }

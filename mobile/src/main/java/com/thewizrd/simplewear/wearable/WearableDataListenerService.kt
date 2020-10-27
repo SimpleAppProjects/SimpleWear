@@ -14,6 +14,7 @@ import com.thewizrd.shared_resources.utils.booleanToBytes
 import com.thewizrd.shared_resources.utils.bytesToInt
 import com.thewizrd.shared_resources.utils.bytesToString
 import com.thewizrd.simplewear.MainActivity
+import kotlinx.coroutines.*
 
 class WearableDataListenerService : WearableListenerService() {
     companion object {
@@ -23,6 +24,7 @@ class WearableDataListenerService : WearableListenerService() {
         private const val JOB_ID = 1000
     }
 
+    private val scope = CoroutineScope(Job() + Dispatchers.Unconfined)
     private lateinit var mWearMgr: WearableManager
 
     override fun onCreate() {
@@ -32,56 +34,60 @@ class WearableDataListenerService : WearableListenerService() {
 
     override fun onDestroy() {
         mWearMgr.unregister()
+        scope.cancel()
         super.onDestroy()
     }
 
     override fun onMessageReceived(messageEvent: MessageEvent) {
-        if (messageEvent.path == WearableHelper.StartActivityPath) {
-            val startIntent = Intent(this, MainActivity::class.java)
-                    .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-            startActivity(startIntent)
-        } else if (messageEvent.path.startsWith(WearableHelper.ActionsPath)) {
-            val jsonData: String? = messageEvent.data?.bytesToString()
-            val action = deserializer(jsonData, Action::class.java)
-            mWearMgr.performAction(messageEvent.sourceNodeId, action!!)
-        } else if (messageEvent.path.startsWith(WearableHelper.UpdatePath)) {
-            mWearMgr.sendStatusUpdate(messageEvent.sourceNodeId, null)
-            mWearMgr.sendActionsUpdate(messageEvent.sourceNodeId)
-        } else if (messageEvent.path == WearableHelper.AppStatePath) {
-            val wearAppState = AppState.valueOf(messageEvent.data.bytesToString())
-            if (wearAppState == AppState.FOREGROUND) {
+        runBlocking(scope.coroutineContext) {
+            if (messageEvent.path == WearableHelper.StartActivityPath) {
+                val startIntent = Intent(this@WearableDataListenerService, MainActivity::class.java)
+                        .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                startActivity(startIntent)
+            } else if (messageEvent.path.startsWith(WearableHelper.ActionsPath)) {
+                val jsonData: String? = messageEvent.data?.bytesToString()
+                val action = deserializer(jsonData, Action::class.java)
+                mWearMgr.performAction(messageEvent.sourceNodeId, action!!)
+            } else if (messageEvent.path.startsWith(WearableHelper.UpdatePath)) {
                 mWearMgr.sendStatusUpdate(messageEvent.sourceNodeId, null)
                 mWearMgr.sendActionsUpdate(messageEvent.sourceNodeId)
+            } else if (messageEvent.path == WearableHelper.AppStatePath) {
+                val wearAppState = AppState.valueOf(messageEvent.data.bytesToString())
+                if (wearAppState == AppState.FOREGROUND) {
+                    mWearMgr.sendStatusUpdate(messageEvent.sourceNodeId, null)
+                    mWearMgr.sendActionsUpdate(messageEvent.sourceNodeId)
+                }
+            } else if (messageEvent.path.startsWith(WearableHelper.MusicPlayersPath)) {
+                mWearMgr.sendSupportedMusicPlayers()
+            } else if (messageEvent.path == WearableHelper.OpenMusicPlayerPath) {
+                val jsonData: String? = messageEvent.data?.bytesToString()
+                val pair = deserializer(jsonData, Pair::class.java)
+                val pkgName = pair?.first.toString()
+                val activityName = pair?.second.toString()
+                mWearMgr.startMusicPlayer(messageEvent.sourceNodeId, pkgName, activityName, false)
+            } else if (messageEvent.path == WearableHelper.PlayCommandPath) {
+                val jsonData: String? = messageEvent.data?.bytesToString()
+                val pair = deserializer(jsonData, Pair::class.java)
+                val pkgName = pair?.first.toString()
+                val activityName = pair?.second.toString()
+                mWearMgr.startMusicPlayer(messageEvent.sourceNodeId, pkgName, activityName, true)
+            } else if (messageEvent.path == WearableHelper.BtDiscoverPath) {
+                val deviceName: String? = messageEvent.data?.bytesToString()
+                LocalBroadcastManager.getInstance(this@WearableDataListenerService)
+                        .sendBroadcast(Intent(ACTION_GETCONNECTEDNODE)
+                                .putExtra(EXTRA_NODEDEVICENAME, deviceName))
+            } else if (messageEvent.path == SleepTimerHelper.SleepTimerEnabledPath) {
+                mWearMgr.sendMessage(messageEvent.sourceNodeId, SleepTimerHelper.SleepTimerEnabledPath,
+                        SleepTimerHelper.isSleepTimerInstalled.booleanToBytes())
+            } else if (messageEvent.path == SleepTimerHelper.SleepTimerStartPath) {
+                val timeInMins: Int? = messageEvent.data?.bytesToInt()
+                timeInMins?.let { startSleepTimer(it) }
+            } else if (messageEvent.path == SleepTimerHelper.SleepTimerStopPath) {
+                stopSleepTimer()
+            } else if (messageEvent.path.startsWith(WearableHelper.StatusPath)) {
+                mWearMgr.sendStatusUpdate(messageEvent.sourceNodeId, messageEvent.path)
             }
-        } else if (messageEvent.path.startsWith(WearableHelper.MusicPlayersPath)) {
-            mWearMgr.sendSupportedMusicPlayers()
-        } else if (messageEvent.path == WearableHelper.OpenMusicPlayerPath) {
-            val jsonData: String? = messageEvent.data?.bytesToString()
-            val pair = deserializer(jsonData, Pair::class.java)
-            val pkgName = pair?.first.toString()
-            val activityName = pair?.second.toString()
-            mWearMgr.startMusicPlayer(messageEvent.sourceNodeId, pkgName, activityName, false)
-        } else if (messageEvent.path == WearableHelper.PlayCommandPath) {
-            val jsonData: String? = messageEvent.data?.bytesToString()
-            val pair = deserializer(jsonData, Pair::class.java)
-            val pkgName = pair?.first.toString()
-            val activityName = pair?.second.toString()
-            mWearMgr.startMusicPlayer(messageEvent.sourceNodeId, pkgName, activityName, true)
-        } else if (messageEvent.path == WearableHelper.BtDiscoverPath) {
-            val deviceName: String? = messageEvent.data?.bytesToString()
-            LocalBroadcastManager.getInstance(this)
-                    .sendBroadcast(Intent(ACTION_GETCONNECTEDNODE)
-                            .putExtra(EXTRA_NODEDEVICENAME, deviceName))
-        } else if (messageEvent.path == SleepTimerHelper.SleepTimerEnabledPath) {
-            mWearMgr.sendMessage(messageEvent.sourceNodeId, SleepTimerHelper.SleepTimerEnabledPath,
-                    SleepTimerHelper.isSleepTimerInstalled.booleanToBytes())
-        } else if (messageEvent.path == SleepTimerHelper.SleepTimerStartPath) {
-            val timeInMins: Int? = messageEvent.data?.bytesToInt()
-            timeInMins?.let { startSleepTimer(it) }
-        } else if (messageEvent.path == SleepTimerHelper.SleepTimerStopPath) {
-            stopSleepTimer()
-        } else if (messageEvent.path.startsWith(WearableHelper.StatusPath)) {
-            mWearMgr.sendStatusUpdate(messageEvent.sourceNodeId, messageEvent.path)
+            return@runBlocking
         }
     }
 

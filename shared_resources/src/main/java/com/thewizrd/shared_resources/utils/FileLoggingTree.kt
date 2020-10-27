@@ -2,7 +2,9 @@ package com.thewizrd.shared_resources.utils
 
 import android.content.Context
 import android.util.Log
-import com.thewizrd.shared_resources.tasks.AsyncTask
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import org.threeten.bp.Instant
 import org.threeten.bp.ZoneId
 import org.threeten.bp.format.DateTimeFormatter
@@ -53,7 +55,7 @@ class FileLoggingTree(private val context: Context) : Timber.Tree() {
 
             // Cleanup old logs if they exist
             if (!ranCleanup) {
-                AsyncTask.run {
+                GlobalScope.launch(Dispatchers.IO) {
                     try {
                         // Only keep a weeks worth of logs
                         val daysToKeep = 7
@@ -71,7 +73,9 @@ class FileLoggingTree(private val context: Context) : Timber.Tree() {
                         }
 
                         // List all log files not in the above list
-                        val logs = directory.listFiles { dir, name -> name.startsWith("Logger") && !dateStampsToKeep.contains(name) }
+                        val logs = directory.listFiles { dir, name ->
+                            name.startsWith("Logger") && !dateStampsToKeep.contains(name)
+                        }
 
                         // Delete all log files in the array above
                         for (logToDel in logs) {

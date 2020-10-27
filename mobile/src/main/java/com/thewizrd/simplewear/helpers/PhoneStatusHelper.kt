@@ -23,11 +23,12 @@ import android.util.Log
 import android.view.KeyEvent
 import androidx.core.content.ContextCompat
 import com.thewizrd.shared_resources.helpers.*
-import com.thewizrd.shared_resources.tasks.AsyncTask
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.simplewear.ScreenLockAdminReceiver
 import com.thewizrd.simplewear.services.TorchService
 import com.thewizrd.simplewear.services.TorchService.Companion.enqueueWork
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 
 object PhoneStatusHelper {
     fun getBatteryLevel(context: Context): BatteryStatus {
@@ -231,17 +232,17 @@ object PhoneStatusHelper {
 
     fun sendPlayMusicCommand(context: Context): ActionStatus {
         // Add a minor delay before sending the command
-        try {
-            Thread.sleep(500)
-        } catch (ignored: InterruptedException) {
+        runBlocking {
+            delay(500)
         }
+
         val audioMan = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
         val event = KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_MEDIA_PLAY)
         audioMan.dispatchMediaKeyEvent(event)
 
         // Wait for a second to see if music plays
-        val musicActive = AsyncTask.await<Boolean> {
-            Thread.sleep(1000)
+        val musicActive = runBlocking {
+            delay(1000)
             audioMan.isMusicActive
         }
         return if (musicActive) ActionStatus.SUCCESS else ActionStatus.FAILURE
@@ -249,16 +250,16 @@ object PhoneStatusHelper {
 
     fun sendPlayMusicCommand(context: Context, playIntent: Intent): ActionStatus {
         // Add a minor delay before sending the command
-        try {
-            Thread.sleep(500)
-        } catch (ignored: InterruptedException) {
+        runBlocking {
+            delay(500)
         }
+
         val audioMan = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
         context.sendBroadcast(playIntent)
 
         // Wait for a second to see if music plays
-        val musicActive = AsyncTask.await<Boolean> {
-            Thread.sleep(1000)
+        val musicActive = runBlocking {
+            delay(1000)
             audioMan.isMusicActive
         }
         return if (musicActive) ActionStatus.SUCCESS else ActionStatus.FAILURE
@@ -268,8 +269,8 @@ object PhoneStatusHelper {
         val audioMan = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
 
         // Wait for a second to see if music plays
-        val musicActive = AsyncTask.await<Boolean> {
-            Thread.sleep(1000)
+        val musicActive = runBlocking {
+            delay(1000)
             audioMan.isMusicActive
         }
         return if (musicActive) ActionStatus.SUCCESS else ActionStatus.FAILURE

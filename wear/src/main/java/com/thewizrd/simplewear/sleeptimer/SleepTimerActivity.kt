@@ -10,6 +10,7 @@ import android.view.View
 import androidx.core.util.Pair
 import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import com.google.android.gms.wearable.MessageEvent
 import com.google.android.gms.wearable.Wearable
 import com.google.android.wearable.intent.RemoteIntent
@@ -17,7 +18,6 @@ import com.thewizrd.shared_resources.helpers.WearConnectionStatus
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus.Companion.valueOf
 import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.shared_resources.sleeptimer.SleepTimerHelper
-import com.thewizrd.shared_resources.tasks.AsyncTask
 import com.thewizrd.shared_resources.utils.JSONParser.serializer
 import com.thewizrd.shared_resources.utils.Logger.writeLine
 import com.thewizrd.shared_resources.utils.bytesToBool
@@ -28,6 +28,8 @@ import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.WearableListenerActivity
 import com.thewizrd.simplewear.databinding.ActivitySleeptimerBinding
 import com.thewizrd.simplewear.helpers.ConfirmationResultReceiver
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class SleepTimerActivity : WearableListenerActivity() {
     override lateinit var broadcastReceiver: BroadcastReceiver
@@ -44,7 +46,7 @@ class SleepTimerActivity : WearableListenerActivity() {
 
         broadcastReceiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context, intent: Intent) {
-                AsyncTask.run {
+                lifecycleScope.launch {
                     if (intent.action != null) {
                         if (ACTION_UPDATECONNECTIONSTATUS == intent.action) {
                             val connStatus = valueOf(intent.getIntExtra(EXTRA_CONNECTIONSTATUS, 0))
@@ -158,7 +160,7 @@ class SleepTimerActivity : WearableListenerActivity() {
         // Update statuses
         showProgressBar(true)
         binding.nosleeptimerMessageview.visibility = View.GONE
-        AsyncTask.run {
+        lifecycleScope.launch {
             updateConnectionStatus()
             sendMessage(mPhoneNodeWithApp!!.id, SleepTimerHelper.SleepTimerEnabledPath, null)
         }
@@ -170,6 +172,8 @@ class SleepTimerActivity : WearableListenerActivity() {
     }
 
     private fun showProgressBar(show: Boolean) {
-        runOnUiThread { binding.progressBar.visibility = if (show) View.VISIBLE else View.GONE }
+        lifecycleScope.launch(Dispatchers.Main) {
+            binding.progressBar.visibility = if (show) View.VISIBLE else View.GONE
+        }
     }
 }

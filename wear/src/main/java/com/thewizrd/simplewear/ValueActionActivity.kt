@@ -9,18 +9,20 @@ import android.os.CountDownTimer
 import android.util.Log
 import android.view.View
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.google.android.wearable.intent.RemoteIntent
 import com.thewizrd.shared_resources.helpers.*
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus.Companion.valueOf
 import com.thewizrd.shared_resources.helpers.WearableHelper.playStoreURI
-import com.thewizrd.shared_resources.tasks.AsyncTask
 import com.thewizrd.shared_resources.utils.JSONParser.deserializer
 import com.thewizrd.shared_resources.utils.JSONParser.serializer
 import com.thewizrd.shared_resources.utils.Logger.writeLine
 import com.thewizrd.simplewear.controls.CustomConfirmationOverlay
 import com.thewizrd.simplewear.databinding.ActivityValueactionBinding
 import com.thewizrd.simplewear.helpers.ConfirmationResultReceiver
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class ValueActionActivity : WearableListenerActivity() {
     override lateinit var broadcastReceiver: BroadcastReceiver
@@ -56,7 +58,7 @@ class ValueActionActivity : WearableListenerActivity() {
 
         broadcastReceiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context, intent: Intent) {
-                AsyncTask.run {
+                lifecycleScope.launch {
                     if (intent.action != null) {
                         if (ACTION_UPDATECONNECTIONSTATUS == intent.action) {
                             val connStatus = valueOf(intent.getIntExtra(EXTRA_CONNECTIONSTATUS, 0))
@@ -86,7 +88,7 @@ class ValueActionActivity : WearableListenerActivity() {
                             val action = deserializer(jsonData, Action::class.java)
 
                             if (!action!!.isActionSuccessful) {
-                                runOnUiThread {
+                                lifecycleScope.launch(Dispatchers.Main) {
                                     when (action.actionStatus) {
                                         ActionStatus.UNKNOWN, ActionStatus.FAILURE -> {
                                             CustomConfirmationOverlay()
@@ -121,7 +123,7 @@ class ValueActionActivity : WearableListenerActivity() {
                             val action = deserializer(jsonData, Action::class.java)
                             requestAction(jsonData)
 
-                            runOnUiThread {
+                            lifecycleScope.launch(Dispatchers.Main) {
                                 timer?.cancel()
                                 timer = object : CountDownTimer(3000, 500) {
                                     override fun onTick(millisUntilFinished: Long) {}
@@ -173,7 +175,7 @@ class ValueActionActivity : WearableListenerActivity() {
         super.onResume()
 
         // Update statuses
-        AsyncTask.run {
+        lifecycleScope.launch {
             updateConnectionStatus()
         }
     }

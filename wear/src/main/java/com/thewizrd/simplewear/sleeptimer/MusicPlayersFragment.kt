@@ -13,22 +13,24 @@ import android.view.View.OnGenericMotionListener
 import android.view.ViewGroup
 import androidx.core.view.ViewCompat
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.wear.widget.WearableLinearLayoutManager
-import com.google.android.gms.tasks.Tasks
 import com.google.android.gms.wearable.*
 import com.google.android.gms.wearable.DataClient.OnDataChangedListener
 import com.thewizrd.shared_resources.helpers.RecyclerOnClickListenerInterface
 import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.shared_resources.helpers.WearableHelper.getWearDataUri
 import com.thewizrd.shared_resources.sleeptimer.SleepTimerHelper
-import com.thewizrd.shared_resources.tasks.AsyncTask
 import com.thewizrd.shared_resources.utils.ImageUtils
 import com.thewizrd.shared_resources.utils.Logger.writeLine
 import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.controls.MusicPlayerViewModel
 import com.thewizrd.simplewear.databinding.FragmentMusicplayersSleepBinding
 import com.thewizrd.simplewear.fragments.SwipeDismissFragment
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import java.util.*
 import java.util.concurrent.ExecutionException
 
@@ -48,10 +50,12 @@ class MusicPlayersFragment : SwipeDismissFragment(), OnDataChangedListener {
             override fun onTick(millisUntilFinished: Long) {}
 
             override fun onFinish() {
-                AsyncTask.run {
+                viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
                     try {
-                        val buff = Tasks.await(Wearable.getDataClient(requireActivity())
-                                .getDataItems(getWearDataUri("*", WearableHelper.MusicPlayersPath)))
+                        val buff = Wearable.getDataClient(requireActivity())
+                                .getDataItems(getWearDataUri("*", WearableHelper.MusicPlayersPath))
+                                .await()
+
                         for (i in 0 until buff.count) {
                             val item = buff[i]
                             if (WearableHelper.MusicPlayersPath == item.uri.path) {
@@ -154,7 +158,7 @@ class MusicPlayersFragment : SwipeDismissFragment(), OnDataChangedListener {
     }
 
     private fun showProgressBar(show: Boolean) {
-        binding.progressBar.post {
+        viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main) {
             binding.progressBar.visibility = if (show) View.VISIBLE else View.GONE
         }
     }
@@ -176,11 +180,13 @@ class MusicPlayersFragment : SwipeDismissFragment(), OnDataChangedListener {
     }
 
     private fun getSelectedPlayerData() {
-        AsyncTask.run {
+        viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
             var prefKey: String? = null
             try {
-                val buff = Tasks.await(Wearable.getDataClient(requireActivity())
-                        .getDataItems(getWearDataUri("*", SleepTimerHelper.SleepTimerAudioPlayerPath)))
+                val buff = Wearable.getDataClient(requireActivity())
+                        .getDataItems(getWearDataUri("*", SleepTimerHelper.SleepTimerAudioPlayerPath))
+                        .await()
+
                 for (i in 0 until buff.count) {
                     val item = buff[i]
                     if (SleepTimerHelper.SleepTimerAudioPlayerPath == item.uri.path) {
@@ -222,13 +228,15 @@ class MusicPlayersFragment : SwipeDismissFragment(), OnDataChangedListener {
                 val item = event.dataItem
                 if (WearableHelper.MusicPlayersPath == item.uri.path) {
                     val dataMap = DataMapItem.fromDataItem(item).dataMap
-                    updateMusicPlayers(dataMap)
+                    viewLifecycleOwner.lifecycleScope.launch {
+                        updateMusicPlayers(dataMap)
+                    }
                 }
             }
         }
     }
 
-    private fun updateMusicPlayers(dataMap: DataMap) {
+    private suspend fun updateMusicPlayers(dataMap: DataMap) {
         val supported_players: List<String> = dataMap.getStringArrayList(WearableHelper.KEY_SUPPORTEDPLAYERS)
         val viewModels: MutableList<MusicPlayerViewModel> = ArrayList()
         val playerPref = selectedPlayer.key.value
@@ -256,12 +264,12 @@ class MusicPlayersFragment : SwipeDismissFragment(), OnDataChangedListener {
             selectedPlayer.setKey(selectedPlayerModel.key)
         }
 
-        binding.playerList.post {
+        viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main) {
             mAdapter.updateItems(viewModels)
 
             binding.noplayersMessageview.visibility = if (viewModels.size > 0) View.GONE else View.VISIBLE
             binding.playerGroup.visibility = if (viewModels.size > 0) View.VISIBLE else View.GONE
-            binding.playerList.post {
+            viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main) {
                 if (binding.playerList.visibility == View.VISIBLE && !binding.playerList.hasFocus()) {
                     binding.playerList.requestFocus()
                 }

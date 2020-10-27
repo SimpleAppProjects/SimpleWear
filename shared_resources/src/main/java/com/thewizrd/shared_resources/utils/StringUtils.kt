@@ -1,3 +1,5 @@
+@file:JvmName("StringUtils")
+
 package com.thewizrd.shared_resources.utils
 
 public fun String.Companion.isNullOrEmpty(s: String?): Boolean {

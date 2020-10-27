@@ -7,12 +7,13 @@ import android.content.IntentFilter
 import android.os.Bundle
 import android.support.wearable.view.ConfirmationOverlay
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
 import com.google.android.wearable.intent.RemoteIntent
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus.Companion.valueOf
 import com.thewizrd.shared_resources.helpers.WearableHelper.playStoreURI
-import com.thewizrd.shared_resources.tasks.AsyncTask
 import com.thewizrd.simplewear.databinding.ActivitySetupSyncBinding
+import kotlinx.coroutines.launch
 
 class PhoneSyncActivity : WearableListenerActivity() {
     override lateinit var broadcastReceiver: BroadcastReceiver
@@ -102,7 +103,7 @@ class PhoneSyncActivity : WearableListenerActivity() {
         super.onResume()
 
         // Update statuses
-        AsyncTask.run {
+        lifecycleScope.launch {
             updateConnectionStatus()
         }
     }
