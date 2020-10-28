@@ -265,6 +265,7 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
             Actions.MOBILEDATA -> {
                 tA = action as ToggleAction
                 tA.isEnabled = PhoneStatusHelper.isMobileDataEnabled(mContext)
+                tA.setActionSuccessful(PhoneStatusHelper.openMobileDataSettings(mContext))
                 sendMessage(nodeID, WearableHelper.ActionsPath, JSONParser.serializer(tA, Action::class.java).stringToBytes())
             }
             Actions.LOCATION -> {

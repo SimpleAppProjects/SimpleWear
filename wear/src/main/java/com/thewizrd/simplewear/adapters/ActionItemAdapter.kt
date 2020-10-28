@@ -37,16 +37,27 @@ class ActionItemAdapter(activity: Activity) : RecyclerView.Adapter<RecyclerView.
         mActivityContext = activity
         for (action in Actions.values()) {
             when (action) {
-                Actions.WIFI, Actions.BLUETOOTH, Actions.MOBILEDATA, Actions.LOCATION, Actions.TORCH -> mDataset.add(ActionButtonViewModel(ToggleAction(action, true)))
-                Actions.LOCKSCREEN, Actions.MUSICPLAYBACK, Actions.SLEEPTIMER -> mDataset.add(ActionButtonViewModel(NormalAction(action)))
-                Actions.VOLUME -> mDataset.add(ActionButtonViewModel(ValueAction(action, ValueDirection.UP)))
-                Actions.DONOTDISTURB -> mDataset.add(ActionButtonViewModel(
-                        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P)
-                            MultiChoiceAction(action)
-                        else
-                            ToggleAction(action, true)
-                ))
-                Actions.RINGER -> mDataset.add(ActionButtonViewModel(MultiChoiceAction(action)))
+                Actions.WIFI,
+                Actions.BLUETOOTH,
+                Actions.MOBILEDATA,
+                Actions.LOCATION,
+                Actions.TORCH ->
+                    mDataset.add(ActionButtonViewModel(ToggleAction(action, true)))
+                Actions.LOCKSCREEN,
+                Actions.MUSICPLAYBACK,
+                Actions.SLEEPTIMER ->
+                    mDataset.add(ActionButtonViewModel(NormalAction(action)))
+                Actions.VOLUME ->
+                    mDataset.add(ActionButtonViewModel(ValueAction(action, ValueDirection.UP)))
+                Actions.DONOTDISTURB ->
+                    mDataset.add(ActionButtonViewModel(
+                            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P)
+                                MultiChoiceAction(action)
+                            else
+                                ToggleAction(action, true)
+                    ))
+                Actions.RINGER ->
+                    mDataset.add(ActionButtonViewModel(MultiChoiceAction(action)))
             }
         }
     }
@@ -122,8 +133,8 @@ class ActionItemAdapter(activity: Activity) : RecyclerView.Adapter<RecyclerView.
     override fun getItemViewType(position: Int): Int {
         var type = -1
         type = when (mDataset[position].actionType) {
-            Actions.WIFI, Actions.BLUETOOTH, Actions.TORCH -> ActionItemType.TOGGLE_ACTION
-            Actions.MOBILEDATA, Actions.LOCATION -> ActionItemType.READONLY_ACTION
+            Actions.WIFI, Actions.BLUETOOTH, Actions.MOBILEDATA, Actions.TORCH -> ActionItemType.TOGGLE_ACTION
+            Actions.LOCATION -> ActionItemType.READONLY_ACTION
             Actions.LOCKSCREEN, Actions.MUSICPLAYBACK, Actions.SLEEPTIMER -> ActionItemType.ACTION
             Actions.VOLUME -> ActionItemType.VALUE_ACTION
             Actions.DONOTDISTURB -> if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) ActionItemType.MULTICHOICE_ACTION else ActionItemType.TOGGLE_ACTION

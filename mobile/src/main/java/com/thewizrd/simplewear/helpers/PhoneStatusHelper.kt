@@ -279,4 +279,13 @@ object PhoneStatusHelper {
         }
         return if (musicActive) ActionStatus.SUCCESS else ActionStatus.FAILURE
     }
+
+    fun openMobileDataSettings(context: Context): ActionStatus {
+        return try {
+            context.startActivity(Intent(Settings.ACTION_WIRELESS_SETTINGS))
+            ActionStatus.SUCCESS
+        } catch (e: Exception) {
+            ActionStatus.FAILURE
+        }
+    }
 }
