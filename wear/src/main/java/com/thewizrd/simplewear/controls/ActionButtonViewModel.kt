@@ -146,11 +146,14 @@ class ActionButtonViewModel(val action: Action) {
                 stateLabel = null
             }
             Actions.DONOTDISTURB -> {
-                mA = action as MultiChoiceAction
-
                 actionLabel = context.getString(R.string.action_dnd)
 
-                val dndChoice = DNDChoice.valueOf(mA.choice)
+                val dndChoice = if (action is ToggleAction) {
+                    if (action.isEnabled) DNDChoice.PRIORITY else DNDChoice.OFF
+                } else {
+                    mA = action as MultiChoiceAction
+                    DNDChoice.valueOf(mA.choice)
+                }
                 when (dndChoice) {
                     DNDChoice.OFF -> {
                         drawableID = R.drawable.ic_do_not_disturb_off_white_24dp

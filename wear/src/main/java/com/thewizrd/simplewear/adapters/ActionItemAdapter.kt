@@ -2,6 +2,7 @@ package com.thewizrd.simplewear.adapters
 
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.os.Build
 import android.util.TypedValue
 import android.view.View
 import android.view.ViewGroup
@@ -39,7 +40,13 @@ class ActionItemAdapter(activity: Activity) : RecyclerView.Adapter<RecyclerView.
                 Actions.WIFI, Actions.BLUETOOTH, Actions.MOBILEDATA, Actions.LOCATION, Actions.TORCH -> mDataset.add(ActionButtonViewModel(ToggleAction(action, true)))
                 Actions.LOCKSCREEN, Actions.MUSICPLAYBACK, Actions.SLEEPTIMER -> mDataset.add(ActionButtonViewModel(NormalAction(action)))
                 Actions.VOLUME -> mDataset.add(ActionButtonViewModel(ValueAction(action, ValueDirection.UP)))
-                Actions.DONOTDISTURB, Actions.RINGER -> mDataset.add(ActionButtonViewModel(MultiChoiceAction(action)))
+                Actions.DONOTDISTURB -> mDataset.add(ActionButtonViewModel(
+                        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P)
+                            MultiChoiceAction(action)
+                        else
+                            ToggleAction(action, true)
+                ))
+                Actions.RINGER -> mDataset.add(ActionButtonViewModel(MultiChoiceAction(action)))
             }
         }
     }
@@ -119,7 +126,8 @@ class ActionItemAdapter(activity: Activity) : RecyclerView.Adapter<RecyclerView.
             Actions.MOBILEDATA, Actions.LOCATION -> ActionItemType.READONLY_ACTION
             Actions.LOCKSCREEN, Actions.MUSICPLAYBACK, Actions.SLEEPTIMER -> ActionItemType.ACTION
             Actions.VOLUME -> ActionItemType.VALUE_ACTION
-            Actions.DONOTDISTURB, Actions.RINGER -> ActionItemType.MULTICHOICE_ACTION
+            Actions.DONOTDISTURB -> if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) ActionItemType.MULTICHOICE_ACTION else ActionItemType.TOGGLE_ACTION
+            Actions.RINGER -> ActionItemType.MULTICHOICE_ACTION
             else -> ActionItemType.TOGGLE_ACTION
         }
         return type

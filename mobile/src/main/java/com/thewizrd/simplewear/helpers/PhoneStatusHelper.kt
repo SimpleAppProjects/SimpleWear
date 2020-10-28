@@ -186,6 +186,10 @@ object PhoneStatusHelper {
         }
     }
 
+    fun setDNDState(context: Context, enable: Boolean): ActionStatus {
+        return setDNDState(context, if (enable) DNDChoice.PRIORITY else DNDChoice.OFF)
+    }
+
     fun setDNDState(context: Context, dnd: DNDChoice?): ActionStatus {
         if (!isNotificationAccessAllowed(context)) return ActionStatus.PERMISSION_DENIED
         return try {

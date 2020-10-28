@@ -232,7 +232,11 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
             Actions.LOCKSCREEN, Actions.VOLUME -> {
             }
             Actions.DONOTDISTURB -> {
-                action = MultiChoiceAction(act, PhoneStatusHelper.getDNDState(mContext).value)
+                action = if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
+                    MultiChoiceAction(act, PhoneStatusHelper.getDNDState(mContext).value)
+                } else {
+                    ToggleAction(act, PhoneStatusHelper.getDNDState(mContext) != DNDChoice.OFF)
+                }
                 sendMessage(nodeID, WearableHelper.ActionsPath, JSONParser.serializer(action, Action::class.java).stringToBytes())
             }
             Actions.RINGER -> {
@@ -284,9 +288,15 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
                 sendMessage(nodeID, WearableHelper.ActionsPath, JSONParser.serializer(vA, Action::class.java).stringToBytes())
             }
             Actions.DONOTDISTURB -> {
-                mA = action as MultiChoiceAction
-                mA.setActionSuccessful(PhoneStatusHelper.setDNDState(mContext, DNDChoice.valueOf(mA.choice)))
-                sendMessage(nodeID, WearableHelper.ActionsPath, JSONParser.serializer(mA, Action::class.java).stringToBytes())
+                if (action is MultiChoiceAction) {
+                    mA = action
+                    mA.setActionSuccessful(PhoneStatusHelper.setDNDState(mContext, DNDChoice.valueOf(mA.choice)))
+                    sendMessage(nodeID, WearableHelper.ActionsPath, JSONParser.serializer(mA, Action::class.java).stringToBytes())
+                } else if (action is ToggleAction) {
+                    tA = action
+                    tA.setActionSuccessful(PhoneStatusHelper.setDNDState(mContext, tA.isEnabled))
+                    sendMessage(nodeID, WearableHelper.ActionsPath, JSONParser.serializer(tA, Action::class.java).stringToBytes())
+                }
             }
             Actions.RINGER -> {
                 mA = action as MultiChoiceAction

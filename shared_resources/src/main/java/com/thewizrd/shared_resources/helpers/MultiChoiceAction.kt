@@ -1,5 +1,7 @@
 package com.thewizrd.shared_resources.helpers
 
+import android.os.Build
+
 class MultiChoiceAction : Action {
     private var value = 0
 
@@ -28,7 +30,7 @@ class MultiChoiceAction : Action {
                 Actions.TORCH,
                 Actions.LOCKSCREEN,
                 Actions.VOLUME -> 1
-                Actions.DONOTDISTURB -> DNDChoice.values().size
+                Actions.DONOTDISTURB -> if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) DNDChoice.values().size else 1
                 Actions.RINGER -> RingerChoice.values().size
                 else -> 1
             }

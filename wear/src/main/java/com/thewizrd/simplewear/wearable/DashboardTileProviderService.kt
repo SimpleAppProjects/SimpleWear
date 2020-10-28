@@ -145,7 +145,11 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
         views.setOnClickPendingIntent(R.id.lock_toggle, getActionClickIntent(applicationContext, Actions.LOCKSCREEN))
 
         if (dndAction != null) {
-            val dndChoice = DNDChoice.valueOf(dndAction!!.choice)
+            val dndChoice = if (dndAction is ToggleAction) {
+                if ((dndAction as ToggleAction).isEnabled) DNDChoice.PRIORITY else DNDChoice.OFF
+            } else {
+                DNDChoice.valueOf((dndAction as MultiChoiceAction).choice)
+            }
             var mDrawableID = R.drawable.ic_do_not_disturb_off_white_24dp
 
             when (dndChoice) {
@@ -218,7 +222,13 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
                         return@run
                     }
 
-                    requestAction(MultiChoiceAction(Actions.DONOTDISTURB, dndAction!!.choice + 1))
+                    requestAction(
+                            if (dndAction is ToggleAction) {
+                                ToggleAction(Actions.DONOTDISTURB, !(dndAction as ToggleAction).isEnabled)
+                            } else {
+                                MultiChoiceAction(Actions.DONOTDISTURB, (dndAction as MultiChoiceAction).choice + 1)
+                            }
+                    )
                 }
                 Actions.RINGER -> run {
                     if (ringerAction == null) {
@@ -248,7 +258,7 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
     private var battStatus: BatteryStatus? = null
     private var wifiAction: ToggleAction? = null
     private var btAction: ToggleAction? = null
-    private var dndAction: MultiChoiceAction? = null
+    private var dndAction: Action? = null
     private var ringerAction: MultiChoiceAction? = null
     private var torchAction: ToggleAction? = null
 
@@ -290,7 +300,7 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
                     Actions.WIFI -> wifiAction = action as ToggleAction
                     Actions.BLUETOOTH -> btAction = action as ToggleAction
                     Actions.TORCH -> torchAction = action as ToggleAction
-                    Actions.DONOTDISTURB -> dndAction = action as MultiChoiceAction
+                    Actions.DONOTDISTURB -> dndAction = if (action is ToggleAction) action else action as MultiChoiceAction
                     Actions.RINGER -> ringerAction = action as MultiChoiceAction
                 }
             }
