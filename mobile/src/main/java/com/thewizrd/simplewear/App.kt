@@ -78,7 +78,7 @@ class App : Application(), ApplicationLib, ActivityLifecycleCallbacks {
                     ConnectivityManager.CONNECTIVITY_ACTION == intent.action -> {
                         sendActionUpdate(context, Actions.MOBILEDATA)
                     }
-                    LocationManager.PROVIDERS_CHANGED_ACTION == intent.action -> {
+                    LocationManager.PROVIDERS_CHANGED_ACTION == intent.action || LocationManager.MODE_CHANGED_ACTION == intent.action -> {
                         sendActionUpdate(context, Actions.LOCATION)
                     }
                     AudioManager.RINGER_MODE_CHANGED_ACTION == intent.action -> {
@@ -94,6 +94,7 @@ class App : Application(), ApplicationLib, ActivityLifecycleCallbacks {
         actionsFilter.addAction(Intent.ACTION_BATTERY_CHANGED)
         actionsFilter.addAction(ConnectivityManager.CONNECTIVITY_ACTION)
         actionsFilter.addAction(LocationManager.PROVIDERS_CHANGED_ACTION)
+        actionsFilter.addAction(LocationManager.MODE_CHANGED_ACTION)
         actionsFilter.addAction(AudioManager.RINGER_MODE_CHANGED_ACTION)
         actionsFilter.addAction(NotificationManager.ACTION_INTERRUPTION_FILTER_CHANGED)
         appContext.registerReceiver(mActionsReceiver, actionsFilter)

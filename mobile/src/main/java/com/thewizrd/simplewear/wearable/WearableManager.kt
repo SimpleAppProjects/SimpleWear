@@ -222,7 +222,11 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
                 sendMessage(nodeID, WearableHelper.ActionsPath, JSONParser.serializer(action, Action::class.java).stringToBytes())
             }
             Actions.LOCATION -> {
-                action = ToggleAction(act, PhoneStatusHelper.isLocationEnabled(mContext))
+                action = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    ToggleAction(act, PhoneStatusHelper.isLocationEnabled(mContext))
+                } else {
+                    MultiChoiceAction(act, PhoneStatusHelper.getLocationState(mContext).value)
+                }
                 sendMessage(nodeID, WearableHelper.ActionsPath, JSONParser.serializer(action, Action::class.java).stringToBytes())
             }
             Actions.TORCH -> {
@@ -269,9 +273,15 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
                 sendMessage(nodeID, WearableHelper.ActionsPath, JSONParser.serializer(tA, Action::class.java).stringToBytes())
             }
             Actions.LOCATION -> {
-                tA = action as ToggleAction
-                tA.isEnabled = PhoneStatusHelper.isLocationEnabled(mContext)
-                sendMessage(nodeID, WearableHelper.ActionsPath, JSONParser.serializer(tA, Action::class.java).stringToBytes())
+                if (action is MultiChoiceAction) {
+                    mA = action
+                    mA.choice = PhoneStatusHelper.getLocationState(mContext).value
+                    sendMessage(nodeID, WearableHelper.ActionsPath, JSONParser.serializer(mA, Action::class.java).stringToBytes())
+                } else if (action is ToggleAction) {
+                    tA = action
+                    tA.isEnabled = PhoneStatusHelper.isLocationEnabled(mContext)
+                    sendMessage(nodeID, WearableHelper.ActionsPath, JSONParser.serializer(tA, Action::class.java).stringToBytes())
+                }
             }
             Actions.TORCH -> {
                 tA = action as ToggleAction

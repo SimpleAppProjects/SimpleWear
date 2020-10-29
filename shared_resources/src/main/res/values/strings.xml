@@ -9,6 +9,10 @@
     <string name="action_mobiledata">Mobile Data</string>
     <string name="action_location">Location</string>
 
+    <string name="locationstate_sensorsonly">Sensors Only</string>
+    <string name="locationstate_batterysaving">Battery Saving</string>
+    <string name="locationstate_highaccuracy">High Accuracy</string>
+
     <string name="action_torch">Flashlight</string>
     <string name="not_torch_turnoff_summary">Tap to turn off</string>
 
@@ -16,7 +20,6 @@
     <string name="action_volume">Volume</string>
     <string name="action_dnd">Do not Disturb</string>
 
-    <string name="dndstate_off">Off</string>
     <string name="dndstate_priority">Priority only</string>
     <string name="dndstate_alarms">Alarms only</string>
     <string name="dndstate_silence">Total silence</string>

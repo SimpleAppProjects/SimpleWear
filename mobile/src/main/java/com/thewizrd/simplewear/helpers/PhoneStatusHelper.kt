@@ -22,6 +22,7 @@ import android.provider.Settings
 import android.util.Log
 import android.view.KeyEvent
 import androidx.core.content.ContextCompat
+import androidx.core.location.LocationManagerCompat
 import com.thewizrd.shared_resources.helpers.*
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.simplewear.ScreenLockAdminReceiver
@@ -97,10 +98,30 @@ object PhoneStatusHelper {
     }
 
     fun isLocationEnabled(context: Context): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            LocationManagerCompat.isLocationEnabled(context.getSystemService(LocationManager::class.java)!!)
+        } else {
+            val locMan = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+            val isGPSEnabled = locMan.isProviderEnabled(LocationManager.GPS_PROVIDER)
+            val isNetEnabled = locMan.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
+            isGPSEnabled || isNetEnabled
+        }
+    }
+
+    fun getLocationState(context: Context): LocationState {
         val locMan = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
         val isGPSEnabled = locMan.isProviderEnabled(LocationManager.GPS_PROVIDER)
         val isNetEnabled = locMan.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
-        return isGPSEnabled || isNetEnabled
+
+        return if (isGPSEnabled && isNetEnabled) {
+            LocationState.HIGH_ACCURACY
+        } else if (isGPSEnabled) {
+            LocationState.SENSORS_ONLY
+        } else if (isNetEnabled) {
+            LocationState.BATTERY_SAVING
+        } else {
+            LocationState.OFF
+        }
     }
 
     fun isCameraPermissionEnabled(context: Context): Boolean {
@@ -285,6 +306,7 @@ object PhoneStatusHelper {
             context.startActivity(Intent(Settings.ACTION_WIRELESS_SETTINGS))
             ActionStatus.SUCCESS
         } catch (e: Exception) {
+            Logger.writeLine(Log.ERROR, e)
             ActionStatus.FAILURE
         }
     }

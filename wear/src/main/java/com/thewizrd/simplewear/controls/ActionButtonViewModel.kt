@@ -124,10 +124,38 @@ class ActionButtonViewModel(val action: Action) {
                 stateLabel = if (tA.isEnabled) context.getString(R.string.state_on) else context.getString(R.string.state_off)
             }
             Actions.LOCATION -> {
-                tA = action as ToggleAction
-                drawableID = if (tA.isEnabled) R.drawable.ic_location_on_white_24dp else R.drawable.ic_location_off_white_24dp
                 actionLabel = context.getString(R.string.action_location)
-                stateLabel = if (tA.isEnabled) context.getString(R.string.state_on) else context.getString(R.string.state_off)
+
+                val locationState = if (action is ToggleAction) {
+                    if (action.isEnabled) LocationState.HIGH_ACCURACY else LocationState.OFF
+                } else {
+                    mA = action as MultiChoiceAction
+                    LocationState.valueOf(mA.choice)
+                }
+                when (locationState) {
+                    LocationState.OFF -> {
+                        drawableID = R.drawable.ic_location_off_white_24dp
+                        stateLabel = context.getString(R.string.state_off)
+                    }
+                    LocationState.SENSORS_ONLY -> {
+                        drawableID = R.drawable.ic_baseline_gps_fixed_24dp
+                        stateLabel = context.getString(R.string.locationstate_sensorsonly)
+                    }
+                    LocationState.BATTERY_SAVING -> {
+                        drawableID = R.drawable.ic_outline_location_on_24dp
+                        stateLabel = context.getString(R.string.locationstate_batterysaving)
+                    }
+                    LocationState.HIGH_ACCURACY -> {
+                        drawableID = R.drawable.ic_location_on_white_24dp
+                        stateLabel = context.getString(
+                                if (action is ToggleAction) {
+                                    R.string.state_on
+                                } else {
+                                    R.string.locationstate_highaccuracy
+                                }
+                        )
+                    }
+                }
             }
             Actions.TORCH -> {
                 tA = action as ToggleAction
@@ -157,7 +185,7 @@ class ActionButtonViewModel(val action: Action) {
                 when (dndChoice) {
                     DNDChoice.OFF -> {
                         drawableID = R.drawable.ic_do_not_disturb_off_white_24dp
-                        stateLabel = context.getString(R.string.dndstate_off)
+                        stateLabel = context.getString(R.string.state_off)
                     }
                     DNDChoice.PRIORITY -> {
                         drawableID = R.drawable.ic_error_white_24dp

@@ -40,9 +40,15 @@ class ActionItemAdapter(activity: Activity) : RecyclerView.Adapter<RecyclerView.
                 Actions.WIFI,
                 Actions.BLUETOOTH,
                 Actions.MOBILEDATA,
-                Actions.LOCATION,
                 Actions.TORCH ->
                     mDataset.add(ActionButtonViewModel(ToggleAction(action, true)))
+                Actions.LOCATION ->
+                    mDataset.add(ActionButtonViewModel(
+                            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P)
+                                MultiChoiceAction(action)
+                            else
+                                ToggleAction(action, true)
+                    ))
                 Actions.LOCKSCREEN,
                 Actions.MUSICPLAYBACK,
                 Actions.SLEEPTIMER ->
