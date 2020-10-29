@@ -8,7 +8,7 @@ import android.support.wearable.view.ConfirmationOverlay
 import com.google.android.wearable.intent.RemoteIntent
 
 class ConfirmationResultReceiver(private val activity: Activity?) : ResultReceiver(Handler()) {
-    override fun onReceiveResult(resultCode: Int, resultData: Bundle) {
+    override fun onReceiveResult(resultCode: Int, resultData: Bundle?) {
         if (resultCode == RemoteIntent.RESULT_OK) {
             if (activity != null) showConfirmationOverlay(true)
         } else if (resultCode == RemoteIntent.RESULT_FAILED) {
