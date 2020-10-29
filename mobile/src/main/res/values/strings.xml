@@ -19,4 +19,7 @@
 
     <string name="message_watchbttimeout">Please ensure Bluetooth is enabled on your WearOS device</string>
 
+    <string name="prompt_sleeptimer_installed">SleepTimer app installed</string>
+    <string name="prompt_sleeptimer_unavailable">SleepTimer app not installed.</string>
+
 </resources>
