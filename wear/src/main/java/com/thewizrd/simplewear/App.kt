@@ -7,7 +7,6 @@ import android.content.Context
 import android.os.Bundle
 import android.util.Log
 import com.google.firebase.crashlytics.FirebaseCrashlytics
-import com.jakewharton.threetenabp.AndroidThreeTen
 import com.thewizrd.shared_resources.ApplicationLib
 import com.thewizrd.shared_resources.SimpleLibrary
 import com.thewizrd.shared_resources.helpers.AppState
@@ -41,7 +40,6 @@ class App : Application(), ApplicationLib, ActivityLifecycleCallbacks {
 
         // Init shared library
         SimpleLibrary.init(this)
-        AndroidThreeTen.init(this)
 
         // Start logger
         init(appContext)

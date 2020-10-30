@@ -5,9 +5,6 @@ import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import org.threeten.bp.Instant
-import org.threeten.bp.ZoneId
-import org.threeten.bp.format.DateTimeFormatter
 import timber.log.Timber
 import java.io.File
 import java.io.FileOutputStream
@@ -27,7 +24,8 @@ class FileLoggingTree(private val context: Context) : Timber.Tree() {
             if (!directory.exists()) {
                 directory.mkdir()
             }
-            val today = Date()
+            val cal = Calendar.getInstance()
+            val today = cal.time
             val dateTimeStamp = SimpleDateFormat("yyyy-MM-dd", Locale.ROOT).format(today)
             val logTimeStamp = SimpleDateFormat("yyyy-MM-dd HH:mm:ss:SSS", Locale.ROOT).format(today)
             val logNameFormat = "Logger.%s.log"
@@ -60,15 +58,11 @@ class FileLoggingTree(private val context: Context) : Timber.Tree() {
                         // Only keep a weeks worth of logs
                         val daysToKeep = 7
 
-                        // Get todays date
-                        val todayLocal = Instant.ofEpochMilli(today.time)
-                                .atZone(ZoneId.systemDefault()).toLocalDate()
-
                         // Create a list of the last 7 day's dates
                         val dateStampsToKeep: MutableList<String> = ArrayList()
                         for (i in 0 until daysToKeep) {
-                            val date = todayLocal.minusDays(i.toLong())
-                            val dateStamp = date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.ROOT))
+                            val date = Date(today.time - i * 24 * 60 * 60 * 1000)
+                            val dateStamp = SimpleDateFormat("yyyy-MM-dd", Locale.ROOT).format(date)
                             dateStampsToKeep.add(String.format(Locale.ROOT, logNameFormat, dateStamp))
                         }
 
