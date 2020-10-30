@@ -69,7 +69,10 @@ class PermissionCheckFragment : Fragment() {
         }
         binding.dndPref.setOnClickListener {
             if (!isNotificationAccessAllowed(requireContext())) {
-                startActivity(Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS))
+                try {
+                    startActivity(Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS))
+                } catch (e: ActivityNotFoundException) {
+                }
             }
         }
         binding.companionPairPref?.setOnClickListener {

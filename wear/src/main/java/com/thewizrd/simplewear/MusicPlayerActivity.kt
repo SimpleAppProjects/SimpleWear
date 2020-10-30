@@ -134,8 +134,10 @@ class MusicPlayerActivity : WearableListenerActivity(), OnDataChangedListener {
             override fun onClick(view: View, position: Int) {
                 val vm = mAdapter.dataset[position]
                 lifecycleScope.launch {
-                    sendMessage(mPhoneNodeWithApp!!.id, WearableHelper.PlayCommandPath,
-                            serializer(Pair.create(vm.packageName, vm.activityName), Pair::class.java).stringToBytes())
+                    if (connect()) {
+                        sendMessage(mPhoneNodeWithApp!!.id, WearableHelper.PlayCommandPath,
+                                serializer(Pair.create(vm.packageName, vm.activityName), Pair::class.java).stringToBytes())
+                    }
                 }
             }
         })

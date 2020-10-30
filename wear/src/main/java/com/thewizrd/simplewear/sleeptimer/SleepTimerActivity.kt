@@ -69,24 +69,30 @@ class SleepTimerActivity : WearableListenerActivity() {
                                 }
                             }
                         } else if (SleepTimerHelper.SleepTimerStartPath == intent.action) {
-                            sendMessage(mPhoneNodeWithApp!!.id, SleepTimerHelper.SleepTimerStartPath,
-                                    intent.getIntExtra(SleepTimerHelper.EXTRA_TIME_IN_MINS, 0).intToBytes())
+                            if (connect()) {
+                                sendMessage(mPhoneNodeWithApp!!.id, SleepTimerHelper.SleepTimerStartPath,
+                                        intent.getIntExtra(SleepTimerHelper.EXTRA_TIME_IN_MINS, 0).intToBytes())
 
-                            val selectedPlayer = ViewModelProvider(this@SleepTimerActivity, ViewModelProvider.NewInstanceFactory())
-                                    .get(SelectedPlayerViewModel::class.java)
-                            if (selectedPlayer.keyValue != null) {
-                                val data = selectedPlayer.keyValue!!.split("/").toTypedArray()
-                                if (data.size == 2) {
-                                    val packageName = data[0]
-                                    val activityName = data[1]
-                                    sendMessage(mPhoneNodeWithApp!!.id, WearableHelper.OpenMusicPlayerPath,
-                                            serializer(Pair.create(packageName, activityName), Pair::class.java).stringToBytes())
+                                val selectedPlayer = ViewModelProvider(this@SleepTimerActivity, ViewModelProvider.NewInstanceFactory())
+                                        .get(SelectedPlayerViewModel::class.java)
+                                if (selectedPlayer.keyValue != null) {
+                                    val data = selectedPlayer.keyValue!!.split("/").toTypedArray()
+                                    if (data.size == 2) {
+                                        val packageName = data[0]
+                                        val activityName = data[1]
+                                        sendMessage(mPhoneNodeWithApp!!.id, WearableHelper.OpenMusicPlayerPath,
+                                                serializer(Pair.create(packageName, activityName), Pair::class.java).stringToBytes())
+                                    }
                                 }
                             }
                         } else if (SleepTimerHelper.SleepTimerStopPath == intent.action) {
-                            sendMessage(mPhoneNodeWithApp!!.id, SleepTimerHelper.SleepTimerStopPath, null)
+                            if (connect()) {
+                                sendMessage(mPhoneNodeWithApp!!.id, SleepTimerHelper.SleepTimerStopPath, null)
+                            }
                         } else if (WearableHelper.MusicPlayersPath == intent.action) {
-                            sendMessage(mPhoneNodeWithApp!!.id, WearableHelper.MusicPlayersPath, null)
+                            if (connect()) {
+                                sendMessage(mPhoneNodeWithApp!!.id, WearableHelper.MusicPlayersPath, null)
+                            }
                         } else {
                             writeLine(Log.INFO, "%s: Unhandled action: %s", "MusicPlayerActivity", intent.action)
                         }
@@ -162,7 +168,9 @@ class SleepTimerActivity : WearableListenerActivity() {
         binding.nosleeptimerMessageview.visibility = View.GONE
         lifecycleScope.launch {
             updateConnectionStatus()
-            sendMessage(mPhoneNodeWithApp!!.id, SleepTimerHelper.SleepTimerEnabledPath, null)
+            if (mPhoneNodeWithApp != null) {
+                sendMessage(mPhoneNodeWithApp!!.id, SleepTimerHelper.SleepTimerEnabledPath, null)
+            }
         }
     }
 

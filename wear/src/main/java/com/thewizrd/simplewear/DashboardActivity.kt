@@ -370,14 +370,10 @@ class DashboardActivity : WearableListenerActivity(), OnSharedPreferenceChangeLi
     }
 
     private fun cancelTimer(action: Actions) {
-        var timer = activeTimers[action.name]
-        if (timer != null) {
-            timer.cancel()
-            activeTimers.remove(action.name)
-            timer = null
-        }
+        cancelTimer(action.name, true)
     }
 
+    @Synchronized
     private fun cancelTimer(timerKey: String, remove: Boolean = false) {
         var timer = activeTimers[timerKey]
         if (timer != null) {

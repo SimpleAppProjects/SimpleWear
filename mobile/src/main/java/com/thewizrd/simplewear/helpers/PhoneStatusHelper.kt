@@ -249,6 +249,9 @@ object PhoneStatusHelper {
                 else -> audioMan.ringerMode = AudioManager.RINGER_MODE_VIBRATE
             }
             ActionStatus.SUCCESS
+        } catch (e: SecurityException) {
+            Logger.writeLine(Log.ERROR, e)
+            ActionStatus.PERMISSION_DENIED
         } catch (e: Exception) {
             Logger.writeLine(Log.ERROR, e)
             ActionStatus.FAILURE

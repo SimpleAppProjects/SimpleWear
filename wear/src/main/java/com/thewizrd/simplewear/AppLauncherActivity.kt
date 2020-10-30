@@ -96,8 +96,10 @@ class AppLauncherActivity : WearableListenerActivity(), OnDataChangedListener {
             override fun onClick(view: View, position: Int) {
                 val vm = mAdapter.dataset[position]
                 lifecycleScope.launch {
-                    sendMessage(mPhoneNodeWithApp!!.id, WearableHelper.LaunchAppPath,
-                            serializer(Pair.create(vm.packageName, vm.activityName), Pair::class.java).stringToBytes())
+                    if (connect()) {
+                        sendMessage(mPhoneNodeWithApp!!.id, WearableHelper.LaunchAppPath,
+                                serializer(Pair.create(vm.packageName, vm.activityName), Pair::class.java).stringToBytes())
+                    }
                 }
             }
         })
