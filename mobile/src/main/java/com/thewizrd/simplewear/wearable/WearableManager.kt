@@ -1,9 +1,11 @@
 package com.thewizrd.simplewear.wearable
 
 import android.companion.CompanionDeviceManager
+import android.content.ActivityNotFoundException
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.os.Build
@@ -176,6 +178,87 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
             Logger.writeLine(Log.ERROR, e)
         } catch (e: InterruptedException) {
             Logger.writeLine(Log.ERROR, e)
+        }
+    }
+
+    suspend fun sendApps() {
+        val infos = mContext.packageManager.getInstalledApplications(0)
+        val mapRequest = PutDataMapRequest.create(WearableHelper.AppsPath)
+
+        // Sort result
+        Collections.sort(infos, ApplicationInfo.DisplayNameComparator(mContext.packageManager))
+
+        val availableApps = ArrayList<String>(infos.size)
+
+        for (info in infos) {
+            val launchIntent = mContext.packageManager.getLaunchIntentForPackage(info.packageName)
+                    ?: continue
+
+            val activityCmpName = launchIntent.component ?: continue
+            val key = String.format("%s/%s", info.packageName, activityCmpName.className)
+            if (!availableApps.contains(key)) {
+                val label = mContext.packageManager.getApplicationLabel(info).toString()
+                var iconBmp: Bitmap? = null
+                try {
+                    val iconDrwble = mContext.packageManager.getActivityIcon(activityCmpName)
+                    val size = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 36f, mContext.resources.displayMetrics).toInt()
+                    iconBmp = ImageUtils.bitmapFromDrawable(iconDrwble, size, size)
+                } catch (ignored: PackageManager.NameNotFoundException) {
+                }
+                val map = DataMap()
+                map.putString(WearableHelper.KEY_LABEL, label)
+                map.putString(WearableHelper.KEY_PKGNAME, info.packageName)
+                map.putString(WearableHelper.KEY_ACTIVITYNAME, activityCmpName.className)
+                map.putAsset(WearableHelper.KEY_ICON, if (iconBmp != null) ImageUtils.createAssetFromBitmap(iconBmp) else null)
+                mapRequest.dataMap.putDataMap(key, map)
+                availableApps.add(key)
+            }
+        }
+        mapRequest.dataMap.putStringArrayList(WearableHelper.KEY_APPS, availableApps)
+        mapRequest.setUrgent()
+        try {
+            Wearable.getDataClient(mContext)
+                    .putDataItem(mapRequest.asPutDataRequest())
+                    .await()
+        } catch (e: ExecutionException) {
+            Logger.writeLine(Log.ERROR, e)
+        } catch (e: InterruptedException) {
+            Logger.writeLine(Log.ERROR, e)
+        }
+    }
+
+    suspend fun launchApp(nodeID: String?, pkgName: String, activityName: String?) {
+        if (!String.isNullOrWhitespace(pkgName) && !String.isNullOrWhitespace(activityName)) {
+            val appIntent = Intent()
+            appIntent.setAction(Intent.ACTION_MAIN)
+                    .addCategory(Intent.CATEGORY_LAUNCHER)
+                    .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK).component = ComponentName(pkgName, activityName!!)
+
+            if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
+                try {
+                    mContext.startActivity(appIntent)
+                    sendMessage(nodeID, WearableHelper.LaunchAppPath, ActionStatus.SUCCESS.name.stringToBytes())
+                } catch (e: ActivityNotFoundException) {
+                    sendMessage(nodeID, WearableHelper.LaunchAppPath, ActionStatus.FAILURE.name.stringToBytes())
+                }
+            } else { // Android Q+ Devices
+                // Android Q puts a limitation on starting activities from the background
+                // We are allowed to bypass this if we have a device registered as companion,
+                // which will be our WearOS device; Check if device is associated before we start
+                val deviceManager = mContext.getSystemService(Context.COMPANION_DEVICE_SERVICE) as CompanionDeviceManager
+                val associated_devices = deviceManager.associations
+                if (associated_devices.isEmpty()) {
+                    // No devices associated; send message to user
+                    sendMessage(nodeID, WearableHelper.LaunchAppPath, ActionStatus.PERMISSION_DENIED.name.stringToBytes())
+                } else {
+                    try {
+                        mContext.startActivity(appIntent)
+                        sendMessage(nodeID, WearableHelper.LaunchAppPath, ActionStatus.SUCCESS.name.stringToBytes())
+                    } catch (e: ActivityNotFoundException) {
+                        sendMessage(nodeID, WearableHelper.LaunchAppPath, ActionStatus.FAILURE.name.stringToBytes())
+                    }
+                }
+            }
         }
     }
 

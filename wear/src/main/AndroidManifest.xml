@@ -73,6 +73,9 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".AppLauncherActivity"
+            android:theme="@style/WearAppTheme" />
 
         <service
             android:name=".wearable.WearableDataListenerService"

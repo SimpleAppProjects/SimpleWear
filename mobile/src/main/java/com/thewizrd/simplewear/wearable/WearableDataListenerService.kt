@@ -86,6 +86,14 @@ class WearableDataListenerService : WearableListenerService() {
                 stopSleepTimer()
             } else if (messageEvent.path.startsWith(WearableHelper.StatusPath)) {
                 mWearMgr.sendStatusUpdate(messageEvent.sourceNodeId, messageEvent.path)
+            } else if (messageEvent.path == WearableHelper.AppsPath) {
+                mWearMgr.sendApps()
+            } else if (messageEvent.path == WearableHelper.LaunchAppPath) {
+                val jsonData: String? = messageEvent.data?.bytesToString()
+                val pair = deserializer(jsonData, Pair::class.java)
+                val pkgName = pair?.first.toString()
+                val activityName = pair?.second.toString()
+                mWearMgr.launchApp(messageEvent.sourceNodeId, pkgName, activityName)
             }
             return@runBlocking
         }

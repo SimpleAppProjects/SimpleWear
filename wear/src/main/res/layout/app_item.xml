@@ -1,20 +1,20 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/player_item"
+    android:id="@+id/app_item"
     android:layout_width="match_parent"
     android:layout_height="wrap_content">
 
     <ImageView
-        android:id="@+id/player_icon"
+        android:id="@+id/app_icon"
         android:layout_width="wrap_content"
         android:layout_height="36dp"
         android:padding="4dp"
         android:adjustViewBounds="true"
         android:scaleType="fitStart"
-        android:src="@drawable/ic_play_circle_filled_white_24dp" />
+        android:src="@drawable/ic_baseline_android_24dp" />
 
     <TextView
-        android:id="@+id/player_name"
+        android:id="@+id/app_name"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_gravity="center_vertical"
@@ -22,6 +22,6 @@
         android:ellipsize="marquee"
         android:marqueeRepeatLimit="marquee_forever"
         android:padding="4dp"
-        tools:text="Music Player" />
+        tools:text="App" />
 
 </LinearLayout>

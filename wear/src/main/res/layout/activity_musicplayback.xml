@@ -19,7 +19,7 @@
         android:id="@+id/player_list"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        tools:listitem="@layout/musicplayer_item"
+        tools:listitem="@layout/app_item"
         tools:visibility="gone" />
 
     <TextView

@@ -10,22 +10,22 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.thewizrd.shared_resources.helpers.RecyclerOnClickListenerInterface
 import com.thewizrd.simplewear.R
-import com.thewizrd.simplewear.controls.MusicPlayerViewModel
+import com.thewizrd.simplewear.controls.AppItemViewModel
 import com.thewizrd.simplewear.databinding.MusicplayerItemSleeptimerBinding
 
 class PlayerListAdapter(owner: ViewModelStoreOwner) : RecyclerView.Adapter<PlayerListAdapter.ViewHolder>() {
-    private val mDiffer: AsyncListDiffer<MusicPlayerViewModel>
+    private val mDiffer: AsyncListDiffer<AppItemViewModel>
     private var mCheckedPosition = RecyclerView.NO_POSITION
     private var onClickListener: RecyclerOnClickListenerInterface? = null
 
     private val selectedPlayer: SelectedPlayerViewModel
 
-    private val diffCallback: DiffUtil.ItemCallback<MusicPlayerViewModel> = object : DiffUtil.ItemCallback<MusicPlayerViewModel>() {
-        override fun areItemsTheSame(oldItem: MusicPlayerViewModel, newItem: MusicPlayerViewModel): Boolean {
+    private val diffCallback: DiffUtil.ItemCallback<AppItemViewModel> = object : DiffUtil.ItemCallback<AppItemViewModel>() {
+        override fun areItemsTheSame(oldItem: AppItemViewModel, newItem: AppItemViewModel): Boolean {
             return oldItem.packageName == newItem.packageName && oldItem.activityName == newItem.activityName
         }
 
-        override fun areContentsTheSame(oldItem: MusicPlayerViewModel, newItem: MusicPlayerViewModel): Boolean {
+        override fun areContentsTheSame(oldItem: AppItemViewModel, newItem: AppItemViewModel): Boolean {
             return oldItem == newItem
         }
     }
@@ -47,13 +47,13 @@ class PlayerListAdapter(owner: ViewModelStoreOwner) : RecyclerView.Adapter<Playe
     inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val binding = MusicplayerItemSleeptimerBinding.bind(itemView)
 
-        fun bindModel(viewModel: MusicPlayerViewModel) {
+        fun bindModel(viewModel: AppItemViewModel) {
             if (viewModel.bitmapIcon == null) {
-                binding.playerIcon.setImageResource(R.drawable.ic_play_circle_filled_white_24dp)
+                binding.appIcon.setImageResource(R.drawable.ic_play_circle_filled_white_24dp)
             } else {
-                binding.playerIcon.setImageBitmap(viewModel.bitmapIcon)
+                binding.appIcon.setImageBitmap(viewModel.bitmapIcon)
             }
-            binding.playerName.text = viewModel.appLabel
+            binding.appName.text = viewModel.appLabel
         }
 
         fun updateRadioButtom() {
@@ -116,9 +116,9 @@ class PlayerListAdapter(owner: ViewModelStoreOwner) : RecyclerView.Adapter<Playe
         holder.updateRadioButtom()
     }
 
-    fun updateItems(dataset: List<MusicPlayerViewModel>) {
+    fun updateItems(dataset: List<AppItemViewModel>) {
         val currentPref = selectedPlayer.key.value
-        var item: MusicPlayerViewModel? = null
+        var item: AppItemViewModel? = null
 
         for (it in dataset) {
             if (it.key != null && it.key == currentPref) {
@@ -136,7 +136,7 @@ class PlayerListAdapter(owner: ViewModelStoreOwner) : RecyclerView.Adapter<Playe
         mDiffer.submitList(dataset)
     }
 
-    val selectedItem: MusicPlayerViewModel?
+    val selectedItem: AppItemViewModel?
         get() {
             if (mCheckedPosition != RecyclerView.NO_POSITION) {
                 return mDiffer.currentList[mCheckedPosition]

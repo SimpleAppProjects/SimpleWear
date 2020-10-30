@@ -68,6 +68,6 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@id/prompt_text"
         app:layout_constraintBottom_toBottomOf="parent"
-        tools:listitem="@layout/musicplayer_item" />
+        tools:listitem="@layout/app_item" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

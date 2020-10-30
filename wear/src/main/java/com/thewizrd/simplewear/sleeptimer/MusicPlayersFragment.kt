@@ -25,7 +25,7 @@ import com.thewizrd.shared_resources.sleeptimer.SleepTimerHelper
 import com.thewizrd.shared_resources.utils.ImageUtils
 import com.thewizrd.shared_resources.utils.Logger.writeLine
 import com.thewizrd.simplewear.R
-import com.thewizrd.simplewear.controls.MusicPlayerViewModel
+import com.thewizrd.simplewear.controls.AppItemViewModel
 import com.thewizrd.simplewear.databinding.FragmentMusicplayersSleepBinding
 import com.thewizrd.simplewear.fragments.SwipeDismissFragment
 import kotlinx.coroutines.Dispatchers
@@ -238,13 +238,14 @@ class MusicPlayersFragment : SwipeDismissFragment(), OnDataChangedListener {
 
     private suspend fun updateMusicPlayers(dataMap: DataMap) {
         val supported_players: List<String> = dataMap.getStringArrayList(WearableHelper.KEY_SUPPORTEDPLAYERS)
-        val viewModels: MutableList<MusicPlayerViewModel> = ArrayList()
+        val viewModels: MutableList<AppItemViewModel> = ArrayList()
         val playerPref = selectedPlayer.key.value
-        var selectedPlayerModel: MusicPlayerViewModel? = null
+        var selectedPlayerModel: AppItemViewModel? = null
         for (key in supported_players) {
             val map = dataMap.getDataMap(key)
 
-            val model = MusicPlayerViewModel()
+            val model = AppItemViewModel()
+            model.appType = AppItemViewModel.AppType.MUSIC_PLAYER
             model.appLabel = map.getString(WearableHelper.KEY_LABEL)
             model.packageName = map.getString(WearableHelper.KEY_PKGNAME)
             model.activityName = map.getString(WearableHelper.KEY_ACTIVITYNAME)

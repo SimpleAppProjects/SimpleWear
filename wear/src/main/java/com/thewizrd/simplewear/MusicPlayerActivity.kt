@@ -30,8 +30,8 @@ import com.thewizrd.shared_resources.utils.Logger.writeLine
 import com.thewizrd.shared_resources.utils.bytesToString
 import com.thewizrd.shared_resources.utils.stringToBytes
 import com.thewizrd.simplewear.adapters.MusicPlayerListAdapter
+import com.thewizrd.simplewear.controls.AppItemViewModel
 import com.thewizrd.simplewear.controls.CustomConfirmationOverlay
-import com.thewizrd.simplewear.controls.MusicPlayerViewModel
 import com.thewizrd.simplewear.databinding.ActivityMusicplaybackBinding
 import com.thewizrd.simplewear.helpers.ConfirmationResultReceiver
 import com.thewizrd.simplewear.preferences.Settings.isAutoLaunchMediaCtrlsEnabled
@@ -247,11 +247,11 @@ class MusicPlayerActivity : WearableListenerActivity(), OnDataChangedListener {
 
     private suspend fun updateMusicPlayers(dataMap: DataMap) {
         val supported_players: List<String> = dataMap.getStringArrayList(WearableHelper.KEY_SUPPORTEDPLAYERS)
-        val viewModels: MutableList<MusicPlayerViewModel> = ArrayList()
+        val viewModels: MutableList<AppItemViewModel> = ArrayList()
         for (key in supported_players) {
             val map = dataMap.getDataMap(key)
 
-            val model = MusicPlayerViewModel()
+            val model = AppItemViewModel()
             model.appLabel = String.format("%s %s", getString(R.string.prefix_playmusic), map.getString(WearableHelper.KEY_LABEL))
             model.packageName = map.getString(WearableHelper.KEY_PKGNAME)
             model.activityName = map.getString(WearableHelper.KEY_ACTIVITYNAME)

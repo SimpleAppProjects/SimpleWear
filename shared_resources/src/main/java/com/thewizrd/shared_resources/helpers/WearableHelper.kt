@@ -35,9 +35,12 @@ object WearableHelper {
     const val OpenMusicPlayerPath = "/music/start-activity"
     const val BtDiscoverPath = "/bluetooth/discoverable"
     const val PingPath = "/ping"
+    const val AppsPath = "/apps"
+    const val LaunchAppPath = "/apps/start-activity"
 
     // For Music Player DataMap
     const val KEY_SUPPORTEDPLAYERS = "key_supported_players"
+    const val KEY_APPS = "key_apps"
     const val KEY_LABEL = "key_label"
     const val KEY_ICON = "key_icon"
     const val KEY_PKGNAME = "key_package_name"

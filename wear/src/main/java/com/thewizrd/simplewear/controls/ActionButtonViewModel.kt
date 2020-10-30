@@ -79,6 +79,9 @@ class ActionButtonViewModel(val action: Action) {
         } else if (action is NormalAction && action.actionType == Actions.SLEEPTIMER) {
             val intent = Intent(activityContext, SleepTimerActivity::class.java)
             activityContext.startActivityForResult(intent, -1)
+        } else if (action is NormalAction && action.actionType == Actions.APPS) {
+            val intent = Intent(activityContext, AppLauncherActivity::class.java)
+            activityContext.startActivityForResult(intent, -1)
         } else {
             if (action is ToggleAction) {
                 val tA = action
@@ -230,6 +233,11 @@ class ActionButtonViewModel(val action: Action) {
             Actions.SLEEPTIMER -> {
                 drawableID = R.drawable.ic_sleep_timer
                 actionLabel = context.getString(R.string.action_sleeptimer)
+                stateLabel = null
+            }
+            Actions.APPS -> {
+                drawableID = R.drawable.ic_apps_white_24dp
+                actionLabel = context.getString(R.string.action_apps)
                 stateLabel = null
             }
         }

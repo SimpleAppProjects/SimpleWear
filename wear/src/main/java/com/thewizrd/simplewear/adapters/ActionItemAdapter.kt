@@ -51,7 +51,8 @@ class ActionItemAdapter(activity: Activity) : RecyclerView.Adapter<RecyclerView.
                     ))
                 Actions.LOCKSCREEN,
                 Actions.MUSICPLAYBACK,
-                Actions.SLEEPTIMER ->
+                Actions.SLEEPTIMER,
+                Actions.APPS ->
                     mDataset.add(ActionButtonViewModel(NormalAction(action)))
                 Actions.VOLUME ->
                     mDataset.add(ActionButtonViewModel(ValueAction(action, ValueDirection.UP)))
@@ -141,7 +142,7 @@ class ActionItemAdapter(activity: Activity) : RecyclerView.Adapter<RecyclerView.
         type = when (mDataset[position].actionType) {
             Actions.WIFI, Actions.BLUETOOTH, Actions.MOBILEDATA, Actions.TORCH -> ActionItemType.TOGGLE_ACTION
             Actions.LOCATION -> ActionItemType.READONLY_ACTION
-            Actions.LOCKSCREEN, Actions.MUSICPLAYBACK, Actions.SLEEPTIMER -> ActionItemType.ACTION
+            Actions.LOCKSCREEN, Actions.MUSICPLAYBACK, Actions.SLEEPTIMER, Actions.APPS -> ActionItemType.ACTION
             Actions.VOLUME -> ActionItemType.VALUE_ACTION
             Actions.DONOTDISTURB -> if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) ActionItemType.MULTICHOICE_ACTION else ActionItemType.TOGGLE_ACTION
             Actions.RINGER -> ActionItemType.MULTICHOICE_ACTION

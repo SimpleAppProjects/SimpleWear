@@ -36,4 +36,6 @@
     <string name="action_sleeptimer">Sleep Timer</string>
     <string name="title_settings">Settings</string>
 
+    <string name="action_apps">Apps</string>
+
 </resources>

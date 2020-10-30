@@ -9,7 +9,7 @@ import com.thewizrd.simplewear.controls.AppItem
 import com.thewizrd.simplewear.controls.AppItemViewModel
 import java.util.*
 
-class MusicPlayerListAdapter(activity: Activity) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+class AppsListAdapter(activity: Activity) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
     private val mDataset: MutableList<AppItemViewModel>
     private val mActivityContext: Activity
     private var onClickListener: RecyclerOnClickListenerInterface? = null

@@ -5,10 +5,10 @@ import android.util.AttributeSet
 import android.view.LayoutInflater
 import android.widget.LinearLayout
 import com.thewizrd.simplewear.R
-import com.thewizrd.simplewear.databinding.MusicplayerItemBinding
+import com.thewizrd.simplewear.databinding.AppItemBinding
 
-class MusicPlayerItem : LinearLayout {
-    private lateinit var binding: MusicplayerItemBinding
+class AppItem : LinearLayout {
+    private lateinit var binding: AppItemBinding
 
     constructor(context: Context) : super(context) {
         initialize(context)
@@ -28,11 +28,21 @@ class MusicPlayerItem : LinearLayout {
 
     private fun initialize(context: Context) {
         val inflater = LayoutInflater.from(context)
-        binding = MusicplayerItemBinding.inflate(inflater, this, true)
+        binding = AppItemBinding.inflate(inflater, this, true)
     }
 
-    fun updateItem(viewModel: MusicPlayerViewModel) {
-        if (viewModel.bitmapIcon != null) binding.playerIcon.setImageBitmap(viewModel.bitmapIcon) else binding.playerIcon.setImageResource(R.drawable.ic_play_circle_filled_white_24dp)
-        binding.playerName.text = viewModel.appLabel
+    fun updateItem(viewModel: AppItemViewModel) {
+        if (viewModel.bitmapIcon != null) {
+            binding.appIcon.setImageBitmap(viewModel.bitmapIcon)
+        } else {
+            binding.appIcon.setImageResource(
+                    if (viewModel.appType == AppItemViewModel.AppType.MUSIC_PLAYER) {
+                        R.drawable.ic_play_circle_filled_white_24dp
+                    } else {
+                        R.drawable.ic_baseline_android_24dp
+                    }
+            )
+        }
+        binding.appName.text = viewModel.appLabel
     }
 }
