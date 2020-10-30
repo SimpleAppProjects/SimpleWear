@@ -2,6 +2,7 @@ package com.thewizrd.simplewear.controls
 
 import android.app.Activity
 import android.content.Intent
+import android.os.Build
 import androidx.annotation.ColorRes
 import androidx.annotation.DrawableRes
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
@@ -192,7 +193,13 @@ class ActionButtonViewModel(val action: Action) {
                     }
                     DNDChoice.PRIORITY -> {
                         drawableID = R.drawable.ic_error_white_24dp
-                        stateLabel = context.getString(R.string.dndstate_priority)
+                        stateLabel = context.getString(
+                                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
+                                    R.string.dndstate_priority
+                                } else {
+                                    R.string.state_on
+                                }
+                        )
                     }
                     DNDChoice.ALARMS -> {
                         drawableID = R.drawable.ic_alarm_white_24dp
