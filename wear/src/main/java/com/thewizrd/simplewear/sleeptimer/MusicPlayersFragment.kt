@@ -219,16 +219,16 @@ class MusicPlayersFragment : SwipeDismissFragment(), OnDataChangedListener {
     }
 
     override fun onDataChanged(dataEventBuffer: DataEventBuffer) {
-        // Cancel timer
-        timer?.cancel()
-        showProgressBar(false)
+        viewLifecycleOwner.lifecycleScope.launch {
+            // Cancel timer
+            timer?.cancel()
+            showProgressBar(false)
 
-        for (event in dataEventBuffer) {
-            if (event.type == DataEvent.TYPE_CHANGED) {
-                val item = event.dataItem
-                if (WearableHelper.MusicPlayersPath == item.uri.path) {
-                    val dataMap = DataMapItem.fromDataItem(item).dataMap
-                    viewLifecycleOwner.lifecycleScope.launch {
+            for (event in dataEventBuffer) {
+                if (event.type == DataEvent.TYPE_CHANGED) {
+                    val item = event.dataItem
+                    if (WearableHelper.MusicPlayersPath == item.uri.path) {
+                        val dataMap = DataMapItem.fromDataItem(item).dataMap
                         updateMusicPlayers(dataMap)
                     }
                 }

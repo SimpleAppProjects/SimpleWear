@@ -147,28 +147,30 @@ class AppLauncherActivity : WearableListenerActivity(), OnDataChangedListener {
     override fun onMessageReceived(messageEvent: MessageEvent) {
         super.onMessageReceived(messageEvent)
 
-        if (messageEvent.data != null && messageEvent.path == WearableHelper.AppsPath) {
-            val status = ActionStatus.valueOf(messageEvent.data.bytesToString())
+        lifecycleScope.launch {
+            if (messageEvent.data != null && messageEvent.path == WearableHelper.AppsPath) {
+                val status = ActionStatus.valueOf(messageEvent.data.bytesToString())
 
-            lifecycleScope.launch(Dispatchers.Main) {
-                when (status) {
-                    ActionStatus.SUCCESS ->
-                        CustomConfirmationOverlay()
-                                .setType(CustomConfirmationOverlay.SUCCESS_ANIMATION)
-                                .showOn(this@AppLauncherActivity)
-                    ActionStatus.PERMISSION_DENIED ->
-                        CustomConfirmationOverlay()
-                                .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
-                                .setCustomDrawable(ContextCompat.getDrawable(this@AppLauncherActivity, R.drawable.ic_full_sad))
-                                .setMessage(this@AppLauncherActivity.getString(R.string.error_permissiondenied))
-                                .showOn(this@AppLauncherActivity)
-                    ActionStatus.FAILURE ->
-                        CustomConfirmationOverlay()
-                                .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
-                                .setCustomDrawable(ContextCompat.getDrawable(this@AppLauncherActivity, R.drawable.ic_full_sad))
-                                .setMessage(this@AppLauncherActivity.getString(R.string.action_failed_playmusic))
-                                .showOn(this@AppLauncherActivity)
-                    else -> {
+                lifecycleScope.launch(Dispatchers.Main) {
+                    when (status) {
+                        ActionStatus.SUCCESS ->
+                            CustomConfirmationOverlay()
+                                    .setType(CustomConfirmationOverlay.SUCCESS_ANIMATION)
+                                    .showOn(this@AppLauncherActivity)
+                        ActionStatus.PERMISSION_DENIED ->
+                            CustomConfirmationOverlay()
+                                    .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
+                                    .setCustomDrawable(ContextCompat.getDrawable(this@AppLauncherActivity, R.drawable.ic_full_sad))
+                                    .setMessage(this@AppLauncherActivity.getString(R.string.error_permissiondenied))
+                                    .showOn(this@AppLauncherActivity)
+                        ActionStatus.FAILURE ->
+                            CustomConfirmationOverlay()
+                                    .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
+                                    .setCustomDrawable(ContextCompat.getDrawable(this@AppLauncherActivity, R.drawable.ic_full_sad))
+                                    .setMessage(this@AppLauncherActivity.getString(R.string.action_failed_playmusic))
+                                    .showOn(this@AppLauncherActivity)
+                        else -> {
+                        }
                     }
                 }
             }
@@ -176,16 +178,16 @@ class AppLauncherActivity : WearableListenerActivity(), OnDataChangedListener {
     }
 
     override fun onDataChanged(dataEventBuffer: DataEventBuffer) {
-        // Cancel timer
-        timer?.cancel()
-        showProgressBar(false)
+        lifecycleScope.launch {
+            // Cancel timer
+            timer?.cancel()
+            showProgressBar(false)
 
-        for (event in dataEventBuffer) {
-            if (event.type == DataEvent.TYPE_CHANGED) {
-                val item = event.dataItem
-                if (WearableHelper.AppsPath == item.uri.path) {
-                    val dataMap = DataMapItem.fromDataItem(item).dataMap
-                    lifecycleScope.launch {
+            for (event in dataEventBuffer) {
+                if (event.type == DataEvent.TYPE_CHANGED) {
+                    val item = event.dataItem
+                    if (WearableHelper.AppsPath == item.uri.path) {
+                        val dataMap = DataMapItem.fromDataItem(item).dataMap
                         updateApps(dataMap)
                     }
                 }

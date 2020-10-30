@@ -6,6 +6,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.google.android.gms.wearable.MessageClient.OnMessageReceivedListener
 import com.google.android.gms.wearable.MessageEvent
@@ -13,6 +14,7 @@ import com.google.android.gms.wearable.Wearable
 import com.thewizrd.shared_resources.sleeptimer.SleepTimerHelper
 import com.thewizrd.shared_resources.utils.bytesToString
 import com.thewizrd.simplewear.databinding.FragmentSleeptimerStopBinding
+import kotlinx.coroutines.launch
 import java.util.*
 
 class TimerProgressFragment : Fragment(), OnMessageReceivedListener {
@@ -45,16 +47,18 @@ class TimerProgressFragment : Fragment(), OnMessageReceivedListener {
     }
 
     override fun onMessageReceived(messageEvent: MessageEvent) {
-        // stringToBytes(String.format(Locale.ROOT, "%d;%d", timeStartInMillis, timeInMillis)));
-        if (messageEvent.data != null && messageEvent.path == SleepTimerHelper.SleepTimerStatusPath) {
-            val data: String = messageEvent.data.bytesToString()
-            val datas = data.split(";").toTypedArray()
-            val startTimeMs = datas[0].toLong()
-            val progressMs = datas[1].toLong()
+        viewLifecycleOwner.lifecycleScope.launch {
+            // stringToBytes(String.format(Locale.ROOT, "%d;%d", timeStartInMillis, timeInMillis)));
+            if (messageEvent.data != null && messageEvent.path == SleepTimerHelper.SleepTimerStatusPath) {
+                val data: String = messageEvent.data.bytesToString()
+                val datas = data.split(";").toTypedArray()
+                val startTimeMs = datas[0].toLong()
+                val progressMs = datas[1].toLong()
 
-            binding.timerProgressScroller.max = startTimeMs.toInt()
-            binding.timerProgressScroller.progress = (startTimeMs - progressMs).toInt()
-            setProgressText(progressMs)
+                binding.timerProgressScroller.max = startTimeMs.toInt()
+                binding.timerProgressScroller.progress = (startTimeMs - progressMs).toInt()
+                setProgressText(progressMs)
+            }
         }
     }
 

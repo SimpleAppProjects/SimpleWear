@@ -185,61 +185,63 @@ class MusicPlayerActivity : WearableListenerActivity(), OnDataChangedListener {
     override fun onMessageReceived(messageEvent: MessageEvent) {
         super.onMessageReceived(messageEvent)
 
-        if (messageEvent.data != null && messageEvent.path == WearableHelper.PlayCommandPath) {
-            val status = ActionStatus.valueOf(messageEvent.data.bytesToString())
+        lifecycleScope.launch {
+            if (messageEvent.data != null && messageEvent.path == WearableHelper.PlayCommandPath) {
+                val status = ActionStatus.valueOf(messageEvent.data.bytesToString())
 
-            when (status) {
-                ActionStatus.SUCCESS -> if (isAutoLaunchMediaCtrlsEnabled) {
-                    val mediaCtrlCmpName = ComponentName("com.google.android.wearable.app",
-                            "com.google.android.clockwork.home.media.MediaControlActivity")
+                when (status) {
+                    ActionStatus.SUCCESS -> if (isAutoLaunchMediaCtrlsEnabled) {
+                        val mediaCtrlCmpName = ComponentName("com.google.android.wearable.app",
+                                "com.google.android.clockwork.home.media.MediaControlActivity")
 
-                    try {
-                        // Check if activity exists
-                        packageManager.getActivityInfo(mediaCtrlCmpName, 0)
+                        try {
+                            // Check if activity exists
+                            packageManager.getActivityInfo(mediaCtrlCmpName, 0)
 
-                        val mediaCtrlIntent = Intent()
-                        mediaCtrlIntent
-                                .setAction(Intent.ACTION_MAIN)
-                                .addCategory(Intent.CATEGORY_LAUNCHER)
-                                .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK).component = mediaCtrlCmpName
-                        startActivity(mediaCtrlIntent)
-                    } catch (e: Exception) {
-                        // Do nothing
+                            val mediaCtrlIntent = Intent()
+                            mediaCtrlIntent
+                                    .setAction(Intent.ACTION_MAIN)
+                                    .addCategory(Intent.CATEGORY_LAUNCHER)
+                                    .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK).component = mediaCtrlCmpName
+                            startActivity(mediaCtrlIntent)
+                        } catch (e: Exception) {
+                            // Do nothing
+                        }
                     }
-                }
-                ActionStatus.PERMISSION_DENIED ->
-                    lifecycleScope.launch(Dispatchers.Main) {
-                        CustomConfirmationOverlay()
-                                .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
-                                .setCustomDrawable(ContextCompat.getDrawable(this@MusicPlayerActivity, R.drawable.ic_full_sad))
-                                .setMessage(this@MusicPlayerActivity.getString(R.string.error_permissiondenied))
-                                .showOn(this@MusicPlayerActivity)
+                    ActionStatus.PERMISSION_DENIED ->
+                        lifecycleScope.launch(Dispatchers.Main) {
+                            CustomConfirmationOverlay()
+                                    .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
+                                    .setCustomDrawable(ContextCompat.getDrawable(this@MusicPlayerActivity, R.drawable.ic_full_sad))
+                                    .setMessage(this@MusicPlayerActivity.getString(R.string.error_permissiondenied))
+                                    .showOn(this@MusicPlayerActivity)
+                        }
+                    ActionStatus.FAILURE ->
+                        lifecycleScope.launch(Dispatchers.Main) {
+                            CustomConfirmationOverlay()
+                                    .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
+                                    .setCustomDrawable(ContextCompat.getDrawable(this@MusicPlayerActivity, R.drawable.ic_full_sad))
+                                    .setMessage(this@MusicPlayerActivity.getString(R.string.action_failed_playmusic))
+                                    .showOn(this@MusicPlayerActivity)
+                        }
+                    else -> {
                     }
-                ActionStatus.FAILURE ->
-                    lifecycleScope.launch(Dispatchers.Main) {
-                        CustomConfirmationOverlay()
-                                .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
-                                .setCustomDrawable(ContextCompat.getDrawable(this@MusicPlayerActivity, R.drawable.ic_full_sad))
-                                .setMessage(this@MusicPlayerActivity.getString(R.string.action_failed_playmusic))
-                                .showOn(this@MusicPlayerActivity)
-                    }
-                else -> {
                 }
             }
         }
     }
 
     override fun onDataChanged(dataEventBuffer: DataEventBuffer) {
-        // Cancel timer
-        timer?.cancel()
-        showProgressBar(false)
+        lifecycleScope.launch {
+            // Cancel timer
+            timer?.cancel()
+            showProgressBar(false)
 
-        for (event in dataEventBuffer) {
-            if (event.type == DataEvent.TYPE_CHANGED) {
-                val item = event.dataItem
-                if (WearableHelper.MusicPlayersPath == item.uri.path) {
-                    val dataMap = DataMapItem.fromDataItem(item).dataMap
-                    lifecycleScope.launch {
+            for (event in dataEventBuffer) {
+                if (event.type == DataEvent.TYPE_CHANGED) {
+                    val item = event.dataItem
+                    if (WearableHelper.MusicPlayersPath == item.uri.path) {
+                        val dataMap = DataMapItem.fromDataItem(item).dataMap
                         updateMusicPlayers(dataMap)
                     }
                 }

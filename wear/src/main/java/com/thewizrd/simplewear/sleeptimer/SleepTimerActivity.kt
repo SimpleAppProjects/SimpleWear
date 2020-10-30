@@ -111,50 +111,52 @@ class SleepTimerActivity : WearableListenerActivity() {
     override fun onMessageReceived(messageEvent: MessageEvent) {
         super.onMessageReceived(messageEvent)
 
-        if (messageEvent.data != null && messageEvent.path == SleepTimerHelper.SleepTimerEnabledPath) {
-            val isEnabled: Boolean = messageEvent.data.bytesToBool()
+        lifecycleScope.launch {
+            if (messageEvent.data != null && messageEvent.path == SleepTimerHelper.SleepTimerEnabledPath) {
+                val isEnabled: Boolean = messageEvent.data.bytesToBool()
 
-            showProgressBar(false)
-            if (isEnabled) {
-                binding.fragmentContainer.visibility = View.VISIBLE
-                binding.nosleeptimerMessageview.visibility = View.GONE
-                supportFragmentManager.beginTransaction()
-                        .replace(R.id.fragment_container, TimerStartFragment())
-                        .commit()
-            } else {
-                binding.fragmentContainer.visibility = View.GONE
-                binding.nosleeptimerMessageview.visibility = View.VISIBLE
-                binding.nosleeptimerMessageview.setOnClickListener {
-                    val intentapp = Intent(Intent.ACTION_VIEW)
-                            .addCategory(Intent.CATEGORY_BROWSABLE)
-                            .setData(SleepTimerHelper.playStoreURI)
+                showProgressBar(false)
+                if (isEnabled) {
+                    binding.fragmentContainer.visibility = View.VISIBLE
+                    binding.nosleeptimerMessageview.visibility = View.GONE
+                    supportFragmentManager.beginTransaction()
+                            .replace(R.id.fragment_container, TimerStartFragment())
+                            .commit()
+                } else {
+                    binding.fragmentContainer.visibility = View.GONE
+                    binding.nosleeptimerMessageview.visibility = View.VISIBLE
+                    binding.nosleeptimerMessageview.setOnClickListener {
+                        val intentapp = Intent(Intent.ACTION_VIEW)
+                                .addCategory(Intent.CATEGORY_BROWSABLE)
+                                .setData(SleepTimerHelper.playStoreURI)
 
-                    RemoteIntent.startRemoteActivity(this@SleepTimerActivity, intentapp,
-                            ConfirmationResultReceiver(this@SleepTimerActivity))
-                }
+                        RemoteIntent.startRemoteActivity(this@SleepTimerActivity, intentapp,
+                                ConfirmationResultReceiver(this@SleepTimerActivity))
+                    }
 
-                supportFragmentManager.popBackStack(null, FragmentManager.POP_BACK_STACK_INCLUSIVE)
-                for (fragment in supportFragmentManager.fragments) {
-                    if (fragment != null) {
-                        supportFragmentManager.beginTransaction()
-                                .remove(fragment)
-                                .commit()
+                    supportFragmentManager.popBackStack(null, FragmentManager.POP_BACK_STACK_INCLUSIVE)
+                    for (fragment in supportFragmentManager.fragments) {
+                        if (fragment != null) {
+                            supportFragmentManager.beginTransaction()
+                                    .remove(fragment)
+                                    .commit()
+                        }
                     }
                 }
-            }
-        } else if (messageEvent.path == SleepTimerHelper.SleepTimerStatusPath || messageEvent.path == SleepTimerHelper.SleepTimerStartPath) {
-            val fragment = supportFragmentManager.findFragmentById(R.id.fragment_container)
-            if (fragment !is TimerProgressFragment) {
-                supportFragmentManager.beginTransaction()
-                        .replace(R.id.fragment_container, TimerProgressFragment())
-                        .commit()
-            }
-        } else if (messageEvent.path == SleepTimerHelper.SleepTimerStopPath) {
-            val fragment = supportFragmentManager.findFragmentById(R.id.fragment_container)
-            if (fragment !is TimerStartFragment) {
-                supportFragmentManager.beginTransaction()
-                        .replace(R.id.fragment_container, TimerStartFragment())
-                        .commit()
+            } else if (messageEvent.path == SleepTimerHelper.SleepTimerStatusPath || messageEvent.path == SleepTimerHelper.SleepTimerStartPath) {
+                val fragment = supportFragmentManager.findFragmentById(R.id.fragment_container)
+                if (fragment !is TimerProgressFragment) {
+                    supportFragmentManager.beginTransaction()
+                            .replace(R.id.fragment_container, TimerProgressFragment())
+                            .commit()
+                }
+            } else if (messageEvent.path == SleepTimerHelper.SleepTimerStopPath) {
+                val fragment = supportFragmentManager.findFragmentById(R.id.fragment_container)
+                if (fragment !is TimerStartFragment) {
+                    supportFragmentManager.beginTransaction()
+                            .replace(R.id.fragment_container, TimerStartFragment())
+                            .commit()
+                }
             }
         }
     }
