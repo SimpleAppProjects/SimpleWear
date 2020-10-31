@@ -262,6 +262,11 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
         }
     }
 
+    suspend fun sendAudioModeStatus(nodeID: String?, streamType: AudioStreamType) {
+        sendMessage(nodeID, WearableHelper.AudioStatusPath,
+                JSONParser.serializer(PhoneStatusHelper.getStreamVolume(mContext, streamType), AudioStreamState::class.java).stringToBytes())
+    }
+
     suspend fun requestWearAppState() {
         if (mWearNodesWithApp == null) return
         for (node in mWearNodesWithApp!!) {
@@ -378,7 +383,12 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
             }
             Actions.VOLUME -> {
                 vA = action as ValueAction
-                vA.setActionSuccessful(PhoneStatusHelper.setVolume(mContext, vA.direction))
+                if (vA is VolumeAction) {
+                    vA.setActionSuccessful(PhoneStatusHelper.setVolume(mContext, vA.direction, vA.streamType))
+                    vA.streamType?.let { sendAudioModeStatus(nodeID, it) }
+                } else {
+                    vA.setActionSuccessful(PhoneStatusHelper.setVolume(mContext, vA.direction))
+                }
                 sendMessage(nodeID, WearableHelper.ActionsPath, JSONParser.serializer(vA, Action::class.java).stringToBytes())
             }
             Actions.DONOTDISTURB -> {

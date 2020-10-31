@@ -286,7 +286,6 @@ class MusicPlayerActivity : WearableListenerActivity(), OnDataChangedListener {
 
     override fun onResume() {
         super.onResume()
-        Wearable.getMessageClient(this).addListener(this)
         Wearable.getDataClient(this).addListener(this)
 
         binding.playerList.requestFocus()

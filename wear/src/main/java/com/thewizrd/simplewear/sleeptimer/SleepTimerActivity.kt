@@ -12,7 +12,6 @@ import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import com.google.android.gms.wearable.MessageEvent
-import com.google.android.gms.wearable.Wearable
 import com.google.android.wearable.intent.RemoteIntent
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus.Companion.valueOf
@@ -163,7 +162,6 @@ class SleepTimerActivity : WearableListenerActivity() {
 
     override fun onResume() {
         super.onResume()
-        Wearable.getMessageClient(this).addListener(this)
 
         // Update statuses
         showProgressBar(true)
@@ -174,11 +172,6 @@ class SleepTimerActivity : WearableListenerActivity() {
                 sendMessage(mPhoneNodeWithApp!!.id, SleepTimerHelper.SleepTimerEnabledPath, null)
             }
         }
-    }
-
-    override fun onPause() {
-        Wearable.getMessageClient(this).removeListener(this)
-        super.onPause()
     }
 
     private fun showProgressBar(show: Boolean) {

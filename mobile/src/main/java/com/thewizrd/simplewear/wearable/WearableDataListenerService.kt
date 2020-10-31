@@ -7,6 +7,7 @@ import com.google.android.gms.wearable.MessageEvent
 import com.google.android.gms.wearable.WearableListenerService
 import com.thewizrd.shared_resources.helpers.Action
 import com.thewizrd.shared_resources.helpers.AppState
+import com.thewizrd.shared_resources.helpers.AudioStreamType
 import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.shared_resources.sleeptimer.SleepTimerHelper
 import com.thewizrd.shared_resources.utils.JSONParser.deserializer
@@ -84,6 +85,8 @@ class WearableDataListenerService : WearableListenerService() {
                 timeInMins?.let { startSleepTimer(it) }
             } else if (messageEvent.path == SleepTimerHelper.SleepTimerStopPath) {
                 stopSleepTimer()
+            } else if (messageEvent.data != null && messageEvent.path == WearableHelper.AudioStatusPath) {
+                mWearMgr.sendAudioModeStatus(messageEvent.sourceNodeId, AudioStreamType.valueOf(messageEvent.data.bytesToString()))
             } else if (messageEvent.path.startsWith(WearableHelper.StatusPath)) {
                 mWearMgr.sendStatusUpdate(messageEvent.sourceNodeId, messageEvent.path)
             } else if (messageEvent.path == WearableHelper.AppsPath) {

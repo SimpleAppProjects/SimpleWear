@@ -12,7 +12,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:padding="@dimen/inner_frame_layout_padding"
-        app:boxedEdges="all">
+        app:layout_boxedEdges="all">
 
         <androidx.appcompat.widget.AppCompatTextView
             android:id="@+id/action_title"
@@ -30,11 +30,10 @@
             android:id="@+id/action_icon"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintBottom_toTopOf="@id/action_value"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/action_title"
-            app:layout_constraintVertical_bias="0.4"
             app:srcCompat="@drawable/ic_icon" />
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -44,12 +43,11 @@
             android:layout_marginEnd="8dp"
             android:backgroundTint="@color/colorPrimary"
             android:src="@drawable/ic_remove_white_24dp"
-            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintBottom_toTopOf="@id/action_value"
             app:layout_constraintEnd_toStartOf="@+id/action_icon"
             app:layout_constraintHorizontal_bias="0.0"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/action_title"
-            app:layout_constraintVertical_bias="0.4" />
+            app:layout_constraintTop_toBottomOf="@id/action_title" />
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/increase_btn"
@@ -58,12 +56,23 @@
             android:layout_marginStart="8dp"
             android:backgroundTint="@color/colorPrimary"
             android:src="@drawable/ic_add_white_24dp"
-            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintBottom_toTopOf="@id/action_value"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="1.0"
             app:layout_constraintStart_toEndOf="@+id/action_icon"
-            app:layout_constraintTop_toBottomOf="@id/action_title"
-            app:layout_constraintVertical_bias="0.4" />
+            app:layout_constraintTop_toBottomOf="@id/action_title" />
+
+        <androidx.appcompat.widget.AppCompatTextView
+            android:id="@+id/action_value"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:padding="4dp"
+            android:textAppearance="@style/TextAppearance.AppCompat.Body2"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            tools:text="100%" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

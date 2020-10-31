@@ -32,6 +32,8 @@
     <string name="state_off">Off</string>
     <string name="state_on">On</string>
 
+    <string name="volstate_muted">Muted</string>
+
     <string name="action_musicplayback">Play Media</string>
     <string name="action_sleeptimer">Sleep Timer</string>
     <string name="title_settings">Settings</string>

@@ -30,6 +30,8 @@ object WearableHelper {
     const val BluetoothPath = "/status/bt"
     const val WifiPath = "/status/wifi"
     const val UpdatePath = "/update/all"
+    const val AudioStatusPath = "/status/audio"
+    const val AudioVolumePath = "/status/audio/volume"
     const val MusicPlayersPath = "/music-players"
     const val PlayCommandPath = "/music/play"
     const val OpenMusicPlayerPath = "/music/start-activity"

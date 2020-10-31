@@ -172,17 +172,69 @@ object PhoneStatusHelper {
         }
     }
 
-    fun setVolume(context: Context, direction: ValueDirection?): ActionStatus {
+    fun getStreamVolume(context: Context, streamType: AudioStreamType): AudioStreamState? {
+        return try {
+            val audioMan = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+            when (streamType) {
+                AudioStreamType.MUSIC -> {
+                    val currVol = audioMan.getStreamVolume(AudioManager.STREAM_MUSIC)
+                    val minVol = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) audioMan.getStreamMinVolume(AudioManager.STREAM_MUSIC) else 0
+                    val maxVol = audioMan.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+                    AudioStreamState(currVol, minVol, maxVol, streamType)
+                }
+                AudioStreamType.RINGTONE -> {
+                    val currVol = audioMan.getStreamVolume(AudioManager.STREAM_RING)
+                    val minVol = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) audioMan.getStreamMinVolume(AudioManager.STREAM_RING) else 0
+                    val maxVol = audioMan.getStreamMaxVolume(AudioManager.STREAM_RING)
+                    AudioStreamState(currVol, minVol, maxVol, streamType)
+                }
+                AudioStreamType.VOICE_CALL -> {
+                    val currVol = audioMan.getStreamVolume(AudioManager.STREAM_VOICE_CALL)
+                    val minVol = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) audioMan.getStreamMinVolume(AudioManager.STREAM_VOICE_CALL) else 0
+                    val maxVol = audioMan.getStreamMaxVolume(AudioManager.STREAM_VOICE_CALL)
+                    AudioStreamState(currVol, minVol, maxVol, streamType)
+                }
+                AudioStreamType.ALARM -> {
+                    val currVol = audioMan.getStreamVolume(AudioManager.STREAM_ALARM)
+                    val minVol = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) audioMan.getStreamMinVolume(AudioManager.STREAM_ALARM) else 0
+                    val maxVol = audioMan.getStreamMaxVolume(AudioManager.STREAM_ALARM)
+                    AudioStreamState(currVol, minVol, maxVol, streamType)
+                }
+            }
+        } catch (e: Exception) {
+            Logger.writeLine(Log.ERROR, e)
+            null
+        }
+    }
+
+    fun setVolume(context: Context, direction: ValueDirection?, streamType: AudioStreamType? = null): ActionStatus {
         return try {
             val audioMan = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
             val powerMan = context.getSystemService(Context.POWER_SERVICE) as PowerManager
             val isInteractive = powerMan.isInteractive
             var flags = AudioManager.FLAG_PLAY_SOUND
             if (isInteractive) flags = flags or AudioManager.FLAG_SHOW_UI
-            when (direction) {
-                ValueDirection.UP -> audioMan.adjustSuggestedStreamVolume(AudioManager.ADJUST_RAISE, AudioManager.USE_DEFAULT_STREAM_TYPE, flags)
-                ValueDirection.DOWN -> audioMan.adjustSuggestedStreamVolume(AudioManager.ADJUST_LOWER, AudioManager.USE_DEFAULT_STREAM_TYPE, flags)
+
+            val audioStream = when (streamType) {
+                AudioStreamType.MUSIC -> AudioManager.STREAM_MUSIC
+                AudioStreamType.RINGTONE -> AudioManager.STREAM_RING
+                AudioStreamType.VOICE_CALL -> AudioManager.STREAM_VOICE_CALL
+                AudioStreamType.ALARM -> AudioManager.STREAM_ALARM
+                null -> AudioManager.USE_DEFAULT_STREAM_TYPE
             }
+
+            if (audioStream != AudioManager.USE_DEFAULT_STREAM_TYPE) {
+                when (direction) {
+                    ValueDirection.UP -> audioMan.adjustStreamVolume(audioStream, AudioManager.ADJUST_RAISE, flags)
+                    ValueDirection.DOWN -> audioMan.adjustStreamVolume(audioStream, AudioManager.ADJUST_LOWER, flags)
+                }
+            } else {
+                when (direction) {
+                    ValueDirection.UP -> audioMan.adjustSuggestedStreamVolume(AudioManager.ADJUST_RAISE, AudioManager.USE_DEFAULT_STREAM_TYPE, flags)
+                    ValueDirection.DOWN -> audioMan.adjustSuggestedStreamVolume(AudioManager.ADJUST_LOWER, AudioManager.USE_DEFAULT_STREAM_TYPE, flags)
+                }
+            }
+
             ActionStatus.SUCCESS
         } catch (e: Exception) {
             Logger.writeLine(Log.ERROR, e)

@@ -226,7 +226,6 @@ class AppLauncherActivity : WearableListenerActivity(), OnDataChangedListener {
 
     override fun onResume() {
         super.onResume()
-        Wearable.getMessageClient(this).addListener(this)
         Wearable.getDataClient(this).addListener(this)
 
         binding.appList.requestFocus()
@@ -241,7 +240,6 @@ class AppLauncherActivity : WearableListenerActivity(), OnDataChangedListener {
     }
 
     override fun onPause() {
-        Wearable.getMessageClient(this).removeListener(this)
         Wearable.getDataClient(this).removeListener(this)
         super.onPause()
     }
