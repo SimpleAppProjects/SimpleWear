@@ -1,6 +1,7 @@
 package com.thewizrd.simplewear.wearable
 
 import android.content.Intent
+import androidx.core.content.ContextCompat
 import androidx.core.util.Pair
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.google.android.gms.wearable.MessageEvent
@@ -106,12 +107,12 @@ class WearableDataListenerService : WearableListenerService() {
         val startTimerIntent = Intent(SleepTimerHelper.ACTION_START_TIMER)
                 .setClassName(SleepTimerHelper.packageName, SleepTimerHelper.PACKAGE_NAME + ".services.TimerService")
                 .putExtra(SleepTimerHelper.EXTRA_TIME_IN_MINS, timeInMins)
-        startService(startTimerIntent)
+        ContextCompat.startForegroundService(this, startTimerIntent)
     }
 
     private fun stopSleepTimer() {
         val stopTimerIntent = Intent(SleepTimerHelper.ACTION_CANCEL_TIMER)
                 .setClassName(SleepTimerHelper.packageName, SleepTimerHelper.PACKAGE_NAME + ".services.TimerService")
-        startService(stopTimerIntent)
+        ContextCompat.startForegroundService(this, stopTimerIntent)
     }
 }
