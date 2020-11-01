@@ -7,6 +7,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
+import android.content.pm.ResolveInfo
 import android.graphics.Bitmap
 import android.os.Build
 import android.util.Log
@@ -140,7 +141,12 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
         val infos = mContext.packageManager.queryBroadcastReceivers(
                 Intent(Intent.ACTION_MEDIA_BUTTON), PackageManager.GET_RESOLVED_FILTER)
         val mapRequest = PutDataMapRequest.create(WearableHelper.MusicPlayersPath)
-        val supportedPlayers = ArrayList<String>()
+
+        // Sort result
+        Collections.sort(infos, ResolveInfo.DisplayNameComparator(mContext.packageManager))
+
+        val supportedPlayers = ArrayList<String>(infos.size)
+
         for (info in infos) {
             val appInfo = info.activityInfo.applicationInfo
             val launchIntent = mContext.packageManager.getLaunchIntentForPackage(appInfo.packageName)
