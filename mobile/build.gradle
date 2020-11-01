@@ -20,7 +20,7 @@ android {
         minSdkVersion 23
         targetSdkVersion 29
         // NOTE: Version Code Format (TargetSDK, Version Name, Build Number, Variant Code (Android: 00, WearOS: 01)
-        versionCode 291500000
+        versionCode 291500100
         versionName "1.5.0"
 
         vectorDrawables.useSupportLibrary = true
