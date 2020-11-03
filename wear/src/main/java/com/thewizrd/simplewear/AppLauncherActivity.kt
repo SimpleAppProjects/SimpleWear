@@ -121,8 +121,12 @@ class AppLauncherActivity : WearableListenerActivity(), OnDataChangedListener {
                         for (i in 0 until buff.count) {
                             val item = buff[i]
                             if (WearableHelper.AppsPath == item.uri.path) {
-                                val dataMap = DataMapItem.fromDataItem(item).dataMap
-                                updateApps(dataMap)
+                                try {
+                                    val dataMap = DataMapItem.fromDataItem(item).dataMap
+                                    updateApps(dataMap)
+                                } catch (e: Exception) {
+                                    writeLine(Log.ERROR, e)
+                                }
                                 showProgressBar(false)
                             }
                         }

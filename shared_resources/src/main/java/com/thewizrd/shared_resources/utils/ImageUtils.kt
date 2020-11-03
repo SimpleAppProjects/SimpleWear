@@ -51,8 +51,10 @@ object ImageUtils {
 
     fun createAssetFromBitmap(bitmap: Bitmap): Asset {
         val byteStream = ByteArrayOutputStream()
-        bitmap.compress(Bitmap.CompressFormat.WEBP, 100, byteStream)
-        return Asset.createFromBytes(byteStream.toByteArray())
+        return byteStream.use { stream ->
+            bitmap.compress(Bitmap.CompressFormat.WEBP, 100, stream)
+            Asset.createFromBytes(stream.toByteArray())
+        }
     }
 
     suspend fun bitmapFromAssetStream(client: DataClient, asset: Asset?): Bitmap? {
@@ -68,7 +70,9 @@ object ImageUtils {
                 }
 
                 // decode the stream into a bitmap
-                return@withContext BitmapFactory.decodeStream(assetInputStream)
+                return@withContext assetInputStream.use {
+                    BitmapFactory.decodeStream(it)
+                }
             } catch (e: ExecutionException) {
                 writeLine(Log.ERROR, "ImageUtils: bitmapFromAssetStream: Failed to get asset")
                 return@withContext null

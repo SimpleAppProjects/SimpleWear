@@ -159,8 +159,12 @@ class MusicPlayerActivity : WearableListenerActivity(), OnDataChangedListener {
                         for (i in 0 until buff.count) {
                             val item = buff[i]
                             if (WearableHelper.MusicPlayersPath == item.uri.path) {
-                                val dataMap = DataMapItem.fromDataItem(item).dataMap
-                                updateMusicPlayers(dataMap)
+                                try {
+                                    val dataMap = DataMapItem.fromDataItem(item).dataMap
+                                    updateMusicPlayers(dataMap)
+                                } catch (e: Exception) {
+                                    writeLine(Log.ERROR, e)
+                                }
                                 showProgressBar(false)
                             }
                         }
@@ -241,8 +245,12 @@ class MusicPlayerActivity : WearableListenerActivity(), OnDataChangedListener {
                 if (event.type == DataEvent.TYPE_CHANGED) {
                     val item = event.dataItem
                     if (WearableHelper.MusicPlayersPath == item.uri.path) {
-                        val dataMap = DataMapItem.fromDataItem(item).dataMap
-                        updateMusicPlayers(dataMap)
+                        try {
+                            val dataMap = DataMapItem.fromDataItem(item).dataMap
+                            updateMusicPlayers(dataMap)
+                        } catch (e: Exception) {
+                            writeLine(Log.ERROR, e)
+                        }
                     }
                 }
             }

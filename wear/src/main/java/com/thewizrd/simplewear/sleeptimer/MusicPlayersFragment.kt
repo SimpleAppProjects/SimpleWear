@@ -59,8 +59,12 @@ class MusicPlayersFragment : SwipeDismissFragment(), OnDataChangedListener {
                         for (i in 0 until buff.count) {
                             val item = buff[i]
                             if (WearableHelper.MusicPlayersPath == item.uri.path) {
-                                val dataMap = DataMapItem.fromDataItem(item).dataMap
-                                updateMusicPlayers(dataMap)
+                                try {
+                                    val dataMap = DataMapItem.fromDataItem(item).dataMap
+                                    updateMusicPlayers(dataMap)
+                                } catch (e: Exception) {
+                                    writeLine(Log.ERROR, e)
+                                }
                                 showProgressBar(false)
                             }
                         }
@@ -190,8 +194,12 @@ class MusicPlayersFragment : SwipeDismissFragment(), OnDataChangedListener {
                 for (i in 0 until buff.count) {
                     val item = buff[i]
                     if (SleepTimerHelper.SleepTimerAudioPlayerPath == item.uri.path) {
-                        val dataMap = DataMapItem.fromDataItem(item).dataMap
-                        prefKey = dataMap.getString(SleepTimerHelper.KEY_SELECTEDPLAYER, null)
+                        try {
+                            val dataMap = DataMapItem.fromDataItem(item).dataMap
+                            prefKey = dataMap.getString(SleepTimerHelper.KEY_SELECTEDPLAYER, null)
+                        } catch (e: Exception) {
+                            writeLine(Log.ERROR, e)
+                        }
                         break
                     }
                 }
@@ -228,8 +236,12 @@ class MusicPlayersFragment : SwipeDismissFragment(), OnDataChangedListener {
                 if (event.type == DataEvent.TYPE_CHANGED) {
                     val item = event.dataItem
                     if (WearableHelper.MusicPlayersPath == item.uri.path) {
-                        val dataMap = DataMapItem.fromDataItem(item).dataMap
-                        updateMusicPlayers(dataMap)
+                        try {
+                            val dataMap = DataMapItem.fromDataItem(item).dataMap
+                            updateMusicPlayers(dataMap)
+                        } catch (e: Exception) {
+                            writeLine(Log.ERROR, e)
+                        }
                     }
                 }
             }
