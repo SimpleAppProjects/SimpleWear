@@ -214,8 +214,12 @@ class AppLauncherActivity : WearableListenerActivity(), OnDataChangedListener {
             model.appLabel = map.getString(WearableHelper.KEY_LABEL)
             model.packageName = map.getString(WearableHelper.KEY_PKGNAME)
             model.activityName = map.getString(WearableHelper.KEY_ACTIVITYNAME)
-            model.bitmapIcon = ImageUtils.bitmapFromAssetStream(
-                    Wearable.getDataClient(this@AppLauncherActivity), map.getAsset(WearableHelper.KEY_ICON))
+            model.bitmapIcon = try {
+                ImageUtils.bitmapFromAssetStream(
+                        Wearable.getDataClient(this@AppLauncherActivity), map.getAsset(WearableHelper.KEY_ICON))
+            } catch (e: Exception) {
+                null
+            }
             viewModels.add(model)
         }
 

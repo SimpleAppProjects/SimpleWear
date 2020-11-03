@@ -216,7 +216,9 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
                 map.putString(WearableHelper.KEY_LABEL, label)
                 map.putString(WearableHelper.KEY_PKGNAME, info.packageName)
                 map.putString(WearableHelper.KEY_ACTIVITYNAME, activityCmpName.className)
-                map.putAsset(WearableHelper.KEY_ICON, if (iconBmp != null) ImageUtils.createAssetFromBitmap(iconBmp) else null)
+                if (iconBmp != null) {
+                    map.putAsset(WearableHelper.KEY_ICON, ImageUtils.createAssetFromBitmap(iconBmp))
+                }
                 mapRequest.dataMap.putDataMap(key, map)
                 availableApps.add(key)
             }
