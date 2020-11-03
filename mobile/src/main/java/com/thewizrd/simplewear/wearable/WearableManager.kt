@@ -392,7 +392,11 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
                 vA = action as ValueAction
                 if (vA is VolumeAction) {
                     vA.setActionSuccessful(PhoneStatusHelper.setVolume(mContext, vA.direction, vA.streamType))
-                    vA.streamType?.let { sendAudioModeStatus(nodeID, it) }
+                    vA.streamType?.let {
+                        scope.launch {
+                            sendAudioModeStatus(nodeID, it)
+                        }
+                    }
                 } else {
                     vA.setActionSuccessful(PhoneStatusHelper.setVolume(mContext, vA.direction))
                 }
