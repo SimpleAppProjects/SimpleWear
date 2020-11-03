@@ -358,7 +358,8 @@ object PhoneStatusHelper {
 
     fun openMobileDataSettings(context: Context): ActionStatus {
         return try {
-            context.startActivity(Intent(Settings.ACTION_WIRELESS_SETTINGS))
+            context.startActivity(Intent(Settings.ACTION_NETWORK_OPERATOR_SETTINGS)
+                    .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
             ActionStatus.SUCCESS
         } catch (e: Exception) {
             Logger.writeLine(Log.ERROR, e)
