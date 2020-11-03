@@ -12,8 +12,10 @@ import androidx.lifecycle.lifecycleScope
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.google.android.gms.wearable.MessageEvent
 import com.google.android.wearable.intent.RemoteIntent
-import com.thewizrd.shared_resources.helpers.*
+import com.thewizrd.shared_resources.actions.*
+import com.thewizrd.shared_resources.helpers.WearConnectionStatus
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus.Companion.valueOf
+import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.shared_resources.helpers.WearableHelper.playStoreURI
 import com.thewizrd.shared_resources.utils.JSONParser.deserializer
 import com.thewizrd.shared_resources.utils.JSONParser.serializer
@@ -246,9 +248,5 @@ class ValueActionActivity : WearableListenerActivity() {
                 requestAudioStreamState()
             }
         }
-    }
-
-    override fun onPause() {
-        super.onPause()
     }
 }

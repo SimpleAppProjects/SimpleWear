@@ -1,4 +1,4 @@
-package com.thewizrd.shared_resources.helpers
+package com.thewizrd.shared_resources.actions
 
 import android.os.Build
 

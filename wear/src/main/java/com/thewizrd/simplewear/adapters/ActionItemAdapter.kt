@@ -11,7 +11,7 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.wear.widget.WearableRecyclerView
-import com.thewizrd.shared_resources.helpers.*
+import com.thewizrd.shared_resources.actions.*
 import com.thewizrd.shared_resources.utils.isNullOrWhitespace
 import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.controls.ActionButton

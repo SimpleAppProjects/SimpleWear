@@ -8,7 +8,7 @@ import com.google.gson.stream.JsonReader
 import com.google.gson.stream.JsonWriter
 import com.google.gson.typeadapters.LowercaseEnumTypeAdapterFactory
 import com.google.gson.typeadapters.RuntimeTypeAdapterFactory
-import com.thewizrd.shared_resources.helpers.*
+import com.thewizrd.shared_resources.actions.*
 import java.io.*
 import java.lang.reflect.Type
 

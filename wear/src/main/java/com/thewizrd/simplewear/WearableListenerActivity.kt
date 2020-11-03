@@ -18,7 +18,13 @@ import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.wearable.*
 import com.google.android.gms.wearable.CapabilityClient.OnCapabilityChangedListener
 import com.google.android.gms.wearable.MessageClient.OnMessageReceivedListener
-import com.thewizrd.shared_resources.helpers.*
+import com.thewizrd.shared_resources.actions.Action
+import com.thewizrd.shared_resources.actions.Actions
+import com.thewizrd.shared_resources.actions.BatteryStatus
+import com.thewizrd.shared_resources.actions.ToggleAction
+import com.thewizrd.shared_resources.helpers.AppState
+import com.thewizrd.shared_resources.helpers.WearConnectionStatus
+import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.shared_resources.utils.JSONParser.serializer
 import com.thewizrd.shared_resources.utils.Logger.writeLine
 import com.thewizrd.shared_resources.utils.bytesToString

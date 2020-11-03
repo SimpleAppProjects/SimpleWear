@@ -1,3 +1,3 @@
-package com.thewizrd.shared_resources.helpers
+package com.thewizrd.shared_resources.actions
 
 class AudioStreamState(var currentVolume: Int, var minVolume: Int, var maxVolume: Int, var streamType: AudioStreamType)

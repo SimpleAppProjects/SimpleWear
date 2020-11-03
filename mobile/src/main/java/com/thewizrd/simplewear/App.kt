@@ -21,9 +21,9 @@ import android.util.Log
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.thewizrd.shared_resources.ApplicationLib
 import com.thewizrd.shared_resources.SimpleLibrary
-import com.thewizrd.shared_resources.helpers.Actions
+import com.thewizrd.shared_resources.actions.Actions
+import com.thewizrd.shared_resources.actions.BatteryStatus
 import com.thewizrd.shared_resources.helpers.AppState
-import com.thewizrd.shared_resources.helpers.BatteryStatus
 import com.thewizrd.shared_resources.utils.JSONParser.serializer
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.simplewear.wearable.WearableWorker

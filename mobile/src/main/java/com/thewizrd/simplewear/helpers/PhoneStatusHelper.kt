@@ -23,7 +23,7 @@ import android.util.Log
 import android.view.KeyEvent
 import androidx.core.content.ContextCompat
 import androidx.core.location.LocationManagerCompat
-import com.thewizrd.shared_resources.helpers.*
+import com.thewizrd.shared_resources.actions.*
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.simplewear.ScreenLockAdminReceiver
 import com.thewizrd.simplewear.services.TorchService

@@ -21,10 +21,9 @@
 #-renamesourcefileattribute SourceFile
 
 # Application classes that will be serialized/deserialized over Gson
--keep class com.thewizrd.shared_resources.helpers.Action { *; }
--keep class * extends com.thewizrd.shared_resources.helpers.Action { *; }
--keep public enum com.thewizrd.shared_resources.helpers.** { <fields>; }
--keep class com.thewizrd.shared_resources.helpers.BatteryStatus { <fields>; }
+-keep class com.thewizrd.shared_resources.actions.** { *; }
+-keep class * extends com.thewizrd.shared_resources.actions.Action { *; }
+-keep public enum com.thewizrd.shared_resources.actions.** { <fields>; }
 
 # Prevent proguard from stripping interface information from TypeAdapterFactory,
 # JsonSerializer, JsonDeserializer instances (so they can be used in @JsonAdapter)

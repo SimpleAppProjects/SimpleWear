@@ -6,7 +6,7 @@ import android.os.Build
 import androidx.annotation.ColorRes
 import androidx.annotation.DrawableRes
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
-import com.thewizrd.shared_resources.helpers.*
+import com.thewizrd.shared_resources.actions.*
 import com.thewizrd.shared_resources.utils.JSONParser.serializer
 import com.thewizrd.simplewear.*
 import com.thewizrd.simplewear.WearableListenerActivity.Companion.EXTRA_ACTION

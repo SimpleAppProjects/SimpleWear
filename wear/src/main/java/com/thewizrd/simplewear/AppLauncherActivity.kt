@@ -15,7 +15,7 @@ import androidx.wear.widget.WearableLinearLayoutManager
 import com.google.android.gms.wearable.*
 import com.google.android.gms.wearable.DataClient.OnDataChangedListener
 import com.google.android.wearable.intent.RemoteIntent
-import com.thewizrd.shared_resources.helpers.ActionStatus
+import com.thewizrd.shared_resources.actions.ActionStatus
 import com.thewizrd.shared_resources.helpers.RecyclerOnClickListenerInterface
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus.Companion.valueOf
