@@ -30,7 +30,7 @@
             android:id="@+id/action_icon"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            app:layout_constraintBottom_toTopOf="@id/action_value"
+            app:layout_constraintBottom_toTopOf="@id/action_value_progress"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/action_title"
@@ -43,7 +43,7 @@
             android:layout_marginEnd="8dp"
             android:backgroundTint="@color/colorPrimary"
             android:src="@drawable/ic_remove_white_24dp"
-            app:layout_constraintBottom_toTopOf="@id/action_value"
+            app:layout_constraintBottom_toTopOf="@id/action_value_progress"
             app:layout_constraintEnd_toStartOf="@+id/action_icon"
             app:layout_constraintHorizontal_bias="0.0"
             app:layout_constraintStart_toStartOf="parent"
@@ -56,23 +56,25 @@
             android:layout_marginStart="8dp"
             android:backgroundTint="@color/colorPrimary"
             android:src="@drawable/ic_add_white_24dp"
-            app:layout_constraintBottom_toTopOf="@id/action_value"
+            app:layout_constraintBottom_toTopOf="@id/action_value_progress"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="1.0"
             app:layout_constraintStart_toEndOf="@+id/action_icon"
             app:layout_constraintTop_toBottomOf="@id/action_title" />
 
-        <androidx.appcompat.widget.AppCompatTextView
-            android:id="@+id/action_value"
+        <ProgressBar
+            android:id="@+id/action_value_progress"
+            style="@style/Widget.AppCompat.ProgressBar.Horizontal"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center"
             android:padding="4dp"
-            android:textAppearance="@style/TextAppearance.AppCompat.Body2"
+            android:progressTint="@color/colorPrimary"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"
-            tools:text="100%" />
+            tools:progress="50"
+            tools:max="100" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

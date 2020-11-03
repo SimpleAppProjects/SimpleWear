@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.os.Build
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.util.Log
@@ -27,7 +28,6 @@ import com.thewizrd.simplewear.databinding.ActivityValueactionBinding
 import com.thewizrd.simplewear.helpers.ConfirmationResultReceiver
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlin.math.roundToInt
 
 class ValueActionActivity : WearableListenerActivity() {
     override lateinit var broadcastReceiver: BroadcastReceiver
@@ -208,7 +208,7 @@ class ValueActionActivity : WearableListenerActivity() {
                     if (status == null) {
                         mStreamType = null
                         binding.actionIcon.setImageResource(R.drawable.ic_volume_up_white_24dp)
-                        binding.actionValue.text = null
+                        binding.actionValueProgress.progress = 0
                     } else {
                         mStreamType = status.streamType
                         when (status.streamType) {
@@ -218,12 +218,11 @@ class ValueActionActivity : WearableListenerActivity() {
                             AudioStreamType.ALARM -> binding.actionIcon.setImageResource(R.drawable.ic_alarm_white_24dp)
                         }
 
-                        binding.actionValue.text = if (status.currentVolume == 0 && status.minVolume == 0) {
-                            getString(R.string.volstate_muted)
-                        } else {
-                            val volPct = (((status.currentVolume - status.minVolume) / (status.maxVolume.toFloat() - status.minVolume)) * 100)
-                            volPct.roundToInt().toString() + "%"
+                        binding.actionValueProgress.max = status.maxVolume
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                            binding.actionValueProgress.min = status.minVolume
                         }
+                        binding.actionValueProgress.progress = status.currentVolume
                     }
                 }
             }
