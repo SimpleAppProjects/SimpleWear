@@ -59,6 +59,7 @@ class ActionButtonViewModel(val action: Action) {
                 mA.choice = mA.choice - 1
             }
 
+            buttonBackgroundColor = if (mA.choice > 0) R.color.buttonEnabled else R.color.buttonDisabled
             updateIconAndLabel()
         } else if (action != null) {
             updateIconAndLabel()

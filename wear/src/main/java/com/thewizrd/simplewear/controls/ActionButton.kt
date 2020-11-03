@@ -41,7 +41,6 @@ class ActionButton : ConstraintLayout {
             override fun afterTextChanged(s: Editable) {}
         })
         binding.fab.customSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 36f, context.resources.displayMetrics).toInt()
-        //binding.fab.setUseCompatPadding(true);
         clipChildren = false
         clipToPadding = false
         binding.fab.supportBackgroundTintList = ColorStateList.valueOf(context.getColor(R.color.colorPrimary))
