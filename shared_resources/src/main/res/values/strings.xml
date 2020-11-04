@@ -1,7 +1,6 @@
 <resources>
     <string name="app_name">SimpleWear</string>
 
-    <string name="not_channel_name_general">General notifications</string>
     <string name="not_channel_name_torch">Flashlight notification</string>
 
     <string name="action_wifi">WiFi</string>

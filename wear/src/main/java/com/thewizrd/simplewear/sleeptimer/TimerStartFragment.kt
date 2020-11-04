@@ -19,7 +19,6 @@ import com.thewizrd.shared_resources.sleeptimer.SleepTimerHelper
 import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.controls.SleepTimerViewModel
 import com.thewizrd.simplewear.databinding.FragmentSleeptimerStartBinding
-import java.util.*
 
 class TimerStartFragment : Fragment() {
     private lateinit var binding: FragmentSleeptimerStartBinding
@@ -135,14 +134,6 @@ class TimerStartFragment : Fragment() {
         return binding.root
     }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-    }
-
     override fun onResume() {
         super.onResume()
         binding.timerProgressScroller.requestFocus()
@@ -155,22 +146,14 @@ class TimerStartFragment : Fragment() {
         }
     }
 
-    override fun onPause() {
-        super.onPause()
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-    }
-
     private fun setProgressText(progress: Int) {
         val hours = progress / 60
         val minutes = progress - hours * 60
 
         if (hours > 0) {
-            binding.progressText.text = String.format(Locale.ROOT, "%02dh:%02dm", hours, minutes)
+            binding.progressText.text = requireContext().getString(R.string.progress_text_hrmin, hours, minutes)
         } else {
-            binding.progressText.text = String.format(Locale.ROOT, "%02dm", minutes)
+            binding.progressText.text = requireContext().getString(R.string.progress_text_min, minutes)
         }
     }
 }

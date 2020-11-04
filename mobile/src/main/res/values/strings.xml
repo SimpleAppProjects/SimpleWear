@@ -2,7 +2,6 @@
 
     <string name="permission_camera_enabled">Camera permission granted.</string>
     <string name="permission_camera_disabled">Camera permission disabled. Please click to enable controlling flashlight from WearOS device</string>
-    <string name="not_title_wearable_sync">Syncing with wearable device…</string>
 
     <string name="cat_title_permissions">Permissions</string>
     <string name="device_admin_description">Allows you to turn of your screen and lock your device from your WearOS device</string>
