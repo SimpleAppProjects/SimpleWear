@@ -129,10 +129,10 @@ class MusicPlayerActivity : WearableListenerActivity(), OnDataChangedListener {
         binding.playerList.isEdgeItemsCenteringEnabled = true
 
         binding.playerList.layoutManager = WearableLinearLayoutManager(this)
-        mAdapter = MusicPlayerListAdapter(this)
+        mAdapter = MusicPlayerListAdapter()
         mAdapter.setOnClickListener(object : RecyclerOnClickListenerInterface {
             override fun onClick(view: View, position: Int) {
-                val vm = mAdapter.dataset[position]
+                val vm = mAdapter.currentList[position]
                 lifecycleScope.launch {
                     if (connect()) {
                         sendMessage(mPhoneNodeWithApp!!.id, WearableHelper.PlayCommandPath,
@@ -273,7 +273,7 @@ class MusicPlayerActivity : WearableListenerActivity(), OnDataChangedListener {
         }
 
         lifecycleScope.launch(Dispatchers.Main) {
-            mAdapter.updateItems(viewModels)
+            mAdapter.submitList(viewModels)
             binding.noplayersMessageview.visibility = if (viewModels.size > 0) View.GONE else View.VISIBLE
             binding.playerList.visibility = if (viewModels.size > 0) View.VISIBLE else View.GONE
             lifecycleScope.launch(Dispatchers.Main) {

@@ -5,36 +5,21 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStoreOwner
-import androidx.recyclerview.widget.AsyncListDiffer
-import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.thewizrd.shared_resources.helpers.RecyclerOnClickListenerInterface
 import com.thewizrd.simplewear.R
+import com.thewizrd.simplewear.adapters.AppItemDiffer
 import com.thewizrd.simplewear.controls.AppItemViewModel
 import com.thewizrd.simplewear.databinding.MusicplayerItemSleeptimerBinding
 
-class PlayerListAdapter(owner: ViewModelStoreOwner) : RecyclerView.Adapter<PlayerListAdapter.ViewHolder>() {
-    private val mDiffer: AsyncListDiffer<AppItemViewModel>
+class PlayerListAdapter(owner: ViewModelStoreOwner) : ListAdapter<AppItemViewModel, PlayerListAdapter.ViewHolder>(AppItemDiffer()) {
     private var mCheckedPosition = RecyclerView.NO_POSITION
     private var onClickListener: RecyclerOnClickListenerInterface? = null
 
-    private val selectedPlayer: SelectedPlayerViewModel
-
-    private val diffCallback: DiffUtil.ItemCallback<AppItemViewModel> = object : DiffUtil.ItemCallback<AppItemViewModel>() {
-        override fun areItemsTheSame(oldItem: AppItemViewModel, newItem: AppItemViewModel): Boolean {
-            return oldItem.packageName == newItem.packageName && oldItem.activityName == newItem.activityName
-        }
-
-        override fun areContentsTheSame(oldItem: AppItemViewModel, newItem: AppItemViewModel): Boolean {
-            return oldItem == newItem
-        }
-    }
-
-    init {
-        mDiffer = AsyncListDiffer(this, diffCallback)
-        selectedPlayer = ViewModelProvider(owner, ViewModelProvider.NewInstanceFactory())
-                .get(SelectedPlayerViewModel::class.java)
-    }
+    private val selectedPlayer =
+            ViewModelProvider(owner, ViewModelProvider.NewInstanceFactory())
+                    .get(SelectedPlayerViewModel::class.java)
 
     private object Payload {
         var RADIOBUTTON_UPDATE = 0
@@ -94,12 +79,8 @@ class PlayerListAdapter(owner: ViewModelStoreOwner) : RecyclerView.Adapter<Playe
         return ViewHolder(view)
     }
 
-    override fun getItemCount(): Int {
-        return mDiffer.currentList.size
-    }
-
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        holder.bindModel(mDiffer.currentList[position])
+        holder.bindModel(getItem(position))
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int, payloads: List<Any>) {
@@ -133,13 +114,13 @@ class PlayerListAdapter(owner: ViewModelStoreOwner) : RecyclerView.Adapter<Playe
             RecyclerView.NO_POSITION
         }
 
-        mDiffer.submitList(dataset)
+        submitList(dataset)
     }
 
     val selectedItem: AppItemViewModel?
         get() {
             if (mCheckedPosition != RecyclerView.NO_POSITION) {
-                return mDiffer.currentList[mCheckedPosition]
+                return getItem(mCheckedPosition)
             }
 
             return null

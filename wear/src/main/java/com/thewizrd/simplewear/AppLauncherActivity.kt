@@ -91,10 +91,10 @@ class AppLauncherActivity : WearableListenerActivity(), OnDataChangedListener {
         binding.appList.isEdgeItemsCenteringEnabled = true
 
         binding.appList.layoutManager = WearableLinearLayoutManager(this)
-        mAdapter = AppsListAdapter(this)
+        mAdapter = AppsListAdapter()
         mAdapter.setOnClickListener(object : RecyclerOnClickListenerInterface {
             override fun onClick(view: View, position: Int) {
-                val vm = mAdapter.dataset[position]
+                val vm = mAdapter.currentList[position]
                 lifecycleScope.launch {
                     if (connect()) {
                         sendMessage(mPhoneNodeWithApp!!.id, WearableHelper.LaunchAppPath,
@@ -224,7 +224,7 @@ class AppLauncherActivity : WearableListenerActivity(), OnDataChangedListener {
         }
 
         lifecycleScope.launch(Dispatchers.Main) {
-            mAdapter.updateItems(viewModels)
+            mAdapter.submitList(viewModels)
         }
     }
 
