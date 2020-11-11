@@ -197,8 +197,8 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
         return PendingIntent.getService(context, action.value, onClickIntent, PendingIntent.FLAG_UPDATE_CURRENT)
     }
 
-    override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
-        if (intent.action != null) {
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (intent?.action != null) {
             val action = Actions.valueOf(intent.action!!)
             when (action) {
                 Actions.WIFI -> run {
