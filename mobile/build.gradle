@@ -32,11 +32,13 @@ android {
             debuggable true
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            manifestPlaceholders = [sleepTimerIdPrefix: 'com.thewizrd.simplesleeptimer.debug']
         }
         release {
             minifyEnabled true
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            manifestPlaceholders = [sleepTimerIdPrefix: 'com.thewizrd.simplesleeptimer']
         }
     }
 
