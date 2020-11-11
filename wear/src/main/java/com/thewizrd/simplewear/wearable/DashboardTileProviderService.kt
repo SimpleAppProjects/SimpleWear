@@ -155,12 +155,14 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
             var mDrawableID = R.drawable.ic_do_not_disturb_off_white_24dp
 
             when (dndChoice) {
+                DNDChoice.OFF -> mDrawableID = R.drawable.ic_do_not_disturb_off_white_24dp
                 DNDChoice.PRIORITY -> mDrawableID = R.drawable.ic_error_white_24dp
                 DNDChoice.ALARMS -> mDrawableID = R.drawable.ic_alarm_white_24dp
                 DNDChoice.SILENCE -> mDrawableID = R.drawable.ic_notifications_off_white_24dp
             }
 
             views.setImageViewResource(R.id.dnd_toggle, mDrawableID)
+            views.setInt(R.id.dnd_toggle, "setBackgroundResource", if (dndChoice != DNDChoice.OFF) R.drawable.round_button_enabled else R.drawable.round_button_disabled)
             views.setOnClickPendingIntent(R.id.dnd_toggle, getActionClickIntent(applicationContext, Actions.DONOTDISTURB))
         }
 
@@ -169,11 +171,13 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
             var mDrawableID = R.drawable.ic_vibration_white_24dp
 
             when (ringerChoice) {
+                RingerChoice.VIBRATION -> mDrawableID = R.drawable.ic_vibration_white_24dp
                 RingerChoice.SOUND -> mDrawableID = R.drawable.ic_notifications_active_white_24dp
                 RingerChoice.SILENT -> mDrawableID = R.drawable.ic_volume_off_white_24dp
             }
 
             views.setImageViewResource(R.id.ringer_toggle, mDrawableID)
+            views.setInt(R.id.ringer_toggle, "setBackgroundResource", if (ringerChoice != RingerChoice.SILENT) R.drawable.round_button_enabled else R.drawable.round_button_disabled)
             views.setOnClickPendingIntent(R.id.ringer_toggle, getActionClickIntent(applicationContext, Actions.RINGER))
         }
 
