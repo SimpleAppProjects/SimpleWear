@@ -32,7 +32,6 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
         init()
     }
 
-    private val scope = CoroutineScope(Job() + Dispatchers.Default)
     private var mWearNodesWithApp: Collection<Node>? = null
 
     private fun init() {
@@ -43,7 +42,6 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
     fun unregister() {
         val mCapabilityClient = Wearable.getCapabilityClient(mContext)
         mCapabilityClient.removeListener(this)
-        scope.cancel()
     }
 
     suspend fun isWearNodesAvailable(): Boolean {
@@ -55,7 +53,7 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
 
     override fun onCapabilityChanged(capabilityInfo: CapabilityInfo) {
         mWearNodesWithApp = capabilityInfo.nodes
-        scope.launch { requestWearAppState() }
+        GlobalScope.launch(Dispatchers.Unconfined) { requestWearAppState() }
     }
 
     private suspend fun findWearDevicesWithApp(): Collection<Node>? {
@@ -296,7 +294,7 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
     }
 
     fun sendActionsUpdate(nodeID: String?) {
-        scope.launch {
+        GlobalScope.launch(Dispatchers.Unconfined) {
             for (act in Actions.values()) {
                 async { sendActionsUpdate(nodeID, act) }
             }
@@ -395,7 +393,7 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
                 if (vA is VolumeAction) {
                     vA.setActionSuccessful(PhoneStatusHelper.setVolume(mContext, vA.direction, vA.streamType))
                     vA.streamType?.let {
-                        scope.launch {
+                        GlobalScope.launch(Dispatchers.Unconfined) {
                             sendAudioModeStatus(nodeID, it)
                         }
                     }

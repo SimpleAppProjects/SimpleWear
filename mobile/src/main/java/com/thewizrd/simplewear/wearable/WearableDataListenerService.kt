@@ -16,7 +16,8 @@ import com.thewizrd.shared_resources.utils.booleanToBytes
 import com.thewizrd.shared_resources.utils.bytesToInt
 import com.thewizrd.shared_resources.utils.bytesToString
 import com.thewizrd.simplewear.MainActivity
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 
 class WearableDataListenerService : WearableListenerService() {
     companion object {
@@ -26,7 +27,6 @@ class WearableDataListenerService : WearableListenerService() {
         private const val JOB_ID = 1000
     }
 
-    private val scope = CoroutineScope(Job() + Dispatchers.Unconfined)
     private lateinit var mWearMgr: WearableManager
 
     override fun onCreate() {
@@ -36,12 +36,11 @@ class WearableDataListenerService : WearableListenerService() {
 
     override fun onDestroy() {
         mWearMgr.unregister()
-        scope.cancel()
         super.onDestroy()
     }
 
     override fun onMessageReceived(messageEvent: MessageEvent) {
-        runBlocking(scope.coroutineContext) {
+        runBlocking(Dispatchers.Unconfined) {
             if (messageEvent.path == WearableHelper.StartActivityPath) {
                 val startIntent = Intent(this@WearableDataListenerService, MainActivity::class.java)
                         .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)

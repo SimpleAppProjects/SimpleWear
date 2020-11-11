@@ -23,8 +23,11 @@ import com.thewizrd.shared_resources.utils.bytesToString
 import com.thewizrd.shared_resources.utils.stringToBytes
 import com.thewizrd.simplewear.LaunchActivity
 import com.thewizrd.simplewear.R
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import timber.log.Timber
 import java.util.*
 import java.util.concurrent.ExecutionException
 
@@ -50,19 +53,16 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
         }
     }
 
-    private val scope = CoroutineScope(Job() + Dispatchers.Default)
-
     private var mInFocus = false
     private var id = -1
 
     override fun onDestroy() {
-        Log.d(TAG, "destroying service...")
-        scope.cancel()
+        Timber.d("destroying service...")
         super.onDestroy()
     }
 
     override fun onTileUpdate(tileId: Int) {
-        Log.d(TAG, "onTileUpdate called with: tileId = $tileId")
+        Timber.d("$TAG: onTileUpdate called with: tileId = $tileId")
 
         if (!isIdForDummyData(tileId)) {
             id = tileId
@@ -73,7 +73,7 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
     override fun onTileFocus(tileId: Int) {
         super.onTileFocus(tileId)
 
-        Log.d(TAG, "onTileFocus called with: tileId = $tileId")
+        Timber.d("$TAG: onTileFocus called with: tileId = $tileId")
         if (!isIdForDummyData(tileId)) {
             id = tileId
             mInFocus = true
@@ -82,7 +82,7 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
             Wearable.getCapabilityClient(applicationContext).addListener(this, WearableHelper.CAPABILITY_PHONE_APP)
             Wearable.getMessageClient(applicationContext).addListener(this)
 
-            scope.launch {
+            GlobalScope.launch(Dispatchers.Unconfined) {
                 checkConnectionStatus()
                 requestUpdate()
             }
@@ -92,7 +92,7 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
     override fun onTileBlur(tileId: Int) {
         super.onTileBlur(tileId)
 
-        Log.d(TAG, "onTileBlur called with: tileId = $tileId")
+        Timber.d("$TAG: onTileBlur called with: tileId = $tileId")
         if (!isIdForDummyData(tileId)) {
             mInFocus = false
 
@@ -102,8 +102,8 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
     }
 
     private fun sendRemoteViews() {
-        Log.d(TAG, "sendRemoteViews")
-        scope.launch {
+        Timber.d("$TAG: sendRemoteViews")
+        GlobalScope.launch(Dispatchers.Unconfined) {
             val updateViews = buildUpdate()
 
             val tileData = TileData.Builder()
@@ -271,7 +271,7 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
     override fun onMessageReceived(messageEvent: MessageEvent) {
         val data = messageEvent.data ?: return
 
-        scope.launch {
+        GlobalScope.launch(Dispatchers.Unconfined) {
             if (messageEvent.path.contains(WearableHelper.WifiPath)) {
                 val wifiStatus = data[0].toInt()
                 var enabled = false
@@ -319,7 +319,7 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
     }
 
     override fun onCapabilityChanged(capabilityInfo: CapabilityInfo) {
-        scope.launch {
+        GlobalScope.launch(Dispatchers.Unconfined) {
             mPhoneNodeWithApp = pickBestNodeId(capabilityInfo.nodes)
 
             mConnectionStatus = if (mPhoneNodeWithApp == null) {
@@ -373,7 +373,7 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
     }
 
     protected fun requestUpdate() {
-        scope.launch {
+        GlobalScope.launch(Dispatchers.Unconfined) {
             if (connect()) {
                 sendMessage(mPhoneNodeWithApp!!.id, WearableHelper.UpdatePath, null)
             }
@@ -385,7 +385,7 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
     }
 
     protected fun requestAction(actionJSONString: String) {
-        scope.launch {
+        GlobalScope.launch(Dispatchers.Unconfined) {
             if (connect()) {
                 sendMessage(mPhoneNodeWithApp!!.id, WearableHelper.ActionsPath, actionJSONString.stringToBytes())
             }
