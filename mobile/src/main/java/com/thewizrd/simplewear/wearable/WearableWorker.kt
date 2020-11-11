@@ -9,7 +9,6 @@ import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.shared_resources.sleeptimer.SleepTimerHelper
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.shared_resources.utils.stringToBytes
-import java.util.*
 
 class WearableWorker(context: Context, workerParams: WorkerParameters) : CoroutineWorker(context, workerParams) {
     companion object {
@@ -79,15 +78,10 @@ class WearableWorker(context: Context, workerParams: WorkerParameters) : Corouti
             val context = context.applicationContext
             Logger.writeLine(Log.INFO, "%s: Requesting to start work", TAG)
             val updateRequest = OneTimeWorkRequest.Builder(WearableWorker::class.java)
-            var intentAction: String? = null
             if (inputData != null) {
-                intentAction = inputData.getString(KEY_ACTION)
                 updateRequest.setInputData(inputData)
             }
-            WorkManager.getInstance(context)
-                    .enqueueUniqueWork(String.format(Locale.ROOT, "%s:%s_oneTime", TAG, intentAction),
-                            ExistingWorkPolicy.REPLACE, updateRequest.build()
-                    )
+            WorkManager.getInstance(context).enqueue(updateRequest.build())
             Logger.writeLine(Log.INFO, "%s: One-time work enqueued", TAG)
         }
     }
