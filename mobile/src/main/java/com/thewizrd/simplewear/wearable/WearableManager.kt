@@ -378,8 +378,18 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
         when (action.actionType) {
             Actions.WIFI -> {
                 tA = action as ToggleAction
-                tA.setActionSuccessful(PhoneStatusHelper.setWifiEnabled(mContext, tA.isEnabled))
-                sendMessage(nodeID, WearableHelper.ActionsPath, JSONParser.serializer(tA, Action::class.java).stringToBytes())
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    /* WifiManager.setWifiEnabled is unavailable as of Android 10 */
+                    tA.setActionSuccessful(PhoneStatusHelper.openWifiSettings(mContext))
+                    tA.isEnabled = PhoneStatusHelper.isWifiEnabled(mContext)
+                } else {
+                    tA.setActionSuccessful(PhoneStatusHelper.setWifiEnabled(mContext, tA.isEnabled))
+                }
+                sendMessage(
+                    nodeID,
+                    WearableHelper.ActionsPath,
+                    JSONParser.serializer(tA, Action::class.java).stringToBytes()
+                )
             }
             Actions.BLUETOOTH -> {
                 tA = action as ToggleAction

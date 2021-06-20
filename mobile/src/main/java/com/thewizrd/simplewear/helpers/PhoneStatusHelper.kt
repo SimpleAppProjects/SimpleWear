@@ -21,6 +21,7 @@ import android.os.PowerManager
 import android.provider.Settings
 import android.util.Log
 import android.view.KeyEvent
+import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
 import androidx.core.location.LocationManagerCompat
 import com.thewizrd.shared_resources.actions.*
@@ -346,8 +347,32 @@ object PhoneStatusHelper {
 
     fun openMobileDataSettings(context: Context): ActionStatus {
         return try {
-            context.startActivity(Intent(Settings.ACTION_NETWORK_OPERATOR_SETTINGS)
-                    .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                context.startActivity(
+                    Intent(Settings.Panel.ACTION_INTERNET_CONNECTIVITY)
+                        .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                )
+            } else {
+                context.startActivity(
+                    Intent(Settings.ACTION_NETWORK_OPERATOR_SETTINGS)
+                        .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                )
+            }
+
+            ActionStatus.SUCCESS
+        } catch (e: Exception) {
+            Logger.writeLine(Log.ERROR, e)
+            ActionStatus.FAILURE
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.Q)
+    fun openWifiSettings(context: Context): ActionStatus {
+        return try {
+            context.startActivity(
+                Intent(Settings.Panel.ACTION_WIFI)
+                    .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            )
             ActionStatus.SUCCESS
         } catch (e: Exception) {
             Logger.writeLine(Log.ERROR, e)
