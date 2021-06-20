@@ -166,7 +166,7 @@ class AppLauncherActivity : WearableListenerActivity(), OnDataChangedListener {
         super.onMessageReceived(messageEvent)
 
         lifecycleScope.launch {
-            if (messageEvent.data != null && messageEvent.path == WearableHelper.AppsPath) {
+            if (messageEvent.data != null && messageEvent.path == WearableHelper.LaunchAppPath) {
                 val status = ActionStatus.valueOf(messageEvent.data.bytesToString())
 
                 lifecycleScope.launch {
