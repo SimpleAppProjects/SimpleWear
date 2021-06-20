@@ -97,10 +97,10 @@ class PermissionCheckFragment : Fragment() {
         }
 
         binding.sleeptimerPref.setOnClickListener {
-            if (!SleepTimerHelper.isSleepTimerInstalled) {
+            if (!SleepTimerHelper.isSleepTimerInstalled()) {
                 val intentapp = Intent(Intent.ACTION_VIEW)
-                        .addCategory(Intent.CATEGORY_BROWSABLE)
-                        .setData(SleepTimerHelper.playStoreURI)
+                    .addCategory(Intent.CATEGORY_BROWSABLE)
+                    .setData(SleepTimerHelper.getPlayStoreURI())
 
                 startActivity(intentapp)
             }
@@ -179,7 +179,7 @@ class PermissionCheckFragment : Fragment() {
             val deviceManager = requireContext().getSystemService(Context.COMPANION_DEVICE_SERVICE) as CompanionDeviceManager
             updatePairPermText(deviceManager.associations.isNotEmpty())
         }
-        updateSleepTimerText(SleepTimerHelper.isSleepTimerInstalled)
+        updateSleepTimerText(SleepTimerHelper.isSleepTimerInstalled())
     }
 
     private fun updateCamPermText(enabled: Boolean) {

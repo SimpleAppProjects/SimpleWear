@@ -29,7 +29,6 @@ import com.thewizrd.simplewear.ScreenLockAdminReceiver
 import com.thewizrd.simplewear.services.TorchService
 import com.thewizrd.simplewear.services.TorchService.Companion.enqueueWork
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
 
 object PhoneStatusHelper {
     fun getBatteryLevel(context: Context): BatteryStatus {
@@ -65,15 +64,14 @@ object PhoneStatusHelper {
 
     fun setWifiEnabled(context: Context, enable: Boolean): ActionStatus {
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_WIFI_STATE) == PackageManager.PERMISSION_GRANTED) {
-            val status: ActionStatus
-            status = try {
-                val wifiMan = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+            return try {
+                val wifiMan =
+                    context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
                 if (wifiMan.setWifiEnabled(enable)) ActionStatus.SUCCESS else ActionStatus.FAILURE
             } catch (e: Exception) {
                 Logger.writeLine(Log.ERROR, e)
                 ActionStatus.FAILURE
             }
-            return status
         }
         return ActionStatus.PERMISSION_DENIED
     }
@@ -85,9 +83,9 @@ object PhoneStatusHelper {
 
     fun setBluetoothEnabled(context: Context, enable: Boolean): ActionStatus {
         val mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
-        return if (mBluetoothAdapter != null) {
-            if (if (enable) mBluetoothAdapter.enable() else mBluetoothAdapter.disable()) ActionStatus.SUCCESS else ActionStatus.FAILURE
-        } else ActionStatus.FAILURE
+        return mBluetoothAdapter?.let {
+            if (if (enable) it.enable() else it.disable()) ActionStatus.SUCCESS else ActionStatus.FAILURE
+        } ?: ActionStatus.FAILURE
     }
 
     fun isMobileDataEnabled(context: Context): Boolean {
@@ -310,49 +308,39 @@ object PhoneStatusHelper {
         }
     }
 
-    fun sendPlayMusicCommand(context: Context): ActionStatus {
+    suspend fun sendPlayMusicCommand(context: Context): ActionStatus {
         // Add a minor delay before sending the command
-        runBlocking {
-            delay(500)
-        }
+        delay(500)
 
         val audioMan = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
         val event = KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_MEDIA_PLAY)
         audioMan.dispatchMediaKeyEvent(event)
 
         // Wait for a second to see if music plays
-        val musicActive = runBlocking {
-            delay(1000)
-            audioMan.isMusicActive
-        }
+        delay(1000)
+        val musicActive = audioMan.isMusicActive
         return if (musicActive) ActionStatus.SUCCESS else ActionStatus.FAILURE
     }
 
-    fun sendPlayMusicCommand(context: Context, playIntent: Intent): ActionStatus {
+    suspend fun sendPlayMusicCommand(context: Context, playIntent: Intent): ActionStatus {
         // Add a minor delay before sending the command
-        runBlocking {
-            delay(500)
-        }
+        delay(500)
 
         val audioMan = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
         context.sendBroadcast(playIntent)
 
         // Wait for a second to see if music plays
-        val musicActive = runBlocking {
-            delay(1000)
-            audioMan.isMusicActive
-        }
+        delay(1000)
+        val musicActive = audioMan.isMusicActive
         return if (musicActive) ActionStatus.SUCCESS else ActionStatus.FAILURE
     }
 
-    fun isMusicActive(context: Context): ActionStatus {
+    suspend fun isMusicActive(context: Context): ActionStatus {
         val audioMan = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
 
         // Wait for a second to see if music plays
-        val musicActive = runBlocking {
-            delay(1000)
-            audioMan.isMusicActive
-        }
+        delay(1000)
+        val musicActive = audioMan.isMusicActive
         return if (musicActive) ActionStatus.SUCCESS else ActionStatus.FAILURE
     }
 

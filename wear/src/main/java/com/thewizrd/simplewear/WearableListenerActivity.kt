@@ -5,9 +5,6 @@ import android.content.BroadcastReceiver
 import android.content.Intent
 import android.content.IntentFilter
 import android.net.wifi.WifiManager
-import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.support.wearable.phone.PhoneDeviceType
 import android.util.Log
 import android.widget.Toast
@@ -25,14 +22,12 @@ import com.thewizrd.shared_resources.actions.ToggleAction
 import com.thewizrd.shared_resources.helpers.AppState
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
 import com.thewizrd.shared_resources.helpers.WearableHelper
-import com.thewizrd.shared_resources.utils.JSONParser.serializer
-import com.thewizrd.shared_resources.utils.Logger.writeLine
+import com.thewizrd.shared_resources.utils.JSONParser
+import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.shared_resources.utils.bytesToString
 import com.thewizrd.shared_resources.utils.stringToBytes
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
-import java.util.concurrent.ExecutionException
 
 abstract class WearableListenerActivity : AppCompatActivity(), OnMessageReceivedListener, OnCapabilityChangedListener {
     companion object {
@@ -46,14 +41,14 @@ abstract class WearableListenerActivity : AppCompatActivity(), OnMessageReceived
         /**
          * Extra contains success flag for open on phone action.
          *
-         * @see .ACTION_OPENONPHONE
+         * @see ACTION_OPENONPHONE
          */
         const val EXTRA_SUCCESS = "SimpleWear.Droid.Wear.extra.SUCCESS"
 
         /**
          * Extra contains flag for whether or not to show the animation for the open on phone action.
          *
-         * @see .ACTION_OPENONPHONE
+         * @see ACTION_OPENONPHONE
          */
         const val EXTRA_SHOWANIMATION = "SimpleWear.Droid.Wear.extra.SHOW_ANIMATION"
 
@@ -112,15 +107,9 @@ abstract class WearableListenerActivity : AppCompatActivity(), OnMessageReceived
     @Volatile
     protected var mPhoneNodeWithApp: Node? = null
     protected var mConnectionStatus = WearConnectionStatus.DISCONNECTED
-    protected lateinit var mMainHandler: Handler
 
     protected abstract val broadcastReceiver: BroadcastReceiver
     protected abstract val intentFilter: IntentFilter
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        mMainHandler = Handler(Looper.getMainLooper())
-    }
 
     override fun onResume() {
         super.onResume()
@@ -145,24 +134,37 @@ abstract class WearableListenerActivity : AppCompatActivity(), OnMessageReceived
             connect()
 
             if (mPhoneNodeWithApp == null) {
-                lifecycleScope.launch(Dispatchers.Main) {
-                    Toast.makeText(this@WearableListenerActivity, "Device is not connected or app is not installed on device...", Toast.LENGTH_SHORT).show()
+                lifecycleScope.launch {
+                    Toast.makeText(
+                        this@WearableListenerActivity,
+                        "Device is not connected or app is not installed on device...",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
 
-                val deviceType = PhoneDeviceType.getPhoneDeviceType(this@WearableListenerActivity)
-                when (deviceType) {
+                when (PhoneDeviceType.getPhoneDeviceType(this@WearableListenerActivity)) {
                     PhoneDeviceType.DEVICE_TYPE_ANDROID -> {
-                        LocalBroadcastManager.getInstance(this@WearableListenerActivity).sendBroadcast(
-                                Intent(ACTION_SHOWSTORELISTING))
+                        LocalBroadcastManager.getInstance(this@WearableListenerActivity)
+                            .sendBroadcast(
+                                Intent(ACTION_SHOWSTORELISTING)
+                            )
                     }
                     PhoneDeviceType.DEVICE_TYPE_IOS -> {
-                        lifecycleScope.launch(Dispatchers.Main) {
-                            Toast.makeText(this@WearableListenerActivity, "Connected device is not supported", Toast.LENGTH_SHORT).show()
+                        lifecycleScope.launch {
+                            Toast.makeText(
+                                this@WearableListenerActivity,
+                                "Connected device is not supported",
+                                Toast.LENGTH_SHORT
+                            ).show()
                         }
                     }
                     else -> {
-                        lifecycleScope.launch(Dispatchers.Main) {
-                            Toast.makeText(this@WearableListenerActivity, "Connected device is not supported", Toast.LENGTH_SHORT).show()
+                        lifecycleScope.launch {
+                            Toast.makeText(
+                                this@WearableListenerActivity,
+                                "Connected device is not supported",
+                                Toast.LENGTH_SHORT
+                            ).show()
                         }
                     }
                 }
@@ -182,61 +184,89 @@ abstract class WearableListenerActivity : AppCompatActivity(), OnMessageReceived
 
     override fun onMessageReceived(messageEvent: MessageEvent) {
         lifecycleScope.launch {
-            if (messageEvent.path.contains(WearableHelper.WifiPath)) {
-                val data = messageEvent.data
-                val wifiStatus = data[0].toInt()
-                var enabled = false
-                when (wifiStatus) {
-                    WifiManager.WIFI_STATE_DISABLING,
-                    WifiManager.WIFI_STATE_DISABLED,
-                    WifiManager.WIFI_STATE_UNKNOWN -> {
-                        enabled = false
+            when {
+                messageEvent.path.contains(WearableHelper.WifiPath) -> {
+                    val data = messageEvent.data
+                    val wifiStatus = data[0].toInt()
+                    var enabled = false
+                    when (wifiStatus) {
+                        WifiManager.WIFI_STATE_DISABLING,
+                        WifiManager.WIFI_STATE_DISABLED,
+                        WifiManager.WIFI_STATE_UNKNOWN -> {
+                            enabled = false
+                        }
+                        WifiManager.WIFI_STATE_ENABLING,
+                        WifiManager.WIFI_STATE_ENABLED -> {
+                            enabled = true
+                        }
                     }
-                    WifiManager.WIFI_STATE_ENABLING,
-                    WifiManager.WIFI_STATE_ENABLED -> {
-                        enabled = true
-                    }
+
+                    LocalBroadcastManager.getInstance(this@WearableListenerActivity)
+                        .sendBroadcast(
+                            Intent(WearableHelper.ActionsPath)
+                                .putExtra(
+                                    EXTRA_ACTIONDATA,
+                                    JSONParser.serializer(
+                                        ToggleAction(Actions.WIFI, enabled),
+                                        Action::class.java
+                                    )
+                                )
+                        )
                 }
+                messageEvent.path.contains(WearableHelper.BluetoothPath) -> {
+                    val data = messageEvent.data
+                    val bt_status = data[0].toInt()
+                    var enabled = false
 
-                LocalBroadcastManager.getInstance(this@WearableListenerActivity)
-                        .sendBroadcast(Intent(WearableHelper.ActionsPath)
-                                .putExtra(EXTRA_ACTIONDATA,
-                                        serializer(ToggleAction(Actions.WIFI, enabled), Action::class.java)))
-            } else if (messageEvent.path.contains(WearableHelper.BluetoothPath)) {
-                val data = messageEvent.data
-                val bt_status = data[0].toInt()
-                var enabled = false
+                    when (bt_status) {
+                        BluetoothAdapter.STATE_OFF,
+                        BluetoothAdapter.STATE_TURNING_OFF -> {
+                            enabled = false
+                        }
+                        BluetoothAdapter.STATE_ON,
+                        BluetoothAdapter.STATE_TURNING_ON -> {
+                            enabled = true
+                        }
+                    }
 
-                when (bt_status) {
-                    BluetoothAdapter.STATE_OFF,
-                    BluetoothAdapter.STATE_TURNING_OFF -> {
-                        enabled = false
-                    }
-                    BluetoothAdapter.STATE_ON,
-                    BluetoothAdapter.STATE_TURNING_ON -> {
-                        enabled = true
-                    }
+                    LocalBroadcastManager.getInstance(this@WearableListenerActivity)
+                        .sendBroadcast(
+                            Intent(WearableHelper.ActionsPath)
+                                .putExtra(
+                                    EXTRA_ACTIONDATA,
+                                    JSONParser.serializer(
+                                        ToggleAction(Actions.BLUETOOTH, enabled),
+                                        Action::class.java
+                                    )
+                                )
+                        )
                 }
-
-                LocalBroadcastManager.getInstance(this@WearableListenerActivity)
-                        .sendBroadcast(Intent(WearableHelper.ActionsPath)
-                                .putExtra(EXTRA_ACTIONDATA,
-                                        serializer(ToggleAction(Actions.BLUETOOTH, enabled), Action::class.java)))
-            } else if (messageEvent.path == WearableHelper.BatteryPath) {
-                val data = messageEvent.data
-                val jsonData: String = data.bytesToString()
-                LocalBroadcastManager.getInstance(this@WearableListenerActivity)
-                        .sendBroadcast(Intent(WearableHelper.BatteryPath)
-                                .putExtra(EXTRA_STATUS, jsonData))
-            } else if (messageEvent.path == WearableHelper.AppStatePath) {
-                val appState: AppState = App.instance!!.appState
-                sendMessage(messageEvent.sourceNodeId, messageEvent.path, appState.name.stringToBytes())
-            } else if (messageEvent.path == WearableHelper.ActionsPath) {
-                val data = messageEvent.data
-                val jsonData: String = data.bytesToString()
-                LocalBroadcastManager.getInstance(this@WearableListenerActivity)
-                        .sendBroadcast(Intent(WearableHelper.ActionsPath)
-                                .putExtra(EXTRA_ACTIONDATA, jsonData))
+                messageEvent.path == WearableHelper.BatteryPath -> {
+                    val data = messageEvent.data
+                    val jsonData: String = data.bytesToString()
+                    LocalBroadcastManager.getInstance(this@WearableListenerActivity)
+                        .sendBroadcast(
+                            Intent(WearableHelper.BatteryPath)
+                                .putExtra(EXTRA_STATUS, jsonData)
+                        )
+                }
+                messageEvent.path == WearableHelper.AppStatePath -> {
+                    val appState: AppState = App.instance.applicationState
+                    sendMessage(
+                        messageEvent.sourceNodeId,
+                        messageEvent.path,
+                        appState.name.stringToBytes()
+                    )
+                }
+                messageEvent.path == WearableHelper.ActionsPath -> {
+                    val data = messageEvent.data
+                    val jsonData: String = data.bytesToString()
+                    LocalBroadcastManager.getInstance(this@WearableListenerActivity)
+                        .sendBroadcast(
+                            Intent(WearableHelper.ActionsPath)
+                                .putExtra(EXTRA_ACTIONDATA, jsonData)
+                        )
+                }
             }
         }
     }
@@ -302,13 +332,14 @@ abstract class WearableListenerActivity : AppCompatActivity(), OnMessageReceived
 
         try {
             val capabilityInfo = Wearable.getCapabilityClient(this@WearableListenerActivity)
-                    .getCapability(WearableHelper.CAPABILITY_PHONE_APP, CapabilityClient.FILTER_REACHABLE)
-                    .await()
+                .getCapability(
+                    WearableHelper.CAPABILITY_PHONE_APP,
+                    CapabilityClient.FILTER_REACHABLE
+                )
+                .await()
             node = pickBestNodeId(capabilityInfo.nodes)
-        } catch (e: ExecutionException) {
-            writeLine(Log.ERROR, e)
-        } catch (e: InterruptedException) {
-            writeLine(Log.ERROR, e)
+        } catch (e: Exception) {
+            Logger.writeLine(Log.ERROR, e)
         }
 
         return node
@@ -330,7 +361,7 @@ abstract class WearableListenerActivity : AppCompatActivity(), OnMessageReceived
     }
 
     protected fun requestAction(action: Action?) {
-        requestAction(serializer(action, Action::class.java))
+        requestAction(JSONParser.serializer(action, Action::class.java))
     }
 
     protected fun requestAction(actionJSONString: String?) {
@@ -344,22 +375,22 @@ abstract class WearableListenerActivity : AppCompatActivity(), OnMessageReceived
     protected suspend fun sendMessage(nodeID: String, path: String, data: ByteArray?) {
         try {
             Wearable.getMessageClient(this@WearableListenerActivity)
-                    .sendMessage(nodeID, path, data).await()
-        } catch (ex: ExecutionException) {
-            if (ex.cause is ApiException) {
-                val apiEx = ex.cause as ApiException?
-                if (apiEx!!.statusCode == WearableStatusCodes.TARGET_NODE_NOT_CONNECTED) {
+                .sendMessage(nodeID, path, data).await()
+        } catch (e: Exception) {
+            if (e is ApiException || e.cause is ApiException) {
+                val apiException = e.cause as? ApiException ?: e as? ApiException
+                if (apiException?.statusCode == WearableStatusCodes.TARGET_NODE_NOT_CONNECTED) {
                     mConnectionStatus = WearConnectionStatus.DISCONNECTED
 
                     LocalBroadcastManager.getInstance(this@WearableListenerActivity)
-                            .sendBroadcast(Intent(ACTION_UPDATECONNECTIONSTATUS)
-                                    .putExtra(EXTRA_CONNECTIONSTATUS, mConnectionStatus.value))
+                        .sendBroadcast(
+                            Intent(ACTION_UPDATECONNECTIONSTATUS)
+                                .putExtra(EXTRA_CONNECTIONSTATUS, mConnectionStatus.value)
+                        )
                 }
             }
 
-            writeLine(Log.ERROR, ex)
-        } catch (e: Exception) {
-            writeLine(Log.ERROR, e)
+            Logger.writeLine(Log.ERROR, e)
         }
     }
 
@@ -368,13 +399,12 @@ abstract class WearableListenerActivity : AppCompatActivity(), OnMessageReceived
         try {
             Wearable.getMessageClient(this@WearableListenerActivity)
                     .sendMessage(nodeID, WearableHelper.PingPath, null).await()
-        } catch (ex: ExecutionException) {
-            if (ex.cause is ApiException) {
-                throw ex.cause as ApiException
-            }
-            writeLine(Log.ERROR, ex)
         } catch (e: Exception) {
-            writeLine(Log.ERROR, e)
+            if (e is ApiException || e.cause is ApiException) {
+                val apiException = e.cause as? ApiException ?: e as ApiException
+                throw apiException
+            }
+            Logger.writeLine(Log.ERROR, e)
         }
     }
 }

@@ -153,7 +153,13 @@ object JSONParser {
         }
     }
 
-    fun serializer(`object`: Any?, type: Type?): String {
+    @JvmName("serializerOrNull")
+    fun serializer(`object`: Any?, type: Type): String? {
+        if (`object` == null) return null
+        return serializer(`object`, type)
+    }
+
+    fun serializer(`object`: Any, type: Type): String {
         return gson.toJson(`object`, type)
     }
 }

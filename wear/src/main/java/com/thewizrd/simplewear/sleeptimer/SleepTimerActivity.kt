@@ -14,20 +14,14 @@ import androidx.lifecycle.lifecycleScope
 import com.google.android.gms.wearable.MessageEvent
 import com.google.android.wearable.intent.RemoteIntent
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
-import com.thewizrd.shared_resources.helpers.WearConnectionStatus.Companion.valueOf
 import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.shared_resources.sleeptimer.SleepTimerHelper
-import com.thewizrd.shared_resources.utils.JSONParser.serializer
-import com.thewizrd.shared_resources.utils.Logger.writeLine
-import com.thewizrd.shared_resources.utils.bytesToBool
-import com.thewizrd.shared_resources.utils.intToBytes
-import com.thewizrd.shared_resources.utils.stringToBytes
+import com.thewizrd.shared_resources.utils.*
 import com.thewizrd.simplewear.PhoneSyncActivity
 import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.WearableListenerActivity
 import com.thewizrd.simplewear.databinding.ActivitySleeptimerBinding
 import com.thewizrd.simplewear.helpers.ConfirmationResultReceiver
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 class SleepTimerActivity : WearableListenerActivity() {
@@ -48,19 +42,28 @@ class SleepTimerActivity : WearableListenerActivity() {
                 lifecycleScope.launch {
                     if (intent.action != null) {
                         if (ACTION_UPDATECONNECTIONSTATUS == intent.action) {
-                            val connStatus = valueOf(intent.getIntExtra(EXTRA_CONNECTIONSTATUS, 0))
-                            when (connStatus) {
+                            when (WearConnectionStatus.valueOf(
+                                intent.getIntExtra(
+                                    EXTRA_CONNECTIONSTATUS,
+                                    0
+                                )
+                            )) {
                                 WearConnectionStatus.DISCONNECTED -> {
                                     // Navigate
-                                    startActivity(Intent(this@SleepTimerActivity, PhoneSyncActivity::class.java)
-                                            .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK))
+                                    startActivity(
+                                        Intent(
+                                            this@SleepTimerActivity,
+                                            PhoneSyncActivity::class.java
+                                        )
+                                            .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                                    )
                                     finishAffinity()
                                 }
                                 WearConnectionStatus.APPNOTINSTALLED -> {
                                     // Open store on remote device
                                     val intentAndroid = Intent(Intent.ACTION_VIEW)
-                                            .addCategory(Intent.CATEGORY_BROWSABLE)
-                                            .setData(WearableHelper.playStoreURI)
+                                        .addCategory(Intent.CATEGORY_BROWSABLE)
+                                        .setData(WearableHelper.getPlayStoreURI())
                                     RemoteIntent.startRemoteActivity(this@SleepTimerActivity, intentAndroid,
                                             ConfirmationResultReceiver(this@SleepTimerActivity))
                                 }
@@ -79,8 +82,16 @@ class SleepTimerActivity : WearableListenerActivity() {
                                     if (data.size == 2) {
                                         val packageName = data[0]
                                         val activityName = data[1]
-                                        sendMessage(mPhoneNodeWithApp!!.id, WearableHelper.OpenMusicPlayerPath,
-                                                serializer(Pair.create(packageName, activityName), Pair::class.java).stringToBytes())
+                                        sendMessage(
+                                            mPhoneNodeWithApp!!.id,
+                                            WearableHelper.OpenMusicPlayerPath,
+                                            JSONParser.serializer(
+                                                Pair.create(
+                                                    packageName,
+                                                    activityName
+                                                ), Pair::class.java
+                                            ).stringToBytes()
+                                        )
                                     }
                                 }
                             }
@@ -90,21 +101,31 @@ class SleepTimerActivity : WearableListenerActivity() {
                             }
                         } else if (WearableHelper.MusicPlayersPath == intent.action) {
                             if (connect()) {
-                                sendMessage(mPhoneNodeWithApp!!.id, WearableHelper.MusicPlayersPath, null)
+                                sendMessage(
+                                    mPhoneNodeWithApp!!.id,
+                                    WearableHelper.MusicPlayersPath,
+                                    null
+                                )
                             }
                         } else {
-                            writeLine(Log.INFO, "%s: Unhandled action: %s", "MusicPlayerActivity", intent.action)
+                            Logger.writeLine(
+                                Log.INFO,
+                                "%s: Unhandled action: %s",
+                                "MusicPlayerActivity",
+                                intent.action
+                            )
                         }
                     }
                 }
             }
         }
 
-        intentFilter = IntentFilter()
-        intentFilter.addAction(ACTION_UPDATECONNECTIONSTATUS)
-        intentFilter.addAction(SleepTimerHelper.SleepTimerStartPath)
-        intentFilter.addAction(SleepTimerHelper.SleepTimerStopPath)
-        intentFilter.addAction(WearableHelper.MusicPlayersPath)
+        intentFilter = IntentFilter().apply {
+            addAction(ACTION_UPDATECONNECTIONSTATUS)
+            addAction(SleepTimerHelper.SleepTimerStartPath)
+            addAction(SleepTimerHelper.SleepTimerStopPath)
+            addAction(WearableHelper.MusicPlayersPath)
+        }
     }
 
     override fun onMessageReceived(messageEvent: MessageEvent) {
@@ -126,8 +147,8 @@ class SleepTimerActivity : WearableListenerActivity() {
                     binding.nosleeptimerMessageview.visibility = View.VISIBLE
                     binding.nosleeptimerMessageview.setOnClickListener {
                         val intentapp = Intent(Intent.ACTION_VIEW)
-                                .addCategory(Intent.CATEGORY_BROWSABLE)
-                                .setData(SleepTimerHelper.playStoreURI)
+                            .addCategory(Intent.CATEGORY_BROWSABLE)
+                            .setData(SleepTimerHelper.getPlayStoreURI())
 
                         RemoteIntent.startRemoteActivity(this@SleepTimerActivity, intentapp,
                                 ConfirmationResultReceiver(this@SleepTimerActivity))
@@ -175,7 +196,7 @@ class SleepTimerActivity : WearableListenerActivity() {
     }
 
     private fun showProgressBar(show: Boolean) {
-        lifecycleScope.launch(Dispatchers.Main) {
+        lifecycleScope.launch {
             binding.progressBar.visibility = if (show) View.VISIBLE else View.GONE
         }
     }

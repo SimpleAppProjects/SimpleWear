@@ -5,6 +5,6 @@ import com.thewizrd.shared_resources.helpers.AppState
 
 interface ApplicationLib {
     val appContext: Context
-    val appState: AppState
+    val applicationState: AppState
     val isPhone: Boolean
 }

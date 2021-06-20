@@ -19,18 +19,22 @@ import com.google.android.gms.wearable.CapabilityClient.OnCapabilityChangedListe
 import com.thewizrd.shared_resources.actions.*
 import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.shared_resources.sleeptimer.SleepTimerHelper
-import com.thewizrd.shared_resources.utils.*
+import com.thewizrd.shared_resources.utils.ImageUtils
+import com.thewizrd.shared_resources.utils.JSONParser
+import com.thewizrd.shared_resources.utils.Logger
+import com.thewizrd.shared_resources.utils.stringToBytes
 import com.thewizrd.simplewear.helpers.PhoneStatusHelper
 import kotlinx.coroutines.*
 import kotlinx.coroutines.tasks.await
 import java.util.*
-import java.util.concurrent.ExecutionException
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 class WearableManager(private val mContext: Context) : OnCapabilityChangedListener {
     init {
         init()
     }
+
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     private var mWearNodesWithApp: Collection<Node>? = null
 
@@ -40,6 +44,7 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
     }
 
     fun unregister() {
+        scope.cancel()
         val mCapabilityClient = Wearable.getCapabilityClient(mContext)
         mCapabilityClient.removeListener(this)
     }
@@ -53,40 +58,47 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
 
     override fun onCapabilityChanged(capabilityInfo: CapabilityInfo) {
         mWearNodesWithApp = capabilityInfo.nodes
-        GlobalScope.launch(Dispatchers.Unconfined) { requestWearAppState() }
+        scope.launch { requestWearAppState() }
     }
 
     private suspend fun findWearDevicesWithApp(): Collection<Node>? {
         var capabilityInfo: CapabilityInfo? = null
         try {
             capabilityInfo = Wearable.getCapabilityClient(mContext)
-                    .getCapability(WearableHelper.CAPABILITY_WEAR_APP, CapabilityClient.FILTER_REACHABLE)
-                    .await()
-        } catch (e: ExecutionException) {
-            Logger.writeLine(Log.ERROR, e)
-        } catch (e: InterruptedException) {
+                .getCapability(
+                    WearableHelper.CAPABILITY_WEAR_APP,
+                    CapabilityClient.FILTER_REACHABLE
+                )
+                .await()
+        } catch (e: Exception) {
             Logger.writeLine(Log.ERROR, e)
         }
         return capabilityInfo?.nodes
     }
 
     suspend fun startMusicPlayer(nodeID: String?, pkgName: String, activityName: String?, playMusic: Boolean) {
-        if (!String.isNullOrWhitespace(pkgName) && !String.isNullOrWhitespace(activityName)) {
-            val appIntent = Intent()
-            appIntent.setAction(Intent.ACTION_MAIN)
-                    .addCategory(Intent.CATEGORY_APP_MUSIC)
-                    .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK).component = ComponentName(pkgName, activityName!!)
+        if (!pkgName.isNullOrBlank() && !activityName.isNullOrBlank()) {
+            val appIntent = Intent().apply {
+                action = Intent.ACTION_MAIN
+                addCategory(Intent.CATEGORY_APP_MUSIC)
+                setFlags(Intent.FLAG_ACTIVITY_NEW_TASK).component =
+                    ComponentName(pkgName, activityName)
+            }
 
             // Check if the app has a registered MediaButton BroadcastReceiver
             val infos = mContext.packageManager.queryBroadcastReceivers(
-                    Intent(Intent.ACTION_MEDIA_BUTTON).setPackage(pkgName), PackageManager.GET_RESOLVED_FILTER)
+                Intent(Intent.ACTION_MEDIA_BUTTON).setPackage(pkgName),
+                PackageManager.GET_RESOLVED_FILTER
+            )
             var playKeyIntent: Intent? = null
             for (info in infos) {
                 if (pkgName == info.activityInfo.packageName) {
                     val event = KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_MEDIA_PLAY)
-                    playKeyIntent = Intent()
-                    playKeyIntent.putExtra(Intent.EXTRA_KEY_EVENT, event)
-                    playKeyIntent.setAction(Intent.ACTION_MEDIA_BUTTON).component = ComponentName(pkgName, info.activityInfo.name)
+                    playKeyIntent = Intent().apply {
+                        putExtra(Intent.EXTRA_KEY_EVENT, event)
+                        setAction(Intent.ACTION_MEDIA_BUTTON).component =
+                            ComponentName(pkgName, info.activityInfo.name)
+                    }
                     break
                 }
             }
@@ -167,7 +179,9 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
                     map.putString(WearableHelper.KEY_LABEL, label)
                     map.putString(WearableHelper.KEY_PKGNAME, appInfo.packageName)
                     map.putString(WearableHelper.KEY_ACTIVITYNAME, activityInfo.activityInfo.name)
-                    map.putAsset(WearableHelper.KEY_ICON, if (iconBmp != null) ImageUtils.createAssetFromBitmap(iconBmp) else null)
+                    map.putAsset(
+                        WearableHelper.KEY_ICON,
+                        iconBmp?.let { ImageUtils.createAssetFromBitmap(iconBmp) })
                     mapRequest.dataMap.putDataMap(key, map)
                     supportedPlayers.add(key)
                 }
@@ -177,11 +191,9 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
         mapRequest.setUrgent()
         try {
             Wearable.getDataClient(mContext)
-                    .putDataItem(mapRequest.asPutDataRequest())
-                    .await()
-        } catch (e: ExecutionException) {
-            Logger.writeLine(Log.ERROR, e)
-        } catch (e: InterruptedException) {
+                .putDataItem(mapRequest.asPutDataRequest())
+                .await()
+        } catch (e: Exception) {
             Logger.writeLine(Log.ERROR, e)
         }
     }
@@ -225,28 +237,36 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
         mapRequest.setUrgent()
         try {
             Wearable.getDataClient(mContext)
-                    .putDataItem(mapRequest.asPutDataRequest())
-                    .await()
-        } catch (e: ExecutionException) {
-            Logger.writeLine(Log.ERROR, e)
-        } catch (e: InterruptedException) {
+                .putDataItem(mapRequest.asPutDataRequest())
+                .await()
+        } catch (e: Exception) {
             Logger.writeLine(Log.ERROR, e)
         }
     }
 
     suspend fun launchApp(nodeID: String?, pkgName: String, activityName: String?) {
-        if (!String.isNullOrWhitespace(pkgName) && !String.isNullOrWhitespace(activityName)) {
-            val appIntent = Intent()
-            appIntent.setAction(Intent.ACTION_MAIN)
-                    .addCategory(Intent.CATEGORY_LAUNCHER)
-                    .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK).component = ComponentName(pkgName, activityName!!)
+        if (!pkgName.isNullOrBlank() && !activityName.isNullOrBlank()) {
+            val appIntent = Intent().apply {
+                action = Intent.ACTION_MAIN
+                addCategory(Intent.CATEGORY_LAUNCHER)
+                setFlags(Intent.FLAG_ACTIVITY_NEW_TASK).component =
+                    ComponentName(pkgName, activityName)
+            }
 
             if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
                 try {
                     mContext.startActivity(appIntent)
-                    sendMessage(nodeID, WearableHelper.LaunchAppPath, ActionStatus.SUCCESS.name.stringToBytes())
+                    sendMessage(
+                        nodeID,
+                        WearableHelper.LaunchAppPath,
+                        ActionStatus.SUCCESS.name.stringToBytes()
+                    )
                 } catch (e: ActivityNotFoundException) {
-                    sendMessage(nodeID, WearableHelper.LaunchAppPath, ActionStatus.FAILURE.name.stringToBytes())
+                    sendMessage(
+                        nodeID,
+                        WearableHelper.LaunchAppPath,
+                        ActionStatus.FAILURE.name.stringToBytes()
+                    )
                 }
             } else { // Android Q+ Devices
                 // Android Q puts a limitation on starting activities from the background
@@ -270,8 +290,13 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
     }
 
     suspend fun sendAudioModeStatus(nodeID: String?, streamType: AudioStreamType) {
-        sendMessage(nodeID, WearableHelper.AudioStatusPath,
-                JSONParser.serializer(PhoneStatusHelper.getStreamVolume(mContext, streamType), AudioStreamState::class.java).stringToBytes())
+        sendMessage(
+            nodeID, WearableHelper.AudioStatusPath,
+            JSONParser.serializer(
+                PhoneStatusHelper.getStreamVolume(mContext, streamType),
+                AudioStreamState::class.java
+            )?.stringToBytes()
+        )
     }
 
     suspend fun requestWearAppState() {
@@ -294,7 +319,7 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
     }
 
     fun sendActionsUpdate(nodeID: String?) {
-        GlobalScope.launch(Dispatchers.Unconfined) {
+        scope.launch {
             for (act in Actions.values()) {
                 async { sendActionsUpdate(nodeID, act) }
             }
@@ -393,7 +418,7 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
                 if (vA is VolumeAction) {
                     vA.setActionSuccessful(PhoneStatusHelper.setVolume(mContext, vA.direction, vA.streamType))
                     vA.streamType?.let {
-                        GlobalScope.launch(Dispatchers.Unconfined) {
+                        scope.launch {
                             sendAudioModeStatus(nodeID, it)
                         }
                     }
@@ -437,22 +462,18 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
         if (nodeID != null) {
             try {
                 Wearable.getMessageClient(mContext)
-                        .sendMessage(nodeID, path, data)
-                        .await()
-            } catch (e: ExecutionException) {
-                Logger.writeLine(Log.ERROR, e)
-            } catch (e: InterruptedException) {
+                    .sendMessage(nodeID, path, data)
+                    .await()
+            } catch (e: Exception) {
                 Logger.writeLine(Log.ERROR, e)
             }
         } else {
             for (node in mWearNodesWithApp!!) {
                 try {
                     Wearable.getMessageClient(mContext)
-                            .sendMessage(node.id, path, data)
-                            .await()
-                } catch (e: ExecutionException) {
-                    Logger.writeLine(Log.ERROR, e)
-                } catch (e: InterruptedException) {
+                        .sendMessage(node.id, path, data)
+                        .await()
+                } catch (e: Exception) {
                     Logger.writeLine(Log.ERROR, e)
                 }
             }

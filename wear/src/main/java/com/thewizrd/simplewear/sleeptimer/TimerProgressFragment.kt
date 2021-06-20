@@ -20,10 +20,6 @@ import java.util.*
 class TimerProgressFragment : Fragment(), OnMessageReceivedListener {
     private lateinit var binding: FragmentSleeptimerStopBinding
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-    }
-
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         binding = FragmentSleeptimerStopBinding.inflate(inflater, container, false)
 
@@ -36,14 +32,6 @@ class TimerProgressFragment : Fragment(), OnMessageReceivedListener {
         }
 
         return binding.root
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
     }
 
     override fun onMessageReceived(messageEvent: MessageEvent) {
@@ -67,12 +55,17 @@ class TimerProgressFragment : Fragment(), OnMessageReceivedListener {
         val mins = progressMs % 3600000L / 60000L
         val secs = progressMs / 1000 % 60
 
-        if (hours > 0) {
-            binding.progressText.text = String.format(Locale.ROOT, "%02d:%02d:%02d", hours, mins, secs)
-        } else if (mins > 0) {
-            binding.progressText.text = String.format(Locale.ROOT, "%02d:%02d", mins, secs)
-        } else {
-            binding.progressText.text = String.format(Locale.ROOT, "%02d", secs)
+        when {
+            hours > 0 -> {
+                binding.progressText.text =
+                    String.format(Locale.ROOT, "%02d:%02d:%02d", hours, mins, secs)
+            }
+            mins > 0 -> {
+                binding.progressText.text = String.format(Locale.ROOT, "%02d:%02d", mins, secs)
+            }
+            else -> {
+                binding.progressText.text = String.format(Locale.ROOT, "%02d", secs)
+            }
         }
     }
 
@@ -86,7 +79,4 @@ class TimerProgressFragment : Fragment(), OnMessageReceivedListener {
         super.onPause()
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-    }
 }

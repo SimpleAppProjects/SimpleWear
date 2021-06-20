@@ -10,10 +10,10 @@ class AppItemViewModel {
     var activityName: String? = null
     val key: String?
         get() {
-            if (packageName != null && activityName != null) {
-                return String.format(Locale.ROOT, "%s/%s", packageName, activityName)
+            return if (packageName != null && activityName != null) {
+                String.format(Locale.ROOT, "%s/%s", packageName, activityName)
             } else {
-                return null
+                null
             }
         }
     var appType: AppType = AppType.APP

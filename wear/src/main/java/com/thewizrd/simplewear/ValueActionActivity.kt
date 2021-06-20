@@ -15,18 +15,14 @@ import com.google.android.gms.wearable.MessageEvent
 import com.google.android.wearable.intent.RemoteIntent
 import com.thewizrd.shared_resources.actions.*
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
-import com.thewizrd.shared_resources.helpers.WearConnectionStatus.Companion.valueOf
 import com.thewizrd.shared_resources.helpers.WearableHelper
-import com.thewizrd.shared_resources.helpers.WearableHelper.playStoreURI
-import com.thewizrd.shared_resources.utils.JSONParser.deserializer
-import com.thewizrd.shared_resources.utils.JSONParser.serializer
-import com.thewizrd.shared_resources.utils.Logger.writeLine
+import com.thewizrd.shared_resources.utils.JSONParser
+import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.shared_resources.utils.bytesToString
 import com.thewizrd.shared_resources.utils.stringToBytes
 import com.thewizrd.simplewear.controls.CustomConfirmationOverlay
 import com.thewizrd.simplewear.databinding.ActivityValueactionBinding
 import com.thewizrd.simplewear.helpers.ConfirmationResultReceiver
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 class ValueActionActivity : WearableListenerActivity() {
@@ -67,19 +63,28 @@ class ValueActionActivity : WearableListenerActivity() {
                 lifecycleScope.launch {
                     if (intent.action != null) {
                         if (ACTION_UPDATECONNECTIONSTATUS == intent.action) {
-                            val connStatus = valueOf(intent.getIntExtra(EXTRA_CONNECTIONSTATUS, 0))
-                            when (connStatus) {
+                            when (WearConnectionStatus.valueOf(
+                                intent.getIntExtra(
+                                    EXTRA_CONNECTIONSTATUS,
+                                    0
+                                )
+                            )) {
                                 WearConnectionStatus.DISCONNECTED -> {
                                     // Navigate
-                                    startActivity(Intent(this@ValueActionActivity, PhoneSyncActivity::class.java)
-                                            .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK))
+                                    startActivity(
+                                        Intent(
+                                            this@ValueActionActivity,
+                                            PhoneSyncActivity::class.java
+                                        )
+                                            .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                                    )
                                     finishAffinity()
                                 }
                                 WearConnectionStatus.APPNOTINSTALLED -> {
                                     // Open store on remote device
                                     val intentAndroid = Intent(Intent.ACTION_VIEW)
-                                            .addCategory(Intent.CATEGORY_BROWSABLE)
-                                            .setData(playStoreURI)
+                                        .addCategory(Intent.CATEGORY_BROWSABLE)
+                                        .setData(WearableHelper.getPlayStoreURI())
 
                                     RemoteIntent.startRemoteActivity(this@ValueActionActivity, intentAndroid,
                                             ConfirmationResultReceiver(this@ValueActionActivity))
@@ -91,17 +96,22 @@ class ValueActionActivity : WearableListenerActivity() {
                             timer?.cancel()
 
                             val jsonData = intent.getStringExtra(EXTRA_ACTIONDATA)
-                            val action = deserializer(jsonData, Action::class.java)
+                            val action = JSONParser.deserializer(jsonData, Action::class.java)
 
                             if (!action!!.isActionSuccessful) {
-                                lifecycleScope.launch(Dispatchers.Main) {
+                                lifecycleScope.launch {
                                     when (action.actionStatus) {
                                         ActionStatus.UNKNOWN, ActionStatus.FAILURE -> {
                                             CustomConfirmationOverlay()
-                                                    .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
-                                                    .setCustomDrawable(ContextCompat.getDrawable(this@ValueActionActivity, R.drawable.ic_full_sad))
-                                                    .setMessage(getString(R.string.error_actionfailed))
-                                                    .showOn(this@ValueActionActivity)
+                                                .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
+                                                .setCustomDrawable(
+                                                    ContextCompat.getDrawable(
+                                                        this@ValueActionActivity,
+                                                        R.drawable.ic_full_sad
+                                                    )
+                                                )
+                                                .setMessage(getString(R.string.error_actionfailed))
+                                                .showOn(this@ValueActionActivity)
                                         }
                                         ActionStatus.PERMISSION_DENIED -> {
                                             CustomConfirmationOverlay()
@@ -126,24 +136,37 @@ class ValueActionActivity : WearableListenerActivity() {
                             }
                         } else if (ACTION_CHANGED == intent.action) {
                             val jsonData = intent.getStringExtra(EXTRA_ACTIONDATA)
-                            val action = deserializer(jsonData, Action::class.java)
+                            val action = JSONParser.deserializer(jsonData, Action::class.java)
                             requestAction(jsonData)
 
-                            lifecycleScope.launch(Dispatchers.Main) {
+                            lifecycleScope.launch {
                                 timer?.cancel()
                                 timer = object : CountDownTimer(3000, 500) {
                                     override fun onTick(millisUntilFinished: Long) {}
                                     override fun onFinish() {
                                         action!!.setActionSuccessful(ActionStatus.TIMEOUT)
                                         LocalBroadcastManager.getInstance(this@ValueActionActivity)
-                                                .sendBroadcast(Intent(WearableHelper.ActionsPath)
-                                                        .putExtra(EXTRA_ACTIONDATA, serializer(action, Action::class.java)))
+                                            .sendBroadcast(
+                                                Intent(WearableHelper.ActionsPath)
+                                                    .putExtra(
+                                                        EXTRA_ACTIONDATA,
+                                                        JSONParser.serializer(
+                                                            action,
+                                                            Action::class.java
+                                                        )
+                                                    )
+                                            )
                                     }
                                 }
                                 timer!!.start()
                             }
                         } else {
-                            writeLine(Log.INFO, "%s: Unhandled action: %s", "ValueActionActivity", intent.action)
+                            Logger.writeLine(
+                                Log.INFO,
+                                "%s: Unhandled action: %s",
+                                "ValueActionActivity",
+                                intent.action
+                            )
                         }
                     }
                 }
@@ -157,9 +180,13 @@ class ValueActionActivity : WearableListenerActivity() {
                 ValueAction(mAction!!, ValueDirection.UP)
             }
             LocalBroadcastManager.getInstance(this@ValueActionActivity)
-                    .sendBroadcast(Intent(ACTION_CHANGED)
-                            .putExtra(EXTRA_ACTIONDATA,
-                                    serializer(actionData, Action::class.java)))
+                    .sendBroadcast(
+                        Intent(ACTION_CHANGED)
+                            .putExtra(
+                                EXTRA_ACTIONDATA,
+                                JSONParser.serializer(actionData, Action::class.java)
+                            )
+                    )
         }
         binding.decreaseBtn.setOnClickListener {
             val actionData = if (mAction == Actions.VOLUME && mStreamType != null) {
@@ -168,9 +195,13 @@ class ValueActionActivity : WearableListenerActivity() {
                 ValueAction(mAction!!, ValueDirection.DOWN)
             }
             LocalBroadcastManager.getInstance(this@ValueActionActivity)
-                    .sendBroadcast(Intent(ACTION_CHANGED)
-                            .putExtra(EXTRA_ACTIONDATA,
-                                    serializer(actionData, Action::class.java)))
+                    .sendBroadcast(
+                        Intent(ACTION_CHANGED)
+                            .putExtra(
+                                EXTRA_ACTIONDATA,
+                                JSONParser.serializer(actionData, Action::class.java)
+                            )
+                    )
         }
         binding.actionIcon.setOnClickListener {
             if (mStreamType != null && mAction == Actions.VOLUME) {
@@ -200,11 +231,11 @@ class ValueActionActivity : WearableListenerActivity() {
 
         lifecycleScope.launch {
             if (messageEvent.path == WearableHelper.AudioStatusPath && mAction == Actions.VOLUME) {
-                val status = if (messageEvent.data != null) {
-                    deserializer(messageEvent.data.bytesToString(), AudioStreamState::class.java)
-                } else null
+                val status = messageEvent.data?.let {
+                    JSONParser.deserializer(it.bytesToString(), AudioStreamState::class.java)
+                }
 
-                lifecycleScope.launch(Dispatchers.Main) {
+                lifecycleScope.launch {
                     if (status == null) {
                         mStreamType = null
                         binding.actionIcon.setImageResource(R.drawable.ic_volume_up_white_24dp)

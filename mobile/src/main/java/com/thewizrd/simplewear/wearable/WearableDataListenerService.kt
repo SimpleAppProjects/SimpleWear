@@ -11,7 +11,7 @@ import com.thewizrd.shared_resources.actions.AudioStreamType
 import com.thewizrd.shared_resources.helpers.AppState
 import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.shared_resources.sleeptimer.SleepTimerHelper
-import com.thewizrd.shared_resources.utils.JSONParser.deserializer
+import com.thewizrd.shared_resources.utils.JSONParser
 import com.thewizrd.shared_resources.utils.booleanToBytes
 import com.thewizrd.shared_resources.utils.bytesToInt
 import com.thewizrd.shared_resources.utils.bytesToString
@@ -40,14 +40,14 @@ class WearableDataListenerService : WearableListenerService() {
     }
 
     override fun onMessageReceived(messageEvent: MessageEvent) {
-        runBlocking(Dispatchers.Unconfined) {
+        runBlocking(Dispatchers.Default) {
             if (messageEvent.path == WearableHelper.StartActivityPath) {
                 val startIntent = Intent(this@WearableDataListenerService, MainActivity::class.java)
-                        .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                    .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
                 startActivity(startIntent)
             } else if (messageEvent.path.startsWith(WearableHelper.ActionsPath)) {
-                val jsonData: String? = messageEvent.data?.bytesToString()
-                val action = deserializer(jsonData, Action::class.java)
+                val jsonData = messageEvent.data.bytesToString()
+                val action = JSONParser.deserializer(jsonData, Action::class.java)
                 mWearMgr.performAction(messageEvent.sourceNodeId, action!!)
             } else if (messageEvent.path.startsWith(WearableHelper.UpdatePath)) {
                 mWearMgr.sendStatusUpdate(messageEvent.sourceNodeId, null)
@@ -61,27 +61,29 @@ class WearableDataListenerService : WearableListenerService() {
             } else if (messageEvent.path.startsWith(WearableHelper.MusicPlayersPath)) {
                 mWearMgr.sendSupportedMusicPlayers()
             } else if (messageEvent.path == WearableHelper.OpenMusicPlayerPath) {
-                val jsonData: String? = messageEvent.data?.bytesToString()
-                val pair = deserializer(jsonData, Pair::class.java)
+                val jsonData = messageEvent.data.bytesToString()
+                val pair = JSONParser.deserializer(jsonData, Pair::class.java)
                 val pkgName = pair?.first.toString()
                 val activityName = pair?.second.toString()
                 mWearMgr.startMusicPlayer(messageEvent.sourceNodeId, pkgName, activityName, false)
             } else if (messageEvent.path == WearableHelper.PlayCommandPath) {
-                val jsonData: String? = messageEvent.data?.bytesToString()
-                val pair = deserializer(jsonData, Pair::class.java)
+                val jsonData = messageEvent.data.bytesToString()
+                val pair = JSONParser.deserializer(jsonData, Pair::class.java)
                 val pkgName = pair?.first.toString()
                 val activityName = pair?.second.toString()
                 mWearMgr.startMusicPlayer(messageEvent.sourceNodeId, pkgName, activityName, true)
             } else if (messageEvent.path == WearableHelper.BtDiscoverPath) {
-                val deviceName: String? = messageEvent.data?.bytesToString()
+                val deviceName = messageEvent.data.bytesToString()
                 LocalBroadcastManager.getInstance(this@WearableDataListenerService)
                         .sendBroadcast(Intent(ACTION_GETCONNECTEDNODE)
                                 .putExtra(EXTRA_NODEDEVICENAME, deviceName))
             } else if (messageEvent.path == SleepTimerHelper.SleepTimerEnabledPath) {
-                mWearMgr.sendMessage(messageEvent.sourceNodeId, SleepTimerHelper.SleepTimerEnabledPath,
-                        SleepTimerHelper.isSleepTimerInstalled.booleanToBytes())
+                mWearMgr.sendMessage(
+                    messageEvent.sourceNodeId, SleepTimerHelper.SleepTimerEnabledPath,
+                    SleepTimerHelper.isSleepTimerInstalled().booleanToBytes()
+                )
             } else if (messageEvent.path == SleepTimerHelper.SleepTimerStartPath) {
-                val timeInMins: Int? = messageEvent.data?.bytesToInt()
+                val timeInMins = messageEvent.data.bytesToInt()
                 timeInMins?.let { startSleepTimer(it) }
             } else if (messageEvent.path == SleepTimerHelper.SleepTimerStopPath) {
                 stopSleepTimer()
@@ -92,8 +94,8 @@ class WearableDataListenerService : WearableListenerService() {
             } else if (messageEvent.path == WearableHelper.AppsPath) {
                 mWearMgr.sendApps()
             } else if (messageEvent.path == WearableHelper.LaunchAppPath) {
-                val jsonData: String? = messageEvent.data?.bytesToString()
-                val pair = deserializer(jsonData, Pair::class.java)
+                val jsonData = messageEvent.data.bytesToString()
+                val pair = JSONParser.deserializer(jsonData, Pair::class.java)
                 val pkgName = pair?.first.toString()
                 val activityName = pair?.second.toString()
                 mWearMgr.launchApp(messageEvent.sourceNodeId, pkgName, activityName)
@@ -104,14 +106,20 @@ class WearableDataListenerService : WearableListenerService() {
 
     private fun startSleepTimer(timeInMins: Int) {
         val startTimerIntent = Intent(SleepTimerHelper.ACTION_START_TIMER)
-                .setClassName(SleepTimerHelper.packageName, SleepTimerHelper.PACKAGE_NAME + ".services.TimerService")
+            .setClassName(
+                SleepTimerHelper.getPackageName(),
+                SleepTimerHelper.PACKAGE_NAME + ".services.TimerService"
+            )
                 .putExtra(SleepTimerHelper.EXTRA_TIME_IN_MINS, timeInMins)
         ContextCompat.startForegroundService(this, startTimerIntent)
     }
 
     private fun stopSleepTimer() {
         val stopTimerIntent = Intent(SleepTimerHelper.ACTION_CANCEL_TIMER)
-                .setClassName(SleepTimerHelper.packageName, SleepTimerHelper.PACKAGE_NAME + ".services.TimerService")
+            .setClassName(
+                SleepTimerHelper.getPackageName(),
+                SleepTimerHelper.PACKAGE_NAME + ".services.TimerService"
+            )
         ContextCompat.startForegroundService(this, stopTimerIntent)
     }
 }

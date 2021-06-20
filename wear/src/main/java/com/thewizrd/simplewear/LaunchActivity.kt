@@ -10,7 +10,6 @@ class LaunchActivity : Activity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        setTheme(R.style.WearAppTheme)
         super.onCreate(savedInstanceState)
 
         val intent = Intent(this, PhoneSyncActivity::class.java)

@@ -18,8 +18,7 @@ object WearableHelper {
     // Link to Play Store listing
     private const val PLAY_STORE_APP_URI = "market://details?id=com.thewizrd.simplewear"
 
-    val playStoreURI: Uri
-        get() = Uri.parse(PLAY_STORE_APP_URI)
+    fun getPlayStoreURI(): Uri = Uri.parse(PLAY_STORE_APP_URI)
 
     // For WearableListenerService
     const val StartActivityPath = "/start-activity"
@@ -48,27 +47,29 @@ object WearableHelper {
     const val KEY_PKGNAME = "key_package_name"
     const val KEY_ACTIVITYNAME = "key_activity_name"
 
-    val isGooglePlayServicesInstalled: Boolean
-        get() {
-            val queryResult = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(SimpleLibrary.getInstance().app.appContext)
-            if (queryResult == ConnectionResult.SUCCESS) {
-                Logger.writeLine(Log.INFO, "App: Google Play Services is installed on this device.")
-                return true
-            }
-            if (GoogleApiAvailability.getInstance().isUserResolvableError(queryResult)) {
-                val errorString = GoogleApiAvailability.getInstance().getErrorString(queryResult)
-                Logger.writeLine(Log.INFO,
-                        "App: There is a problem with Google Play Services on this device: %s - %s",
-                        queryResult, errorString)
-            }
-            return false
+    fun isGooglePlayServicesInstalled(): Boolean {
+        val queryResult = GoogleApiAvailability.getInstance()
+            .isGooglePlayServicesAvailable(SimpleLibrary.instance.app.appContext)
+        if (queryResult == ConnectionResult.SUCCESS) {
+            Logger.writeLine(Log.INFO, "App: Google Play Services is installed on this device.")
+            return true
         }
+        if (GoogleApiAvailability.getInstance().isUserResolvableError(queryResult)) {
+            val errorString = GoogleApiAvailability.getInstance().getErrorString(queryResult)
+            Logger.writeLine(
+                Log.INFO,
+                "App: There is a problem with Google Play Services on this device: %s - %s",
+                queryResult, errorString
+            )
+        }
+        return false
+    }
 
     fun getWearDataUri(NodeId: String?, Path: String?): Uri {
         return Uri.Builder()
-                .scheme(PutDataRequest.WEAR_URI_SCHEME)
-                .authority(NodeId)
-                .path(Path)
-                .build()
+            .scheme(PutDataRequest.WEAR_URI_SCHEME)
+            .authority(NodeId)
+            .path(Path)
+            .build()
     }
 }

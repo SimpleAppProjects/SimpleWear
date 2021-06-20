@@ -16,20 +16,16 @@ import com.google.android.gms.wearable.MessageClient.OnMessageReceivedListener
 import com.thewizrd.shared_resources.actions.*
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
 import com.thewizrd.shared_resources.helpers.WearableHelper
-import com.thewizrd.shared_resources.utils.JSONParser.deserializer
-import com.thewizrd.shared_resources.utils.JSONParser.serializer
-import com.thewizrd.shared_resources.utils.Logger.writeLine
+import com.thewizrd.shared_resources.utils.JSONParser
+import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.shared_resources.utils.bytesToString
 import com.thewizrd.shared_resources.utils.stringToBytes
 import com.thewizrd.simplewear.LaunchActivity
 import com.thewizrd.simplewear.R
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import kotlinx.coroutines.tasks.await
 import timber.log.Timber
 import java.util.*
-import java.util.concurrent.ExecutionException
 
 class DashboardTileProviderService : TileProviderService(), OnMessageReceivedListener, OnCapabilityChangedListener {
     companion object {
@@ -56,13 +52,16 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
     private var mInFocus = false
     private var id = -1
 
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
     override fun onDestroy() {
-        Timber.d("destroying service...")
+        Timber.tag(TAG).d("destroying service...")
         super.onDestroy()
+        scope.cancel()
     }
 
     override fun onTileUpdate(tileId: Int) {
-        Timber.d("$TAG: onTileUpdate called with: tileId = $tileId")
+        Timber.tag(TAG).d("onTileUpdate called with: tileId = $tileId")
 
         if (!isIdForDummyData(tileId)) {
             id = tileId
@@ -73,7 +72,7 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
     override fun onTileFocus(tileId: Int) {
         super.onTileFocus(tileId)
 
-        Timber.d("$TAG: onTileFocus called with: tileId = $tileId")
+        Timber.tag(TAG).d("$TAG: onTileFocus called with: tileId = $tileId")
         if (!isIdForDummyData(tileId)) {
             id = tileId
             mInFocus = true
@@ -82,7 +81,7 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
             Wearable.getCapabilityClient(applicationContext).addListener(this, WearableHelper.CAPABILITY_PHONE_APP)
             Wearable.getMessageClient(applicationContext).addListener(this)
 
-            GlobalScope.launch(Dispatchers.Unconfined) {
+            scope.launch {
                 checkConnectionStatus()
                 requestUpdate()
             }
@@ -92,7 +91,7 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
     override fun onTileBlur(tileId: Int) {
         super.onTileBlur(tileId)
 
-        Timber.d("$TAG: onTileBlur called with: tileId = $tileId")
+        Timber.tag(TAG).d("$TAG: onTileBlur called with: tileId = $tileId")
         if (!isIdForDummyData(tileId)) {
             mInFocus = false
 
@@ -102,13 +101,13 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
     }
 
     private fun sendRemoteViews() {
-        Timber.d("$TAG: sendRemoteViews")
-        GlobalScope.launch(Dispatchers.Unconfined) {
+        Timber.tag(TAG).d("$TAG: sendRemoteViews")
+        scope.launch {
             val updateViews = buildUpdate()
 
             val tileData = TileData.Builder()
-                    .setRemoteViews(updateViews)
-                    .build()
+                .setRemoteViews(updateViews)
+                .build()
 
             sendData(id, tileData)
         }
@@ -117,7 +116,7 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
     private fun buildUpdate(): RemoteViews {
         val views: RemoteViews
 
-        if (mConnectionStatus !== WearConnectionStatus.CONNECTED) {
+        if (mConnectionStatus != WearConnectionStatus.CONNECTED) {
             views = RemoteViews(applicationContext.packageName, R.layout.tile_disconnected)
             views.setOnClickPendingIntent(R.id.tile, getTapIntent(applicationContext))
             return views
@@ -152,33 +151,44 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
             } else {
                 DNDChoice.valueOf((dndAction as MultiChoiceAction).choice)
             }
-            var mDrawableID = R.drawable.ic_do_not_disturb_off_white_24dp
 
-            when (dndChoice) {
-                DNDChoice.OFF -> mDrawableID = R.drawable.ic_do_not_disturb_off_white_24dp
-                DNDChoice.PRIORITY -> mDrawableID = R.drawable.ic_error_white_24dp
-                DNDChoice.ALARMS -> mDrawableID = R.drawable.ic_alarm_white_24dp
-                DNDChoice.SILENCE -> mDrawableID = R.drawable.ic_notifications_off_white_24dp
+            val mDrawableID = when (dndChoice) {
+                DNDChoice.OFF -> R.drawable.ic_do_not_disturb_off_white_24dp
+                DNDChoice.PRIORITY -> R.drawable.ic_error_white_24dp
+                DNDChoice.ALARMS -> R.drawable.ic_alarm_white_24dp
+                DNDChoice.SILENCE -> R.drawable.ic_notifications_off_white_24dp
             }
 
             views.setImageViewResource(R.id.dnd_toggle, mDrawableID)
-            views.setInt(R.id.dnd_toggle, "setBackgroundResource", if (dndChoice != DNDChoice.OFF) R.drawable.round_button_enabled else R.drawable.round_button_disabled)
-            views.setOnClickPendingIntent(R.id.dnd_toggle, getActionClickIntent(applicationContext, Actions.DONOTDISTURB))
+            views.setInt(
+                R.id.dnd_toggle,
+                "setBackgroundResource",
+                if (dndChoice != DNDChoice.OFF) R.drawable.round_button_enabled else R.drawable.round_button_disabled
+            )
+            views.setOnClickPendingIntent(
+                R.id.dnd_toggle,
+                getActionClickIntent(applicationContext, Actions.DONOTDISTURB)
+            )
         }
 
         if (ringerAction != null) {
             val ringerChoice = RingerChoice.valueOf(ringerAction!!.choice)
-            var mDrawableID = R.drawable.ic_vibration_white_24dp
-
-            when (ringerChoice) {
-                RingerChoice.VIBRATION -> mDrawableID = R.drawable.ic_vibration_white_24dp
-                RingerChoice.SOUND -> mDrawableID = R.drawable.ic_notifications_active_white_24dp
-                RingerChoice.SILENT -> mDrawableID = R.drawable.ic_volume_off_white_24dp
+            val mDrawableID = when (ringerChoice) {
+                RingerChoice.VIBRATION -> R.drawable.ic_vibration_white_24dp
+                RingerChoice.SOUND -> R.drawable.ic_notifications_active_white_24dp
+                RingerChoice.SILENT -> R.drawable.ic_volume_off_white_24dp
             }
 
             views.setImageViewResource(R.id.ringer_toggle, mDrawableID)
-            views.setInt(R.id.ringer_toggle, "setBackgroundResource", if (ringerChoice != RingerChoice.SILENT) R.drawable.round_button_enabled else R.drawable.round_button_disabled)
-            views.setOnClickPendingIntent(R.id.ringer_toggle, getActionClickIntent(applicationContext, Actions.RINGER))
+            views.setInt(
+                R.id.ringer_toggle,
+                "setBackgroundResource",
+                if (ringerChoice != RingerChoice.SILENT) R.drawable.round_button_enabled else R.drawable.round_button_disabled
+            )
+            views.setOnClickPendingIntent(
+                R.id.ringer_toggle,
+                getActionClickIntent(applicationContext, Actions.RINGER)
+            )
         }
 
         if (torchAction != null) {
@@ -203,8 +213,7 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action != null) {
-            val action = Actions.valueOf(intent.action!!)
-            when (action) {
+            when (Actions.valueOf(intent.action!!)) {
                 Actions.WIFI -> run {
                     if (wifiAction == null) {
                         requestUpdate()
@@ -271,7 +280,7 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
     override fun onMessageReceived(messageEvent: MessageEvent) {
         val data = messageEvent.data ?: return
 
-        GlobalScope.launch(Dispatchers.Unconfined) {
+        scope.launch {
             if (messageEvent.path.contains(WearableHelper.WifiPath)) {
                 val wifiStatus = data[0].toInt()
                 var enabled = false
@@ -298,10 +307,10 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
                 btAction = ToggleAction(Actions.BLUETOOTH, enabled)
             } else if (messageEvent.path == WearableHelper.BatteryPath) {
                 val jsonData: String = data.bytesToString()
-                battStatus = deserializer(jsonData, BatteryStatus::class.java)
+                battStatus = JSONParser.deserializer(jsonData, BatteryStatus::class.java)
             } else if (messageEvent.path == WearableHelper.ActionsPath) {
                 val jsonData: String = data.bytesToString()
-                val action = deserializer(jsonData, Action::class.java)!!
+                val action = JSONParser.deserializer(jsonData, Action::class.java)!!
                 when (action.actionType) {
                     Actions.WIFI -> wifiAction = action as ToggleAction
                     Actions.BLUETOOTH -> btAction = action as ToggleAction
@@ -319,7 +328,7 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
     }
 
     override fun onCapabilityChanged(capabilityInfo: CapabilityInfo) {
-        GlobalScope.launch(Dispatchers.Unconfined) {
+        scope.launch {
             mPhoneNodeWithApp = pickBestNodeId(capabilityInfo.nodes)
 
             mConnectionStatus = if (mPhoneNodeWithApp == null) {
@@ -353,13 +362,14 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
 
         try {
             val capabilityInfo = Wearable.getCapabilityClient(this@DashboardTileProviderService)
-                    .getCapability(WearableHelper.CAPABILITY_PHONE_APP, CapabilityClient.FILTER_REACHABLE)
-                    .await()
+                .getCapability(
+                    WearableHelper.CAPABILITY_PHONE_APP,
+                    CapabilityClient.FILTER_REACHABLE
+                )
+                .await()
             node = pickBestNodeId(capabilityInfo.nodes)
-        } catch (e: ExecutionException) {
-            writeLine(Log.ERROR, e)
-        } catch (e: InterruptedException) {
-            writeLine(Log.ERROR, e)
+        } catch (e: Exception) {
+            Logger.writeLine(Log.ERROR, e)
         }
 
         return node
@@ -373,7 +383,7 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
     }
 
     protected fun requestUpdate() {
-        GlobalScope.launch(Dispatchers.Unconfined) {
+        scope.launch {
             if (connect()) {
                 sendMessage(mPhoneNodeWithApp!!.id, WearableHelper.UpdatePath, null)
             }
@@ -381,13 +391,17 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
     }
 
     protected fun requestAction(action: Action) {
-        requestAction(serializer(action, Action::class.java))
+        requestAction(JSONParser.serializer(action, Action::class.java))
     }
 
     protected fun requestAction(actionJSONString: String) {
-        GlobalScope.launch(Dispatchers.Unconfined) {
+        scope.launch {
             if (connect()) {
-                sendMessage(mPhoneNodeWithApp!!.id, WearableHelper.ActionsPath, actionJSONString.stringToBytes())
+                sendMessage(
+                    mPhoneNodeWithApp!!.id,
+                    WearableHelper.ActionsPath,
+                    actionJSONString.stringToBytes()
+                )
             }
         }
     }
@@ -395,12 +409,12 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
     protected suspend fun sendMessage(nodeID: String, path: String, data: ByteArray?) {
         try {
             Wearable.getMessageClient(this@DashboardTileProviderService)
-                    .sendMessage(nodeID, path, data)
-                    .await()
-        } catch (ex: ExecutionException) {
-            if (ex.cause is ApiException) {
-                val apiEx = ex.cause as ApiException
-                if (apiEx.statusCode == WearableStatusCodes.TARGET_NODE_NOT_CONNECTED) {
+                .sendMessage(nodeID, path, data)
+                .await()
+        } catch (e: Exception) {
+            if (e is ApiException || e.cause is ApiException) {
+                val apiException = e.cause as? ApiException ?: e as? ApiException
+                if (apiException?.statusCode == WearableStatusCodes.TARGET_NODE_NOT_CONNECTED) {
                     mConnectionStatus = WearConnectionStatus.DISCONNECTED
 
                     if (mInFocus && !isIdForDummyData(id)) {
@@ -409,9 +423,7 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
                 }
             }
 
-            writeLine(Log.ERROR, ex)
-        } catch (e: Exception) {
-            writeLine(Log.ERROR, e)
+            Logger.writeLine(Log.ERROR, e)
         }
     }
 }

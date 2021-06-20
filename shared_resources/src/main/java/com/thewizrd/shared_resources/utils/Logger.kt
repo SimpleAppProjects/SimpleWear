@@ -13,11 +13,16 @@ object Logger {
     fun init(context: Context) {
         if (BuildConfig.DEBUG) {
             Timber.plant(DebugTree())
-            Timber.plant(FileLoggingTree(context))
+            Timber.plant(FileLoggingTree(context.applicationContext))
         } else {
-            cleanupLogs(context)
+            cleanupLogs(context.applicationContext)
             Timber.plant(CrashlyticsLoggingTree())
         }
+    }
+
+    @JvmStatic
+    fun registerLogger(tree: Timber.Tree) {
+        Timber.plant(tree)
     }
 
     @JvmStatic

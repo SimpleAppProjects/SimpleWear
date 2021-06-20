@@ -5,18 +5,18 @@ import android.content.SharedPreferences.OnSharedPreferenceChangeListener
 import android.content.res.Resources
 import android.os.Bundle
 import android.os.CountDownTimer
-import android.preference.PreferenceManager
 import android.support.wearable.input.RotaryEncoder
 import android.support.wearable.view.ConfirmationOverlay
 import android.util.ArrayMap
 import android.util.Log
 import android.view.MotionEvent
 import android.view.View
-import android.view.ViewTreeObserver.OnWindowAttachListener
+import android.view.ViewTreeObserver
 import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.wear.widget.WearableLinearLayoutManager
 import androidx.wear.widget.drawer.WearableDrawerLayout
@@ -28,22 +28,15 @@ import com.thewizrd.shared_resources.actions.ActionStatus
 import com.thewizrd.shared_resources.actions.Actions
 import com.thewizrd.shared_resources.actions.BatteryStatus
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
-import com.thewizrd.shared_resources.helpers.WearConnectionStatus.Companion.valueOf
 import com.thewizrd.shared_resources.helpers.WearableHelper
-import com.thewizrd.shared_resources.helpers.WearableHelper.playStoreURI
-import com.thewizrd.shared_resources.utils.JSONParser.deserializer
-import com.thewizrd.shared_resources.utils.JSONParser.serializer
-import com.thewizrd.shared_resources.utils.Logger.writeLine
-import com.thewizrd.shared_resources.utils.isNullOrWhitespace
+import com.thewizrd.shared_resources.utils.JSONParser
+import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.simplewear.adapters.ActionItemAdapter
 import com.thewizrd.simplewear.controls.ActionButtonViewModel
 import com.thewizrd.simplewear.controls.CustomConfirmationOverlay
 import com.thewizrd.simplewear.databinding.ActivityDashboardBinding
 import com.thewizrd.simplewear.helpers.ConfirmationResultReceiver
 import com.thewizrd.simplewear.preferences.Settings
-import com.thewizrd.simplewear.preferences.Settings.setGridLayout
-import com.thewizrd.simplewear.preferences.Settings.useGridLayout
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.util.*
 import kotlin.math.roundToInt
@@ -73,48 +66,62 @@ class DashboardActivity : WearableListenerActivity(), OnSharedPreferenceChangeLi
                 lifecycleScope.launch {
                     if (intent.action != null) {
                         if (ACTION_UPDATECONNECTIONSTATUS == intent.action) {
-                            val connStatus = valueOf(intent.getIntExtra(EXTRA_CONNECTIONSTATUS, 0))
-                            when (connStatus) {
+                            when (WearConnectionStatus.valueOf(
+                                intent.getIntExtra(
+                                    EXTRA_CONNECTIONSTATUS,
+                                    0
+                                )
+                            )) {
                                 WearConnectionStatus.DISCONNECTED ->
-                                    lifecycleScope.launch(Dispatchers.Main) {
+                                    lifecycleScope.launch {
                                         binding.deviceStatText.setText(R.string.status_disconnected)
 
                                         // Navigate
-                                        startActivity(Intent(this@DashboardActivity, PhoneSyncActivity::class.java)
-                                                .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK))
+                                        startActivity(
+                                            Intent(
+                                                this@DashboardActivity,
+                                                PhoneSyncActivity::class.java
+                                            )
+                                                .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                                        )
                                         finishAffinity()
                                     }
                                 WearConnectionStatus.CONNECTING ->
-                                    lifecycleScope.launch(Dispatchers.Main) {
+                                    lifecycleScope.launch {
                                         binding.deviceStatText.setText(R.string.status_connecting)
-                                        if (binding.actionsList.isEnabled) binding.actionsList.isEnabled = false
+                                        if (binding.actionsList.isEnabled) binding.actionsList.isEnabled =
+                                            false
                                     }
                                 WearConnectionStatus.APPNOTINSTALLED ->
-                                    lifecycleScope.launch(Dispatchers.Main) {
+                                    lifecycleScope.launch {
                                         binding.deviceStatText.setText(R.string.error_notinstalled)
 
                                         // Open store on remote device
                                         val intentAndroid = Intent(Intent.ACTION_VIEW)
-                                                .addCategory(Intent.CATEGORY_BROWSABLE)
-                                                .setData(playStoreURI)
-                                        RemoteIntent.startRemoteActivity(this@DashboardActivity, intentAndroid,
-                                                ConfirmationResultReceiver(this@DashboardActivity))
-                                        if (binding.actionsList.isEnabled) binding.actionsList.isEnabled = false
+                                            .addCategory(Intent.CATEGORY_BROWSABLE)
+                                            .setData(WearableHelper.getPlayStoreURI())
+                                        RemoteIntent.startRemoteActivity(
+                                            this@DashboardActivity, intentAndroid,
+                                            ConfirmationResultReceiver(this@DashboardActivity)
+                                        )
+                                        if (binding.actionsList.isEnabled) binding.actionsList.isEnabled =
+                                            false
                                     }
                                 WearConnectionStatus.CONNECTED ->
-                                    lifecycleScope.launch(Dispatchers.Main) {
+                                    lifecycleScope.launch {
                                         binding.deviceStatText.setText(R.string.status_connected)
-                                        if (!binding.actionsList.isEnabled) binding.actionsList.isEnabled = true
+                                        if (!binding.actionsList.isEnabled) binding.actionsList.isEnabled =
+                                            true
                                     }
                             }
                         } else if (ACTION_OPENONPHONE == intent.action) {
                             val success = intent.getBooleanExtra(EXTRA_SUCCESS, false)
                             val showAni = intent.getBooleanExtra(EXTRA_SHOWANIMATION, false)
                             if (showAni) {
-                                lifecycleScope.launch(Dispatchers.Main) {
+                                lifecycleScope.launch {
                                     ConfirmationOverlay()
-                                            .setType(if (success) ConfirmationOverlay.OPEN_ON_PHONE_ANIMATION else ConfirmationOverlay.FAILURE_ANIMATION)
-                                            .showOn(this@DashboardActivity)
+                                        .setType(if (success) ConfirmationOverlay.OPEN_ON_PHONE_ANIMATION else ConfirmationOverlay.FAILURE_ANIMATION)
+                                        .showOn(this@DashboardActivity)
                                     if (!success) {
                                         binding.deviceStatText.setText(R.string.error_syncing)
                                     }
@@ -126,47 +133,67 @@ class DashboardActivity : WearableListenerActivity(), OnSharedPreferenceChangeLi
                             cancelTimer(TIMER_SYNC_NORESPONSE)
 
                             val jsonData = intent.getStringExtra(EXTRA_STATUS)
-                            lifecycleScope.launch(Dispatchers.Main) {
+                            lifecycleScope.launch {
                                 var value = getString(R.string.state_unknown)
-                                if (!String.isNullOrWhitespace(jsonData)) {
-                                    val status = deserializer(jsonData, BatteryStatus::class.java)
-                                    value = String.format(Locale.ROOT, "%d%%, %s", status!!.batteryLevel,
-                                            if (status.isCharging) getString(R.string.batt_state_charging) else getString(R.string.batt_state_discharging))
+                                if (!jsonData.isNullOrBlank()) {
+                                    val status =
+                                        JSONParser.deserializer(jsonData, BatteryStatus::class.java)
+                                    value = String.format(
+                                        Locale.ROOT, "%d%%, %s", status!!.batteryLevel,
+                                        if (status.isCharging) getString(R.string.batt_state_charging) else getString(
+                                            R.string.batt_state_discharging
+                                        )
+                                    )
                                 }
                                 binding.battStatText.text = value
                             }
                         } else if (WearableHelper.ActionsPath == intent.action) {
                             val jsonData = intent.getStringExtra(EXTRA_ACTIONDATA)
-                            val action = deserializer(jsonData, Action::class.java)!!
+                            val action = JSONParser.deserializer(jsonData, Action::class.java)!!
 
                             cancelTimer(action.actionType)
 
-                            lifecycleScope.launch(Dispatchers.Main) {
+                            lifecycleScope.launch {
                                 mAdapter.updateButton(ActionButtonViewModel(action))
                             }
 
                             if (!action.isActionSuccessful) {
                                 when (action.actionStatus) {
                                     ActionStatus.UNKNOWN, ActionStatus.FAILURE ->
-                                        lifecycleScope.launch(Dispatchers.Main) {
+                                        lifecycleScope.launch {
                                             CustomConfirmationOverlay()
-                                                    .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
-                                                    .setCustomDrawable(ContextCompat.getDrawable(this@DashboardActivity, R.drawable.ic_full_sad))
-                                                    .setMessage(this@DashboardActivity.getString(R.string.error_actionfailed))
-                                                    .showOn(this@DashboardActivity)
+                                                .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
+                                                .setCustomDrawable(
+                                                    ContextCompat.getDrawable(
+                                                        this@DashboardActivity,
+                                                        R.drawable.ic_full_sad
+                                                    )
+                                                )
+                                                .setMessage(this@DashboardActivity.getString(R.string.error_actionfailed))
+                                                .showOn(this@DashboardActivity)
                                         }
                                     ActionStatus.PERMISSION_DENIED -> {
-                                        lifecycleScope.launch(Dispatchers.Main) {
+                                        lifecycleScope.launch {
                                             if (action.actionType == Actions.TORCH) {
                                                 CustomConfirmationOverlay()
-                                                        .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
-                                                        .setCustomDrawable(ContextCompat.getDrawable(this@DashboardActivity, R.drawable.ic_full_sad))
-                                                        .setMessage(this@DashboardActivity.getString(R.string.error_torch_action))
-                                                        .showOn(this@DashboardActivity)
+                                                    .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
+                                                    .setCustomDrawable(
+                                                        ContextCompat.getDrawable(
+                                                            this@DashboardActivity,
+                                                            R.drawable.ic_full_sad
+                                                        )
+                                                    )
+                                                    .setMessage(this@DashboardActivity.getString(R.string.error_torch_action))
+                                                    .showOn(this@DashboardActivity)
                                             } else {
                                                 CustomConfirmationOverlay()
-                                                        .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
-                                                        .setCustomDrawable(ContextCompat.getDrawable(this@DashboardActivity, R.drawable.ic_full_sad))
+                                                    .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
+                                                    .setCustomDrawable(
+                                                        ContextCompat.getDrawable(
+                                                            this@DashboardActivity,
+                                                            R.drawable.ic_full_sad
+                                                        )
+                                                    )
                                                         .setMessage(this@DashboardActivity.getString(R.string.error_permissiondenied))
                                                         .showOn(this@DashboardActivity)
                                             }
@@ -175,36 +202,49 @@ class DashboardActivity : WearableListenerActivity(), OnSharedPreferenceChangeLi
                                         openAppOnPhone(false)
                                     }
                                     ActionStatus.TIMEOUT ->
-                                        lifecycleScope.launch(Dispatchers.Main) {
+                                        lifecycleScope.launch {
                                             CustomConfirmationOverlay()
-                                                    .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
-                                                    .setCustomDrawable(ContextCompat.getDrawable(this@DashboardActivity, R.drawable.ic_full_sad))
-                                                    .setMessage(this@DashboardActivity.getString(R.string.error_sendmessage))
-                                                    .showOn(this@DashboardActivity)
+                                                .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
+                                                .setCustomDrawable(
+                                                    ContextCompat.getDrawable(
+                                                        this@DashboardActivity,
+                                                        R.drawable.ic_full_sad
+                                                    )
+                                                )
+                                                .setMessage(this@DashboardActivity.getString(R.string.error_sendmessage))
+                                                .showOn(this@DashboardActivity)
                                         }
                                     ActionStatus.SUCCESS -> {
                                     }
                                 }
                             }
 
-                            lifecycleScope.launch(Dispatchers.Main) {
+                            lifecycleScope.launch {
                                 // Re-enable click action
                                 mAdapter.isItemsClickable = true
                             }
                         } else if (ACTION_CHANGED == intent.action) {
                             val jsonData = intent.getStringExtra(EXTRA_ACTIONDATA)
-                            val action = deserializer(jsonData, Action::class.java)!!
+                            val action = JSONParser.deserializer(jsonData, Action::class.java)!!
                             requestAction(jsonData)
 
-                            lifecycleScope.launch(Dispatchers.Main) {
+                            lifecycleScope.launch {
                                 val timer: CountDownTimer = object : CountDownTimer(3000, 500) {
                                     override fun onTick(millisUntilFinished: Long) {}
 
                                     override fun onFinish() {
                                         action.setActionSuccessful(ActionStatus.TIMEOUT)
                                         LocalBroadcastManager.getInstance(this@DashboardActivity)
-                                                .sendBroadcast(Intent(WearableHelper.ActionsPath)
-                                                        .putExtra(EXTRA_ACTIONDATA, serializer(action, Action::class.java)))
+                                            .sendBroadcast(
+                                                Intent(WearableHelper.ActionsPath)
+                                                    .putExtra(
+                                                        EXTRA_ACTIONDATA,
+                                                        JSONParser.serializer(
+                                                            action,
+                                                            Action::class.java
+                                                        )
+                                                    )
+                                            )
                                     }
                                 }
                                 timer.start()
@@ -214,7 +254,12 @@ class DashboardActivity : WearableListenerActivity(), OnSharedPreferenceChangeLi
                                 mAdapter.isItemsClickable = false
                             }
                         } else {
-                            writeLine(Log.INFO, "%s: Unhandled action: %s", "DashboardActivity", intent.action)
+                            Logger.writeLine(
+                                Log.INFO,
+                                "%s: Unhandled action: %s",
+                                "DashboardActivity",
+                                intent.action
+                            )
                         }
                     }
                 }
@@ -252,6 +297,39 @@ class DashboardActivity : WearableListenerActivity(), OnSharedPreferenceChangeLi
             binding.swipeLayout.isRefreshing = false
         }
 
+        binding.swipeLayout.viewTreeObserver.addOnPreDrawListener(object :
+            ViewTreeObserver.OnPreDrawListener {
+            /* BoxInsetLayout impl */
+            private val FACTOR = 0.146447f //(1 - sqrt(2)/2)/2
+            private val mIsRound = resources.configuration.isScreenRound
+
+            override fun onPreDraw(): Boolean {
+                binding.swipeLayout.viewTreeObserver.removeOnPreDrawListener(this)
+
+                val innerLayout = binding.scrollView.getChildAt(0)
+                val peekContainer =
+                    binding.bottomActionDrawer.findViewById<View>(R.id.ws_drawer_view_peek_container)
+
+                lifecycleScope.launch {
+                    val verticalPadding =
+                        resources.getDimensionPixelSize(R.dimen.inner_frame_layout_padding)
+                    val mScreenHeight = Resources.getSystem().displayMetrics.heightPixels
+                    val mScreenWidth = Resources.getSystem().displayMetrics.widthPixels
+                    val rightEdge = Math.min(binding.swipeLayout.measuredWidth, mScreenWidth)
+                    val bottomEdge = Math.min(binding.swipeLayout.measuredHeight, mScreenHeight)
+                    val verticalInset = (FACTOR * Math.max(rightEdge, bottomEdge)).toInt()
+                    innerLayout.setPaddingRelative(
+                        innerLayout.paddingStart,
+                        if (mIsRound) verticalInset else verticalPadding,
+                        innerLayout.paddingEnd,
+                        peekContainer.height
+                    )
+                }
+
+                return true
+            }
+        })
+
         binding.deviceStatText.setText(R.string.message_gettingstatus)
 
         binding.actionsList.isEdgeItemsCenteringEnabled = false
@@ -264,16 +342,17 @@ class DashboardActivity : WearableListenerActivity(), OnSharedPreferenceChangeLi
         setLayoutManager()
 
         findViewById<View>(R.id.layout_pref).setOnClickListener {
-            setGridLayout(!useGridLayout())
+            Settings.setGridLayout(!Settings.useGridLayout())
         }
         updateLayoutPref()
 
-        intentFilter = IntentFilter()
-        intentFilter.addAction(ACTION_UPDATECONNECTIONSTATUS)
-        intentFilter.addAction(ACTION_OPENONPHONE)
-        intentFilter.addAction(ACTION_CHANGED)
-        intentFilter.addAction(WearableHelper.BatteryPath)
-        intentFilter.addAction(WearableHelper.ActionsPath)
+        intentFilter = IntentFilter().apply {
+            addAction(ACTION_UPDATECONNECTIONSTATUS)
+            addAction(ACTION_OPENONPHONE)
+            addAction(ACTION_CHANGED)
+            addAction(WearableHelper.BatteryPath)
+            addAction(WearableHelper.ActionsPath)
+        }
 
         activeTimers = ArrayMap()
         activeTimers[TIMER_SYNC] = object : CountDownTimer(3000, 1000) {
@@ -292,59 +371,30 @@ class DashboardActivity : WearableListenerActivity(), OnSharedPreferenceChangeLi
             override fun onTick(millisUntilFinished: Long) {}
 
             override fun onFinish() {
-                lifecycleScope.launch(Dispatchers.Main) {
+                lifecycleScope.launch {
                     CustomConfirmationOverlay()
-                            .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
-                            .setCustomDrawable(ContextCompat.getDrawable(this@DashboardActivity, R.drawable.ic_full_sad))
-                            .setMessage(this@DashboardActivity.getString(R.string.error_sendmessage))
-                            .showOn(this@DashboardActivity)
+                        .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
+                        .setCustomDrawable(
+                            ContextCompat.getDrawable(
+                                this@DashboardActivity,
+                                R.drawable.ic_full_sad
+                            )
+                        )
+                        .setMessage(this@DashboardActivity.getString(R.string.error_sendmessage))
+                        .showOn(this@DashboardActivity)
                 }
             }
         }
     }
 
-    override fun onAttachedToWindow() {
-        super.onAttachedToWindow()
-
-        binding.swipeLayout.viewTreeObserver.addOnWindowAttachListener(object : OnWindowAttachListener {
-            /* BoxInsetLayout impl */
-            private val FACTOR = 0.146447f //(1 - sqrt(2)/2)/2
-            private val mIsRound = resources.configuration.isScreenRound
-
-            override fun onWindowAttached() {
-                binding.swipeLayout.viewTreeObserver.removeOnWindowAttachListener(this)
-
-                val constrLayout = binding.scrollView.getChildAt(0)
-                val peekContainer = binding.bottomActionDrawer.findViewById<View>(R.id.ws_drawer_view_peek_container)
-
-                lifecycleScope.launch(Dispatchers.Main) {
-                    val verticalPadding = resources.getDimensionPixelSize(R.dimen.inner_frame_layout_padding)
-                    val mScreenHeight = Resources.getSystem().displayMetrics.heightPixels
-                    val mScreenWidth = Resources.getSystem().displayMetrics.widthPixels
-                    val rightEdge = Math.min(binding.swipeLayout.measuredWidth, mScreenWidth)
-                    val bottomEdge = Math.min(binding.swipeLayout.measuredHeight, mScreenHeight)
-                    val verticalInset = (FACTOR * Math.max(rightEdge, bottomEdge)).toInt()
-
-                    constrLayout.setPaddingRelative(
-                            constrLayout.paddingStart,
-                            if (mIsRound) verticalInset else verticalPadding,
-                            constrLayout.paddingEnd,
-                            peekContainer.height)
-                }
-            }
-
-            override fun onWindowDetached() {}
-        })
-    }
-
     private fun showProgressBar(show: Boolean) {
-        lifecycleScope.launch(Dispatchers.Main) {
+        lifecycleScope.launch {
             binding.progressBar.visibility = if (show) View.VISIBLE else View.GONE
         }
     }
 
     private fun updateLayoutPref() {
-        val useGridLayout = useGridLayout()
+        val useGridLayout = Settings.useGridLayout()
         val fab = findViewById<FloatingActionButton>(R.id.layout_pref_icon)
         val prefSummary = findViewById<TextView>(R.id.layout_pref_summary)
         fab.setImageResource(if (useGridLayout) R.drawable.ic_apps_white_24dp else R.drawable.ic_view_list_white_24dp)
@@ -352,7 +402,7 @@ class DashboardActivity : WearableListenerActivity(), OnSharedPreferenceChangeLi
     }
 
     private fun setLayoutManager() {
-        if (useGridLayout()) {
+        if (Settings.useGridLayout()) {
             binding.actionsList.layoutManager = GridLayoutManager(this, 3)
         } else {
             binding.actionsList.layoutManager = WearableLinearLayoutManager(this, null)

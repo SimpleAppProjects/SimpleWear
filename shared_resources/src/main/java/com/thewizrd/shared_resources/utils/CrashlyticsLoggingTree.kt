@@ -1,5 +1,6 @@
 package com.thewizrd.shared_resources.utils
 
+import android.annotation.SuppressLint
 import android.util.Log
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.thewizrd.shared_resources.utils.CrashlyticsLoggingTree
@@ -13,8 +14,9 @@ class CrashlyticsLoggingTree : Timber.Tree() {
         private val TAG = CrashlyticsLoggingTree::class.java.simpleName
     }
 
-    private val crashlytics: FirebaseCrashlytics = FirebaseCrashlytics.getInstance()
+    private val crashlytics = FirebaseCrashlytics.getInstance()
 
+    @SuppressLint("LogNotTimber")
     override fun log(priority: Int, tag: String?, message: String, t: Throwable?) {
         try {
             val priorityTAG: String = when (priority) {
@@ -25,16 +27,23 @@ class CrashlyticsLoggingTree : Timber.Tree() {
                 Log.ERROR -> "ERROR"
                 else -> "DEBUG"
             }
+
             crashlytics.setCustomKey(KEY_PRIORITY, priorityTAG)
-            crashlytics.setCustomKey(KEY_TAG, tag!!)
+            tag?.let { crashlytics.setCustomKey(KEY_TAG, it) }
             crashlytics.setCustomKey(KEY_MESSAGE, message)
+
+            if (tag != null) {
+                crashlytics.log(String.format("%s/%s: %s", priorityTAG, tag, message))
+            } else {
+                crashlytics.log(String.format("%s/%s", priorityTAG, message))
+
+            }
+
             if (t != null) {
                 crashlytics.recordException(t)
-            } else {
-                crashlytics.log(String.format("%s/%s: %s", priority, tag, message))
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error while logging into file : $e")
+            Log.e(TAG, "Error while logging : $e")
         }
     }
 }

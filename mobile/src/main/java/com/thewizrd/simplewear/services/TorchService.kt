@@ -38,12 +38,17 @@ class TorchService : Service() {
         private fun initChannel() {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 // Gets an instance of the NotificationManager service
-                val context = App.instance!!.appContext
-                val mNotifyMgr = context.getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+                val context = App.instance.appContext
+                val mNotifyMgr =
+                    context.getSystemService(NOTIFICATION_SERVICE) as NotificationManager
                 var mChannel = mNotifyMgr.getNotificationChannel(NOT_CHANNEL_ID)
                 if (mChannel == null) {
                     val notchannel_name = context.getString(R.string.not_channel_name_torch)
-                    mChannel = NotificationChannel(NOT_CHANNEL_ID, notchannel_name, NotificationManager.IMPORTANCE_LOW)
+                    mChannel = NotificationChannel(
+                        NOT_CHANNEL_ID,
+                        notchannel_name,
+                        NotificationManager.IMPORTANCE_LOW
+                    )
                     // Configure the notification channel.
                     mChannel.setShowBadge(false)
                     mChannel.enableLights(false)
@@ -53,21 +58,26 @@ class TorchService : Service() {
             }
         }
 
-        @get:TargetApi(Build.VERSION_CODES.O)
-        private val foregroundNotification: Notification
-            private get() {
-                val context = App.instance!!.appContext
-                val mBuilder = NotificationCompat.Builder(context, NOT_CHANNEL_ID)
-                        .setSmallIcon(R.drawable.ic_lightbulb_outline_white_24dp)
-                        .setContentTitle(context.getString(R.string.action_torch))
-                        .setContentText(context.getString(R.string.not_torch_turnoff_summary))
-                        .setContentIntent(PendingIntent.getBroadcast(context, JOB_ID,
-                                Intent(context, PhoneBroadcastReceiver::class.java).setAction(ACTION_END_LIGHT), PendingIntent.FLAG_UPDATE_CURRENT))
-                        .setColor(ContextCompat.getColor(context, R.color.colorPrimary))
-                        .setOnlyAlertOnce(true)
-                        .setPriority(NotificationCompat.PRIORITY_HIGH)
-                return mBuilder.build()
-            }
+        @TargetApi(Build.VERSION_CODES.O)
+        private fun getForegroundNotification(): Notification {
+            val context = App.instance.appContext
+            val mBuilder = NotificationCompat.Builder(context, NOT_CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_lightbulb_outline_white_24dp)
+                .setContentTitle(context.getString(R.string.action_torch))
+                .setContentText(context.getString(R.string.not_torch_turnoff_summary))
+                .setContentIntent(
+                    PendingIntent.getBroadcast(
+                        context, JOB_ID,
+                        Intent(context, PhoneBroadcastReceiver::class.java).setAction(
+                            ACTION_END_LIGHT
+                        ), PendingIntent.FLAG_UPDATE_CURRENT
+                    )
+                )
+                .setColor(ContextCompat.getColor(context, R.color.colorPrimary))
+                .setOnlyAlertOnce(true)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+            return mBuilder.build()
+        }
     }
 
     private var mFlashEnabled = false
@@ -77,7 +87,7 @@ class TorchService : Service() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             initChannel()
         }
-        startForeground(JOB_ID, foregroundNotification)
+        startForeground(JOB_ID, getForegroundNotification())
     }
 
     override fun onBind(intent: Intent): IBinder? {
@@ -85,7 +95,7 @@ class TorchService : Service() {
     }
 
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
-        startForeground(JOB_ID, foregroundNotification)
+        startForeground(JOB_ID, getForegroundNotification())
         if (ACTION_START_LIGHT == intent.action) {
             turnOnFlashLight()
         } else if (ACTION_END_LIGHT == intent.action) {

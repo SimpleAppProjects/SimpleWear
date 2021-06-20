@@ -10,21 +10,19 @@ import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.thewizrd.shared_resources.ApplicationLib
 import com.thewizrd.shared_resources.SimpleLibrary
 import com.thewizrd.shared_resources.helpers.AppState
-import com.thewizrd.shared_resources.utils.Logger.init
-import com.thewizrd.shared_resources.utils.Logger.shutdown
-import com.thewizrd.shared_resources.utils.Logger.writeLine
+import com.thewizrd.shared_resources.utils.Logger
 import kotlin.system.exitProcess
 
 class App : Application(), ApplicationLib, ActivityLifecycleCallbacks {
     companion object {
-        @get:Synchronized
-        var instance: ApplicationLib? = null
+        @JvmStatic
+        lateinit var instance: ApplicationLib
             private set
     }
 
     override lateinit var appContext: Context
         private set
-    override lateinit var appState: AppState
+    override lateinit var applicationState: AppState
         private set
     private var mActivitiesStarted = 0
     override val isPhone: Boolean = false
@@ -35,31 +33,36 @@ class App : Application(), ApplicationLib, ActivityLifecycleCallbacks {
         instance = this
 
         registerActivityLifecycleCallbacks(this)
-        appState = AppState.CLOSED
+        applicationState = AppState.CLOSED
         mActivitiesStarted = 0
 
         // Init shared library
-        SimpleLibrary.init(this)
+        SimpleLibrary.initialize(this)
 
         // Start logger
-        init(appContext)
-        FirebaseCrashlytics.getInstance().setCrashlyticsCollectionEnabled(true)
-        FirebaseCrashlytics.getInstance().sendUnsentReports()
+        Logger.init(appContext)
+        FirebaseCrashlytics.getInstance().apply {
+            setCrashlyticsCollectionEnabled(true)
+            sendUnsentReports()
+        }
 
         val oldHandler = Thread.getDefaultUncaughtExceptionHandler()
 
         Thread.setDefaultUncaughtExceptionHandler { t, e ->
-            writeLine(Log.ERROR, e)
-            if (oldHandler != null) oldHandler.uncaughtException(t, e) else exitProcess(2)
+            Logger.writeLine(Log.ERROR, e)
+            if (oldHandler != null) {
+                oldHandler.uncaughtException(t, e)
+            } else {
+                exitProcess(2)
+            }
         }
     }
 
     override fun onTerminate() {
         super.onTerminate()
         // Shutdown logger
-        shutdown()
-        SimpleLibrary.unRegister()
-        instance = null
+        Logger.shutdown()
+        SimpleLibrary.unregister()
     }
 
     override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {}
@@ -68,21 +71,21 @@ class App : Application(), ApplicationLib, ActivityLifecycleCallbacks {
     }
 
     override fun onActivityResumed(activity: Activity) {
-        if (activity is WearableListenerActivity && appState !== AppState.FOREGROUND) {
-            appState = AppState.FOREGROUND
+        if (activity is WearableListenerActivity && applicationState !== AppState.FOREGROUND) {
+            applicationState = AppState.FOREGROUND
         }
     }
 
     override fun onActivityPaused(activity: Activity) {}
     override fun onActivityStopped(activity: Activity) {
         mActivitiesStarted--
-        if (mActivitiesStarted == 0) appState = AppState.BACKGROUND
+        if (mActivitiesStarted == 0) applicationState = AppState.BACKGROUND
     }
 
     override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {}
     override fun onActivityDestroyed(activity: Activity) {
         if (activity.localClassName.contains("DashboardActivity")) {
-            appState = AppState.CLOSED
+            applicationState = AppState.CLOSED
         }
     }
 }

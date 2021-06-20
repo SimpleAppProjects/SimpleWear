@@ -1,6 +1,5 @@
 package com.thewizrd.simplewear.adapters
 
-import android.annotation.SuppressLint
 import android.app.Activity
 import android.os.Build
 import android.util.TypedValue
@@ -12,13 +11,12 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.wear.widget.WearableRecyclerView
 import com.thewizrd.shared_resources.actions.*
-import com.thewizrd.shared_resources.utils.isNullOrWhitespace
 import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.controls.ActionButton
 import com.thewizrd.simplewear.controls.ActionButtonViewModel
 import java.util.*
 
-class ActionItemAdapter(activity: Activity) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+class ActionItemAdapter(activity: Activity) : RecyclerView.Adapter<ActionItemAdapter.ViewHolder>() {
     private object ActionItemType {
         const val ACTION = 0
         const val TOGGLE_ACTION = 1
@@ -35,6 +33,7 @@ class ActionItemAdapter(activity: Activity) : RecyclerView.Adapter<RecyclerView.
     init {
         mDataset = ArrayList()
         mActivityContext = activity
+
         for (action in Actions.values()) {
             when (action) {
                 Actions.WIFI,
@@ -72,16 +71,20 @@ class ActionItemAdapter(activity: Activity) : RecyclerView.Adapter<RecyclerView.
     // Provide a reference to the views for each data item
     // Complex data items may need more than one view per item, and
     // you provide access to all the views for a data item in a view holder
-    internal inner class ViewHolder(var mButton: ActionButton) : RecyclerView.ViewHolder(mButton)
+    inner class ViewHolder(var mButton: ActionButton) : RecyclerView.ViewHolder(mButton)
 
-    @SuppressLint("NewApi")  // Create new views (invoked by the layout manager)
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         // create a new view
         val v = ActionButton(parent.context)
         val recyclerView: RecyclerView = parent as WearableRecyclerView
         val viewLayoutMgr = recyclerView.layoutManager
-        val vParams = RecyclerView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-        val innerPadding = parent.getContext().resources.getDimensionPixelSize(R.dimen.inner_layout_padding)
+        val vParams = RecyclerView.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT
+        )
+        val innerPadding =
+            parent.getContext().resources.getDimensionPixelSize(R.dimen.inner_layout_padding)
+
         if (viewLayoutMgr is GridLayoutManager) {
             v.isExpanded = false
             var horizPadding = 0
@@ -92,7 +95,12 @@ class ActionItemAdapter(activity: Activity) : RecyclerView.Adapter<RecyclerView.
                 horizPadding = colWidth - v.fabCustomSize
             } catch (ignored: Exception) {
             }
-            val vertPadding = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 6f, parent.getContext().resources.displayMetrics).toInt()
+
+            val vertPadding = TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP,
+                6f,
+                parent.getContext().resources.displayMetrics
+            ).toInt()
             v.setPaddingRelative(0, 0, 0, 0)
             recyclerView.setPaddingRelative(innerPadding, 0, innerPadding, 0)
             vParams.setMargins(horizPadding / 2, vertPadding, horizPadding / 2, vertPadding)
@@ -101,34 +109,36 @@ class ActionItemAdapter(activity: Activity) : RecyclerView.Adapter<RecyclerView.
             v.setPaddingRelative(innerPadding, 0, innerPadding, 0)
             recyclerView.setPaddingRelative(0, 0, 0, 0)
         }
+
         v.layoutParams = vParams
+
         return ViewHolder(v)
     }
 
     // Replace the contents of a view (invoked by the layout manager)
-    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         // - get element from your dataset at this position
         // - replace the contents of the view with that element
-        val vh = holder as ViewHolder
         val actionVM = mDataset[position]
-        vh.mButton.updateButton(actionVM)
-        if (holder.getItemViewType() != ActionItemType.READONLY_ACTION) {
-            vh.mButton.setOnClickListener(object : View.OnClickListener {
-                override fun onClick(v: View) {
-                    if (!isItemsClickable) return
-                    actionVM.onClick(mActivityContext)
-                    notifyItemChanged(position)
-                }
+
+        holder.mButton.updateButton(actionVM)
+
+        if (holder.itemViewType != ActionItemType.READONLY_ACTION) {
+            holder.mButton.setOnClickListener(View.OnClickListener {
+                if (!isItemsClickable) return@OnClickListener
+                actionVM.onClick(mActivityContext)
+                notifyItemChanged(position)
             })
         } else {
-            vh.mButton.setOnClickListener(null)
+            holder.mButton.setOnClickListener(null)
         }
-        if (vh.mButton.isExpanded) {
-            vh.mButton.setOnLongClickListener(null)
+
+        if (holder.mButton.isExpanded) {
+            holder.mButton.setOnLongClickListener(null)
         } else {
-            vh.mButton.setOnLongClickListener { v ->
+            holder.mButton.setOnLongClickListener { v ->
                 var text = actionVM.actionLabel
-                if (!String.isNullOrWhitespace(actionVM.stateLabel)) {
+                if (!actionVM.stateLabel.isNullOrBlank()) {
                     text = String.format("%s: %s", text, actionVM.stateLabel)
                 }
                 Toast.makeText(v.context, text, Toast.LENGTH_SHORT).show()
@@ -138,17 +148,25 @@ class ActionItemAdapter(activity: Activity) : RecyclerView.Adapter<RecyclerView.
     }
 
     override fun getItemViewType(position: Int): Int {
-        var type = -1
-        type = when (mDataset[position].actionType) {
-            Actions.WIFI, Actions.BLUETOOTH, Actions.MOBILEDATA, Actions.TORCH -> ActionItemType.TOGGLE_ACTION
+        return when (mDataset[position].actionType) {
+            Actions.WIFI, Actions.BLUETOOTH, Actions.MOBILEDATA, Actions.TORCH -> {
+                ActionItemType.TOGGLE_ACTION
+            }
             Actions.LOCATION -> ActionItemType.READONLY_ACTION
-            Actions.LOCKSCREEN, Actions.MUSICPLAYBACK, Actions.SLEEPTIMER, Actions.APPS -> ActionItemType.ACTION
+            Actions.LOCKSCREEN, Actions.MUSICPLAYBACK, Actions.SLEEPTIMER, Actions.APPS -> {
+                ActionItemType.ACTION
+            }
             Actions.VOLUME -> ActionItemType.VALUE_ACTION
-            Actions.DONOTDISTURB -> if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) ActionItemType.MULTICHOICE_ACTION else ActionItemType.TOGGLE_ACTION
+            Actions.DONOTDISTURB -> {
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
+                    ActionItemType.MULTICHOICE_ACTION
+                } else {
+                    ActionItemType.TOGGLE_ACTION
+                }
+            }
             Actions.RINGER -> ActionItemType.MULTICHOICE_ACTION
             else -> ActionItemType.TOGGLE_ACTION
         }
-        return type
     }
 
     // Return the size of your dataset (invoked by the layout manager)

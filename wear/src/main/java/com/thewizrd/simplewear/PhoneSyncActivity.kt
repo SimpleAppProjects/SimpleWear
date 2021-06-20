@@ -10,8 +10,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.google.android.wearable.intent.RemoteIntent
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
-import com.thewizrd.shared_resources.helpers.WearConnectionStatus.Companion.valueOf
-import com.thewizrd.shared_resources.helpers.WearableHelper.playStoreURI
+import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.simplewear.databinding.ActivitySetupSyncBinding
 import kotlinx.coroutines.launch
 
@@ -35,24 +34,38 @@ class PhoneSyncActivity : WearableListenerActivity() {
         broadcastReceiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context, intent: Intent) {
                 if (ACTION_UPDATECONNECTIONSTATUS == intent.action) {
-                    val connStatus = valueOf(intent.getIntExtra(EXTRA_CONNECTIONSTATUS, 0))
-                    when (connStatus) {
+                    when (WearConnectionStatus.valueOf(
+                        intent.getIntExtra(
+                            EXTRA_CONNECTIONSTATUS,
+                            0
+                        )
+                    )) {
                         WearConnectionStatus.DISCONNECTED -> {
                             binding.message.setText(R.string.status_disconnected)
-                            binding.button.setImageDrawable(ContextCompat.getDrawable(context, R.drawable.ic_phonelink_erase_white_24dp))
+                            binding.button.setImageDrawable(
+                                ContextCompat.getDrawable(
+                                    context,
+                                    R.drawable.ic_phonelink_erase_white_24dp
+                                )
+                            )
                             stopProgressBar()
                         }
                         WearConnectionStatus.CONNECTING -> {
                             binding.message.setText(R.string.status_connecting)
-                            binding.button.setImageDrawable(ContextCompat.getDrawable(context, android.R.drawable.ic_popup_sync))
+                            binding.button.setImageDrawable(
+                                ContextCompat.getDrawable(
+                                    context,
+                                    android.R.drawable.ic_popup_sync
+                                )
+                            )
                         }
                         WearConnectionStatus.APPNOTINSTALLED -> {
                             binding.message.setText(R.string.error_notinstalled)
 
                             binding.circularProgress.setOnClickListener { // Open store on remote device
                                 val intentAndroid = Intent(Intent.ACTION_VIEW)
-                                        .addCategory(Intent.CATEGORY_BROWSABLE)
-                                        .setData(playStoreURI)
+                                    .addCategory(Intent.CATEGORY_BROWSABLE)
+                                    .setData(WearableHelper.getPlayStoreURI())
 
                                 RemoteIntent.startRemoteActivity(this@PhoneSyncActivity, intentAndroid, null)
 
@@ -106,9 +119,5 @@ class PhoneSyncActivity : WearableListenerActivity() {
         lifecycleScope.launch {
             updateConnectionStatus()
         }
-    }
-
-    override fun onPause() {
-        super.onPause()
     }
 }

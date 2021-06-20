@@ -30,44 +30,54 @@ class WearableWorker(context: Context, workerParams: WorkerParameters) : Corouti
         const val EXTRA_ACTION_CHANGED = "SimpleWear.Droid.extra.ACTION_CHANGED"
 
         fun enqueueAction(context: Context, intentAction: String, inputDataMap: Map<String, Any>? = null) {
-            val context = context.applicationContext
             when (intentAction) {
-                ACTION_SENDSTATUSUPDATE, ACTION_REQUESTBTDISCOVERABLE, ACTION_SLEEPTIMERINSTALLEDSTATUS, SleepTimerHelper.ACTION_START_TIMER, SleepTimerHelper.ACTION_CANCEL_TIMER -> startWork(context, intentAction)
-                SleepTimerHelper.ACTION_TIME_UPDATED -> startWork(context, if (inputDataMap == null) null else Data.Builder()
-                        .putString(KEY_ACTION, intentAction)
-                        .putAll(inputDataMap)
-                        .build()
-                )
+                ACTION_SENDSTATUSUPDATE,
+                ACTION_REQUESTBTDISCOVERABLE,
+                ACTION_SLEEPTIMERINSTALLEDSTATUS,
+                SleepTimerHelper.ACTION_START_TIMER,
+                SleepTimerHelper.ACTION_CANCEL_TIMER -> {
+                    startWork(context.applicationContext, intentAction)
+                }
+                SleepTimerHelper.ACTION_TIME_UPDATED -> {
+                    startWork(context.applicationContext, inputDataMap?.let {
+                        Data.Builder()
+                            .putString(KEY_ACTION, intentAction)
+                            .putAll(it)
+                            .build()
+                    })
+                }
             }
         }
 
         fun sendStatusUpdate(context: Context) {
-            val context = context.applicationContext
-            startWork(context, ACTION_SENDSTATUSUPDATE)
+            startWork(context.applicationContext, ACTION_SENDSTATUSUPDATE)
         }
 
         fun sendStatusUpdate(context: Context, @StatusAction statusAction: String, status: String) {
-            val context = context.applicationContext
-            startWork(context, Data.Builder()
+            startWork(
+                context.applicationContext, Data.Builder()
                     .putString(KEY_ACTION, statusAction)
                     .putString(EXTRA_STATUS, status)
-                    .build())
+                    .build()
+            )
         }
 
         fun sendStatusUpdate(context: Context, @StatusAction statusAction: String, status: Int) {
-            val context = context.applicationContext
-            startWork(context, Data.Builder()
+            startWork(
+                context.applicationContext, Data.Builder()
                     .putString(KEY_ACTION, statusAction)
                     .putInt(EXTRA_STATUS, status)
-                    .build())
+                    .build()
+            )
         }
 
         fun sendActionUpdate(context: Context, action: Actions) {
-            val context = context.applicationContext
-            startWork(context, Data.Builder()
+            startWork(
+                context.applicationContext, Data.Builder()
                     .putString(KEY_ACTION, ACTION_SENDACTIONUPDATE)
                     .putInt(EXTRA_ACTION_CHANGED, action.value)
-                    .build())
+                    .build()
+            )
         }
 
         private fun startWork(context: Context, intentAction: String) {
@@ -75,13 +85,12 @@ class WearableWorker(context: Context, workerParams: WorkerParameters) : Corouti
         }
 
         private fun startWork(context: Context, inputData: Data?) {
-            val context = context.applicationContext
             Logger.writeLine(Log.INFO, "%s: Requesting to start work", TAG)
             val updateRequest = OneTimeWorkRequest.Builder(WearableWorker::class.java)
             if (inputData != null) {
                 updateRequest.setInputData(inputData)
             }
-            WorkManager.getInstance(context).enqueue(updateRequest.build())
+            WorkManager.getInstance(context.applicationContext).enqueue(updateRequest.build())
             Logger.writeLine(Log.INFO, "%s: One-time work enqueued", TAG)
         }
     }
@@ -99,30 +108,52 @@ class WearableWorker(context: Context, workerParams: WorkerParameters) : Corouti
         val mWearMgr = WearableManager(applicationContext)
 
         if (mWearMgr.isWearNodesAvailable()) {
-            if (ACTION_SENDSTATUSUPDATE == intentAction) {
-                // Check if any devices are running and send an update
-                mWearMgr.requestWearAppState()
-            } else if (ACTION_SENDBATTERYUPDATE == intentAction) {
-                val jsonData = inputData.getString(EXTRA_STATUS)
-                mWearMgr.sendMessage(null, WearableHelper.BatteryPath, jsonData?.stringToBytes())
-            } else if (ACTION_SENDWIFIUPDATE == intentAction) {
-                mWearMgr.sendMessage(null, WearableHelper.WifiPath, byteArrayOf(inputData.getInt(EXTRA_STATUS, -1).toByte()))
-            } else if (ACTION_SENDBTUPDATE == intentAction) {
-                mWearMgr.sendMessage(null, WearableHelper.BluetoothPath, byteArrayOf(inputData.getInt(EXTRA_STATUS, -1).toByte()))
-            } else if (ACTION_SENDACTIONUPDATE == intentAction) {
-                val action = Actions.valueOf(inputData.getInt(EXTRA_ACTION_CHANGED, 0))
-                mWearMgr.sendActionsUpdate(null, action)
-            } else if (ACTION_REQUESTBTDISCOVERABLE == intentAction) {
-                mWearMgr.sendMessage(null, WearableHelper.PingPath, null)
-                mWearMgr.sendMessage(null, WearableHelper.BtDiscoverPath, null)
-            } else if (SleepTimerHelper.ACTION_START_TIMER == intentAction) {
-                mWearMgr.sendMessage(null, SleepTimerHelper.SleepTimerStartPath, null)
-            } else if (SleepTimerHelper.ACTION_CANCEL_TIMER == intentAction) {
-                mWearMgr.sendMessage(null, SleepTimerHelper.SleepTimerStopPath, null)
-            } else if (SleepTimerHelper.ACTION_TIME_UPDATED == intentAction) {
-                val timeStartMs = inputData.getLong(SleepTimerHelper.EXTRA_START_TIME_IN_MS, 0)
-                val timeProgMs = inputData.getLong(SleepTimerHelper.EXTRA_TIME_IN_MS, 0)
-                mWearMgr.sendSleepTimerUpdate(null, timeStartMs, timeProgMs)
+            when (intentAction) {
+                ACTION_SENDSTATUSUPDATE -> {
+                    // Check if any devices are running and send an update
+                    mWearMgr.requestWearAppState()
+                }
+                ACTION_SENDBATTERYUPDATE -> {
+                    val jsonData = inputData.getString(EXTRA_STATUS)
+                    mWearMgr.sendMessage(
+                        null,
+                        WearableHelper.BatteryPath,
+                        jsonData?.stringToBytes()
+                    )
+                }
+                ACTION_SENDWIFIUPDATE -> {
+                    mWearMgr.sendMessage(
+                        null,
+                        WearableHelper.WifiPath,
+                        byteArrayOf(inputData.getInt(EXTRA_STATUS, -1).toByte())
+                    )
+                }
+                ACTION_SENDBTUPDATE -> {
+                    mWearMgr.sendMessage(
+                        null,
+                        WearableHelper.BluetoothPath,
+                        byteArrayOf(inputData.getInt(EXTRA_STATUS, -1).toByte())
+                    )
+                }
+                ACTION_SENDACTIONUPDATE -> {
+                    val action = Actions.valueOf(inputData.getInt(EXTRA_ACTION_CHANGED, 0))
+                    mWearMgr.sendActionsUpdate(null, action)
+                }
+                ACTION_REQUESTBTDISCOVERABLE -> {
+                    mWearMgr.sendMessage(null, WearableHelper.PingPath, null)
+                    mWearMgr.sendMessage(null, WearableHelper.BtDiscoverPath, null)
+                }
+                SleepTimerHelper.ACTION_START_TIMER -> {
+                    mWearMgr.sendMessage(null, SleepTimerHelper.SleepTimerStartPath, null)
+                }
+                SleepTimerHelper.ACTION_CANCEL_TIMER -> {
+                    mWearMgr.sendMessage(null, SleepTimerHelper.SleepTimerStopPath, null)
+                }
+                SleepTimerHelper.ACTION_TIME_UPDATED -> {
+                    val timeStartMs = inputData.getLong(SleepTimerHelper.EXTRA_START_TIME_IN_MS, 0)
+                    val timeProgMs = inputData.getLong(SleepTimerHelper.EXTRA_TIME_IN_MS, 0)
+                    mWearMgr.sendSleepTimerUpdate(null, timeStartMs, timeProgMs)
+                }
             }
         }
 

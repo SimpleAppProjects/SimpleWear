@@ -1,6 +1,6 @@
 package com.thewizrd.shared_resources.actions
 
-abstract class Action {
+abstract class Action(_action: Actions) {
     var isActionSuccessful = true
 
     fun setActionSuccessful(status: ActionStatus) {
@@ -11,13 +11,11 @@ abstract class Action {
     var actionStatus: ActionStatus
         private set
 
-    var actionType: Actions
+    var actionType: Actions = _action
         protected set
 
-    constructor(_action: Actions) {
-        this.actionType = _action
+    init {
         isActionSuccessful = true
         actionStatus = ActionStatus.UNKNOWN
-        this.actionType = _action
     }
 }

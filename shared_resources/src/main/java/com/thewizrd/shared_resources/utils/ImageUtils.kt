@@ -9,21 +9,22 @@ import android.util.Log
 import androidx.core.content.ContextCompat
 import com.google.android.gms.wearable.Asset
 import com.google.android.gms.wearable.DataClient
-import com.thewizrd.shared_resources.utils.Logger.writeLine
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
-import java.util.concurrent.ExecutionException
 
 object ImageUtils {
-    fun bitmapFromDrawable(context: Context?, resDrawable: Int): Bitmap? {
-        val drawable = ContextCompat.getDrawable(context!!, resDrawable)
-                ?: return null
+    fun bitmapFromDrawable(context: Context, resDrawable: Int): Bitmap? {
+        val drawable = ContextCompat.getDrawable(context, resDrawable) ?: return null
         return bitmapFromDrawable(drawable)
     }
 
-    fun bitmapFromDrawable(drawable: Drawable, maxWidth: Int = drawable.intrinsicWidth, maxHeight: Int = drawable.intrinsicHeight): Bitmap {
+    fun bitmapFromDrawable(
+        drawable: Drawable,
+        maxWidth: Int = drawable.intrinsicWidth,
+        maxHeight: Int = drawable.intrinsicHeight
+    ): Bitmap {
         val bitmap: Bitmap
         var maxWidth = maxWidth
         var maxHeight = maxHeight
@@ -63,9 +64,12 @@ object ImageUtils {
 
             try {
                 // convert asset into a file descriptor and block until it's ready
-                val assetInputStream = client.getFdForAsset(asset).await().inputStream
+                val assetInputStream = client.getFdForAsset(asset).await()?.inputStream
                 if (assetInputStream == null) {
-                    writeLine(Log.INFO, "ImageUtils: bitmapFromAssetStream: Unknown asset requested")
+                    Logger.writeLine(
+                        Log.INFO,
+                        "ImageUtils: bitmapFromAssetStream: Unknown asset requested"
+                    )
                     return@withContext null
                 }
 
@@ -73,11 +77,11 @@ object ImageUtils {
                 return@withContext assetInputStream.use {
                     BitmapFactory.decodeStream(it)
                 }
-            } catch (e: ExecutionException) {
-                writeLine(Log.ERROR, "ImageUtils: bitmapFromAssetStream: Failed to get asset")
-                return@withContext null
-            } catch (e: InterruptedException) {
-                writeLine(Log.ERROR, "ImageUtils: bitmapFromAssetStream: Failed to get asset")
+            } catch (e: Exception) {
+                Logger.writeLine(
+                    Log.ERROR,
+                    "ImageUtils: bitmapFromAssetStream: Failed to get asset"
+                )
                 return@withContext null
             }
         }

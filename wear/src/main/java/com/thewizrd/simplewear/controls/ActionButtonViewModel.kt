@@ -107,7 +107,7 @@ class ActionButtonViewModel(val action: Action) {
     private fun updateIconAndLabel() {
         val tA: ToggleAction
         val mA: MultiChoiceAction
-        val context = App.instance!!.appContext
+        val context = App.instance.appContext
 
         when (actionType) {
             Actions.WIFI -> {
@@ -217,8 +217,7 @@ class ActionButtonViewModel(val action: Action) {
 
                 actionLabel = context.getString(R.string.action_ringer)
 
-                val ringerChoice = RingerChoice.valueOf(mA.choice)
-                when (ringerChoice) {
+                when (RingerChoice.valueOf(mA.choice)) {
                     RingerChoice.VIBRATION -> {
                         drawableID = R.drawable.ic_vibration_white_24dp
                         stateLabel = context.getString(R.string.ringerstate_vib)

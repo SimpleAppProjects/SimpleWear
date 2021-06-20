@@ -6,11 +6,8 @@ import android.os.Bundle
 import android.os.CountDownTimer
 import android.support.wearable.input.RotaryEncoder
 import android.util.Log
-import android.view.LayoutInflater
-import android.view.MotionEvent
-import android.view.View
+import android.view.*
 import android.view.View.OnGenericMotionListener
-import android.view.ViewGroup
 import androidx.core.view.ViewCompat
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
@@ -20,10 +17,9 @@ import com.google.android.gms.wearable.*
 import com.google.android.gms.wearable.DataClient.OnDataChangedListener
 import com.thewizrd.shared_resources.helpers.RecyclerOnClickListenerInterface
 import com.thewizrd.shared_resources.helpers.WearableHelper
-import com.thewizrd.shared_resources.helpers.WearableHelper.getWearDataUri
 import com.thewizrd.shared_resources.sleeptimer.SleepTimerHelper
 import com.thewizrd.shared_resources.utils.ImageUtils
-import com.thewizrd.shared_resources.utils.Logger.writeLine
+import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.controls.AppItemViewModel
 import com.thewizrd.simplewear.databinding.FragmentMusicplayersSleepBinding
@@ -32,7 +28,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import java.util.*
-import java.util.concurrent.ExecutionException
 
 class MusicPlayersFragment : SwipeDismissFragment(), OnDataChangedListener {
     private lateinit var binding: FragmentMusicplayersSleepBinding
@@ -53,7 +48,12 @@ class MusicPlayersFragment : SwipeDismissFragment(), OnDataChangedListener {
                 viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
                     try {
                         val buff = Wearable.getDataClient(requireActivity())
-                                .getDataItems(getWearDataUri("*", WearableHelper.MusicPlayersPath))
+                            .getDataItems(
+                                WearableHelper.getWearDataUri(
+                                    "*",
+                                    WearableHelper.MusicPlayersPath
+                                )
+                            )
                                 .await()
 
                         for (i in 0 until buff.count) {
@@ -63,16 +63,14 @@ class MusicPlayersFragment : SwipeDismissFragment(), OnDataChangedListener {
                                     val dataMap = DataMapItem.fromDataItem(item).dataMap
                                     updateMusicPlayers(dataMap)
                                 } catch (e: Exception) {
-                                    writeLine(Log.ERROR, e)
+                                    Logger.writeLine(Log.ERROR, e)
                                 }
                                 showProgressBar(false)
                             }
                         }
                         buff.release()
-                    } catch (e: ExecutionException) {
-                        writeLine(Log.ERROR, e)
-                    } catch (e: InterruptedException) {
-                        writeLine(Log.ERROR, e)
+                    } catch (e: Exception) {
+                        Logger.writeLine(Log.ERROR, e)
                     }
                 }
             }
@@ -84,52 +82,30 @@ class MusicPlayersFragment : SwipeDismissFragment(), OnDataChangedListener {
             val mapRequest = PutDataMapRequest.create(SleepTimerHelper.SleepTimerAudioPlayerPath)
             mapRequest.dataMap.putString(SleepTimerHelper.KEY_SELECTEDPLAYER, s)
             Wearable.getDataClient(requireActivity()).putDataItem(
-                    mapRequest.asPutDataRequest()).addOnFailureListener { e -> writeLine(Log.ERROR, e) }
+                mapRequest.asPutDataRequest()
+            ).addOnFailureListener { e -> Logger.writeLine(Log.ERROR, e) }
         })
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
         val outerView = super.onCreateView(inflater, container, savedInstanceState)
         binding = FragmentMusicplayersSleepBinding.inflate(inflater, outerView as ViewGroup?, true)
 
         binding.playerList.setHasFixedSize(true)
         binding.playerList.isEdgeItemsCenteringEnabled = false
         binding.playerList.layoutManager = WearableLinearLayoutManager(requireActivity(), null)
-        binding.playerList.addOnLayoutChangeListener(object : View.OnLayoutChangeListener {
-            /* BoxInsetLayout impl */
-            private val FACTOR = 0.146447f //(1 - sqrt(2)/2)/2
-            private val mIsRound = resources.configuration.isScreenRound
-            private val paddingTop = binding.playerList.paddingTop
-            private val paddingBottom = binding.playerList.paddingBottom
-            private val paddingStart = ViewCompat.getPaddingStart(binding.playerList)
-            private val paddingEnd = ViewCompat.getPaddingEnd(binding.playerList)
-
-            override fun onLayoutChange(v: View, left: Int, top: Int, right: Int, bottom: Int,
-                                        oldLeft: Int, oldTop: Int, oldRight: Int, oldBottom: Int) {
-                binding.playerList.removeOnLayoutChangeListener(this)
-
-                val verticalPadding = resources.getDimensionPixelSize(R.dimen.inner_frame_layout_padding)
-
-                val mScreenHeight = Resources.getSystem().displayMetrics.heightPixels
-                val mScreenWidth = Resources.getSystem().displayMetrics.widthPixels
-
-                val rightEdge = Math.min(binding.playerList.measuredWidth, mScreenWidth)
-                val bottomEdge = Math.min(binding.playerList.measuredHeight, mScreenHeight)
-                val verticalInset = (FACTOR * Math.max(rightEdge, bottomEdge)).toInt()
-
-                binding.playerList.setPaddingRelative(
-                        paddingStart,
-                        if (mIsRound) verticalInset else verticalPadding,
-                        paddingEnd,
-                        paddingBottom + if (mIsRound) verticalInset else verticalPadding
-                )
-            }
-        })
         binding.playerList.setOnGenericMotionListener(OnGenericMotionListener { v, event ->
             if (event.action == MotionEvent.ACTION_SCROLL && RotaryEncoder.isFromRotaryEncoder(event)) {
 
                 // Don't forget the negation here
-                val delta = -RotaryEncoder.getRotaryAxisValue(event) * RotaryEncoder.getScaledScrollFactor(requireActivity())
+                val delta =
+                    -RotaryEncoder.getRotaryAxisValue(event) * RotaryEncoder.getScaledScrollFactor(
+                        requireActivity()
+                    )
 
                 // Swap these axes if you want to do horizontal scrolling instead
                 v.scrollBy(0, Math.round(delta))
@@ -153,22 +129,52 @@ class MusicPlayersFragment : SwipeDismissFragment(), OnDataChangedListener {
         return outerView
     }
 
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        binding.playerList.viewTreeObserver.addOnPreDrawListener(object :
+            ViewTreeObserver.OnPreDrawListener {
+            /* BoxInsetLayout impl */
+            private val FACTOR = 0.146447f //(1 - sqrt(2)/2)/2
+            private val mIsRound = resources.configuration.isScreenRound
+            private val paddingTop = binding.playerList.paddingTop
+            private val paddingBottom = binding.playerList.paddingBottom
+            private val paddingStart = ViewCompat.getPaddingStart(binding.playerList)
+            private val paddingEnd = ViewCompat.getPaddingEnd(binding.playerList)
+
+            override fun onPreDraw(): Boolean {
+                binding.playerList.viewTreeObserver.removeOnPreDrawListener(this)
+
+                val verticalPadding =
+                    resources.getDimensionPixelSize(R.dimen.inner_frame_layout_padding)
+
+                val mScreenHeight = Resources.getSystem().displayMetrics.heightPixels
+                val mScreenWidth = Resources.getSystem().displayMetrics.widthPixels
+
+                val rightEdge = Math.min(binding.playerList.measuredWidth, mScreenWidth)
+                val bottomEdge = Math.min(binding.playerList.measuredHeight, mScreenHeight)
+                val verticalInset = (FACTOR * Math.max(rightEdge, bottomEdge)).toInt()
+
+                binding.playerList.setPaddingRelative(
+                    paddingStart,
+                    if (mIsRound) verticalInset else verticalPadding,
+                    paddingEnd,
+                    paddingBottom + if (mIsRound) verticalInset else verticalPadding
+                )
+
+                return true
+            }
+        })
+    }
+
     fun setOnClickListener(listener: RecyclerOnClickListenerInterface?) {
         onClickListener = listener
     }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-    }
-
     private fun showProgressBar(show: Boolean) {
-        viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main) {
+        viewLifecycleOwner.lifecycleScope.launch {
             binding.progressBar.visibility = if (show) View.VISIBLE else View.GONE
         }
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
     }
 
     override fun onResume() {
@@ -188,7 +194,12 @@ class MusicPlayersFragment : SwipeDismissFragment(), OnDataChangedListener {
             var prefKey: String? = null
             try {
                 val buff = Wearable.getDataClient(requireActivity())
-                        .getDataItems(getWearDataUri("*", SleepTimerHelper.SleepTimerAudioPlayerPath))
+                    .getDataItems(
+                        WearableHelper.getWearDataUri(
+                            "*",
+                            SleepTimerHelper.SleepTimerAudioPlayerPath
+                        )
+                    )
                         .await()
 
                 for (i in 0 until buff.count) {
@@ -198,17 +209,14 @@ class MusicPlayersFragment : SwipeDismissFragment(), OnDataChangedListener {
                             val dataMap = DataMapItem.fromDataItem(item).dataMap
                             prefKey = dataMap.getString(SleepTimerHelper.KEY_SELECTEDPLAYER, null)
                         } catch (e: Exception) {
-                            writeLine(Log.ERROR, e)
+                            Logger.writeLine(Log.ERROR, e)
                         }
                         break
                     }
                 }
                 buff.release()
-            } catch (e: ExecutionException) {
-                writeLine(Log.ERROR, e)
-                prefKey = null
-            } catch (e: InterruptedException) {
-                writeLine(Log.ERROR, e)
+            } catch (e: Exception) {
+                Logger.writeLine(Log.ERROR, e)
                 prefKey = null
             }
             selectedPlayer.setKey(prefKey)
@@ -240,7 +248,7 @@ class MusicPlayersFragment : SwipeDismissFragment(), OnDataChangedListener {
                             val dataMap = DataMapItem.fromDataItem(item).dataMap
                             updateMusicPlayers(dataMap)
                         } catch (e: Exception) {
-                            writeLine(Log.ERROR, e)
+                            Logger.writeLine(Log.ERROR, e)
                         }
                     }
                 }
@@ -249,20 +257,23 @@ class MusicPlayersFragment : SwipeDismissFragment(), OnDataChangedListener {
     }
 
     private suspend fun updateMusicPlayers(dataMap: DataMap) {
-        val supported_players: List<String> = dataMap.getStringArrayList(WearableHelper.KEY_SUPPORTEDPLAYERS)
-        val viewModels: MutableList<AppItemViewModel> = ArrayList()
+        val supported_players =
+            dataMap.getStringArrayList(WearableHelper.KEY_SUPPORTEDPLAYERS) ?: return
+        val viewModels = ArrayList<AppItemViewModel>()
         val playerPref = selectedPlayer.key.value
         var selectedPlayerModel: AppItemViewModel? = null
         for (key in supported_players) {
-            val map = dataMap.getDataMap(key)
+            val map = dataMap.getDataMap(key) ?: continue
 
-            val model = AppItemViewModel()
-            model.appType = AppItemViewModel.AppType.MUSIC_PLAYER
-            model.appLabel = map.getString(WearableHelper.KEY_LABEL)
-            model.packageName = map.getString(WearableHelper.KEY_PKGNAME)
-            model.activityName = map.getString(WearableHelper.KEY_ACTIVITYNAME)
-            model.bitmapIcon = ImageUtils.bitmapFromAssetStream(
-                    Wearable.getDataClient(requireActivity()), map.getAsset(WearableHelper.KEY_ICON))
+            val model = AppItemViewModel().apply {
+                appType = AppItemViewModel.AppType.MUSIC_PLAYER
+                appLabel = map.getString(WearableHelper.KEY_LABEL)
+                packageName = map.getString(WearableHelper.KEY_PKGNAME)
+                activityName = map.getString(WearableHelper.KEY_ACTIVITYNAME)
+                bitmapIcon = ImageUtils.bitmapFromAssetStream(
+                    Wearable.getDataClient(requireActivity()), map.getAsset(WearableHelper.KEY_ICON)
+                )
+            }
 
             viewModels.add(model)
 
@@ -271,18 +282,15 @@ class MusicPlayersFragment : SwipeDismissFragment(), OnDataChangedListener {
             }
         }
 
-        if (selectedPlayerModel == null) {
-            selectedPlayer.setKey(null)
-        } else {
-            selectedPlayer.setKey(selectedPlayerModel.key)
-        }
+        selectedPlayer.setKey(selectedPlayerModel?.key)
 
-        viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main) {
+        viewLifecycleOwner.lifecycleScope.launch {
             mAdapter.updateItems(viewModels)
 
-            binding.noplayersMessageview.visibility = if (viewModels.size > 0) View.GONE else View.VISIBLE
+            binding.noplayersMessageview.visibility =
+                if (viewModels.size > 0) View.GONE else View.VISIBLE
             binding.playerGroup.visibility = if (viewModels.size > 0) View.VISIBLE else View.GONE
-            viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main) {
+            viewLifecycleOwner.lifecycleScope.launch {
                 if (binding.playerList.visibility == View.VISIBLE && !binding.playerList.hasFocus()) {
                     binding.playerList.requestFocus()
                 }

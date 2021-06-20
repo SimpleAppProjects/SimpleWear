@@ -20,6 +20,7 @@
  */
 package com.thewizrd.simplewear.controls
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.graphics.drawable.Animatable
@@ -41,7 +42,6 @@ import androidx.annotation.VisibleForTesting
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
 import androidx.wear.R
-import com.thewizrd.shared_resources.utils.isNullOrWhitespace
 import com.thewizrd.simplewear.utils.ResourcesUtils
 import java.util.*
 
@@ -253,6 +253,7 @@ class CustomConfirmationOverlay {
     }
 
     @MainThread
+    @SuppressLint("ClickableViewAccessibility")
     private fun updateOverlayView(context: Context) {
         if (mOverlayView == null) {
             mOverlayView = LayoutInflater.from(context).inflate(if (mType == CUSTOM_ANIMATION) com.thewizrd.simplewear.R.layout.ws_customoverlay_confirmation else R.layout.ws_overlay_confirmation, null)
@@ -304,7 +305,7 @@ class CustomConfirmationOverlay {
         imageView.setImageDrawable(mOverlayDrawable)
         if (imageView.layoutParams is ConstraintLayout.LayoutParams) {
             val lp = imageView.layoutParams as ConstraintLayout.LayoutParams
-            if (String.isNullOrWhitespace(mMessage)) lp.verticalBias = 0.5f
+            if (mMessage.isNullOrBlank()) lp.verticalBias = 0.5f
             imageView.layoutParams = lp
         }
     }

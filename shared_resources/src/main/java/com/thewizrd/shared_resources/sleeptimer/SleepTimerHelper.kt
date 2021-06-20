@@ -10,8 +10,7 @@ object SleepTimerHelper {
     const val PACKAGE_NAME = "com.thewizrd.simplesleeptimer"
     private const val PLAY_STORE_APP_URI = "market://details?id=$PACKAGE_NAME"
 
-    val playStoreURI: Uri
-        get() = Uri.parse(PLAY_STORE_APP_URI)
+    fun getPlayStoreURI(): Uri = Uri.parse(PLAY_STORE_APP_URI)
 
     // For WearableListenerService
     const val SleepTimerEnabledPath = "/status/sleeptimer/enabled"
@@ -29,18 +28,16 @@ object SleepTimerHelper {
     const val EXTRA_START_TIME_IN_MS = "SimpleSleepTimer.extra.START_TIME_IN_MS"
     const val EXTRA_TIME_IN_MS = "SimpleSleepTimer.extra.TIME_IN_MS"
 
-    val packageName: String
-        get() {
-            var packageName = PACKAGE_NAME
-            if (BuildConfig.DEBUG) packageName += ".debug"
-            return packageName
-        }
+    fun getPackageName(): String {
+        var packageName = PACKAGE_NAME
+        if (BuildConfig.DEBUG) packageName += ".debug"
+        return packageName
+    }
 
-    val isSleepTimerInstalled: Boolean
-        get() = try {
-            val context = SimpleLibrary.getInstance().app.appContext
-            context.packageManager.getApplicationInfo(packageName, 0).enabled
-        } catch (e: PackageManager.NameNotFoundException) {
-            false
-        }
+    fun isSleepTimerInstalled(): Boolean = try {
+        val context = SimpleLibrary.instance.app.appContext
+        context.packageManager.getApplicationInfo(getPackageName(), 0).enabled
+    } catch (e: PackageManager.NameNotFoundException) {
+        false
+    }
 }

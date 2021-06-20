@@ -20,15 +20,8 @@ import com.google.android.wearable.intent.RemoteIntent
 import com.thewizrd.shared_resources.actions.ActionStatus
 import com.thewizrd.shared_resources.helpers.RecyclerOnClickListenerInterface
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
-import com.thewizrd.shared_resources.helpers.WearConnectionStatus.Companion.valueOf
 import com.thewizrd.shared_resources.helpers.WearableHelper
-import com.thewizrd.shared_resources.helpers.WearableHelper.getWearDataUri
-import com.thewizrd.shared_resources.helpers.WearableHelper.playStoreURI
-import com.thewizrd.shared_resources.utils.ImageUtils
-import com.thewizrd.shared_resources.utils.JSONParser.serializer
-import com.thewizrd.shared_resources.utils.Logger.writeLine
-import com.thewizrd.shared_resources.utils.bytesToString
-import com.thewizrd.shared_resources.utils.stringToBytes
+import com.thewizrd.shared_resources.utils.*
 import com.thewizrd.simplewear.adapters.MusicPlayerListAdapter
 import com.thewizrd.simplewear.controls.AppItemViewModel
 import com.thewizrd.simplewear.controls.CustomConfirmationOverlay
@@ -40,7 +33,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import java.util.*
-import java.util.concurrent.ExecutionException
 
 class MusicPlayerActivity : WearableListenerActivity(), OnDataChangedListener {
     override lateinit var broadcastReceiver: BroadcastReceiver
@@ -65,19 +57,28 @@ class MusicPlayerActivity : WearableListenerActivity(), OnDataChangedListener {
                 lifecycleScope.launch {
                     if (intent.action != null) {
                         if (ACTION_UPDATECONNECTIONSTATUS == intent.action) {
-                            val connStatus = valueOf(intent.getIntExtra(EXTRA_CONNECTIONSTATUS, 0))
-                            when (connStatus) {
+                            when (WearConnectionStatus.valueOf(
+                                intent.getIntExtra(
+                                    EXTRA_CONNECTIONSTATUS,
+                                    0
+                                )
+                            )) {
                                 WearConnectionStatus.DISCONNECTED -> {
                                     // Navigate
-                                    startActivity(Intent(this@MusicPlayerActivity, PhoneSyncActivity::class.java)
-                                            .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK))
+                                    startActivity(
+                                        Intent(
+                                            this@MusicPlayerActivity,
+                                            PhoneSyncActivity::class.java
+                                        )
+                                            .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                                    )
                                     finishAffinity()
                                 }
                                 WearConnectionStatus.APPNOTINSTALLED -> {
                                     // Open store on remote device
                                     val intentAndroid = Intent(Intent.ACTION_VIEW)
-                                            .addCategory(Intent.CATEGORY_BROWSABLE)
-                                            .setData(playStoreURI)
+                                        .addCategory(Intent.CATEGORY_BROWSABLE)
+                                        .setData(WearableHelper.getPlayStoreURI())
 
                                     RemoteIntent.startRemoteActivity(this@MusicPlayerActivity, intentAndroid,
                                             ConfirmationResultReceiver(this@MusicPlayerActivity))
@@ -86,7 +87,12 @@ class MusicPlayerActivity : WearableListenerActivity(), OnDataChangedListener {
                                 }
                             }
                         } else {
-                            writeLine(Log.INFO, "%s: Unhandled action: %s", "MusicPlayerActivity", intent.action)
+                            Logger.writeLine(
+                                Log.INFO,
+                                "%s: Unhandled action: %s",
+                                "MusicPlayerActivity",
+                                intent.action
+                            )
                         }
                     }
                 }
@@ -135,8 +141,13 @@ class MusicPlayerActivity : WearableListenerActivity(), OnDataChangedListener {
                 val vm = mAdapter.currentList[position]
                 lifecycleScope.launch {
                     if (connect()) {
-                        sendMessage(mPhoneNodeWithApp!!.id, WearableHelper.PlayCommandPath,
-                                serializer(Pair.create(vm.packageName, vm.activityName), Pair::class.java).stringToBytes())
+                        sendMessage(
+                            mPhoneNodeWithApp!!.id, WearableHelper.PlayCommandPath,
+                            JSONParser.serializer(
+                                Pair.create(vm.packageName, vm.activityName),
+                                Pair::class.java
+                            ).stringToBytes()
+                        )
                     }
                 }
             }
@@ -153,7 +164,12 @@ class MusicPlayerActivity : WearableListenerActivity(), OnDataChangedListener {
                 lifecycleScope.launch(Dispatchers.IO) {
                     try {
                         val buff = Wearable.getDataClient(this@MusicPlayerActivity)
-                                .getDataItems(getWearDataUri("*", WearableHelper.MusicPlayersPath))
+                            .getDataItems(
+                                WearableHelper.getWearDataUri(
+                                    "*",
+                                    WearableHelper.MusicPlayersPath
+                                )
+                            )
                                 .await()
 
                         for (i in 0 until buff.count) {
@@ -163,17 +179,15 @@ class MusicPlayerActivity : WearableListenerActivity(), OnDataChangedListener {
                                     val dataMap = DataMapItem.fromDataItem(item).dataMap
                                     updateMusicPlayers(dataMap)
                                 } catch (e: Exception) {
-                                    writeLine(Log.ERROR, e)
+                                    Logger.writeLine(Log.ERROR, e)
                                 }
                                 showProgressBar(false)
                             }
                         }
 
                         buff.release()
-                    } catch (e: ExecutionException) {
-                        writeLine(Log.ERROR, e)
-                    } catch (e: InterruptedException) {
-                        writeLine(Log.ERROR, e)
+                    } catch (e: Exception) {
+                        Logger.writeLine(Log.ERROR, e)
                     }
                 }
             }
@@ -181,7 +195,7 @@ class MusicPlayerActivity : WearableListenerActivity(), OnDataChangedListener {
     }
 
     private fun showProgressBar(show: Boolean) {
-        lifecycleScope.launch(Dispatchers.Main) {
+        lifecycleScope.launch {
             binding.progressBar.visibility = if (show) View.VISIBLE else View.GONE
         }
     }
@@ -213,20 +227,30 @@ class MusicPlayerActivity : WearableListenerActivity(), OnDataChangedListener {
                         }
                     }
                     ActionStatus.PERMISSION_DENIED ->
-                        lifecycleScope.launch(Dispatchers.Main) {
+                        lifecycleScope.launch {
                             CustomConfirmationOverlay()
-                                    .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
-                                    .setCustomDrawable(ContextCompat.getDrawable(this@MusicPlayerActivity, R.drawable.ic_full_sad))
-                                    .setMessage(this@MusicPlayerActivity.getString(R.string.error_permissiondenied))
-                                    .showOn(this@MusicPlayerActivity)
+                                .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
+                                .setCustomDrawable(
+                                    ContextCompat.getDrawable(
+                                        this@MusicPlayerActivity,
+                                        R.drawable.ic_full_sad
+                                    )
+                                )
+                                .setMessage(this@MusicPlayerActivity.getString(R.string.error_permissiondenied))
+                                .showOn(this@MusicPlayerActivity)
                         }
                     ActionStatus.FAILURE ->
-                        lifecycleScope.launch(Dispatchers.Main) {
+                        lifecycleScope.launch {
                             CustomConfirmationOverlay()
-                                    .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
-                                    .setCustomDrawable(ContextCompat.getDrawable(this@MusicPlayerActivity, R.drawable.ic_full_sad))
-                                    .setMessage(this@MusicPlayerActivity.getString(R.string.action_failed_playmusic))
-                                    .showOn(this@MusicPlayerActivity)
+                                .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
+                                .setCustomDrawable(
+                                    ContextCompat.getDrawable(
+                                        this@MusicPlayerActivity,
+                                        R.drawable.ic_full_sad
+                                    )
+                                )
+                                .setMessage(this@MusicPlayerActivity.getString(R.string.action_failed_playmusic))
+                                .showOn(this@MusicPlayerActivity)
                         }
                     else -> {
                     }
@@ -249,7 +273,7 @@ class MusicPlayerActivity : WearableListenerActivity(), OnDataChangedListener {
                             val dataMap = DataMapItem.fromDataItem(item).dataMap
                             updateMusicPlayers(dataMap)
                         } catch (e: Exception) {
-                            writeLine(Log.ERROR, e)
+                            Logger.writeLine(Log.ERROR, e)
                         }
                     }
                 }
@@ -258,25 +282,34 @@ class MusicPlayerActivity : WearableListenerActivity(), OnDataChangedListener {
     }
 
     private suspend fun updateMusicPlayers(dataMap: DataMap) {
-        val supported_players: List<String> = dataMap.getStringArrayList(WearableHelper.KEY_SUPPORTEDPLAYERS)
-        val viewModels: MutableList<AppItemViewModel> = ArrayList()
+        val supported_players =
+            dataMap.getStringArrayList(WearableHelper.KEY_SUPPORTEDPLAYERS) ?: return
+        val viewModels = ArrayList<AppItemViewModel>()
         for (key in supported_players) {
-            val map = dataMap.getDataMap(key)
+            val map = dataMap.getDataMap(key) ?: continue
 
-            val model = AppItemViewModel()
-            model.appLabel = String.format("%s %s", getString(R.string.prefix_playmusic), map.getString(WearableHelper.KEY_LABEL))
-            model.packageName = map.getString(WearableHelper.KEY_PKGNAME)
-            model.activityName = map.getString(WearableHelper.KEY_ACTIVITYNAME)
-            model.bitmapIcon = ImageUtils.bitmapFromAssetStream(
-                    Wearable.getDataClient(this@MusicPlayerActivity), map.getAsset(WearableHelper.KEY_ICON))
+            val model = AppItemViewModel().apply {
+                appLabel = String.format(
+                    "%s %s",
+                    getString(R.string.prefix_playmusic),
+                    map.getString(WearableHelper.KEY_LABEL)
+                )
+                packageName = map.getString(WearableHelper.KEY_PKGNAME)
+                activityName = map.getString(WearableHelper.KEY_ACTIVITYNAME)
+                bitmapIcon = ImageUtils.bitmapFromAssetStream(
+                    Wearable.getDataClient(this@MusicPlayerActivity),
+                    map.getAsset(WearableHelper.KEY_ICON)
+                )
+            }
             viewModels.add(model)
         }
 
-        lifecycleScope.launch(Dispatchers.Main) {
+        lifecycleScope.launch {
             mAdapter.submitList(viewModels)
-            binding.noplayersMessageview.visibility = if (viewModels.size > 0) View.GONE else View.VISIBLE
+            binding.noplayersMessageview.visibility =
+                if (viewModels.size > 0) View.GONE else View.VISIBLE
             binding.playerList.visibility = if (viewModels.size > 0) View.VISIBLE else View.GONE
-            lifecycleScope.launch(Dispatchers.Main) {
+            lifecycleScope.launch {
                 if (binding.playerList.visibility == View.VISIBLE && !binding.playerList.hasFocus()) {
                     binding.playerList.requestFocus()
                 }

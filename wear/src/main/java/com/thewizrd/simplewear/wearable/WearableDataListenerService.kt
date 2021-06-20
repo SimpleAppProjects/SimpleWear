@@ -4,14 +4,17 @@ import android.bluetooth.BluetoothAdapter
 import android.content.Intent
 import android.os.Build
 import android.util.Log
-import com.google.android.gms.tasks.Tasks
 import com.google.android.gms.wearable.MessageEvent
 import com.google.android.gms.wearable.Wearable
 import com.google.android.gms.wearable.WearableListenerService
 import com.thewizrd.shared_resources.helpers.WearableHelper
-import com.thewizrd.shared_resources.utils.Logger.writeLine
+import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.shared_resources.utils.stringToBytes
 import com.thewizrd.simplewear.LaunchActivity
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 
 class WearableDataListenerService : WearableListenerService() {
     companion object {
@@ -24,19 +27,28 @@ class WearableDataListenerService : WearableListenerService() {
                     .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
             this.startActivity(startIntent)
         } else if (messageEvent.path == WearableHelper.BtDiscoverPath) {
-            this.startActivity(Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE)
+            this.startActivity(
+                Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE)
                     .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    .putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 30))
+                    .putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 30)
+            )
 
-            sendMessage(messageEvent.sourceNodeId, messageEvent.path, Build.MODEL.stringToBytes())
+            GlobalScope.launch(Dispatchers.Default) {
+                sendMessage(
+                    messageEvent.sourceNodeId,
+                    messageEvent.path,
+                    Build.MODEL.stringToBytes()
+                )
+            }
         }
     }
 
-    protected fun sendMessage(nodeID: String, path: String, data: ByteArray?) {
+    protected suspend fun sendMessage(nodeID: String, path: String, data: ByteArray?) {
         try {
-            Tasks.await(Wearable.getMessageClient(this@WearableDataListenerService).sendMessage(nodeID, path, data))
+            Wearable.getMessageClient(this@WearableDataListenerService)
+                .sendMessage(nodeID, path, data).await()
         } catch (e: Exception) {
-            writeLine(Log.ERROR, e)
+            Logger.writeLine(Log.ERROR, e)
         }
     }
 }

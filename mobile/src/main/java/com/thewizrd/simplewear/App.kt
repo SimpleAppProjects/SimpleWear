@@ -18,47 +18,53 @@ import android.os.Bundle
 import android.os.Handler
 import android.provider.Settings
 import android.util.Log
+import androidx.work.Configuration
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.thewizrd.shared_resources.ApplicationLib
 import com.thewizrd.shared_resources.SimpleLibrary
 import com.thewizrd.shared_resources.actions.Actions
 import com.thewizrd.shared_resources.actions.BatteryStatus
 import com.thewizrd.shared_resources.helpers.AppState
-import com.thewizrd.shared_resources.utils.JSONParser.serializer
+import com.thewizrd.shared_resources.utils.JSONParser
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.simplewear.wearable.WearableWorker
-import com.thewizrd.simplewear.wearable.WearableWorker.Companion.sendActionUpdate
-import com.thewizrd.simplewear.wearable.WearableWorker.Companion.sendStatusUpdate
+import kotlin.system.exitProcess
 
-class App : Application(), ApplicationLib, ActivityLifecycleCallbacks {
+class App : Application(), ApplicationLib, ActivityLifecycleCallbacks, Configuration.Provider {
     companion object {
-        @get:Synchronized
-        var instance: ApplicationLib? = null
+        @JvmStatic
+        lateinit var instance: ApplicationLib
             private set
     }
 
     override lateinit var appContext: Context
         private set
-    override lateinit var appState: AppState
+    override lateinit var applicationState: AppState
         private set
+    override val isPhone: Boolean = true
+
+    private var mActivitiesStarted = 0
+
     private lateinit var mActionsReceiver: BroadcastReceiver
     private lateinit var mContentObserver: ContentObserver
-    override val isPhone: Boolean = true
 
     override fun onCreate() {
         super.onCreate()
         appContext = applicationContext
         instance = this
         registerActivityLifecycleCallbacks(this)
-        appState = AppState.CLOSED
+        applicationState = AppState.CLOSED
+        mActivitiesStarted = 0
 
         // Init shared library
-        SimpleLibrary.init(this)
+        SimpleLibrary.initialize(this)
 
         // Start logger
         Logger.init(appContext)
-        FirebaseCrashlytics.getInstance().setCrashlyticsCollectionEnabled(true)
-        FirebaseCrashlytics.getInstance().sendUnsentReports()
+        FirebaseCrashlytics.getInstance().apply {
+            setCrashlyticsCollectionEnabled(true)
+            sendUnsentReports()
+        }
 
         // Init common action broadcast receiver
         mActionsReceiver = object : BroadcastReceiver() {
@@ -69,46 +75,52 @@ class App : Application(), ApplicationLib, ActivityLifecycleCallbacks {
                         val scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, -1)
                         val battPct = (level / scale.toFloat() * 100).toInt()
                         val batStatus = intent.getIntExtra(BatteryManager.EXTRA_STATUS, -1)
-                        val isCharging = batStatus == BatteryManager.BATTERY_STATUS_CHARGING || batStatus == BatteryManager.BATTERY_STATUS_FULL
-                        val jsonData = serializer(BatteryStatus(battPct, isCharging), BatteryStatus::class.java)
-                        sendStatusUpdate(context, WearableWorker.ACTION_SENDBATTERYUPDATE, jsonData)
+                        val isCharging =
+                            batStatus == BatteryManager.BATTERY_STATUS_CHARGING || batStatus == BatteryManager.BATTERY_STATUS_FULL
+                        val jsonData = JSONParser.serializer(
+                            BatteryStatus(battPct, isCharging),
+                            BatteryStatus::class.java
+                        )
+                        WearableWorker.sendStatusUpdate(
+                            context,
+                            WearableWorker.ACTION_SENDBATTERYUPDATE,
+                            jsonData
+                        )
                     }
                     ConnectivityManager.CONNECTIVITY_ACTION == intent.action -> {
-                        sendActionUpdate(context, Actions.MOBILEDATA)
+                        WearableWorker.sendActionUpdate(context, Actions.MOBILEDATA)
                     }
                     LocationManager.PROVIDERS_CHANGED_ACTION == intent.action || LocationManager.MODE_CHANGED_ACTION == intent.action -> {
-                        sendActionUpdate(context, Actions.LOCATION)
+                        WearableWorker.sendActionUpdate(context, Actions.LOCATION)
                     }
                     AudioManager.RINGER_MODE_CHANGED_ACTION == intent.action -> {
-                        sendActionUpdate(context, Actions.RINGER)
+                        WearableWorker.sendActionUpdate(context, Actions.RINGER)
                     }
                     NotificationManager.ACTION_INTERRUPTION_FILTER_CHANGED == intent.action -> {
-                        sendActionUpdate(context, Actions.DONOTDISTURB)
+                        WearableWorker.sendActionUpdate(context, Actions.DONOTDISTURB)
                     }
                 }
             }
         }
-        val actionsFilter = IntentFilter()
-        actionsFilter.addAction(Intent.ACTION_BATTERY_CHANGED)
-        actionsFilter.addAction(ConnectivityManager.CONNECTIVITY_ACTION)
-        actionsFilter.addAction(LocationManager.PROVIDERS_CHANGED_ACTION)
-        actionsFilter.addAction(LocationManager.MODE_CHANGED_ACTION)
-        actionsFilter.addAction(AudioManager.RINGER_MODE_CHANGED_ACTION)
-        actionsFilter.addAction(NotificationManager.ACTION_INTERRUPTION_FILTER_CHANGED)
+
+        val actionsFilter = IntentFilter().apply {
+            addAction(Intent.ACTION_BATTERY_CHANGED)
+            addAction(ConnectivityManager.CONNECTIVITY_ACTION)
+            addAction(LocationManager.PROVIDERS_CHANGED_ACTION)
+            addAction(LocationManager.MODE_CHANGED_ACTION)
+            addAction(AudioManager.RINGER_MODE_CHANGED_ACTION)
+            addAction(NotificationManager.ACTION_INTERRUPTION_FILTER_CHANGED)
+        }
         appContext.registerReceiver(mActionsReceiver, actionsFilter)
 
         // Register listener system settings
         val contentResolver = contentResolver
         val setting = Settings.Global.getUriFor("mobile_data")
         mContentObserver = object : ContentObserver(Handler()) {
-            override fun deliverSelfNotifications(): Boolean {
-                return super.deliverSelfNotifications()
-            }
-
             override fun onChange(selfChange: Boolean, uri: Uri) {
                 super.onChange(selfChange, uri)
                 if (uri.toString().contains("mobile_data")) {
-                    sendActionUpdate(appContext, Actions.MOBILEDATA)
+                    WearableWorker.sendActionUpdate(appContext, Actions.MOBILEDATA)
                 }
             }
         }
@@ -117,38 +129,51 @@ class App : Application(), ApplicationLib, ActivityLifecycleCallbacks {
         val oldHandler = Thread.getDefaultUncaughtExceptionHandler()
         Thread.setDefaultUncaughtExceptionHandler { t, e ->
             Logger.writeLine(Log.ERROR, e, "Uncaught exception!")
-            if (oldHandler != null) oldHandler.uncaughtException(t, e) else System.exit(2)
+            if (oldHandler != null) {
+                oldHandler.uncaughtException(t, e)
+            } else {
+                exitProcess(2)
+            }
         }
 
-        sendStatusUpdate(appContext)
+        WearableWorker.sendStatusUpdate(appContext)
     }
 
     override fun onTerminate() {
         contentResolver.unregisterContentObserver(mContentObserver)
         appContext.unregisterReceiver(mActionsReceiver)
-        super.onTerminate()
         // Shutdown logger
         Logger.shutdown()
-        SimpleLibrary.unRegister()
-        instance = null
+        SimpleLibrary.unregister()
+        super.onTerminate()
     }
 
     override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
-        appState = AppState.FOREGROUND
+        applicationState = AppState.FOREGROUND
     }
 
     override fun onActivityStarted(activity: Activity) {
-        appState = AppState.FOREGROUND
+        if (mActivitiesStarted == 0) applicationState = AppState.FOREGROUND
+        mActivitiesStarted++
     }
 
     override fun onActivityResumed(activity: Activity) {}
     override fun onActivityPaused(activity: Activity) {}
     override fun onActivityStopped(activity: Activity) {
-        appState = AppState.BACKGROUND
+        mActivitiesStarted--
+        if (mActivitiesStarted == 0) applicationState = AppState.BACKGROUND
     }
 
     override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {}
     override fun onActivityDestroyed(activity: Activity) {
-        appState = AppState.CLOSED
+        if (activity.localClassName.contains("MainActivity")) {
+            applicationState = AppState.CLOSED
+        }
+    }
+
+    override fun getWorkManagerConfiguration(): Configuration {
+        return Configuration.Builder()
+            .setMinimumLoggingLevel(if (BuildConfig.DEBUG) Log.DEBUG else Log.INFO)
+            .build()
     }
 }
