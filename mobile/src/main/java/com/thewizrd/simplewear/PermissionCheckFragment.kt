@@ -5,9 +5,7 @@ import android.annotation.TargetApi
 import android.app.Activity
 import android.app.admin.DevicePolicyManager
 import android.bluetooth.BluetoothDevice
-import android.companion.AssociationRequest
-import android.companion.BluetoothDeviceFilter
-import android.companion.CompanionDeviceManager
+import android.companion.*
 import android.content.*
 import android.content.IntentSender.SendIntentException
 import android.content.pm.PackageManager
@@ -139,11 +137,32 @@ class PermissionCheckFragment : Fragment() {
             updatePairPermText(false)
 
             val request = AssociationRequest.Builder()
-                    .addDeviceFilter(BluetoothDeviceFilter.Builder()
-                            .setNamePattern(Pattern.compile("$deviceName.*", Pattern.DOTALL))
-                            .build())
-                    .setSingleDevice(true)
-                    .build()
+                .addDeviceFilter(
+                    BluetoothDeviceFilter.Builder()
+                        .setNamePattern(Pattern.compile("$deviceName.*", Pattern.DOTALL))
+                        .build()
+                )
+                .addDeviceFilter(
+                    BluetoothLeDeviceFilter.Builder()
+                        .setNamePattern(Pattern.compile("$deviceName.*", Pattern.DOTALL))
+                        .build()
+                )
+                .addDeviceFilter(
+                    WifiDeviceFilter.Builder()
+                        .setNamePattern(Pattern.compile("$deviceName.*", Pattern.DOTALL))
+                        .build()
+                )
+                .apply {
+                    if (BuildConfig.DEBUG) {
+                        addDeviceFilter(
+                            WifiDeviceFilter.Builder()
+                                .setNamePattern(Pattern.compile(".*", Pattern.DOTALL))
+                                .build()
+                        )
+                    }
+                }
+                .setSingleDevice(true)
+                .build()
 
             Toast.makeText(requireContext(), R.string.message_watchbtdiscover, Toast.LENGTH_LONG).show()
 
