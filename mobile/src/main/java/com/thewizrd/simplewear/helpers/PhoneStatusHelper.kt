@@ -296,7 +296,22 @@ object PhoneStatusHelper {
             when (ringer) {
                 RingerChoice.VIBRATION -> audioMan.ringerMode = AudioManager.RINGER_MODE_VIBRATE
                 RingerChoice.SOUND -> audioMan.ringerMode = AudioManager.RINGER_MODE_NORMAL
-                RingerChoice.SILENT -> audioMan.ringerMode = AudioManager.RINGER_MODE_SILENT
+                RingerChoice.SILENT -> {
+                    val dndState = getDNDState(context)
+
+                    audioMan.ringerMode = AudioManager.RINGER_MODE_SILENT
+                    audioMan.adjustStreamVolume(
+                        AudioManager.STREAM_RING,
+                        AudioManager.ADJUST_MUTE,
+                        AudioManager.FLAG_REMOVE_SOUND_AND_VIBRATE
+                    )
+
+                    /*
+                     * Setting ringerMode to silent may trigger Do Not Disturb mode to change
+                     * In case this happens, set it back to its original state
+                     */
+                    setDNDState(context, dndState)
+                }
                 else -> audioMan.ringerMode = AudioManager.RINGER_MODE_VIBRATE
             }
             ActionStatus.SUCCESS
