@@ -37,6 +37,18 @@ android {
         dataBinding = true
         viewBinding = true
     }
+
+    compileOptions {
+        // Flag to enable support for the new language APIs
+        coreLibraryDesugaringEnabled true
+        // Sets Java compatibility to Java 8
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
 }
 
 dependencies {
@@ -44,6 +56,8 @@ dependencies {
     implementation project(":unofficialtileapi")
     implementation project(":circularseekbar")
     implementation fileTree(dir: 'libs', include: ['*.jar'])
+
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:1.1.5'
 
     // Kotlin
     implementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.4.32'
@@ -66,5 +80,4 @@ dependencies {
 
     implementation 'com.jakewharton.timber:timber:4.7.1'
     implementation 'com.google.code.gson:gson:2.8.7'
-    implementation 'com.google.guava:guava:30.0-android'
 }
