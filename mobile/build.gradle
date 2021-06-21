@@ -5,7 +5,7 @@ apply plugin: 'com.google.gms.google-services'
 apply plugin: 'com.google.firebase.crashlytics'
 
 android {
-    compileSdkVersion 29
+    compileSdkVersion 30
     defaultConfig {
         applicationId "com.thewizrd.simplewear"
 
@@ -18,9 +18,9 @@ android {
         testInstrumentationRunnerArguments clearPackageData: 'true'
 
         minSdkVersion 23
-        targetSdkVersion 29
+        targetSdkVersion 30
         // NOTE: Version Code Format (TargetSDK, Version Name, Build Number, Variant Code (Android: 00, WearOS: 01)
-        versionCode 291500500
+        versionCode 301500500
         versionName "1.5.0"
 
         vectorDrawables.useSupportLibrary = true
