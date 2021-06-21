@@ -4,6 +4,7 @@ import android.app.Activity
 import android.app.Application
 import android.app.Application.ActivityLifecycleCallbacks
 import android.app.NotificationManager
+import android.bluetooth.BluetoothAdapter
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -11,8 +12,8 @@ import android.content.IntentFilter
 import android.database.ContentObserver
 import android.location.LocationManager
 import android.media.AudioManager
-import android.net.ConnectivityManager
-import android.net.Uri
+import android.net.*
+import android.net.wifi.WifiManager
 import android.os.BatteryManager
 import android.os.Bundle
 import android.os.Handler
@@ -69,8 +70,8 @@ class App : Application(), ApplicationLib, ActivityLifecycleCallbacks, Configura
         // Init common action broadcast receiver
         mActionsReceiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context, intent: Intent) {
-                when {
-                    Intent.ACTION_BATTERY_CHANGED == intent.action -> {
+                when (intent.action) {
+                    Intent.ACTION_BATTERY_CHANGED -> {
                         val level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
                         val scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, -1)
                         val battPct = (level / scale.toFloat() * 100).toInt()
@@ -87,17 +88,33 @@ class App : Application(), ApplicationLib, ActivityLifecycleCallbacks, Configura
                             jsonData
                         )
                     }
-                    ConnectivityManager.CONNECTIVITY_ACTION == intent.action -> {
-                        WearableWorker.sendActionUpdate(context, Actions.MOBILEDATA)
-                    }
-                    LocationManager.PROVIDERS_CHANGED_ACTION == intent.action || LocationManager.MODE_CHANGED_ACTION == intent.action -> {
+                    LocationManager.PROVIDERS_CHANGED_ACTION,
+                    LocationManager.MODE_CHANGED_ACTION -> {
                         WearableWorker.sendActionUpdate(context, Actions.LOCATION)
                     }
-                    AudioManager.RINGER_MODE_CHANGED_ACTION == intent.action -> {
+                    AudioManager.RINGER_MODE_CHANGED_ACTION -> {
                         WearableWorker.sendActionUpdate(context, Actions.RINGER)
                     }
-                    NotificationManager.ACTION_INTERRUPTION_FILTER_CHANGED == intent.action -> {
+                    NotificationManager.ACTION_INTERRUPTION_FILTER_CHANGED -> {
                         WearableWorker.sendActionUpdate(context, Actions.DONOTDISTURB)
+                    }
+                    WifiManager.WIFI_STATE_CHANGED_ACTION -> {
+                        WearableWorker.sendStatusUpdate(
+                            context, WearableWorker.ACTION_SENDWIFIUPDATE,
+                            intent.getIntExtra(
+                                WifiManager.EXTRA_WIFI_STATE,
+                                WifiManager.WIFI_STATE_UNKNOWN
+                            )
+                        )
+                    }
+                    BluetoothAdapter.ACTION_STATE_CHANGED -> {
+                        WearableWorker.sendStatusUpdate(
+                            context, WearableWorker.ACTION_SENDBTUPDATE,
+                            intent.getIntExtra(
+                                BluetoothAdapter.EXTRA_STATE,
+                                BluetoothAdapter.STATE_ON
+                            )
+                        )
                     }
                 }
             }
@@ -105,16 +122,16 @@ class App : Application(), ApplicationLib, ActivityLifecycleCallbacks, Configura
 
         val actionsFilter = IntentFilter().apply {
             addAction(Intent.ACTION_BATTERY_CHANGED)
-            addAction(ConnectivityManager.CONNECTIVITY_ACTION)
             addAction(LocationManager.PROVIDERS_CHANGED_ACTION)
             addAction(LocationManager.MODE_CHANGED_ACTION)
             addAction(AudioManager.RINGER_MODE_CHANGED_ACTION)
             addAction(NotificationManager.ACTION_INTERRUPTION_FILTER_CHANGED)
+            addAction(WifiManager.WIFI_STATE_CHANGED_ACTION)
+            addAction(BluetoothAdapter.ACTION_STATE_CHANGED)
         }
         appContext.registerReceiver(mActionsReceiver, actionsFilter)
 
         // Register listener system settings
-        val contentResolver = contentResolver
         val setting = Settings.Global.getUriFor("mobile_data")
         mContentObserver = object : ContentObserver(Handler()) {
             override fun onChange(selfChange: Boolean, uri: Uri) {
@@ -125,6 +142,25 @@ class App : Application(), ApplicationLib, ActivityLifecycleCallbacks, Configura
             }
         }
         contentResolver.registerContentObserver(setting, false, mContentObserver)
+
+        // Register connectivity listener
+        val connMgr = appContext.getSystemService(ConnectivityManager::class.java)
+        connMgr.registerNetworkCallback(
+            NetworkRequest.Builder()
+                .addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR)
+                .build(),
+            object : ConnectivityManager.NetworkCallback() {
+                override fun onAvailable(network: Network) {
+                    super.onAvailable(network)
+                    WearableWorker.sendActionUpdate(appContext, Actions.MOBILEDATA)
+                }
+
+                override fun onUnavailable() {
+                    super.onUnavailable()
+                    WearableWorker.sendActionUpdate(appContext, Actions.MOBILEDATA)
+                }
+            }
+        )
 
         val oldHandler = Thread.getDefaultUncaughtExceptionHandler()
         Thread.setDefaultUncaughtExceptionHandler { t, e ->

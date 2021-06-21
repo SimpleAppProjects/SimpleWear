@@ -15,8 +15,8 @@ import androidx.core.content.ContextCompat
 import com.thewizrd.shared_resources.actions.Actions
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.simplewear.App
-import com.thewizrd.simplewear.PhoneBroadcastReceiver
 import com.thewizrd.simplewear.R
+import com.thewizrd.simplewear.receivers.PhoneBroadcastReceiver
 import com.thewizrd.simplewear.wearable.WearableWorker
 
 class TorchService : Service() {
@@ -68,9 +68,9 @@ class TorchService : Service() {
                 .setContentIntent(
                     PendingIntent.getBroadcast(
                         context, JOB_ID,
-                        Intent(context, PhoneBroadcastReceiver::class.java).setAction(
-                            ACTION_END_LIGHT
-                        ), PendingIntent.FLAG_UPDATE_CURRENT
+                        Intent(context, PhoneBroadcastReceiver::class.java)
+                            .setAction(ACTION_END_LIGHT),
+                        PendingIntent.FLAG_UPDATE_CURRENT
                     )
                 )
                 .setColor(ContextCompat.getColor(context, R.color.colorPrimary))

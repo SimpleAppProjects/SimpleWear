@@ -50,12 +50,11 @@
         </service>
 
         <receiver
-            android:name=".PhoneBroadcastReceiver"
+            android:name=".receivers.PhoneBroadcastReceiver"
             android:enabled="true">
             <intent-filter>
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
-                <action android:name="android.net.wifi.WIFI_STATE_CHANGED" />
-                <action android:name="android.bluetooth.adapter.action.STATE_CHANGED" />
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
         </receiver>
 
