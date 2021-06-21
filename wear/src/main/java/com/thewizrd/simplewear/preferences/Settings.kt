@@ -1,12 +1,14 @@
 package com.thewizrd.simplewear.preferences
 
+import androidx.core.content.edit
 import androidx.preference.PreferenceManager
 import com.thewizrd.simplewear.App
 
 object Settings {
     const val TAG = "Settings"
     const val KEY_LAYOUTMODE = "key_layoutmode"
-    const val KEY_AUTOLAUNCH = "key_autolaunchmediactrls"
+    private const val KEY_AUTOLAUNCH = "key_autolaunchmediactrls"
+    private const val KEY_MUSICFILTER = "key_musicplayerfilter"
 
     fun useGridLayout(): Boolean {
         val preferences = PreferenceManager.getDefaultSharedPreferences(App.instance.appContext)
@@ -14,10 +16,10 @@ object Settings {
     }
 
     fun setGridLayout(value: Boolean) {
-        val editor = PreferenceManager.getDefaultSharedPreferences(App.instance.appContext)
-            .edit()
-        editor.putBoolean(KEY_LAYOUTMODE, value)
-        editor.apply()
+        val preferences = PreferenceManager.getDefaultSharedPreferences(App.instance.appContext)
+        preferences.edit {
+            putBoolean(KEY_LAYOUTMODE, value)
+        }
     }
 
     val isAutoLaunchMediaCtrlsEnabled: Boolean
@@ -27,9 +29,21 @@ object Settings {
         }
 
     fun setAutoLaunchMediaCtrls(enabled: Boolean) {
-        val editor = PreferenceManager.getDefaultSharedPreferences(App.instance.appContext)
-            .edit()
-        editor.putBoolean(KEY_AUTOLAUNCH, enabled)
-        editor.apply()
+        val preferences = PreferenceManager.getDefaultSharedPreferences(App.instance.appContext)
+        preferences.edit {
+            putBoolean(KEY_AUTOLAUNCH, enabled)
+        }
+    }
+
+    fun getMusicPlayersFilter(): Set<String> {
+        val preferences = PreferenceManager.getDefaultSharedPreferences(App.instance.appContext)
+        return preferences.getStringSet(KEY_MUSICFILTER, emptySet()) ?: emptySet()
+    }
+
+    fun setMusicPlayersFilter(c: Set<String>) {
+        val preferences = PreferenceManager.getDefaultSharedPreferences(App.instance.appContext)
+        preferences.edit {
+            putStringSet(KEY_MUSICFILTER, c)
+        }
     }
 }

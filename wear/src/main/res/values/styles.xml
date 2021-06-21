@@ -27,4 +27,8 @@
         <item name="android:clipToPadding">false</item>
     </style>
 
+    <style name="WearDialogTheme" parent="@android:style/Theme.DeviceDefault.Dialog">
+        <item name="android:windowBackground">@color/buttonDisabled</item>
+    </style>
+
 </resources>

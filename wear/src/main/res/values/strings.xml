@@ -48,4 +48,6 @@
     <string name="progress_text_hrmin">%1$02dh:%2$02dm</string>
     <string name="progress_text_min">%1$02dm</string>
 
+    <string name="title_filter_apps">Filter Apps</string>
+
 </resources>

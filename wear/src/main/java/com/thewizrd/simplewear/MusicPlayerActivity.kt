@@ -4,6 +4,7 @@ import android.content.*
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.CountDownTimer
+import android.support.wearable.view.WearableDialogHelper
 import android.util.Log
 import android.view.View
 import android.widget.ImageView
@@ -27,6 +28,7 @@ import com.thewizrd.simplewear.controls.AppItemViewModel
 import com.thewizrd.simplewear.controls.CustomConfirmationOverlay
 import com.thewizrd.simplewear.databinding.ActivityMusicplaybackBinding
 import com.thewizrd.simplewear.helpers.ConfirmationResultReceiver
+import com.thewizrd.simplewear.preferences.Settings
 import com.thewizrd.simplewear.preferences.Settings.isAutoLaunchMediaCtrlsEnabled
 import com.thewizrd.simplewear.preferences.Settings.setAutoLaunchMediaCtrls
 import kotlinx.coroutines.Dispatchers
@@ -45,6 +47,8 @@ class MusicPlayerActivity : WearableListenerActivity(), OnDataChangedListener {
     private lateinit var mMediaCtrlBtn: View
     private lateinit var mAdapter: MusicPlayerListAdapter
     private var timer: CountDownTimer? = null
+
+    private val mMediaAppsList: MutableList<AppItemViewModel> = ArrayList()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -129,6 +133,49 @@ class MusicPlayerActivity : WearableListenerActivity(), OnDataChangedListener {
             val state = !isAutoLaunchMediaCtrlsEnabled
             setAutoLaunchMediaCtrls(state)
             mSwitch.isChecked = state
+        }
+
+        findViewById<View>(R.id.filter_apps_btn).setOnClickListener { v ->
+            val filteredApps = Settings.getMusicPlayersFilter()
+
+            val appItems = arrayOfNulls<CharSequence>(mMediaAppsList.size)
+            val checkedItems = BooleanArray(mMediaAppsList.size)
+            val selectedItems = filteredApps.toMutableSet()
+
+            mMediaAppsList.forEachIndexed { i, it ->
+                appItems[i] = it.appName
+                checkedItems[i] = filteredApps.contains(it.packageName)
+            }
+
+            val dialog = WearableDialogHelper.DialogBuilder(v.context, R.style.WearDialogTheme)
+                .setPositiveIcon(R.drawable.round_button_ok)
+                .setNegativeIcon(R.drawable.round_button_cancel)
+                .setTitle(R.string.title_filter_apps)
+                .setMultiChoiceItems(appItems, checkedItems) { d, which, isChecked ->
+                    val appName = appItems[which]
+
+                    // Insert/Remove from collection
+                    val model =
+                        mMediaAppsList.find { it.appName == appName } ?: return@setMultiChoiceItems
+                    if (isChecked) {
+                        selectedItems.add(model.packageName!!)
+                    } else {
+                        selectedItems.remove(model.packageName)
+                    }
+                }
+                .setCancelable(true)
+                .setOnDismissListener {
+                    // Update filtered apps
+                    Settings.setMusicPlayersFilter(selectedItems)
+
+                    // Update list
+                    updateAppsList()
+                }
+                .setPositiveButton(android.R.string.ok, null)
+                .setNegativeButton(android.R.string.cancel, null)
+                .show()
+
+            dialog.listView?.requestFocus()
         }
 
         binding.playerList.setHasFixedSize(true)
@@ -284,7 +331,9 @@ class MusicPlayerActivity : WearableListenerActivity(), OnDataChangedListener {
     private suspend fun updateMusicPlayers(dataMap: DataMap) {
         val supported_players =
             dataMap.getStringArrayList(WearableHelper.KEY_SUPPORTEDPLAYERS) ?: return
-        val viewModels = ArrayList<AppItemViewModel>()
+
+        mMediaAppsList.clear()
+
         for (key in supported_players) {
             val map = dataMap.getDataMap(key) ?: continue
 
@@ -294,6 +343,7 @@ class MusicPlayerActivity : WearableListenerActivity(), OnDataChangedListener {
                     getString(R.string.prefix_playmusic),
                     map.getString(WearableHelper.KEY_LABEL)
                 )
+                appName = map.getString(WearableHelper.KEY_LABEL)
                 packageName = map.getString(WearableHelper.KEY_PKGNAME)
                 activityName = map.getString(WearableHelper.KEY_ACTIVITYNAME)
                 bitmapIcon = ImageUtils.bitmapFromAssetStream(
@@ -301,14 +351,24 @@ class MusicPlayerActivity : WearableListenerActivity(), OnDataChangedListener {
                     map.getAsset(WearableHelper.KEY_ICON)
                 )
             }
-            viewModels.add(model)
+            mMediaAppsList.add(model)
         }
 
+        updateAppsList()
+    }
+
+    private fun updateAppsList() {
         lifecycleScope.launch {
-            mAdapter.submitList(viewModels)
+            val filteredApps = Settings.getMusicPlayersFilter()
+
+            mAdapter.submitList(if (filteredApps.isNullOrEmpty()) mMediaAppsList else mMediaAppsList.filter {
+                filteredApps.contains(
+                    it.packageName
+                )
+            })
             binding.noplayersMessageview.visibility =
-                if (viewModels.size > 0) View.GONE else View.VISIBLE
-            binding.playerList.visibility = if (viewModels.size > 0) View.VISIBLE else View.GONE
+                if (mMediaAppsList.size > 0) View.GONE else View.VISIBLE
+            binding.playerList.visibility = if (mMediaAppsList.size > 0) View.VISIBLE else View.GONE
             lifecycleScope.launch {
                 if (binding.playerList.visibility == View.VISIBLE && !binding.playerList.hasFocus()) {
                     binding.playerList.requestFocus()

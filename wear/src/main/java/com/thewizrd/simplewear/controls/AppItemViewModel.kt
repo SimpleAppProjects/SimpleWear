@@ -6,6 +6,7 @@ import java.util.*
 class AppItemViewModel {
     var bitmapIcon: Bitmap? = null
     var appLabel: String? = null
+    var appName: String? = null
     var packageName: String? = null
     var activityName: String? = null
     val key: String?
