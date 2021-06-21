@@ -67,7 +67,7 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
             capabilityInfo = Wearable.getCapabilityClient(mContext)
                 .getCapability(
                     WearableHelper.CAPABILITY_WEAR_APP,
-                    CapabilityClient.FILTER_REACHABLE
+                    CapabilityClient.FILTER_ALL
                 )
                 .await()
         } catch (e: Exception) {

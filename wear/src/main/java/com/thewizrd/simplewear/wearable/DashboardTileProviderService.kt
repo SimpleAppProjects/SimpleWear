@@ -364,7 +364,7 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
             val capabilityInfo = Wearable.getCapabilityClient(this@DashboardTileProviderService)
                 .getCapability(
                     WearableHelper.CAPABILITY_PHONE_APP,
-                    CapabilityClient.FILTER_REACHABLE
+                    CapabilityClient.FILTER_ALL
                 )
                 .await()
             node = pickBestNodeId(capabilityInfo.nodes)

@@ -85,23 +85,6 @@ abstract class WearableListenerActivity : AppCompatActivity(), OnMessageReceived
          * @see WearableListenerActivity
          */
         const val EXTRA_CONNECTIONSTATUS = "SimpleWear.Droid.Wear.extra.CONNECTION_STATUS"
-
-        /*
-         * There should only ever be one phone in a node set (much less w/ the correct capability), so
-         * I am just grabbing the first one (which should be the only one).
-        */
-        protected fun pickBestNodeId(nodes: Collection<Node>): Node? {
-            var bestNode: Node? = null
-
-            // Find a nearby node/phone or pick one arbitrarily. Realistically, there is only one phone.
-            for (node in nodes) {
-                if (node.isNearby) {
-                    return node
-                }
-                bestNode = node
-            }
-            return bestNode
-        }
     }
 
     @Volatile
@@ -334,7 +317,7 @@ abstract class WearableListenerActivity : AppCompatActivity(), OnMessageReceived
             val capabilityInfo = Wearable.getCapabilityClient(this@WearableListenerActivity)
                 .getCapability(
                     WearableHelper.CAPABILITY_PHONE_APP,
-                    CapabilityClient.FILTER_REACHABLE
+                    CapabilityClient.FILTER_ALL
                 )
                 .await()
             node = pickBestNodeId(capabilityInfo.nodes)
@@ -367,9 +350,30 @@ abstract class WearableListenerActivity : AppCompatActivity(), OnMessageReceived
     protected fun requestAction(actionJSONString: String?) {
         lifecycleScope.launch {
             if (connect()) {
-                sendMessage(mPhoneNodeWithApp!!.id, WearableHelper.ActionsPath, actionJSONString?.stringToBytes())
+                sendMessage(
+                    mPhoneNodeWithApp!!.id,
+                    WearableHelper.ActionsPath,
+                    actionJSONString?.stringToBytes()
+                )
             }
         }
+    }
+
+    /*
+     * There should only ever be one phone in a node set (much less w/ the correct capability), so
+     * I am just grabbing the first one (which should be the only one).
+     */
+    protected fun pickBestNodeId(nodes: Collection<Node>): Node? {
+        var bestNode: Node? = null
+
+        // Find a nearby node/phone or pick one arbitrarily. Realistically, there is only one phone.
+        for (node in nodes) {
+            if (node.isNearby) {
+                return node
+            }
+            bestNode = node
+        }
+        return bestNode
     }
 
     protected suspend fun sendMessage(nodeID: String, path: String, data: ByteArray?) {
