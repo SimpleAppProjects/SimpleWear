@@ -6,6 +6,7 @@ import android.os.CountDownTimer
 import android.support.wearable.view.WearableDialogHelper
 import android.util.Log
 import android.view.View
+import android.widget.Switch
 import androidx.lifecycle.lifecycleScope
 import androidx.wear.widget.WearableLinearLayoutManager
 import androidx.wear.widget.drawer.WearableDrawerLayout
@@ -13,6 +14,7 @@ import androidx.wear.widget.drawer.WearableDrawerView
 import com.google.android.gms.wearable.*
 import com.google.android.gms.wearable.DataClient.OnDataChangedListener
 import com.google.android.wearable.intent.RemoteIntent
+import com.thewizrd.shared_resources.actions.ActionStatus
 import com.thewizrd.shared_resources.helpers.RecyclerOnClickListenerInterface
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
 import com.thewizrd.shared_resources.helpers.WearableHelper
@@ -28,7 +30,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import java.util.*
 
-class MediaPlayerListActivity : WearableListenerActivity(), OnDataChangedListener {
+class MediaPlayerListActivity : WearableListenerActivity(), MessageClient.OnMessageReceivedListener,
+    OnDataChangedListener {
     override lateinit var broadcastReceiver: BroadcastReceiver
         private set
     override lateinit var intentFilter: IntentFilter
@@ -121,6 +124,14 @@ class MediaPlayerListActivity : WearableListenerActivity(), OnDataChangedListene
         binding.bottomActionDrawer.isPeekOnScrollDownEnabled = true
         binding.bottomActionDrawer.setIsAutoPeekEnabled(true)
         binding.bottomActionDrawer.setIsLocked(false)
+
+        val mSwitch = findViewById<Switch>(R.id.autolaunch_pref_switch)
+        mSwitch.isChecked = Settings.isAutoLaunchMediaCtrlsEnabled
+        findViewById<View>(R.id.autolaunch_pref).setOnClickListener {
+            val state = !Settings.isAutoLaunchMediaCtrlsEnabled
+            Settings.setAutoLaunchMediaCtrls(state)
+            mSwitch.isChecked = state
+        }
 
         findViewById<View>(R.id.filter_apps_btn).setOnClickListener { v ->
             val filteredApps = Settings.getMusicPlayersFilter()
@@ -219,11 +230,35 @@ class MediaPlayerListActivity : WearableListenerActivity(), OnDataChangedListene
                 }
             }
         }
+
+        lifecycleScope.launchWhenResumed {
+            if (Settings.isAutoLaunchMediaCtrlsEnabled) {
+                if (connect()) {
+                    sendMessage(
+                        mPhoneNodeWithApp!!.id,
+                        WearableHelper.MediaPlayerAutoLaunchPath,
+                        null
+                    )
+                }
+            }
+        }
     }
 
     private fun showProgressBar(show: Boolean) {
         lifecycleScope.launch {
             binding.progressBar.visibility = if (show) View.VISIBLE else View.GONE
+        }
+    }
+
+    override fun onMessageReceived(messageEvent: MessageEvent) {
+        super.onMessageReceived(messageEvent)
+
+        if (messageEvent.path == WearableHelper.MediaPlayerAutoLaunchPath) {
+            val status = ActionStatus.valueOf(messageEvent.data.bytesToString())
+
+            if (status == ActionStatus.SUCCESS) {
+                startActivity(MediaPlayerActivity.buildAutoLaunchIntent(this))
+            }
         }
     }
 

@@ -48,6 +48,7 @@ object WearableHelper {
     const val KEY_ACTIVITYNAME = "key_activity_name"
 
     // For MediaController
+    const val MediaPlayerAutoLaunchPath = "/media/autolaunch"
     const val MediaPlayerConnectPath = "/media/connect"
     const val MediaPlayerStatePath = "/media/playback_state"
     const val MediaPlayerStateStoppedPath = "/media/playback_state/stopped"

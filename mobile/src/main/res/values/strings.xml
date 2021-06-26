@@ -24,7 +24,7 @@
     <string name="permission_title_notifservice">Media Player</string>
     <string name="prompt_notifservice_enabled">Notification access enabled</string>
     <string name="prompt_notifservice_disabled">Notification access not enabled. Please click to enable media player access</string>
-    <string name="not_channel_name_mediacontroller">Media Controller</string>
+    <string name="not_channel_name_mediacontroller" translatable="false">@string/title_media_controller</string>
     <string name="not_title_mediacontroller_running">Media Controller active</string>
     <string name="not_content_mediacontroller_tap2disable">@string/not_torch_turnoff_summary</string>
 

@@ -32,6 +32,7 @@ class MediaPlayerActivity : WearableListenerActivity(), AmbientModeSupport.Ambie
     DataClient.OnDataChangedListener {
     companion object {
         private const val KEY_APPDETAILS = "SimpleWear.Droid.extra.APP_DETAILS"
+        private const val KEY_AUTOLAUNCH = "SimpleWear.Droid.extra.AUTO_LAUNCH"
 
         const val ACTION_ENTERAMBIENTMODE = "SimpleWear.Droid.action.ENTER_AMBIENT_MODE"
         const val ACTION_EXITAMBIENTMODE = "SimpleWear.Droid.action.EXIT_AMBIENT_MODE"
@@ -43,6 +44,12 @@ class MediaPlayerActivity : WearableListenerActivity(), AmbientModeSupport.Ambie
                 KEY_APPDETAILS,
                 JSONParser.serializer(appDetails, AppItemViewModel::class.java)
             )
+            return intent
+        }
+
+        fun buildAutoLaunchIntent(context: Context): Intent {
+            val intent = Intent(context, MediaPlayerActivity::class.java)
+            intent.putExtra(KEY_AUTOLAUNCH, true)
             return intent
         }
     }
@@ -63,6 +70,8 @@ class MediaPlayerActivity : WearableListenerActivity(), AmbientModeSupport.Ambie
     private var updateJob: Job? = null
 
     private lateinit var mAmbientController: AmbientModeSupport.AmbientController
+
+    private var isAutoLaunch = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -123,7 +132,7 @@ class MediaPlayerActivity : WearableListenerActivity(), AmbientModeSupport.Ambie
                                         sendMessage(
                                             mPhoneNodeWithApp!!.id,
                                             WearableHelper.MediaPlayerConnectPath,
-                                            mMediaPlayerDetails.packageName?.stringToBytes()
+                                            if (isAutoLaunch) isAutoLaunch.booleanToBytes() else mMediaPlayerDetails.packageName?.stringToBytes()
                                         )
                                         sendMessage(mPhoneNodeWithApp!!.id, intent.action!!, null)
                                     }
@@ -139,7 +148,7 @@ class MediaPlayerActivity : WearableListenerActivity(), AmbientModeSupport.Ambie
                                         sendMessage(
                                             mPhoneNodeWithApp!!.id,
                                             WearableHelper.MediaPlayerConnectPath,
-                                            mMediaPlayerDetails.packageName?.stringToBytes()
+                                            if (isAutoLaunch) isAutoLaunch.booleanToBytes() else mMediaPlayerDetails.packageName?.stringToBytes()
                                         )
                                         sendMessage(
                                             mPhoneNodeWithApp!!.id,
@@ -158,7 +167,7 @@ class MediaPlayerActivity : WearableListenerActivity(), AmbientModeSupport.Ambie
                                         sendMessage(
                                             mPhoneNodeWithApp!!.id,
                                             WearableHelper.MediaPlayerConnectPath,
-                                            mMediaPlayerDetails.packageName?.stringToBytes()
+                                            if (isAutoLaunch) isAutoLaunch.booleanToBytes() else mMediaPlayerDetails.packageName?.stringToBytes()
                                         )
                                         sendMessage(
                                             mPhoneNodeWithApp!!.id,
@@ -412,7 +421,7 @@ class MediaPlayerActivity : WearableListenerActivity(), AmbientModeSupport.Ambie
                 sendMessage(
                     mPhoneNodeWithApp!!.id,
                     WearableHelper.MediaPlayerConnectPath,
-                    mMediaPlayerDetails.packageName?.stringToBytes()
+                    if (isAutoLaunch) isAutoLaunch.booleanToBytes() else mMediaPlayerDetails.packageName?.stringToBytes()
                 )
             }
         }
@@ -466,6 +475,11 @@ class MediaPlayerActivity : WearableListenerActivity(), AmbientModeSupport.Ambie
 
     private fun handleIntent(intent: Intent?) {
         if (intent == null) return
+
+        if (intent.extras?.getBoolean(KEY_AUTOLAUNCH) == true) {
+            isAutoLaunch = true
+            return
+        }
 
         val model = intent.extras?.getString(KEY_APPDETAILS)?.let {
             JSONParser.deserializer(it, AppItemViewModel::class.java)

@@ -34,6 +34,7 @@
     <string name="volstate_muted">Muted</string>
 
     <string name="action_musicplayback">Play Media</string>
+    <string name="title_media_controller">Media Controller</string>
     <string name="action_sleeptimer">Sleep Timer</string>
     <string name="title_settings">Settings</string>
 

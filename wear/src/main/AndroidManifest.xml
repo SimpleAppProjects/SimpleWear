@@ -47,7 +47,7 @@
         <activity
             android:name=".MediaPlayerListActivity"
             android:icon="@drawable/ic_play_circle_simpleblue"
-            android:label="@string/shortcut_label_playmusic"
+            android:label="@string/title_media_controller"
             android:theme="@style/WearAppTheme"
             android:clearTaskOnLaunch="true"
             android:launchMode="singleTask"

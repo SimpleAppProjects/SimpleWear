@@ -52,4 +52,41 @@
 
     </RelativeLayout>
 
+    <RelativeLayout
+        android:id="@+id/autolaunch_pref"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        style="@style/SettingPrefLayoutStyle">
+
+        <Switch
+            android:id="@+id/autolaunch_pref_switch"
+            style="@style/Widget.Wear.RoundSwitch"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+            android:layout_alignTop="@id/autolaunch_pref_switch"
+            android:layout_marginEnd="8dp"
+            android:clickable="false"
+            android:src="@drawable/ic_apps_white_24dp"
+            android:trackTint="@color/dark_grey"
+            app:fabCustomSize="36dp"
+            app:rippleColor="@null" />
+
+        <TextView
+            android:id="@+id/autolaunch_pref_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignBottom="@id/autolaunch_pref_switch"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentEnd="true"
+            android:layout_toEndOf="@id/autolaunch_pref_switch"
+            android:ellipsize="marquee"
+            android:gravity="center_vertical"
+            android:maxLines="2"
+            android:text="@string/title_autolaunchmediactrls"
+            android:textAppearance="@style/TextAppearance.AppCompat"
+            android:textSize="12sp" />
+
+    </RelativeLayout>
+
 </LinearLayout>

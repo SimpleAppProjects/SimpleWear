@@ -351,11 +351,11 @@ object PhoneStatusHelper {
         return if (musicActive) ActionStatus.SUCCESS else ActionStatus.FAILURE
     }
 
-    suspend fun isMusicActive(context: Context): ActionStatus {
+    suspend fun isMusicActive(context: Context, delay: Boolean = true): ActionStatus {
         val audioMan = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
 
         // Wait for a second to see if music plays
-        delay(1000)
+        if (delay) delay(1000)
         val musicActive = audioMan.isMusicActive
         return if (musicActive) ActionStatus.SUCCESS else ActionStatus.FAILURE
     }

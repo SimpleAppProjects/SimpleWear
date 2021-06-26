@@ -80,6 +80,7 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
         const val ACTION_DISCONNECTCONTROLLER = "SimpleWear.Droid.action.DISCONNECT_CONTROLLER"
 
         const val EXTRA_PACKAGENAME = "SimpleWear.Droid.extra.PACKAGE_NAME"
+        const val EXTRA_AUTOLAUNCH = "SimpleWear.Droid.extra.AUTO_LAUNCH"
 
         fun enqueueWork(context: Context, work: Intent) {
             ContextCompat.startForegroundService(context, work)
@@ -186,9 +187,10 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
         when (intent?.action) {
             ACTION_CONNECTCONTROLLER -> {
                 mSelectedPackageName = intent.getStringExtra(EXTRA_PACKAGENAME)
+                val isAutoLaunch = intent.getBooleanExtra(EXTRA_AUTOLAUNCH, false)
 
                 scope.launch {
-                    if (mSelectedPackageName == mSelectedMediaApp?.packageName && mController != null) return@launch
+                    if ((isAutoLaunch || mSelectedPackageName == mSelectedMediaApp?.packageName) && mController != null) return@launch
 
                     mSelectedMediaApp = if (mSelectedPackageName.isNullOrBlank()) {
                         mAvailableMediaApps.firstOrNull()
@@ -308,6 +310,16 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
 
     private fun getMediaAppControllers() {
         scope.launch {
+            val actionSessionDetails = MediaAppControllerUtils.getMediaAppsFromControllers(
+                mMediaSessionManager.getActiveSessions(NotificationListener.getComponentName(this@MediaControllerService)),
+                packageManager,
+                resources
+            )
+
+            if (!isActive) return@launch
+
+            mAvailableMediaApps.addAll(actionSessionDetails)
+
             val mediaBrowserServices = packageManager.queryIntentServices(
                 Intent(MediaBrowserServiceCompat.SERVICE_INTERFACE),
                 PackageManager.GET_RESOLVED_FILTER
@@ -326,18 +338,6 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
                     )
                 }
             }
-
-            if (!isActive) return@launch
-
-            val actionSessionDetails = MediaAppControllerUtils.getMediaAppsFromControllers(
-                mMediaSessionManager.getActiveSessions(NotificationListener.getComponentName(this@MediaControllerService)),
-                packageManager,
-                resources
-            )
-
-            if (!isActive) return@launch
-
-            mAvailableMediaApps.addAll(actionSessionDetails)
 
             if (!mSelectedPackageName.isNullOrBlank()) {
                 mAvailableMediaApps.find {
