@@ -220,6 +220,7 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
 
     private fun removeMediaState() {
         scope.launch {
+            Log.d(TAG, "removeMediaState")
             mDataClient.deleteDataItems(
                 WearableHelper.getWearDataUri(WearableHelper.MediaPlayerStatePath)
             ).await()
@@ -237,6 +238,7 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
 
     private fun removeBrowserItems() {
         scope.launch {
+            Log.d(TAG, "removeBrowserItems")
             mDataClient.deleteDataItems(
                 WearableHelper.getWearDataUri(WearableHelper.MediaBrowserItemsPath)
             ).await()
@@ -450,19 +452,37 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
     }
 
     private val mCallback = object : MediaControllerCompat.Callback() {
+        private var updateJob: Job? = null
+
         override fun onPlaybackStateChanged(state: PlaybackStateCompat?) {
+            Log.d(TAG, "Callback: onPlaybackStateChanged")
             playFromSearchTimer.cancel()
-            onUpdate()
-            onUpdateQueue()
+            updateJob?.cancel()
+            updateJob = scope.launch {
+                delay(250)
+
+                if (!isActive) return@launch
+
+                onUpdate()
+                onUpdateQueue()
+            }
             if (state != null && mController != null) {
                 mCustomControlsAdapter.setActions(mController!!, state.actions, state.customActions)
             }
         }
 
         override fun onMetadataChanged(metadata: MediaMetadataCompat?) {
+            Log.d(TAG, "Callback: onMetadataChanged")
             playFromSearchTimer.cancel()
-            onUpdate()
-            onUpdateQueue()
+            updateJob?.cancel()
+            updateJob = scope.launch {
+                delay(250)
+
+                if (!isActive) return@launch
+
+                onUpdate()
+                onUpdateQueue()
+            }
         }
 
         override fun onAudioInfoChanged(info: MediaControllerCompat.PlaybackInfo?) {
@@ -512,6 +532,7 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
         request.setUrgent()
 
         scope.launch {
+            Log.d(TAG, "Making request: ${mapRequest.uri}")
             mDataClient.deleteDataItems(mapRequest.uri).await()
             mDataClient.putDataItem(request).await()
         }
@@ -586,6 +607,7 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
         request.setUrgent()
 
         scope.launch {
+            Log.d(TAG, "Making request: ${mapRequest.uri}")
             mDataClient.deleteDataItems(mapRequest.uri).await()
             mDataClient.putDataItem(request).await()
         }
@@ -697,87 +719,95 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
         private var mMediaAppResources: Resources? = null
         private var supportsPlayFromSearch: Boolean = false
 
+        private var updateJob: Job? = null
+
         fun onDatasetChanged() {
-            val mapRequest = PutDataMapRequest.create(WearableHelper.MediaActionsPath)
+            updateJob?.cancel()
+            updateJob = scope.launch {
+                delay(250)
 
-            if (mActions.isEmpty() && !supportsPlayFromSearch) {
-                // Remove all items (datamap)
-                scope.launch {
-                    mDataClient.deleteDataItems(mapRequest.uri).await()
-                }
-                return
-            }
+                if (!isActive) return@launch
 
-            // Send action items to datamap
-            val dataMapList =
-                ArrayList<DataMap>(mActions.size + if (supportsPlayFromSearch) 1 else 0)
+                val mapRequest = PutDataMapRequest.create(WearableHelper.MediaActionsPath)
 
-            if (supportsPlayFromSearch) {
-                val d = DataMap().apply {
-                    putString(
-                        WearableHelper.KEY_MEDIA_ACTIONITEM_ACTION,
-                        WearableHelper.ACTIONITEM_PLAY
-                    )
-                    putString(
-                        WearableHelper.KEY_MEDIA_ACTIONITEM_TITLE,
-                        getString(R.string.action_musicplayback)
-                    )
-
-                    val iconDrawable = ContextCompat.getDrawable(
-                        applicationContext,
-                        R.drawable.ic_baseline_play_circle_filled_24
-                    )
-                    val size = TypedValue.applyDimension(
-                        TypedValue.COMPLEX_UNIT_DIP,
-                        36f,
-                        resources.displayMetrics
-                    ).toInt()
-
-                    putAsset(
-                        WearableHelper.KEY_MEDIA_ACTIONITEM_ICON,
-                        ImageUtils.createAssetFromBitmap(
-                            ImageUtils.bitmapFromDrawable(iconDrawable!!, size, size)
-                        )
-                    )
+                if (mActions.isEmpty() && !supportsPlayFromSearch) {
+                    // Remove all items (datamap)
+                    scope.launch {
+                        mDataClient.deleteDataItems(mapRequest.uri).await()
+                    }
+                    return@launch
                 }
 
-                dataMapList.add(d)
-            }
+                // Send action items to datamap
+                val dataMapList =
+                    ArrayList<DataMap>(mActions.size + if (supportsPlayFromSearch) 1 else 0)
 
-            mActions.forEach {
-                val d = DataMap().apply {
-                    putString(WearableHelper.KEY_MEDIA_ACTIONITEM_ACTION, it.action)
-                    putString(WearableHelper.KEY_MEDIA_ACTIONITEM_TITLE, it.name.toString())
-                    if (mMediaAppResources != null) {
-                        val iconDrawable = ResourcesCompat.getDrawable(
-                            mMediaAppResources!!, it.icon,  /* theme = */null
+                if (supportsPlayFromSearch) {
+                    val d = DataMap().apply {
+                        putString(
+                            WearableHelper.KEY_MEDIA_ACTIONITEM_ACTION,
+                            WearableHelper.ACTIONITEM_PLAY
                         )
-                        if (iconDrawable != null) {
-                            val size = TypedValue.applyDimension(
-                                TypedValue.COMPLEX_UNIT_DIP,
-                                36f,
-                                resources.displayMetrics
-                            ).toInt()
+                        putString(
+                            WearableHelper.KEY_MEDIA_ACTIONITEM_TITLE,
+                            getString(R.string.action_musicplayback)
+                        )
 
-                            putAsset(
-                                WearableHelper.KEY_MEDIA_ACTIONITEM_ICON,
-                                ImageUtils.createAssetFromBitmap(
-                                    ImageUtils.bitmapFromDrawable(iconDrawable, size, size)
-                                )
+                        val iconDrawable = ContextCompat.getDrawable(
+                            applicationContext,
+                            R.drawable.ic_baseline_play_circle_filled_24
+                        )
+                        val size = TypedValue.applyDimension(
+                            TypedValue.COMPLEX_UNIT_DIP,
+                            36f,
+                            resources.displayMetrics
+                        ).toInt()
+
+                        putAsset(
+                            WearableHelper.KEY_MEDIA_ACTIONITEM_ICON,
+                            ImageUtils.createAssetFromBitmap(
+                                ImageUtils.bitmapFromDrawable(iconDrawable!!, size, size)
                             )
+                        )
+                    }
+
+                    dataMapList.add(d)
+                }
+
+                mActions.forEach {
+                    val d = DataMap().apply {
+                        putString(WearableHelper.KEY_MEDIA_ACTIONITEM_ACTION, it.action)
+                        putString(WearableHelper.KEY_MEDIA_ACTIONITEM_TITLE, it.name.toString())
+                        if (mMediaAppResources != null) {
+                            val iconDrawable = ResourcesCompat.getDrawable(
+                                mMediaAppResources!!, it.icon,  /* theme = */null
+                            )
+                            if (iconDrawable != null) {
+                                val size = TypedValue.applyDimension(
+                                    TypedValue.COMPLEX_UNIT_DIP,
+                                    36f,
+                                    resources.displayMetrics
+                                ).toInt()
+
+                                putAsset(
+                                    WearableHelper.KEY_MEDIA_ACTIONITEM_ICON,
+                                    ImageUtils.createAssetFromBitmap(
+                                        ImageUtils.bitmapFromDrawable(iconDrawable, size, size)
+                                    )
+                                )
+                            }
                         }
                     }
+
+                    dataMapList.add(d)
                 }
 
-                dataMapList.add(d)
-            }
+                mapRequest.dataMap.putDataMapArrayList(WearableHelper.KEY_MEDIAITEMS, dataMapList)
 
-            mapRequest.dataMap.putDataMapArrayList(WearableHelper.KEY_MEDIAITEMS, dataMapList)
+                val request = mapRequest.asPutDataRequest()
+                request.setUrgent()
 
-            val request = mapRequest.asPutDataRequest()
-            request.setUrgent()
-
-            scope.launch {
+                Log.d(TAG, "Making request: ${mapRequest.uri}")
                 mDataClient.deleteDataItems(mapRequest.uri).await()
                 mDataClient.putDataItem(request).await()
             }
@@ -832,6 +862,8 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
         private var mItems: List<MediaBrowserCompat.MediaItem>? = null
         private val mNodes = Stack<String>()
 
+        private var updateJob: Job? = null
+
         var callback: MediaBrowserCompat.SubscriptionCallback =
             object : MediaBrowserCompat.SubscriptionCallback() {
                 override fun onChildrenLoaded(
@@ -843,54 +875,63 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
             }
 
         private fun onDatasetChanged() {
-            val mapRequest = PutDataMapRequest.create(itemNodePath)
+            updateJob?.cancel()
+            updateJob = scope.launch {
+                delay(250)
 
-            if (mNodes.size == 0) {
-                // Remove all items (datamap)
-                scope.launch {
-                    mDataClient.deleteDataItems(mapRequest.uri).await()
-                }
-                return
-            }
-            if (mItems == null) {
-                // Remove all items (datamap)
-                scope.launch {
-                    mDataClient.deleteDataItems(mapRequest.uri).await()
-                }
-                return
-            }
-            if (mItems!!.isEmpty()) {
-                // Remove all items (datamap)
-                scope.launch {
-                    mDataClient.deleteDataItems(mapRequest.uri).await()
-                }
-                return
-            }
+                if (!isActive) return@launch
 
-            // Send media items to datamap
-            val dataMapList = ArrayList<DataMap>(mItems!!.size)
-            mItems!!.forEach {
-                val d = DataMap().apply {
-                    putString(WearableHelper.KEY_MEDIAITEM_ID, it.mediaId)
-                    putString(WearableHelper.KEY_MEDIAITEM_TITLE, it.description.title.toString())
-                    if (it.description.iconBitmap != null) {
-                        putAsset(
-                            WearableHelper.KEY_MEDIAITEM_ICON,
-                            ImageUtils.createAssetFromBitmap(it.description.iconBitmap!!)
-                        )
+                val mapRequest = PutDataMapRequest.create(itemNodePath)
+
+                if (mNodes.size == 0) {
+                    // Remove all items (datamap)
+                    scope.launch {
+                        mDataClient.deleteDataItems(mapRequest.uri).await()
                     }
+                    return@launch
+                }
+                if (mItems == null) {
+                    // Remove all items (datamap)
+                    scope.launch {
+                        mDataClient.deleteDataItems(mapRequest.uri).await()
+                    }
+                    return@launch
+                }
+                if (mItems!!.isEmpty()) {
+                    // Remove all items (datamap)
+                    scope.launch {
+                        mDataClient.deleteDataItems(mapRequest.uri).await()
+                    }
+                    return@launch
                 }
 
-                dataMapList.add(d)
-            }
+                // Send media items to datamap
+                val dataMapList = ArrayList<DataMap>(mItems!!.size)
+                mItems!!.forEach {
+                    val d = DataMap().apply {
+                        putString(WearableHelper.KEY_MEDIAITEM_ID, it.mediaId)
+                        putString(
+                            WearableHelper.KEY_MEDIAITEM_TITLE,
+                            it.description.title.toString()
+                        )
+                        if (it.description.iconBitmap != null) {
+                            putAsset(
+                                WearableHelper.KEY_MEDIAITEM_ICON,
+                                ImageUtils.createAssetFromBitmap(it.description.iconBitmap!!)
+                            )
+                        }
+                    }
 
-            mapRequest.dataMap.putDataMapArrayList(WearableHelper.KEY_MEDIAITEMS, dataMapList)
-            mapRequest.dataMap.putBoolean(WearableHelper.KEY_MEDIAITEM_ISROOT, treeDepth() <= 1)
+                    dataMapList.add(d)
+                }
 
-            val request = mapRequest.asPutDataRequest()
-            request.setUrgent()
+                mapRequest.dataMap.putDataMapArrayList(WearableHelper.KEY_MEDIAITEMS, dataMapList)
+                mapRequest.dataMap.putBoolean(WearableHelper.KEY_MEDIAITEM_ISROOT, treeDepth() <= 1)
 
-            scope.launch {
+                val request = mapRequest.asPutDataRequest()
+                request.setUrgent()
+
+                Log.d(TAG, "Making request: ${mapRequest.uri}")
                 mDataClient.deleteDataItems(mapRequest.uri).await()
                 mDataClient.putDataItem(request).await()
             }
@@ -974,45 +1015,56 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
         private var mControls: MediaControllerCompat.TransportControls? = null
         private var mActiveQueueItemId: Long = MediaSessionCompat.QueueItem.UNKNOWN_ID.toLong()
 
+        private var updateJob: Job? = null
+
         fun onDatasetChanged() {
-            val mapRequest = PutDataMapRequest.create(WearableHelper.MediaQueueItemsPath)
+            updateJob?.cancel()
+            updateJob = scope.launch {
+                delay(250)
 
-            if (mQueueItems.isEmpty()) {
-                // Remove all items (datamap)
-                scope.launch {
-                    mDataClient.deleteDataItems(mapRequest.uri).await()
-                }
-                return
-            }
+                if (!isActive) return@launch
 
-            // Send action items to datamap
-            val dataMapList = ArrayList<DataMap>(mQueueItems.size)
+                val mapRequest = PutDataMapRequest.create(WearableHelper.MediaQueueItemsPath)
 
-            mQueueItems.forEach {
-                val d = DataMap().apply {
-                    putLong(WearableHelper.KEY_MEDIAITEM_ID, it.queueId)
-                    putString(WearableHelper.KEY_MEDIAITEM_TITLE, it.description.title.toString())
-                    if (it.description.iconBitmap != null) {
-                        putAsset(
-                            WearableHelper.KEY_MEDIAITEM_ICON,
-                            ImageUtils.createAssetFromBitmap(it.description.iconBitmap!!)
-                        )
+                if (mQueueItems.isEmpty()) {
+                    // Remove all items (datamap)
+                    scope.launch {
+                        mDataClient.deleteDataItems(mapRequest.uri).await()
                     }
+                    return@launch
                 }
 
-                dataMapList.add(d)
-            }
+                // Send action items to datamap
+                val dataMapList = ArrayList<DataMap>(mQueueItems.size)
 
-            mapRequest.dataMap.putDataMapArrayList(WearableHelper.KEY_MEDIAITEMS, dataMapList)
-            mapRequest.dataMap.putLong(
-                WearableHelper.KEY_MEDIA_ACTIVEQUEUEITEM_ID,
-                mActiveQueueItemId
-            )
+                mQueueItems.forEach {
+                    val d = DataMap().apply {
+                        putLong(WearableHelper.KEY_MEDIAITEM_ID, it.queueId)
+                        putString(
+                            WearableHelper.KEY_MEDIAITEM_TITLE,
+                            it.description.title.toString()
+                        )
+                        if (it.description.iconBitmap != null) {
+                            putAsset(
+                                WearableHelper.KEY_MEDIAITEM_ICON,
+                                ImageUtils.createAssetFromBitmap(it.description.iconBitmap!!)
+                            )
+                        }
+                    }
 
-            val request = mapRequest.asPutDataRequest()
-            request.setUrgent()
+                    dataMapList.add(d)
+                }
 
-            scope.launch {
+                mapRequest.dataMap.putDataMapArrayList(WearableHelper.KEY_MEDIAITEMS, dataMapList)
+                mapRequest.dataMap.putLong(
+                    WearableHelper.KEY_MEDIA_ACTIVEQUEUEITEM_ID,
+                    mActiveQueueItemId
+                )
+
+                val request = mapRequest.asPutDataRequest()
+                request.setUrgent()
+
+                Log.d(TAG, "Making request: ${mapRequest.uri}")
                 mDataClient.deleteDataItems(mapRequest.uri).await()
                 mDataClient.putDataItem(request).await()
             }

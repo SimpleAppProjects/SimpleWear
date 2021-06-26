@@ -25,10 +25,7 @@ import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.simplewear.databinding.AppItemBinding
 import com.thewizrd.simplewear.databinding.FragmentBrowserListBinding
 import com.thewizrd.simplewear.helpers.SimpleRecyclerViewAdapterObserver
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import kotlinx.coroutines.tasks.await
 import java.util.*
 import kotlin.collections.ArrayList
@@ -297,9 +294,11 @@ class MediaQueueFragment : Fragment(), DataClient.OnDataChangedListener {
                 } else if (event.type == DataEvent.TYPE_DELETED) {
                     val item = event.dataItem
                     if (WearableHelper.MediaQueueItemsPath == item.uri.path) {
-                        deleteJob?.cancel()
                         deleteJob = lifecycleScope.launch {
-                            delay(3000)
+                            delay(1000)
+
+                            if (!isActive) return@launch
+
                             mQueueItemsAdapter.mActiveQueueItemId = -1
                             mQueueItemsAdapter.notifyItemRangeChanged(
                                 0,

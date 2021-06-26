@@ -29,10 +29,7 @@ import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.WearableListenerActivity
 import com.thewizrd.simplewear.controls.CustomConfirmationOverlay
 import com.thewizrd.simplewear.databinding.MediaPlayerControlsBinding
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import kotlinx.coroutines.tasks.await
 import kotlin.random.Random
 
@@ -281,7 +278,10 @@ class MediaPlayerControlsFragment : Fragment(), MessageClient.OnMessageReceivedL
                     if (WearableHelper.MediaPlayerStatePath == item.uri.path) {
                         deleteJob?.cancel()
                         deleteJob = lifecycleScope.launch {
-                            delay(3000)
+                            delay(1000)
+
+                            if (!isActive) return@launch
+
                             updatePlayerState(DataMap())
                         }
                     }

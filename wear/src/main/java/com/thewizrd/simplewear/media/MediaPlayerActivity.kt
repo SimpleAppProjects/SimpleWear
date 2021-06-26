@@ -324,8 +324,11 @@ class MediaPlayerActivity : WearableListenerActivity(), AmbientModeSupport.Ambie
                 }
             }
 
-            updateJob = lifecycleScope.launch {
-                delay(3000)
+            updateJob = lifecycleScope.launch updateJob@{
+                delay(1000)
+
+                if (!isActive) return@updateJob
+
                 mViewPagerAdapter.updateSupportedPages(
                     supportsBrowser,
                     supportsQueue,
