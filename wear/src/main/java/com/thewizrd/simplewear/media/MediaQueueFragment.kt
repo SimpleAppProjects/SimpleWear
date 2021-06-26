@@ -249,10 +249,11 @@ class MediaQueueFragment : Fragment(), DataClient.OnDataChangedListener {
                 mQueueItemsAdapter.registerAdapterDataObserver(object :
                     SimpleRecyclerViewAdapterObserver() {
                     override fun onChanged() {
-                        val position =
-                            mQueueItemsAdapter.currentList.indexOfFirst { it.id.toLong() == mQueueItemsAdapter.mActiveQueueItemId }
+                        val position = mQueueItemsAdapter.currentList.indexOfFirst {
+                            it.id.toLong() == mQueueItemsAdapter.mActiveQueueItemId
+                        }
 
-                        if (mQueueItemsAdapter.itemCount > position) {
+                        if (position >= 0 && mQueueItemsAdapter.itemCount > position) {
                             mQueueItemsAdapter.unregisterAdapterDataObserver(this)
 
                             binding.listView.viewTreeObserver.addOnGlobalLayoutListener(object :
@@ -261,11 +262,16 @@ class MediaQueueFragment : Fragment(), DataClient.OnDataChangedListener {
                                     binding.listView.viewTreeObserver.removeOnGlobalLayoutListener(
                                         this
                                     )
-                                    mLayoutManager.smoothScrollToPosition(
-                                        binding.listView,
-                                        RecyclerView.State(),
-                                        position
-                                    )
+                                    binding.listView.postOnAnimation {
+                                        val view = mLayoutManager.findViewByPosition(0)!!
+                                        val containerHeight = binding.listView.measuredHeight
+                                        val totalViewsInContainer =
+                                            containerHeight / view.measuredHeight
+                                        mLayoutManager.scrollToPositionWithOffset(
+                                            position + 1,
+                                            view.measuredHeight * (totalViewsInContainer / 2)
+                                        )
+                                    }
                                 }
                             })
                         }
