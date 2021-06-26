@@ -14,6 +14,7 @@ import android.util.Log
 import android.util.TypedValue
 import android.view.KeyEvent
 import androidx.annotation.RestrictTo
+import androidx.media.MediaBrowserServiceCompat
 import com.google.android.gms.wearable.*
 import com.google.android.gms.wearable.CapabilityClient.OnCapabilityChangedListener
 import com.thewizrd.shared_resources.actions.*
@@ -24,6 +25,8 @@ import com.thewizrd.shared_resources.utils.JSONParser
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.shared_resources.utils.stringToBytes
 import com.thewizrd.simplewear.helpers.PhoneStatusHelper
+import com.thewizrd.simplewear.media.MediaAppControllerUtils
+import com.thewizrd.simplewear.services.NotificationListener
 import kotlinx.coroutines.*
 import kotlinx.coroutines.tasks.await
 import java.util.*
@@ -149,23 +152,42 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
     }
 
     suspend fun sendSupportedMusicPlayers() {
-        val infos = mContext.packageManager.queryBroadcastReceivers(
-                Intent(Intent.ACTION_MEDIA_BUTTON), PackageManager.GET_RESOLVED_FILTER)
+        val mediaBrowserInfos = mContext.packageManager.queryIntentServices(
+            Intent(MediaBrowserServiceCompat.SERVICE_INTERFACE),
+            PackageManager.GET_RESOLVED_FILTER
+        )
+
+        val activeMediaInfos = MediaAppControllerUtils.getMediaAppsFromControllers(
+            mContext,
+            MediaAppControllerUtils.getActiveMediaSessions(
+                mContext,
+                NotificationListener.getComponentName(mContext)
+            )
+        )
+
         val mapRequest = PutDataMapRequest.create(WearableHelper.MusicPlayersPath)
 
         // Sort result
-        Collections.sort(infos, ResolveInfo.DisplayNameComparator(mContext.packageManager))
+        Collections.sort(
+            mediaBrowserInfos,
+            ResolveInfo.DisplayNameComparator(mContext.packageManager)
+        )
 
-        val supportedPlayers = ArrayList<String>(infos.size)
+        val supportedPlayers = ArrayList<String>(mediaBrowserInfos.size)
 
-        for (info in infos) {
-            val appInfo = info.activityInfo.applicationInfo
-            val launchIntent = mContext.packageManager.getLaunchIntentForPackage(appInfo.packageName)
+        fun addPlayerInfo(appInfo: ApplicationInfo) {
+            val launchIntent =
+                mContext.packageManager.getLaunchIntentForPackage(appInfo.packageName)
             if (launchIntent != null) {
-                val activityInfo = mContext.packageManager.resolveActivity(launchIntent, PackageManager.MATCH_DEFAULT_ONLY)
-                        ?: return
-                val activityCmpName = ComponentName(appInfo.packageName, activityInfo.activityInfo.name)
-                val key = String.format("%s/%s", appInfo.packageName, activityInfo.activityInfo.name)
+                val activityInfo = mContext.packageManager.resolveActivity(
+                    launchIntent,
+                    PackageManager.MATCH_DEFAULT_ONLY
+                )
+                    ?: return
+                val activityCmpName =
+                    ComponentName(appInfo.packageName, activityInfo.activityInfo.name)
+                val key =
+                    String.format("%s/%s", appInfo.packageName, activityInfo.activityInfo.name)
                 if (!supportedPlayers.contains(key)) {
                     val label = mContext.packageManager.getApplicationLabel(appInfo).toString()
                     var iconBmp: Bitmap? = null
@@ -187,6 +209,16 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
                 }
             }
         }
+
+        for (info in mediaBrowserInfos) {
+            val appInfo = info.serviceInfo.applicationInfo
+            addPlayerInfo(appInfo)
+        }
+
+        for (info in activeMediaInfos) {
+            addPlayerInfo(info)
+        }
+
         mapRequest.dataMap.putStringArrayList(WearableHelper.KEY_SUPPORTEDPLAYERS, supportedPlayers)
         mapRequest.setUrgent()
         try {

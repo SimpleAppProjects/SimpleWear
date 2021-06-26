@@ -76,7 +76,7 @@ class ActionButtonViewModel(val action: Action) {
                     .putExtra(EXTRA_ACTION, actionType)
             activityContext.startActivityForResult(intent, -1)
         } else if (action is NormalAction && action.actionType == Actions.MUSICPLAYBACK) {
-            val intent = Intent(activityContext, MusicPlayerActivity::class.java)
+            val intent = Intent(activityContext, MediaPlayerListActivity::class.java)
             activityContext.startActivityForResult(intent, -1)
         } else if (action is NormalAction && action.actionType == Actions.SLEEPTIMER) {
             val intent = Intent(activityContext, SleepTimerActivity::class.java)

@@ -25,7 +25,6 @@
     <string name="error_sendmessage">No response. Please check connection</string>
     <string name="error_actionfailed">Failed to perform action</string>
 
-    <string name="prefix_playmusic">Play from</string>
     <string name="pref_layout">Actions Layout</string>
     <string name="option_grid">Grid</string>
     <string name="option_list">List</string>
@@ -49,5 +48,8 @@
     <string name="progress_text_min">%1$02dm</string>
 
     <string name="title_filter_apps">Filter Apps</string>
+    <string name="message_playback_stopped">Playback stopped</string>
+    <string name="error_playback_failed">Failed to play. Please check media queue</string>
+    <string name="label_back">Back</string>
 
 </resources>

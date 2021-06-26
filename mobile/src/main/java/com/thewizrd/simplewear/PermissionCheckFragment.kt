@@ -30,6 +30,7 @@ import com.thewizrd.simplewear.databinding.FragmentPermcheckBinding
 import com.thewizrd.simplewear.helpers.PhoneStatusHelper.isCameraPermissionEnabled
 import com.thewizrd.simplewear.helpers.PhoneStatusHelper.isDeviceAdminEnabled
 import com.thewizrd.simplewear.helpers.PhoneStatusHelper.isNotificationAccessAllowed
+import com.thewizrd.simplewear.services.NotificationListener
 import com.thewizrd.simplewear.wearable.WearableDataListenerService
 import com.thewizrd.simplewear.wearable.WearableWorker
 import com.thewizrd.simplewear.wearable.WearableWorker.Companion.enqueueAction
@@ -104,6 +105,15 @@ class PermissionCheckFragment : Fragment() {
             }
         }
 
+        binding.notiflistenerPref.setOnClickListener {
+            if (!NotificationListener.isEnabled(requireContext())) {
+                try {
+                    startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+                } catch (e: ActivityNotFoundException) {
+                }
+            }
+        }
+
         return binding.root
     }
 
@@ -127,9 +137,12 @@ class PermissionCheckFragment : Fragment() {
     }
 
     @TargetApi(Build.VERSION_CODES.Q)
-    private fun pairDevice(deviceName: String) {
+    private fun pairDevice(deviceName: String?) {
         viewLifecycleOwner.lifecycleScope.launch {
-            val deviceManager = requireContext().getSystemService(Context.COMPANION_DEVICE_SERVICE) as CompanionDeviceManager
+            if (deviceName.isNullOrBlank()) return@launch
+
+            val deviceManager =
+                requireContext().getSystemService(Context.COMPANION_DEVICE_SERVICE) as CompanionDeviceManager
 
             for (assoc in deviceManager.associations) {
                 deviceManager.disassociate(assoc)
@@ -173,7 +186,7 @@ class PermissionCheckFragment : Fragment() {
                         if (context == null) return
                         try {
                             startIntentSenderForResult(chooserLauncher,
-                                    SELECT_DEVICE_REQUEST_CODE, null, 0, 0, 0, null)
+                                SELECT_DEVICE_REQUEST_CODE, null, 0, 0, 0, null)
                         } catch (e: SendIntentException) {
                             Logger.writeLine(Log.ERROR, e)
                         }
@@ -199,6 +212,7 @@ class PermissionCheckFragment : Fragment() {
             updatePairPermText(deviceManager.associations.isNotEmpty())
         }
         updateSleepTimerText(SleepTimerHelper.isSleepTimerInstalled())
+        updateNotifListenerText(NotificationListener.isEnabled(requireContext()))
     }
 
     private fun updateCamPermText(enabled: Boolean) {
@@ -226,11 +240,17 @@ class PermissionCheckFragment : Fragment() {
         binding.sleeptimerSummary.setTextColor(if (enabled) Color.GREEN else Color.RED)
     }
 
+    private fun updateNotifListenerText(enabled: Boolean) {
+        binding.notiflistenerSummary.setText(if (enabled) R.string.prompt_notifservice_enabled else R.string.prompt_notifservice_disabled)
+        binding.notiflistenerSummary.setTextColor(if (enabled) Color.GREEN else Color.RED)
+    }
+
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         when (requestCode) {
             DEVADMIN_REQCODE -> updateDeviceAdminText(resultCode == Activity.RESULT_OK)
             SELECT_DEVICE_REQUEST_CODE -> if (data != null && Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
-                val parcel = data.getParcelableExtra<Parcelable>(CompanionDeviceManager.EXTRA_DEVICE)
+                val parcel =
+                    data.getParcelableExtra<Parcelable>(CompanionDeviceManager.EXTRA_DEVICE)
                 if (parcel is BluetoothDevice) {
                     if (parcel.bondState != BluetoothDevice.BOND_BONDED) {
                         parcel.createBond()

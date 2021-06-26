@@ -17,6 +17,7 @@ import android.net.wifi.WifiManager
 import android.os.BatteryManager
 import android.os.Bundle
 import android.os.Handler
+import android.os.Looper
 import android.provider.Settings
 import android.util.Log
 import androidx.work.Configuration
@@ -133,8 +134,8 @@ class App : Application(), ApplicationLib, ActivityLifecycleCallbacks, Configura
 
         // Register listener system settings
         val setting = Settings.Global.getUriFor("mobile_data")
-        mContentObserver = object : ContentObserver(Handler()) {
-            override fun onChange(selfChange: Boolean, uri: Uri) {
+        mContentObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
+            override fun onChange(selfChange: Boolean, uri: Uri?) {
                 super.onChange(selfChange, uri)
                 if (uri.toString().contains("mobile_data")) {
                     WearableWorker.sendActionUpdate(appContext, Actions.MOBILEDATA)

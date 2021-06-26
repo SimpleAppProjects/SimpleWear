@@ -15,11 +15,13 @@ import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 
 object ImageUtils {
+    @JvmStatic
     fun bitmapFromDrawable(context: Context, resDrawable: Int): Bitmap? {
         val drawable = ContextCompat.getDrawable(context, resDrawable) ?: return null
         return bitmapFromDrawable(drawable)
     }
 
+    @JvmStatic
     fun bitmapFromDrawable(
         drawable: Drawable,
         maxWidth: Int = drawable.intrinsicWidth,
@@ -38,9 +40,9 @@ object ImageUtils {
             Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)
         } else {
             Bitmap.createBitmap(
-                    Math.min(drawable.intrinsicWidth, maxWidth),
-                    Math.min(drawable.intrinsicHeight, maxHeight),
-                    Bitmap.Config.ARGB_8888
+                Math.min(drawable.intrinsicWidth, maxWidth),
+                Math.min(drawable.intrinsicHeight, maxHeight),
+                Bitmap.Config.ARGB_8888
             )
         }
 
@@ -50,6 +52,7 @@ object ImageUtils {
         return bitmap
     }
 
+    @JvmStatic
     fun createAssetFromBitmap(bitmap: Bitmap): Asset {
         val byteStream = ByteArrayOutputStream()
         return byteStream.use { stream ->

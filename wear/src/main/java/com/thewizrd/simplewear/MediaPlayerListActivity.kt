@@ -1,16 +1,11 @@
 package com.thewizrd.simplewear
 
 import android.content.*
-import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.support.wearable.view.WearableDialogHelper
 import android.util.Log
 import android.view.View
-import android.widget.ImageView
-import android.widget.Switch
-import androidx.core.content.ContextCompat
-import androidx.core.util.Pair
 import androidx.lifecycle.lifecycleScope
 import androidx.wear.widget.WearableLinearLayoutManager
 import androidx.wear.widget.drawer.WearableDrawerLayout
@@ -18,33 +13,28 @@ import androidx.wear.widget.drawer.WearableDrawerView
 import com.google.android.gms.wearable.*
 import com.google.android.gms.wearable.DataClient.OnDataChangedListener
 import com.google.android.wearable.intent.RemoteIntent
-import com.thewizrd.shared_resources.actions.ActionStatus
 import com.thewizrd.shared_resources.helpers.RecyclerOnClickListenerInterface
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
 import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.shared_resources.utils.*
 import com.thewizrd.simplewear.adapters.MusicPlayerListAdapter
 import com.thewizrd.simplewear.controls.AppItemViewModel
-import com.thewizrd.simplewear.controls.CustomConfirmationOverlay
-import com.thewizrd.simplewear.databinding.ActivityMusicplaybackBinding
+import com.thewizrd.simplewear.databinding.ActivityMusicplayerlistBinding
 import com.thewizrd.simplewear.helpers.ConfirmationResultReceiver
+import com.thewizrd.simplewear.media.MediaPlayerActivity
 import com.thewizrd.simplewear.preferences.Settings
-import com.thewizrd.simplewear.preferences.Settings.isAutoLaunchMediaCtrlsEnabled
-import com.thewizrd.simplewear.preferences.Settings.setAutoLaunchMediaCtrls
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import java.util.*
 
-class MusicPlayerActivity : WearableListenerActivity(), OnDataChangedListener {
+class MediaPlayerListActivity : WearableListenerActivity(), OnDataChangedListener {
     override lateinit var broadcastReceiver: BroadcastReceiver
         private set
     override lateinit var intentFilter: IntentFilter
         private set
 
-    private lateinit var binding: ActivityMusicplaybackBinding
-    private lateinit var mMediaCtrlIcon: ImageView
-    private lateinit var mMediaCtrlBtn: View
+    private lateinit var binding: ActivityMusicplayerlistBinding
     private lateinit var mAdapter: MusicPlayerListAdapter
     private var timer: CountDownTimer? = null
 
@@ -53,7 +43,7 @@ class MusicPlayerActivity : WearableListenerActivity(), OnDataChangedListener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        binding = ActivityMusicplaybackBinding.inflate(layoutInflater)
+        binding = ActivityMusicplayerlistBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         broadcastReceiver = object : BroadcastReceiver() {
@@ -71,7 +61,7 @@ class MusicPlayerActivity : WearableListenerActivity(), OnDataChangedListener {
                                     // Navigate
                                     startActivity(
                                         Intent(
-                                            this@MusicPlayerActivity,
+                                            this@MediaPlayerListActivity,
                                             PhoneSyncActivity::class.java
                                         )
                                             .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
@@ -84,8 +74,10 @@ class MusicPlayerActivity : WearableListenerActivity(), OnDataChangedListener {
                                         .addCategory(Intent.CATEGORY_BROWSABLE)
                                         .setData(WearableHelper.getPlayStoreURI())
 
-                                    RemoteIntent.startRemoteActivity(this@MusicPlayerActivity, intentAndroid,
-                                            ConfirmationResultReceiver(this@MusicPlayerActivity))
+                                    RemoteIntent.startRemoteActivity(
+                                        this@MediaPlayerListActivity, intentAndroid,
+                                        ConfirmationResultReceiver(this@MediaPlayerListActivity)
+                                    )
                                 }
                                 else -> {
                                 }
@@ -94,7 +86,7 @@ class MusicPlayerActivity : WearableListenerActivity(), OnDataChangedListener {
                             Logger.writeLine(
                                 Log.INFO,
                                 "%s: Unhandled action: %s",
-                                "MusicPlayerActivity",
+                                "MediaPlayerListActivity",
                                 intent.action
                             )
                         }
@@ -118,22 +110,17 @@ class MusicPlayerActivity : WearableListenerActivity(), OnDataChangedListener {
             override fun onDrawerStateChanged(layout: WearableDrawerLayout, newState: Int) {
                 super.onDrawerStateChanged(layout, newState)
                 if (newState == WearableDrawerView.STATE_IDLE &&
-                        binding.bottomActionDrawer.isPeeking && binding.bottomActionDrawer.hasFocus()) {
+                    binding.bottomActionDrawer.isPeeking && binding.bottomActionDrawer.hasFocus()
+                ) {
                     binding.bottomActionDrawer.clearFocus()
                 }
             }
         })
 
-        mMediaCtrlIcon = findViewById(R.id.launch_mediacontrols_icon)
-        mMediaCtrlBtn = findViewById(R.id.launch_mediacontrols_ctrl)
-
-        val mSwitch = findViewById<Switch>(R.id.autolaunch_pref_switch)
-        mSwitch.isChecked = isAutoLaunchMediaCtrlsEnabled
-        findViewById<View>(R.id.autolaunch_pref).setOnClickListener {
-            val state = !isAutoLaunchMediaCtrlsEnabled
-            setAutoLaunchMediaCtrls(state)
-            mSwitch.isChecked = state
-        }
+        binding.bottomActionDrawer.visibility = View.VISIBLE
+        binding.bottomActionDrawer.isPeekOnScrollDownEnabled = true
+        binding.bottomActionDrawer.setIsAutoPeekEnabled(true)
+        binding.bottomActionDrawer.setIsLocked(false)
 
         findViewById<View>(R.id.filter_apps_btn).setOnClickListener { v ->
             val filteredApps = Settings.getMusicPlayersFilter()
@@ -143,7 +130,7 @@ class MusicPlayerActivity : WearableListenerActivity(), OnDataChangedListener {
             val selectedItems = filteredApps.toMutableSet()
 
             mMediaAppsList.forEachIndexed { i, it ->
-                appItems[i] = it.appName
+                appItems[i] = it.appLabel
                 checkedItems[i] = filteredApps.contains(it.packageName)
             }
 
@@ -156,7 +143,7 @@ class MusicPlayerActivity : WearableListenerActivity(), OnDataChangedListener {
 
                     // Insert/Remove from collection
                     val model =
-                        mMediaAppsList.find { it.appName == appName } ?: return@setMultiChoiceItems
+                        mMediaAppsList.find { it.appLabel == appName } ?: return@setMultiChoiceItems
                     if (isChecked) {
                         selectedItems.add(model.packageName!!)
                     } else {
@@ -186,16 +173,9 @@ class MusicPlayerActivity : WearableListenerActivity(), OnDataChangedListener {
         mAdapter.setOnClickListener(object : RecyclerOnClickListenerInterface {
             override fun onClick(view: View, position: Int) {
                 val vm = mAdapter.currentList[position]
+
                 lifecycleScope.launch {
-                    if (connect()) {
-                        sendMessage(
-                            mPhoneNodeWithApp!!.id, WearableHelper.PlayCommandPath,
-                            JSONParser.serializer(
-                                Pair.create(vm.packageName, vm.activityName),
-                                Pair::class.java
-                            ).stringToBytes()
-                        )
-                    }
+                    startActivity(MediaPlayerActivity.buildIntent(this@MediaPlayerListActivity, vm))
                 }
             }
         })
@@ -210,14 +190,14 @@ class MusicPlayerActivity : WearableListenerActivity(), OnDataChangedListener {
             override fun onFinish() {
                 lifecycleScope.launch(Dispatchers.IO) {
                     try {
-                        val buff = Wearable.getDataClient(this@MusicPlayerActivity)
+                        val buff = Wearable.getDataClient(this@MediaPlayerListActivity)
                             .getDataItems(
                                 WearableHelper.getWearDataUri(
                                     "*",
                                     WearableHelper.MusicPlayersPath
                                 )
                             )
-                                .await()
+                            .await()
 
                         for (i in 0 until buff.count) {
                             val item = buff[i]
@@ -244,65 +224,6 @@ class MusicPlayerActivity : WearableListenerActivity(), OnDataChangedListener {
     private fun showProgressBar(show: Boolean) {
         lifecycleScope.launch {
             binding.progressBar.visibility = if (show) View.VISIBLE else View.GONE
-        }
-    }
-
-    override fun onMessageReceived(messageEvent: MessageEvent) {
-        super.onMessageReceived(messageEvent)
-
-        lifecycleScope.launch {
-            if (messageEvent.data != null && messageEvent.path == WearableHelper.PlayCommandPath) {
-                val status = ActionStatus.valueOf(messageEvent.data.bytesToString())
-
-                when (status) {
-                    ActionStatus.SUCCESS -> if (isAutoLaunchMediaCtrlsEnabled) {
-                        val mediaCtrlCmpName = ComponentName("com.google.android.wearable.app",
-                                "com.google.android.clockwork.home.media.MediaControlActivity")
-
-                        try {
-                            // Check if activity exists
-                            packageManager.getActivityInfo(mediaCtrlCmpName, 0)
-
-                            val mediaCtrlIntent = Intent()
-                            mediaCtrlIntent
-                                    .setAction(Intent.ACTION_MAIN)
-                                    .addCategory(Intent.CATEGORY_LAUNCHER)
-                                    .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK).component = mediaCtrlCmpName
-                            startActivity(mediaCtrlIntent)
-                        } catch (e: Exception) {
-                            // Do nothing
-                        }
-                    }
-                    ActionStatus.PERMISSION_DENIED ->
-                        lifecycleScope.launch {
-                            CustomConfirmationOverlay()
-                                .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
-                                .setCustomDrawable(
-                                    ContextCompat.getDrawable(
-                                        this@MusicPlayerActivity,
-                                        R.drawable.ic_full_sad
-                                    )
-                                )
-                                .setMessage(this@MusicPlayerActivity.getString(R.string.error_permissiondenied))
-                                .showOn(this@MusicPlayerActivity)
-                        }
-                    ActionStatus.FAILURE ->
-                        lifecycleScope.launch {
-                            CustomConfirmationOverlay()
-                                .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
-                                .setCustomDrawable(
-                                    ContextCompat.getDrawable(
-                                        this@MusicPlayerActivity,
-                                        R.drawable.ic_full_sad
-                                    )
-                                )
-                                .setMessage(this@MusicPlayerActivity.getString(R.string.action_failed_playmusic))
-                                .showOn(this@MusicPlayerActivity)
-                        }
-                    else -> {
-                    }
-                }
-            }
         }
     }
 
@@ -338,16 +259,11 @@ class MusicPlayerActivity : WearableListenerActivity(), OnDataChangedListener {
             val map = dataMap.getDataMap(key) ?: continue
 
             val model = AppItemViewModel().apply {
-                appLabel = String.format(
-                    "%s %s",
-                    getString(R.string.prefix_playmusic),
-                    map.getString(WearableHelper.KEY_LABEL)
-                )
-                appName = map.getString(WearableHelper.KEY_LABEL)
+                appLabel = map.getString(WearableHelper.KEY_LABEL)
                 packageName = map.getString(WearableHelper.KEY_PKGNAME)
                 activityName = map.getString(WearableHelper.KEY_ACTIVITYNAME)
                 bitmapIcon = ImageUtils.bitmapFromAssetStream(
-                    Wearable.getDataClient(this@MusicPlayerActivity),
+                    Wearable.getDataClient(this@MediaPlayerListActivity),
                     map.getAsset(WearableHelper.KEY_ICON)
                 )
             }
@@ -391,31 +307,6 @@ class MusicPlayerActivity : WearableListenerActivity(), OnDataChangedListener {
 
         binding.playerList.requestFocus()
 
-        val mediaCtrlCmpName = ComponentName("com.google.android.wearable.app",
-                "com.google.android.clockwork.home.media.MediaControlActivity")
-        try {
-            mMediaCtrlIcon.setImageDrawable(packageManager.getActivityIcon(mediaCtrlCmpName))
-            mMediaCtrlBtn.setOnClickListener {
-                val mediaCtrlIntent = Intent()
-                mediaCtrlIntent
-                        .setAction(Intent.ACTION_MAIN)
-                        .addCategory(Intent.CATEGORY_LAUNCHER)
-                        .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK).component = mediaCtrlCmpName
-                startActivity(mediaCtrlIntent)
-            }
-            binding.bottomActionDrawer.visibility = View.VISIBLE
-            binding.bottomActionDrawer.isPeekOnScrollDownEnabled = true
-            binding.bottomActionDrawer.setIsAutoPeekEnabled(true)
-            binding.bottomActionDrawer.setIsLocked(false)
-        } catch (e: PackageManager.NameNotFoundException) {
-            mMediaCtrlBtn.setOnClickListener(null)
-            mMediaCtrlBtn.visibility = View.GONE
-            binding.bottomActionDrawer.visibility = View.GONE
-            binding.bottomActionDrawer.isPeekOnScrollDownEnabled = false
-            binding.bottomActionDrawer.setIsAutoPeekEnabled(false)
-            binding.bottomActionDrawer.setIsLocked(true)
-        }
-
         // Update statuses
         lifecycleScope.launch {
             updateConnectionStatus()
@@ -426,7 +317,6 @@ class MusicPlayerActivity : WearableListenerActivity(), OnDataChangedListener {
     }
 
     override fun onPause() {
-        Wearable.getMessageClient(this).removeListener(this)
         Wearable.getDataClient(this).removeListener(this)
         super.onPause()
     }

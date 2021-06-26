@@ -1,48 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.wear.widget.drawer.WearableDrawerLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/drawer_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MusicPlayerActivity"
+    tools:context=".MediaPlayerListActivity"
     tools:deviceIds="wear">
 
-    <ProgressBar
-        android:id="@+id/progressBar"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:indeterminate="true" />
-
-    <androidx.wear.widget.WearableRecyclerView
-        android:id="@+id/player_list"
+    <androidx.viewpager.widget.ViewPager
+        android:id="@+id/media_viewpager"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        tools:listitem="@layout/app_item"
-        tools:visibility="gone" />
+        android:layout_height="match_parent" />
 
-    <TextView
-        android:id="@+id/noplayers_messageview"
+    <androidx.wear.widget.drawer.PageIndicatorView
+        android:id="@+id/media_viewpager_indicator"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:gravity="center"
-        android:padding="4dp"
-        android:text="@string/error_nomusicplayers"
-        android:visibility="gone"
-        tools:visibility="visible" />
+        android:layout_height="@dimen/peek_view_icon_size"
+        android:layout_marginBottom="@dimen/peek_view_bottom_padding"
+        android:layout_gravity="bottom|center_horizontal"
+        app:pageIndicatorDotFadeWhenIdle="false" />
 
-    <androidx.wear.widget.drawer.WearableDrawerView
-        android:id="@+id/bottom_action_drawer"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_gravity="bottom"
-        android:background="@color/buttonDisabled"
-        app:drawerContent="@id/drawer_content">
-
-        <include layout="@layout/musicactivity_drawer_layout" />
-
-    </androidx.wear.widget.drawer.WearableDrawerView>
-
-</androidx.wear.widget.drawer.WearableDrawerLayout>
+</FrameLayout>

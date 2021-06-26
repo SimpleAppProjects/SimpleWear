@@ -1,12 +1,12 @@
 package com.thewizrd.simplewear.controls
 
 import android.graphics.Bitmap
+import androidx.lifecycle.ViewModel
 import java.util.*
 
-class AppItemViewModel {
+class AppItemViewModel : ViewModel() {
     var bitmapIcon: Bitmap? = null
     var appLabel: String? = null
-    var appName: String? = null
     var packageName: String? = null
     var activityName: String? = null
     val key: String?

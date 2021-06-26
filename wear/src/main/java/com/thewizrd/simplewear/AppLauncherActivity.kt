@@ -84,7 +84,7 @@ class AppLauncherActivity : WearableListenerActivity(), OnDataChangedListener {
                             Logger.writeLine(
                                 Log.INFO,
                                 "%s: Unhandled action: %s",
-                                "MusicPlayerActivity",
+                                "AppLauncherActivity",
                                 intent.action
                             )
                         }

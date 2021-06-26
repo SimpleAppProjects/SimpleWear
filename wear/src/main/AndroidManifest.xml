@@ -45,7 +45,7 @@
             android:name=".ValueActionActivity"
             android:theme="@style/WearAppTheme" />
         <activity
-            android:name=".MusicPlayerActivity"
+            android:name=".MediaPlayerListActivity"
             android:icon="@drawable/ic_play_circle_simpleblue"
             android:label="@string/shortcut_label_playmusic"
             android:theme="@style/WearAppTheme"
@@ -72,6 +72,9 @@
         </activity>
         <activity
             android:name=".AppLauncherActivity"
+            android:theme="@style/WearAppTheme" />
+        <activity
+            android:name=".media.MediaPlayerActivity"
             android:theme="@style/WearAppTheme" />
 
         <service

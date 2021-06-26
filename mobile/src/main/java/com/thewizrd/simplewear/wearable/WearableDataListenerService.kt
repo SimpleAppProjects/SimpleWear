@@ -16,6 +16,7 @@ import com.thewizrd.shared_resources.utils.booleanToBytes
 import com.thewizrd.shared_resources.utils.bytesToInt
 import com.thewizrd.shared_resources.utils.bytesToString
 import com.thewizrd.simplewear.MainActivity
+import com.thewizrd.simplewear.media.MediaControllerService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 
@@ -99,6 +100,22 @@ class WearableDataListenerService : WearableListenerService() {
                 val pkgName = pair?.first.toString()
                 val activityName = pair?.second.toString()
                 mWearMgr.launchApp(messageEvent.sourceNodeId, pkgName, activityName)
+            } else if (messageEvent.path == WearableHelper.MediaPlayerConnectPath) {
+                val packageName = messageEvent.data.bytesToString()
+                val ctx = this@WearableDataListenerService
+
+                MediaControllerService.enqueueWork(
+                    ctx, Intent(ctx, MediaControllerService::class.java)
+                        .setAction(MediaControllerService.ACTION_CONNECTCONTROLLER)
+                        .putExtra(MediaControllerService.EXTRA_PACKAGENAME, packageName)
+                )
+            } else if (messageEvent.path == WearableHelper.MediaPlayerDisconnectPath) {
+                val ctx = this@WearableDataListenerService
+
+                MediaControllerService.enqueueWork(
+                    ctx, Intent(ctx, MediaControllerService::class.java)
+                        .setAction(MediaControllerService.ACTION_DISCONNECTCONTROLLER)
+                )
             }
             return@runBlocking
         }

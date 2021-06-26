@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/drawer_content"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@null"
+    android:orientation="vertical"
+    tools:context=".MediaPlayerListActivity"
+    tools:deviceIds="wear"
+    tools:ignore="UseSwitchCompatOrMaterialXml">
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/inner_layout_padding" />
+
+    <RelativeLayout
+        android:id="@+id/filter_apps_btn"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        style="@style/SettingPrefLayoutStyle">
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/filter_apps_icon"
+            android:layout_width="@dimen/ws_switch_size"
+            android:layout_height="@dimen/ws_switch_size"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentBottom="false"
+            android:layout_marginEnd="8dp"
+            android:clickable="false"
+            android:src="@drawable/ic_baseline_filter_list_24"
+            app:backgroundTint="@color/colorPrimary"
+            app:fabCustomSize="36dp"
+            app:rippleColor="@null" />
+
+        <TextView
+            android:id="@+id/filter_apps_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignBottom="@id/filter_apps_icon"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentEnd="true"
+            android:layout_toEndOf="@id/filter_apps_icon"
+            android:ellipsize="marquee"
+            android:gravity="center_vertical"
+            android:maxLines="2"
+            android:text="@string/title_filter_apps"
+            android:textAppearance="@style/TextAppearance.AppCompat"
+            android:textSize="12sp" />
+
+    </RelativeLayout>
+
+</LinearLayout>

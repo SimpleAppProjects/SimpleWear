@@ -111,7 +111,7 @@ class SleepTimerActivity : WearableListenerActivity() {
                             Logger.writeLine(
                                 Log.INFO,
                                 "%s: Unhandled action: %s",
-                                "MusicPlayerActivity",
+                                "SleepTimerActivity",
                                 intent.action
                             )
                         }
