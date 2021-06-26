@@ -4,11 +4,14 @@ import android.content.*
 import android.database.DataSetObserver
 import android.os.Bundle
 import android.util.Log
+import android.view.View
 import androidx.activity.viewModels
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentPagerAdapter
 import androidx.lifecycle.lifecycleScope
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import androidx.wear.ambient.AmbientModeSupport
 import com.google.android.gms.wearable.*
 import com.google.android.wearable.intent.RemoteIntent
 import com.thewizrd.shared_resources.actions.ActionStatus
@@ -25,9 +28,14 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.tasks.await
 import java.util.*
 
-class MediaPlayerActivity : WearableListenerActivity(), DataClient.OnDataChangedListener {
+class MediaPlayerActivity : WearableListenerActivity(), AmbientModeSupport.AmbientCallbackProvider,
+    DataClient.OnDataChangedListener {
     companion object {
         private const val KEY_APPDETAILS = "SimpleWear.Droid.extra.APP_DETAILS"
+
+        const val ACTION_ENTERAMBIENTMODE = "SimpleWear.Droid.action.ENTER_AMBIENT_MODE"
+        const val ACTION_EXITAMBIENTMODE = "SimpleWear.Droid.action.EXIT_AMBIENT_MODE"
+        const val ACTION_UPDATEAMBIENTMODE = "SimpleWear.Droid.action.UPDATE_AMBIENT_MODE"
 
         fun buildIntent(context: Context, appDetails: AppItemViewModel): Intent {
             val intent = Intent(context, MediaPlayerActivity::class.java)
@@ -53,6 +61,8 @@ class MediaPlayerActivity : WearableListenerActivity(), DataClient.OnDataChanged
     private var supportsQueue: Boolean = false
 
     private var updateJob: Job? = null
+
+    private lateinit var mAmbientController: AmbientModeSupport.AmbientController
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -202,6 +212,8 @@ class MediaPlayerActivity : WearableListenerActivity(), DataClient.OnDataChanged
             addAction(WearableHelper.MediaActionsClickPath)
             addAction(WearableHelper.MediaQueueItemsClickPath)
         }
+
+        mAmbientController = AmbientModeSupport.attach(this)
     }
 
     private enum class MediaPageType {
@@ -211,8 +223,12 @@ class MediaPlayerActivity : WearableListenerActivity(), DataClient.OnDataChanged
         Queue
     }
 
-    private class MediaFragmentPagerAdapter(fragmentMgr: FragmentManager) :
+    private inner class MediaFragmentPagerAdapter(fragmentMgr: FragmentManager) :
         FragmentPagerAdapter(fragmentMgr) {
+        var isAmbientMode = false
+        var isLowBitAmbient = false
+        var doBurnInProtection = false
+
         private val supportedPageTypes = mutableListOf(MediaPageType.Player)
 
         override fun getCount(): Int {
@@ -222,9 +238,17 @@ class MediaPlayerActivity : WearableListenerActivity(), DataClient.OnDataChanged
         override fun getItem(position: Int): Fragment {
             val type = supportedPageTypes[position]
 
+            val args = Bundle().apply {
+                putBoolean(AmbientModeSupport.FRAGMENT_TAG, isAmbientMode)
+                putBoolean(AmbientModeSupport.EXTRA_LOWBIT_AMBIENT, isLowBitAmbient)
+                putBoolean(AmbientModeSupport.EXTRA_BURN_IN_PROTECTION, doBurnInProtection)
+            }
+
             return when (type) {
                 MediaPageType.Player -> {
-                    MediaPlayerControlsFragment()
+                    MediaPlayerControlsFragment().apply {
+                        arguments = args
+                    }
                 }
                 MediaPageType.Browser -> {
                     MediaBrowserFragment()
@@ -450,6 +474,67 @@ class MediaPlayerActivity : WearableListenerActivity(), DataClient.OnDataChanged
                 packageName = model.packageName
                 activityName = model.activityName
             }
+        }
+    }
+
+    override fun getAmbientCallback(): AmbientModeSupport.AmbientCallback {
+        return MediaPlayerAmbientCallback()
+    }
+
+    private inner class MediaPlayerAmbientCallback : AmbientModeSupport.AmbientCallback() {
+        /**
+         * If the display is low-bit in ambient mode. i.e. it requires anti-aliased fonts.
+         */
+        private var isLowBitAmbient = false
+
+        /**
+         * If the display requires burn-in protection in ambient mode, rendered pixels need to be
+         * intermittently offset to avoid screen burn-in.
+         */
+        private var doBurnInProtection = false
+
+        override fun onEnterAmbient(ambientDetails: Bundle) {
+            super.onEnterAmbient(ambientDetails)
+            isLowBitAmbient =
+                ambientDetails.getBoolean(AmbientModeSupport.EXTRA_LOWBIT_AMBIENT, false)
+            doBurnInProtection =
+                ambientDetails.getBoolean(AmbientModeSupport.EXTRA_BURN_IN_PROTECTION, false)
+
+            binding.mediaViewpagerIndicator.visibility = View.INVISIBLE
+
+            mViewPagerAdapter.isAmbientMode = true
+            mViewPagerAdapter.isLowBitAmbient = isLowBitAmbient
+            mViewPagerAdapter.doBurnInProtection = doBurnInProtection
+
+            if (binding.mediaViewpager.currentItem != 0) {
+                binding.mediaViewpager.currentItem = 0
+            }
+
+            LocalBroadcastManager.getInstance(this@MediaPlayerActivity)
+                .sendBroadcast(
+                    Intent(ACTION_ENTERAMBIENTMODE)
+                        .putExtra(AmbientModeSupport.EXTRA_LOWBIT_AMBIENT, isLowBitAmbient)
+                        .putExtra(AmbientModeSupport.EXTRA_BURN_IN_PROTECTION, doBurnInProtection)
+                )
+        }
+
+        override fun onExitAmbient() {
+            super.onExitAmbient()
+            binding.mediaViewpagerIndicator.visibility = View.VISIBLE
+
+            mViewPagerAdapter.isAmbientMode = false
+
+            LocalBroadcastManager.getInstance(this@MediaPlayerActivity)
+                .sendBroadcast(Intent(ACTION_EXITAMBIENTMODE))
+        }
+
+        override fun onUpdateAmbient() {
+            super.onUpdateAmbient()
+
+            mViewPagerAdapter.isAmbientMode = true
+
+            LocalBroadcastManager.getInstance(this@MediaPlayerActivity)
+                .sendBroadcast(Intent(ACTION_UPDATEAMBIENTMODE))
         }
     }
 }
