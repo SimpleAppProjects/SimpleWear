@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.Resources
+import android.media.AudioManager
 import android.media.session.MediaController
 import android.media.session.MediaSessionManager
 import android.os.*
@@ -28,6 +29,7 @@ import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.shared_resources.media.PlaybackState
 import com.thewizrd.shared_resources.utils.*
 import com.thewizrd.simplewear.R
+import com.thewizrd.simplewear.helpers.PhoneStatusHelper
 import com.thewizrd.simplewear.services.NotificationListener
 import com.thewizrd.simplewear.wearable.WearableManager
 import kotlinx.coroutines.*
@@ -38,6 +40,7 @@ import kotlin.collections.ArrayList
 
 class MediaControllerService : Service(), MessageClient.OnMessageReceivedListener,
     MediaSessionManager.OnActiveSessionsChangedListener {
+    private lateinit var mAudioManager: AudioManager
     private lateinit var mNotificationManager: NotificationManager
     private lateinit var mMediaSessionManager: MediaSessionManager
 
@@ -132,6 +135,7 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
         super.onCreate()
 
         mMainHandler = Handler(Looper.getMainLooper())
+        mAudioManager = getSystemService(AudioManager::class.java)
         mNotificationManager = getSystemService(NotificationManager::class.java)
         mMediaSessionManager = getSystemService(MediaSessionManager::class.java)
 
@@ -154,12 +158,14 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
             override fun onTick(millisUntilFinished: Long) {}
 
             override fun onFinish() {
-                scope.launch {
-                    mWearableManager.sendMessage(
-                        null,
-                        WearableHelper.MediaPlayPath,
-                        ActionStatus.TIMEOUT.name.stringToBytes()
-                    )
+                if (!mAudioManager.isMusicActive) {
+                    scope.launch {
+                        mWearableManager.sendMessage(
+                            null,
+                            WearableHelper.MediaPlayPath,
+                            ActionStatus.TIMEOUT.name.stringToBytes()
+                        )
+                    }
                 }
             }
         }
@@ -709,7 +715,14 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
 
             startActivity(intent)
 
-            playFromSearchTimer.start()
+            // Notify wear device if successful
+            scope.launch {
+                delay(3000)
+                mWearableManager.sendMessage(
+                    null, WearableHelper.PlayCommandPath,
+                    PhoneStatusHelper.sendPlayMusicCommand(this@MediaControllerService).name.stringToBytes()
+                )
+            }
         }
     }
 
