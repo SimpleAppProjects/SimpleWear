@@ -23,7 +23,6 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
-import com.thewizrd.shared_resources.sleeptimer.SleepTimerHelper
 import com.thewizrd.shared_resources.tasks.delayLaunch
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.simplewear.databinding.FragmentPermcheckBinding
@@ -93,16 +92,6 @@ class PermissionCheckFragment : Fragment() {
             binding.companionPairProgress?.visibility = View.VISIBLE
             enqueueAction(requireContext(), WearableWorker.ACTION_REQUESTBTDISCOVERABLE)
             Logger.writeLine(Log.INFO, "%s: ACTION_REQUESTBTDISCOVERABLE", TAG)
-        }
-
-        binding.sleeptimerPref.setOnClickListener {
-            if (!SleepTimerHelper.isSleepTimerInstalled()) {
-                val intentapp = Intent(Intent.ACTION_VIEW)
-                    .addCategory(Intent.CATEGORY_BROWSABLE)
-                    .setData(SleepTimerHelper.getPlayStoreURI())
-
-                startActivity(intentapp)
-            }
         }
 
         binding.notiflistenerPref.setOnClickListener {
@@ -211,7 +200,6 @@ class PermissionCheckFragment : Fragment() {
             val deviceManager = requireContext().getSystemService(Context.COMPANION_DEVICE_SERVICE) as CompanionDeviceManager
             updatePairPermText(deviceManager.associations.isNotEmpty())
         }
-        updateSleepTimerText(SleepTimerHelper.isSleepTimerInstalled())
         updateNotifListenerText(NotificationListener.isEnabled(requireContext()))
     }
 
@@ -233,11 +221,6 @@ class PermissionCheckFragment : Fragment() {
     private fun updatePairPermText(enabled: Boolean) {
         binding.companionPairSummary?.setText(if (enabled) R.string.permission_pairdevice_enabled else R.string.permission_pairdevice_disabled)
         binding.companionPairSummary?.setTextColor(if (enabled) Color.GREEN else Color.RED)
-    }
-
-    private fun updateSleepTimerText(enabled: Boolean) {
-        binding.sleeptimerSummary.setText(if (enabled) R.string.prompt_sleeptimer_installed else R.string.prompt_sleeptimer_unavailable)
-        binding.sleeptimerSummary.setTextColor(if (enabled) Color.GREEN else Color.RED)
     }
 
     private fun updateNotifListenerText(enabled: Boolean) {

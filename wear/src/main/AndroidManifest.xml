@@ -8,6 +8,11 @@
 
     <uses-feature android:name="android.hardware.type.watch" />
 
+    <queries>
+        <package android:name="com.thewizrd.simplesleeptimer" />
+        <package android:name="com.thewizrd.simplesleeptimer.debug" />
+    </queries>
+
     <application
         android:name=".App"
         android:allowBackup="false"
@@ -48,19 +53,6 @@
             android:name=".MediaPlayerListActivity"
             android:icon="@drawable/ic_play_circle_simpleblue"
             android:label="@string/title_media_controller"
-            android:theme="@style/WearAppTheme"
-            android:clearTaskOnLaunch="true"
-            android:launchMode="singleTask"
-            android:parentActivityName=".DashboardActivity">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
-        <activity
-            android:name=".sleeptimer.SleepTimerActivity"
-            android:icon="@drawable/ic_sleep_timer_launcher"
-            android:label="@string/shortcut_label_sleeptimer"
             android:theme="@style/WearAppTheme"
             android:clearTaskOnLaunch="true"
             android:launchMode="singleTask"

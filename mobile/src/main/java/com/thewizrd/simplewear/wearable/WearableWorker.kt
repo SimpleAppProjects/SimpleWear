@@ -6,7 +6,6 @@ import androidx.annotation.StringDef
 import androidx.work.*
 import com.thewizrd.shared_resources.actions.Actions
 import com.thewizrd.shared_resources.helpers.WearableHelper
-import com.thewizrd.shared_resources.sleeptimer.SleepTimerHelper
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.shared_resources.utils.stringToBytes
 
@@ -20,31 +19,18 @@ class WearableWorker(context: Context, workerParams: WorkerParameters) : Corouti
         const val ACTION_SENDBATTERYUPDATE = "SimpleWear.Droid.action.SEND_BATTERY_UPDATE"
         const val ACTION_SENDWIFIUPDATE = "SimpleWear.Droid.action.SEND_WIFI_UPDATE"
         const val ACTION_SENDBTUPDATE = "SimpleWear.Droid.action.SEND_BT_UPDATE"
-        const val ACTION_SENDMOBILEDATAUPDATE = "SimpleWear.Droid.action.SEND_MOBILEDATA_UPDATE"
         const val ACTION_SENDACTIONUPDATE = "SimpleWear.Droid.action.SEND_ACTION_UPDATE"
         const val ACTION_REQUESTBTDISCOVERABLE = "SimpleWear.Droid.action.REQUEST_BT_DISCOVERABLE"
-        const val ACTION_SLEEPTIMERINSTALLEDSTATUS = "SimpleWear.Droid.action.SLEEP_TIMER_INSTALLED_STATUS"
 
         // Extras
         const val EXTRA_STATUS = "SimpleWear.Droid.extra.STATUS"
         const val EXTRA_ACTION_CHANGED = "SimpleWear.Droid.extra.ACTION_CHANGED"
 
-        fun enqueueAction(context: Context, intentAction: String, inputDataMap: Map<String, Any>? = null) {
+        fun enqueueAction(context: Context, intentAction: String) {
             when (intentAction) {
                 ACTION_SENDSTATUSUPDATE,
-                ACTION_REQUESTBTDISCOVERABLE,
-                ACTION_SLEEPTIMERINSTALLEDSTATUS,
-                SleepTimerHelper.ACTION_START_TIMER,
-                SleepTimerHelper.ACTION_CANCEL_TIMER -> {
+                ACTION_REQUESTBTDISCOVERABLE -> {
                     startWork(context.applicationContext, intentAction)
-                }
-                SleepTimerHelper.ACTION_TIME_UPDATED -> {
-                    startWork(context.applicationContext, inputDataMap?.let {
-                        Data.Builder()
-                            .putString(KEY_ACTION, intentAction)
-                            .putAll(it)
-                            .build()
-                    })
                 }
             }
         }
@@ -142,17 +128,6 @@ class WearableWorker(context: Context, workerParams: WorkerParameters) : Corouti
                 ACTION_REQUESTBTDISCOVERABLE -> {
                     mWearMgr.sendMessage(null, WearableHelper.PingPath, null)
                     mWearMgr.sendMessage(null, WearableHelper.BtDiscoverPath, null)
-                }
-                SleepTimerHelper.ACTION_START_TIMER -> {
-                    mWearMgr.sendMessage(null, SleepTimerHelper.SleepTimerStartPath, null)
-                }
-                SleepTimerHelper.ACTION_CANCEL_TIMER -> {
-                    mWearMgr.sendMessage(null, SleepTimerHelper.SleepTimerStopPath, null)
-                }
-                SleepTimerHelper.ACTION_TIME_UPDATED -> {
-                    val timeStartMs = inputData.getLong(SleepTimerHelper.EXTRA_START_TIME_IN_MS, 0)
-                    val timeProgMs = inputData.getLong(SleepTimerHelper.EXTRA_TIME_IN_MS, 0)
-                    mWearMgr.sendSleepTimerUpdate(null, timeStartMs, timeProgMs)
                 }
             }
         }

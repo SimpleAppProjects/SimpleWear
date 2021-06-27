@@ -36,16 +36,6 @@
     <string name="shortcut_label_playmusic">Play Media on Phone</string>
 
     <string name="error_sleeptimer_notinstalled">SleepTimer app not installed.\nPlease install to continue.</string>
-    <string name="title_audioplayer">Audio Player</string>
-    <string name="prompt_select_audioplayer">Select an audio source to pause</string>
-    <string name="shortcut_label_sleeptimer">Sleep Timer</string>
-    <string name="button_minus_5min">-5M</string>
-    <string name="button_minus_1min">-1M</string>
-    <string name="button_plus_1m">+1M</string>
-    <string name="button_plus_5m">+5M</string>
-
-    <string name="progress_text_hrmin">%1$02dh:%2$02dm</string>
-    <string name="progress_text_min">%1$02dm</string>
 
     <string name="title_filter_apps">Filter Apps</string>
     <string name="message_playback_stopped">Playback stopped</string>

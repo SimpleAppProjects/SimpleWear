@@ -3,7 +3,6 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/SimpleWear.iml" filepath="$PROJECT_DIR$/SimpleWear.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/circularseekbar/SimpleWear.circularseekbar.iml" filepath="$PROJECT_DIR$/.idea/modules/circularseekbar/SimpleWear.circularseekbar.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/mobile/SimpleWear.mobile.iml" filepath="$PROJECT_DIR$/.idea/modules/mobile/SimpleWear.mobile.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/shared_resources/SimpleWear.shared_resources.iml" filepath="$PROJECT_DIR$/.idea/modules/shared_resources/SimpleWear.shared_resources.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/unofficialtileapi/SimpleWear.unofficialtileapi.iml" filepath="$PROJECT_DIR$/.idea/modules/unofficialtileapi/SimpleWear.unofficialtileapi.iml" />

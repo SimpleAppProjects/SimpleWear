@@ -1,5 +1,6 @@
 package com.thewizrd.shared_resources.sleeptimer
 
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import com.thewizrd.shared_resources.BuildConfig
@@ -12,22 +13,6 @@ object SleepTimerHelper {
 
     fun getPlayStoreURI(): Uri = Uri.parse(PLAY_STORE_APP_URI)
 
-    // For WearableListenerService
-    const val SleepTimerEnabledPath = "/status/sleeptimer/enabled"
-    const val SleepTimerStartPath = "/status/sleeptimer/start"
-    const val SleepTimerStopPath = "/status/sleeptimer/stop"
-    const val SleepTimerStatusPath = "/status/sleeptimer/status"
-    const val SleepTimerAudioPlayerPath = "/sleeptimer/audioplayer"
-
-    // For Music Player DataMap
-    const val KEY_SELECTEDPLAYER = "key_selected_player"
-    const val ACTION_START_TIMER = "SimpleSleepTimer.action.START_TIMER"
-    const val ACTION_CANCEL_TIMER = "SimpleSleepTimer.action.CANCEL_TIMER"
-    const val EXTRA_TIME_IN_MINS = "SimpleSleepTimer.extra.TIME_IN_MINUTES"
-    const val ACTION_TIME_UPDATED = "SimpleSleepTimer.action.TIME_UPDATED"
-    const val EXTRA_START_TIME_IN_MS = "SimpleSleepTimer.extra.START_TIME_IN_MS"
-    const val EXTRA_TIME_IN_MS = "SimpleSleepTimer.extra.TIME_IN_MS"
-
     fun getPackageName(): String {
         var packageName = PACKAGE_NAME
         if (BuildConfig.DEBUG) packageName += ".debug"
@@ -39,5 +24,26 @@ object SleepTimerHelper {
         context.packageManager.getApplicationInfo(getPackageName(), 0).enabled
     } catch (e: PackageManager.NameNotFoundException) {
         false
+    }
+
+    fun launchSleepTimer() {
+        try {
+            val context = SimpleLibrary.instance.app.appContext
+
+            val directIntent = Intent(Intent.ACTION_VIEW)
+                .addCategory(Intent.CATEGORY_LAUNCHER)
+                .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                .setClassName(getPackageName(), "SleepTimerActivity")
+
+            if (directIntent.resolveActivity(context.packageManager) != null) {
+                context.startActivity(directIntent)
+            } else {
+                val i = context.packageManager.getLaunchIntentForPackage(getPackageName())
+                if (i != null) {
+                    context.startActivity(i)
+                }
+            }
+        } catch (e: PackageManager.NameNotFoundException) {
+        }
     }
 }

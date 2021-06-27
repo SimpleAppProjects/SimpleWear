@@ -13,6 +13,7 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewTreeObserver
 import android.widget.TextView
+import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
@@ -29,6 +30,7 @@ import com.thewizrd.shared_resources.actions.Actions
 import com.thewizrd.shared_resources.actions.BatteryStatus
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
 import com.thewizrd.shared_resources.helpers.WearableHelper
+import com.thewizrd.shared_resources.sleeptimer.SleepTimerHelper
 import com.thewizrd.shared_resources.utils.JSONParser
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.simplewear.adapters.ActionItemAdapter
@@ -185,6 +187,35 @@ class DashboardActivity : WearableListenerActivity(), OnSharedPreferenceChangeLi
                                                     )
                                                     .setMessage(this@DashboardActivity.getString(R.string.error_torch_action))
                                                     .showOn(this@DashboardActivity)
+                                            } else if (action.actionType == Actions.SLEEPTIMER) {
+                                                // Open store on device
+                                                val intentAndroid = Intent(Intent.ACTION_VIEW)
+                                                    .addCategory(Intent.CATEGORY_BROWSABLE)
+                                                    .setData(SleepTimerHelper.getPlayStoreURI())
+
+                                                if (intentAndroid.resolveActivity(packageManager) != null) {
+                                                    startActivity(intentAndroid)
+                                                    Toast.makeText(
+                                                        this@DashboardActivity,
+                                                        R.string.error_sleeptimer_notinstalled,
+                                                        Toast.LENGTH_LONG
+                                                    ).show()
+                                                } else {
+                                                    CustomConfirmationOverlay()
+                                                        .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
+                                                        .setCustomDrawable(
+                                                            ContextCompat.getDrawable(
+                                                                this@DashboardActivity,
+                                                                R.drawable.ic_full_sad
+                                                            )
+                                                        )
+                                                        .setMessage(
+                                                            this@DashboardActivity.getString(
+                                                                R.string.error_sleeptimer_notinstalled
+                                                            )
+                                                        )
+                                                        .showOn(this@DashboardActivity)
+                                                }
                                             } else {
                                                 CustomConfirmationOverlay()
                                                     .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
@@ -194,8 +225,8 @@ class DashboardActivity : WearableListenerActivity(), OnSharedPreferenceChangeLi
                                                             R.drawable.ic_full_sad
                                                         )
                                                     )
-                                                        .setMessage(this@DashboardActivity.getString(R.string.error_permissiondenied))
-                                                        .showOn(this@DashboardActivity)
+                                                    .setMessage(this@DashboardActivity.getString(R.string.error_permissiondenied))
+                                                    .showOn(this@DashboardActivity)
                                             }
                                         }
 

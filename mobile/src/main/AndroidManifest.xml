@@ -17,8 +17,6 @@
         android:name="android.permission.QUERY_ALL_PACKAGES"
         tools:ignore="QueryAllPackagesPermission" />
 
-    <uses-permission android:name="${sleepTimerIdPrefix}.permission.SLEEP_TIMER" />
-
     <uses-feature
         android:name="android.software.companion_device_setup"
         android:required="false" />
@@ -91,18 +89,6 @@
 
             <intent-filter>
                 <action android:name="android.app.action.DEVICE_ADMIN_ENABLED" />
-            </intent-filter>
-        </receiver>
-
-        <receiver
-            android:name="com.thewizrd.simplesleeptimer.SleepTimerBroadcastReceiver"
-            android:enabled="true"
-            android:exported="true"
-            android:permission="${sleepTimerIdPrefix}.permission.SLEEP_TIMER">
-            <intent-filter>
-                <action android:name="SimpleSleepTimer.action.START_TIMER" />
-                <action android:name="SimpleSleepTimer.action.CANCEL_TIMER" />
-                <action android:name="SimpleSleepTimer.action.TIME_UPDATED" />
             </intent-filter>
         </receiver>
 

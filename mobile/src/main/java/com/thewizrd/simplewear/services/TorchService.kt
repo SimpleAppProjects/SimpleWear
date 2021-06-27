@@ -27,7 +27,7 @@ class TorchService : Service() {
         const val ACTION_START_LIGHT = "SimpleWear.Droid.action.START_LIGHT"
         const val ACTION_END_LIGHT = "SimpleWear.Droid.action.END_LIGHT"
 
-        fun enqueueWork(context: Context, work: Intent?) {
+        fun enqueueWork(context: Context, work: Intent) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 context.startForegroundService(work)
             } else {

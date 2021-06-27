@@ -35,11 +35,9 @@ class ExampleInstrumentedTest {
             for (i in 0..7) {
                 enqueueAction(appContext, WearableWorker.ACTION_SENDWIFIUPDATE)
                 enqueueAction(appContext, WearableWorker.ACTION_SENDBTUPDATE)
-                enqueueAction(appContext, WearableWorker.ACTION_SENDMOBILEDATAUPDATE)
                 enqueueAction(appContext, "")
                 enqueueAction(appContext, WearableWorker.ACTION_SENDBTUPDATE)
                 enqueueAction(appContext, WearableWorker.ACTION_SENDWIFIUPDATE)
-                enqueueAction(appContext, WearableWorker.ACTION_SENDMOBILEDATAUPDATE)
             }
 
             delay(7500)

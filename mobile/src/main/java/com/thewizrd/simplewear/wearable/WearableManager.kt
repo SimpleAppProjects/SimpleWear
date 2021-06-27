@@ -19,7 +19,6 @@ import com.google.android.gms.wearable.*
 import com.google.android.gms.wearable.CapabilityClient.OnCapabilityChangedListener
 import com.thewizrd.shared_resources.actions.*
 import com.thewizrd.shared_resources.helpers.WearableHelper
-import com.thewizrd.shared_resources.sleeptimer.SleepTimerHelper
 import com.thewizrd.shared_resources.utils.ImageUtils
 import com.thewizrd.shared_resources.utils.JSONParser
 import com.thewizrd.shared_resources.utils.Logger
@@ -39,16 +38,16 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
+    private lateinit var mCapabilityClient: CapabilityClient
     private var mWearNodesWithApp: Collection<Node>? = null
 
     private fun init() {
-        val mCapabilityClient = Wearable.getCapabilityClient(mContext)
+        mCapabilityClient = Wearable.getCapabilityClient(mContext)
         mCapabilityClient.addListener(this, WearableHelper.CAPABILITY_WEAR_APP)
     }
 
     fun unregister() {
         scope.cancel()
-        val mCapabilityClient = Wearable.getCapabilityClient(mContext)
         mCapabilityClient.removeListener(this)
     }
 
@@ -67,11 +66,10 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
     private suspend fun findWearDevicesWithApp(): Collection<Node>? {
         var capabilityInfo: CapabilityInfo? = null
         try {
-            capabilityInfo = Wearable.getCapabilityClient(mContext)
-                .getCapability(
-                    WearableHelper.CAPABILITY_WEAR_APP,
-                    CapabilityClient.FILTER_ALL
-                )
+            capabilityInfo = mCapabilityClient.getCapability(
+                WearableHelper.CAPABILITY_WEAR_APP,
+                CapabilityClient.FILTER_ALL
+            )
                 .await()
         } catch (e: Exception) {
             Logger.writeLine(Log.ERROR, e)
@@ -486,11 +484,6 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
                 sendMessage(nodeID, WearableHelper.ActionsPath, JSONParser.serializer(mA, Action::class.java).stringToBytes())
             }
         }
-    }
-
-    suspend fun sendSleepTimerUpdate(nodeID: String?, timeStartInMillis: Long, timeInMillis: Long) {
-        sendMessage(nodeID, SleepTimerHelper.SleepTimerStatusPath,
-                String.format(Locale.ROOT, "%d;%d", timeStartInMillis, timeInMillis).stringToBytes())
     }
 
     suspend fun sendMessage(nodeID: String?, path: String, data: ByteArray?) {

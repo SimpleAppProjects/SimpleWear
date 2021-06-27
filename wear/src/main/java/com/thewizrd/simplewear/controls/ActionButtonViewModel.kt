@@ -7,10 +7,11 @@ import androidx.annotation.ColorRes
 import androidx.annotation.DrawableRes
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.thewizrd.shared_resources.actions.*
+import com.thewizrd.shared_resources.helpers.WearableHelper
+import com.thewizrd.shared_resources.sleeptimer.SleepTimerHelper
 import com.thewizrd.shared_resources.utils.JSONParser.serializer
 import com.thewizrd.simplewear.*
 import com.thewizrd.simplewear.WearableListenerActivity.Companion.EXTRA_ACTION
-import com.thewizrd.simplewear.sleeptimer.SleepTimerActivity
 
 class ActionButtonViewModel(val action: Action) {
     @get:DrawableRes
@@ -79,8 +80,19 @@ class ActionButtonViewModel(val action: Action) {
             val intent = Intent(activityContext, MediaPlayerListActivity::class.java)
             activityContext.startActivityForResult(intent, -1)
         } else if (action is NormalAction && action.actionType == Actions.SLEEPTIMER) {
-            val intent = Intent(activityContext, SleepTimerActivity::class.java)
-            activityContext.startActivityForResult(intent, -1)
+            if (SleepTimerHelper.isSleepTimerInstalled()) {
+                SleepTimerHelper.launchSleepTimer()
+            } else {
+                action.setActionSuccessful(ActionStatus.PERMISSION_DENIED)
+                LocalBroadcastManager.getInstance(activityContext)
+                    .sendBroadcast(
+                        Intent(WearableHelper.ActionsPath)
+                            .putExtra(
+                                WearableListenerActivity.EXTRA_ACTIONDATA,
+                                serializer(action, Action::class.java)
+                            )
+                    )
+            }
         } else if (action is NormalAction && action.actionType == Actions.APPS) {
             val intent = Intent(activityContext, AppLauncherActivity::class.java)
             activityContext.startActivityForResult(intent, -1)
