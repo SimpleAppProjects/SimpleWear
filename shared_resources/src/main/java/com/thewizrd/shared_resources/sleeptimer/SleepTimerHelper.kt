@@ -1,5 +1,6 @@
 package com.thewizrd.shared_resources.sleeptimer
 
+import android.content.ComponentName
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -33,7 +34,7 @@ object SleepTimerHelper {
             val directIntent = Intent(Intent.ACTION_VIEW)
                 .addCategory(Intent.CATEGORY_LAUNCHER)
                 .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                .setClassName(getPackageName(), "SleepTimerActivity")
+                .setComponent(ComponentName(getPackageName(), "$PACKAGE_NAME.SleepTimerActivity"))
 
             if (directIntent.resolveActivity(context.packageManager) != null) {
                 context.startActivity(directIntent)
