@@ -30,23 +30,6 @@ import java.util.*
 class DashboardTileProviderService : TileProviderService(), OnMessageReceivedListener, OnCapabilityChangedListener {
     companion object {
         private const val TAG = "DashTileProviderService"
-
-        /*
-         * There should only ever be one phone in a node set (much less w/ the correct capability), so
-         * I am just grabbing the first one (which should be the only one).
-        */
-        protected fun pickBestNodeId(nodes: Collection<Node>): Node? {
-            var bestNode: Node? = null
-
-            // Find a nearby node/phone or pick one arbitrarily. Realistically, there is only one phone.
-            for (node in nodes) {
-                if (node.isNearby) {
-                    return node
-                }
-                bestNode = node
-            }
-            return bestNode
-        }
     }
 
     private var mInFocus = false
@@ -118,6 +101,22 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
 
         if (mConnectionStatus != WearConnectionStatus.CONNECTED) {
             views = RemoteViews(applicationContext.packageName, R.layout.tile_disconnected)
+            when (mConnectionStatus) {
+                WearConnectionStatus.APPNOTINSTALLED -> {
+                    views.setTextViewText(R.id.message, getString(R.string.error_notinstalled))
+                    views.setImageViewResource(
+                        R.id.imageButton,
+                        R.drawable.common_full_open_on_phone
+                    )
+                }
+                else -> {
+                    views.setTextViewText(R.id.message, getString(R.string.status_disconnected))
+                    views.setImageViewResource(
+                        R.id.imageButton,
+                        R.drawable.ic_phonelink_erase_white_24dp
+                    )
+                }
+            }
             views.setOnClickPendingIntent(R.id.tile, getTapIntent(applicationContext))
             return views
         }
@@ -331,10 +330,21 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
         scope.launch {
             mPhoneNodeWithApp = pickBestNodeId(capabilityInfo.nodes)
 
-            mConnectionStatus = if (mPhoneNodeWithApp == null) {
-                WearConnectionStatus.DISCONNECTED
+            if (mPhoneNodeWithApp == null) {
+                mConnectionStatus = WearConnectionStatus.APPNOTINSTALLED
+                /*
+                 * If a device is disconnected from the wear network, capable nodes are empty
+                 *
+                 * No capable nodes can mean the app is not installed on the remote device or the
+                 * device is disconnected.
+                 *
+                 * Verify if we're connected to any nodes; if not, we're truly disconnected
+                 */
+                if (!verifyNodesAvailable()) {
+                    mConnectionStatus = WearConnectionStatus.DISCONNECTED
+                }
             } else {
-                WearConnectionStatus.CONNECTED
+                mConnectionStatus = WearConnectionStatus.CONNECTED
             }
 
             if (mInFocus && !isIdForDummyData(id)) {
@@ -347,7 +357,7 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
         mPhoneNodeWithApp = checkIfPhoneHasApp()
 
         mConnectionStatus = if (mPhoneNodeWithApp == null) {
-            WearConnectionStatus.DISCONNECTED
+            WearConnectionStatus.APPNOTINSTALLED
         } else {
             WearConnectionStatus.CONNECTED
         }
@@ -404,6 +414,36 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
                 )
             }
         }
+    }
+
+    /*
+     * There should only ever be one phone in a node set (much less w/ the correct capability), so
+     * I am just grabbing the first one (which should be the only one).
+    */
+    protected fun pickBestNodeId(nodes: Collection<Node>): Node? {
+        var bestNode: Node? = null
+
+        // Find a nearby node/phone or pick one arbitrarily. Realistically, there is only one phone.
+        for (node in nodes) {
+            if (node.isNearby) {
+                return node
+            }
+            bestNode = node
+        }
+        return bestNode
+    }
+
+    private suspend fun verifyNodesAvailable(): Boolean {
+        try {
+            val connectedNodes = Wearable.getNodeClient(this)
+                .connectedNodes
+                .await()
+            return connectedNodes.isNotEmpty()
+        } catch (e: Exception) {
+            Logger.writeLine(Log.ERROR, e)
+        }
+
+        return false
     }
 
     protected suspend fun sendMessage(nodeID: String, path: String, data: ByteArray?) {

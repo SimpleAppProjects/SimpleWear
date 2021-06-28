@@ -259,7 +259,18 @@ abstract class WearableListenerActivity : AppCompatActivity(), OnMessageReceived
             mPhoneNodeWithApp = pickBestNodeId(capabilityInfo.nodes)
 
             if (mPhoneNodeWithApp == null) {
-                mConnectionStatus = WearConnectionStatus.DISCONNECTED
+                mConnectionStatus = WearConnectionStatus.APPNOTINSTALLED
+                /*
+                 * If a device is disconnected from the wear network, capable nodes are empty
+                 *
+                 * No capable nodes can mean the app is not installed on the remote device or the
+                 * device is disconnected.
+                 *
+                 * Verify if we're connected to any nodes; if not, we're truly disconnected
+                 */
+                if (!verifyNodesAvailable()) {
+                    mConnectionStatus = WearConnectionStatus.DISCONNECTED
+                }
             } else {
                 if (mPhoneNodeWithApp!!.isNearby) {
                     mConnectionStatus = WearConnectionStatus.CONNECTED
@@ -293,7 +304,7 @@ abstract class WearableListenerActivity : AppCompatActivity(), OnMessageReceived
         mPhoneNodeWithApp = checkIfPhoneHasApp()
 
         if (mPhoneNodeWithApp == null) {
-            mConnectionStatus = WearConnectionStatus.DISCONNECTED
+            mConnectionStatus = WearConnectionStatus.APPNOTINSTALLED
         } else {
             if (mPhoneNodeWithApp!!.isNearby) {
                 mConnectionStatus = WearConnectionStatus.CONNECTED
@@ -374,6 +385,19 @@ abstract class WearableListenerActivity : AppCompatActivity(), OnMessageReceived
             bestNode = node
         }
         return bestNode
+    }
+
+    private suspend fun verifyNodesAvailable(): Boolean {
+        try {
+            val connectedNodes = Wearable.getNodeClient(this)
+                .connectedNodes
+                .await()
+            return connectedNodes.isNotEmpty()
+        } catch (e: Exception) {
+            Logger.writeLine(Log.ERROR, e)
+        }
+
+        return false
     }
 
     protected suspend fun sendMessage(nodeID: String, path: String, data: ByteArray?) {
