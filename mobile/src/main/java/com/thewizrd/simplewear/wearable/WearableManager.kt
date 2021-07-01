@@ -440,6 +440,7 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
                 } else if (action is ToggleAction) {
                     tA = action
                     tA.isEnabled = PhoneStatusHelper.isLocationEnabled(mContext)
+                    tA.setActionSuccessful(PhoneStatusHelper.openLocationSettings(mContext))
                     sendMessage(nodeID, WearableHelper.ActionsPath, JSONParser.serializer(tA, Action::class.java).stringToBytes())
                 }
             }

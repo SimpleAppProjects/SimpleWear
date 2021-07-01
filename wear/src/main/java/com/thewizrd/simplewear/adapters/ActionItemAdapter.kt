@@ -152,7 +152,7 @@ class ActionItemAdapter(activity: Activity) : RecyclerView.Adapter<ActionItemAda
             Actions.WIFI, Actions.BLUETOOTH, Actions.MOBILEDATA, Actions.TORCH -> {
                 ActionItemType.TOGGLE_ACTION
             }
-            Actions.LOCATION -> ActionItemType.READONLY_ACTION
+            Actions.LOCATION -> ActionItemType.TOGGLE_ACTION
             Actions.LOCKSCREEN, Actions.MUSICPLAYBACK, Actions.SLEEPTIMER, Actions.APPS -> {
                 ActionItemType.ACTION
             }

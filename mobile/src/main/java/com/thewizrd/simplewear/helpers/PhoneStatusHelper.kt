@@ -90,10 +90,9 @@ object PhoneStatusHelper {
     }
 
     fun isMobileDataEnabled(context: Context): Boolean {
-        val mobileDataSettingEnabled = Settings.Global.getInt(context.contentResolver, "mobile_data", 0) == 1
         val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         val cap = cm.getNetworkCapabilities(cm.activeNetwork)
-        return cap != null && cap.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) || mobileDataSettingEnabled
+        return cap != null && cap.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)
     }
 
     fun isLocationEnabled(context: Context): Boolean {
@@ -386,6 +385,19 @@ object PhoneStatusHelper {
         return try {
             context.startActivity(
                 Intent(Settings.Panel.ACTION_WIFI)
+                    .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            )
+            ActionStatus.SUCCESS
+        } catch (e: Exception) {
+            Logger.writeLine(Log.ERROR, e)
+            ActionStatus.FAILURE
+        }
+    }
+
+    fun openLocationSettings(context: Context): ActionStatus {
+        return try {
+            context.startActivity(
+                Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
                     .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             )
             ActionStatus.SUCCESS
