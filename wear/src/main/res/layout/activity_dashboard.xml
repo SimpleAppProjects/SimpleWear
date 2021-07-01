@@ -143,9 +143,28 @@
         android:layout_height="match_parent"
         android:layout_gravity="bottom"
         android:background="@color/buttonDisabled"
-        app:drawerContent="@id/drawer_content">
+        app:drawerContent="@id/drawer_content"
+        app:peekView="@id/peek_view">
 
         <include layout="@layout/dashboard_drawer_layout" />
+
+        <FrameLayout
+            android:id="@+id/peek_view"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:orientation="horizontal"
+            android:background="@color/buttonDisabled"
+            android:paddingTop="@dimen/ws_peek_view_top_padding"
+            android:paddingBottom="@dimen/ws_peek_view_bottom_padding">
+
+            <ImageView
+                android:layout_width="@dimen/ws_peek_view_icon_size"
+                android:layout_height="@dimen/ws_peek_view_icon_size"
+                android:layout_gravity="center_horizontal"
+                android:src="@drawable/ic_more_vert_24dp_wht" />
+
+        </FrameLayout>
 
     </androidx.wear.widget.drawer.WearableDrawerView>
 

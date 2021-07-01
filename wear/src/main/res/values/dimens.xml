@@ -19,4 +19,8 @@
     <dimen name="timer_top_margin">0dp</dimen>
     <dimen name="clock_top_margin">0dp</dimen>
 
+    <dimen name="ws_peek_view_bottom_padding">4dp</dimen>
+    <dimen name="ws_peek_view_icon_size">22dp</dimen>
+    <dimen name="ws_peek_view_top_padding">4dp</dimen>
+
 </resources>
