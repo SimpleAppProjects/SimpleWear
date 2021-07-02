@@ -7,6 +7,7 @@ import android.support.wearable.view.WearableDialogHelper
 import android.util.Log
 import android.view.View
 import android.widget.Switch
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.wear.widget.WearableLinearLayoutManager
 import androidx.wear.widget.drawer.WearableDrawerLayout
@@ -21,6 +22,7 @@ import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.shared_resources.utils.*
 import com.thewizrd.simplewear.adapters.MusicPlayerListAdapter
 import com.thewizrd.simplewear.controls.AppItemViewModel
+import com.thewizrd.simplewear.controls.CustomConfirmationOverlay
 import com.thewizrd.simplewear.databinding.ActivityMusicplayerlistBinding
 import com.thewizrd.simplewear.helpers.ConfirmationResultReceiver
 import com.thewizrd.simplewear.media.MediaPlayerActivity
@@ -81,8 +83,16 @@ class MediaPlayerListActivity : WearableListenerActivity(), MessageClient.OnMess
                                         this@MediaPlayerListActivity, intentAndroid,
                                         ConfirmationResultReceiver(this@MediaPlayerListActivity)
                                     )
-                                }
-                                else -> {
+
+                                    // Navigate
+                                    startActivity(
+                                        Intent(
+                                            this@MediaPlayerListActivity,
+                                            PhoneSyncActivity::class.java
+                                        )
+                                            .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                                    )
+                                    finishAffinity()
                                 }
                             }
                         } else {
@@ -192,6 +202,13 @@ class MediaPlayerListActivity : WearableListenerActivity(), MessageClient.OnMess
         })
         binding.playerList.adapter = mAdapter
 
+        binding.retryFab.setOnClickListener {
+            lifecycleScope.launch {
+                updateConnectionStatus()
+                requestPlayersUpdate()
+            }
+        }
+
         intentFilter = IntentFilter()
         intentFilter.addAction(ACTION_UPDATECONNECTIONSTATUS)
 
@@ -199,35 +216,7 @@ class MediaPlayerListActivity : WearableListenerActivity(), MessageClient.OnMess
         timer = object : CountDownTimer(3000, 1000) {
             override fun onTick(millisUntilFinished: Long) {}
             override fun onFinish() {
-                lifecycleScope.launch(Dispatchers.IO) {
-                    try {
-                        val buff = Wearable.getDataClient(this@MediaPlayerListActivity)
-                            .getDataItems(
-                                WearableHelper.getWearDataUri(
-                                    "*",
-                                    WearableHelper.MusicPlayersPath
-                                )
-                            )
-                            .await()
-
-                        for (i in 0 until buff.count) {
-                            val item = buff[i]
-                            if (WearableHelper.MusicPlayersPath == item.uri.path) {
-                                try {
-                                    val dataMap = DataMapItem.fromDataItem(item).dataMap
-                                    updateMusicPlayers(dataMap)
-                                } catch (e: Exception) {
-                                    Logger.writeLine(Log.ERROR, e)
-                                }
-                                showProgressBar(false)
-                            }
-                        }
-
-                        buff.release()
-                    } catch (e: Exception) {
-                        Logger.writeLine(Log.ERROR, e)
-                    }
-                }
+                refreshMusicPlayers()
             }
         }
 
@@ -253,11 +242,33 @@ class MediaPlayerListActivity : WearableListenerActivity(), MessageClient.OnMess
     override fun onMessageReceived(messageEvent: MessageEvent) {
         super.onMessageReceived(messageEvent)
 
-        if (messageEvent.path == WearableHelper.MediaPlayerAutoLaunchPath) {
-            val status = ActionStatus.valueOf(messageEvent.data.bytesToString())
+        when (messageEvent.path) {
+            WearableHelper.MusicPlayersPath -> {
+                val status = ActionStatus.valueOf(messageEvent.data.bytesToString())
 
-            if (status == ActionStatus.SUCCESS) {
-                startActivity(MediaPlayerActivity.buildAutoLaunchIntent(this))
+                if (status == ActionStatus.PERMISSION_DENIED) {
+                    timer?.cancel()
+
+                    CustomConfirmationOverlay()
+                        .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
+                        .setCustomDrawable(ContextCompat.getDrawable(this, R.drawable.ic_full_sad))
+                        .setMessage(getString(R.string.error_permissiondenied))
+                        .showOn(this)
+
+                    openAppOnPhone(false)
+
+                    mMediaAppsList.clear()
+                    updateAppsList()
+                } else if (status == ActionStatus.SUCCESS) {
+                    refreshMusicPlayers()
+                }
+            }
+            WearableHelper.MediaPlayerAutoLaunchPath -> {
+                val status = ActionStatus.valueOf(messageEvent.data.bytesToString())
+
+                if (status == ActionStatus.SUCCESS) {
+                    startActivity(MediaPlayerActivity.buildAutoLaunchIntent(this))
+                }
             }
         }
     }
@@ -280,6 +291,38 @@ class MediaPlayerListActivity : WearableListenerActivity(), MessageClient.OnMess
                         }
                     }
                 }
+            }
+        }
+    }
+
+    private fun refreshMusicPlayers() {
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val buff = Wearable.getDataClient(this@MediaPlayerListActivity)
+                    .getDataItems(
+                        WearableHelper.getWearDataUri(
+                            "*",
+                            WearableHelper.MusicPlayersPath
+                        )
+                    )
+                    .await()
+
+                for (i in 0 until buff.count) {
+                    val item = buff[i]
+                    if (WearableHelper.MusicPlayersPath == item.uri.path) {
+                        try {
+                            val dataMap = DataMapItem.fromDataItem(item).dataMap
+                            updateMusicPlayers(dataMap)
+                        } catch (e: Exception) {
+                            Logger.writeLine(Log.ERROR, e)
+                        }
+                        showProgressBar(false)
+                    }
+                }
+
+                buff.release()
+            } catch (e: Exception) {
+                Logger.writeLine(Log.ERROR, e)
             }
         }
     }
@@ -317,7 +360,8 @@ class MediaPlayerListActivity : WearableListenerActivity(), MessageClient.OnMess
                     it.packageName
                 )
             })
-            binding.noplayersMessageview.visibility =
+            showProgressBar(false)
+            binding.noplayersView.visibility =
                 if (mMediaAppsList.size > 0) View.GONE else View.VISIBLE
             binding.playerList.visibility = if (mMediaAppsList.size > 0) View.VISIBLE else View.GONE
             lifecycleScope.launch {

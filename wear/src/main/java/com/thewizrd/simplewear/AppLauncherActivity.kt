@@ -74,8 +74,20 @@ class AppLauncherActivity : WearableListenerActivity(), OnDataChangedListener {
                                         .addCategory(Intent.CATEGORY_BROWSABLE)
                                         .setData(WearableHelper.getPlayStoreURI())
 
-                                    RemoteIntent.startRemoteActivity(this@AppLauncherActivity, intentAndroid,
-                                            ConfirmationResultReceiver(this@AppLauncherActivity))
+                                    RemoteIntent.startRemoteActivity(
+                                        this@AppLauncherActivity, intentAndroid,
+                                        ConfirmationResultReceiver(this@AppLauncherActivity)
+                                    )
+
+                                    // Navigate
+                                    startActivity(
+                                        Intent(
+                                            this@AppLauncherActivity,
+                                            PhoneSyncActivity::class.java
+                                        )
+                                            .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                                    )
+                                    finishAffinity()
                                 }
                                 else -> {
                                 }

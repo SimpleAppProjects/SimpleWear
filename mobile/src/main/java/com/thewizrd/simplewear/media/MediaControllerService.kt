@@ -83,7 +83,9 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
         const val EXTRA_AUTOLAUNCH = "SimpleWear.Droid.extra.AUTO_LAUNCH"
 
         fun enqueueWork(context: Context, work: Intent) {
-            ContextCompat.startForegroundService(context, work)
+            if (NotificationListener.isEnabled(context)) {
+                ContextCompat.startForegroundService(context, work)
+            }
         }
     }
 
@@ -622,32 +624,39 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
     override fun onMessageReceived(messageEvent: MessageEvent) {
         when (messageEvent.path) {
             WearableHelper.MediaActionsClickPath -> {
+                if (!isNotificationListenerEnabled(messageEvent)) return
                 val actionId = messageEvent.data.bytesToString()
                 mCustomControlsAdapter.onItemClicked(actionId)
             }
             WearableHelper.MediaQueueItemsClickPath -> {
+                if (!isNotificationListenerEnabled(messageEvent)) return
                 val queueId = messageEvent.data.bytesToString().toLong()
                 mQueueItemsAdapter.onItemClicked(queueId)
             }
             WearableHelper.MediaBrowserItemsClickPath -> {
+                if (!isNotificationListenerEnabled(messageEvent)) return
                 /*
                 val mediaId = messageEvent.data.bytesToString()
                 mBrowseMediaItemsAdapter.onItemClicked(mediaId)
                 */
             }
             WearableHelper.MediaBrowserItemsExtraSuggestedClickPath -> {
+                if (!isNotificationListenerEnabled(messageEvent)) return
                 /*
                 val mediaId = messageEvent.data.bytesToString()
                 mBrowseMediaItemsExtraSuggestedAdapter.onItemClicked(mediaId)
                 */
             }
             WearableHelper.MediaBrowserItemsBackPath -> {
+                if (!isNotificationListenerEnabled(messageEvent)) return
                 //mBrowseMediaItemsAdapter.onBackPressed()
             }
             WearableHelper.MediaBrowserItemsExtraSuggestedBackPath -> {
+                if (!isNotificationListenerEnabled(messageEvent)) return
                 //mBrowseMediaItemsExtraSuggestedAdapter.onBackPressed()
             }
             WearableHelper.MediaPlayPath -> {
+                if (!isNotificationListenerEnabled(messageEvent)) return
                 if (mController != null && !mController!!.metadata.isNullOrEmpty()) {
                     mController!!.transportControls.play()
                     playFromSearchTimer.start()
@@ -661,18 +670,36 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
                 }
             }
             WearableHelper.MediaPausePath -> {
+                if (!isNotificationListenerEnabled(messageEvent)) return
                 mController?.transportControls?.pause()
             }
             WearableHelper.MediaPreviousPath -> {
+                if (!isNotificationListenerEnabled(messageEvent)) return
                 mController?.transportControls?.skipToPrevious()
             }
             WearableHelper.MediaNextPath -> {
+                if (!isNotificationListenerEnabled(messageEvent)) return
                 mController?.transportControls?.skipToNext()
             }
             WearableHelper.MediaPlayFromSearchPath -> {
+                if (!isNotificationListenerEnabled(messageEvent)) return
                 playFromSearchController(null)
             }
         }
+    }
+
+    private fun isNotificationListenerEnabled(messageEvent: MessageEvent): Boolean {
+        if (!NotificationListener.isEnabled(this)) {
+            scope.launch {
+                mWearableManager.sendMessage(
+                    messageEvent.sourceNodeId, messageEvent.path,
+                    ActionStatus.PERMISSION_DENIED.name.stringToBytes()
+                )
+            }
+            return false
+        }
+
+        return true
     }
 
     override fun onActiveSessionsChanged(controllers: MutableList<MediaController>?) {
@@ -828,11 +855,11 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
 
         fun onItemClicked(actionID: String) {
             if (actionID == WearableHelper.ACTIONITEM_PLAY) {
-                mControls!!.playFromSearch(null, Bundle.EMPTY)
+                mControls?.playFromSearch(null, Bundle.EMPTY) ?: playFromSearchIntent(null)
                 playFromSearchTimer.start()
             } else {
                 val action = mActions.find { it.action == actionID } ?: return
-                mControls!!.sendCustomAction(action, Bundle.EMPTY)
+                mControls?.sendCustomAction(action, Bundle.EMPTY)
             }
         }
 
@@ -1084,7 +1111,7 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
         }
 
         fun onItemClicked(queueID: Long) {
-            mControls!!.skipToQueueItem(queueID)
+            mControls?.skipToQueueItem(queueID)
         }
 
         fun setQueueItems(

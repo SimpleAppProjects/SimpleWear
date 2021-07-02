@@ -86,10 +86,20 @@ class ValueActionActivity : WearableListenerActivity() {
                                         .addCategory(Intent.CATEGORY_BROWSABLE)
                                         .setData(WearableHelper.getPlayStoreURI())
 
-                                    RemoteIntent.startRemoteActivity(this@ValueActionActivity, intentAndroid,
-                                            ConfirmationResultReceiver(this@ValueActionActivity))
-                                }
-                                else -> {
+                                    RemoteIntent.startRemoteActivity(
+                                        this@ValueActionActivity, intentAndroid,
+                                        ConfirmationResultReceiver(this@ValueActionActivity)
+                                    )
+
+                                    // Navigate
+                                    startActivity(
+                                        Intent(
+                                            this@ValueActionActivity,
+                                            PhoneSyncActivity::class.java
+                                        )
+                                            .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                                    )
+                                    finishAffinity()
                                 }
                             }
                         } else if (WearableHelper.ActionsPath == intent.action) {

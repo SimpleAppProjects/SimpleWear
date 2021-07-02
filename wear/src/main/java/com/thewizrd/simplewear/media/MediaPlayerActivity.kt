@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.util.Log
 import android.view.View
 import androidx.activity.viewModels
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentPagerAdapter
@@ -20,8 +21,10 @@ import com.thewizrd.shared_resources.helpers.WearConnectionStatus
 import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.shared_resources.utils.*
 import com.thewizrd.simplewear.PhoneSyncActivity
+import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.WearableListenerActivity
 import com.thewizrd.simplewear.controls.AppItemViewModel
+import com.thewizrd.simplewear.controls.CustomConfirmationOverlay
 import com.thewizrd.simplewear.databinding.ActivityMusicplaybackBinding
 import com.thewizrd.simplewear.helpers.ConfirmationResultReceiver
 import kotlinx.coroutines.*
@@ -114,8 +117,16 @@ class MediaPlayerActivity : WearableListenerActivity(), AmbientModeSupport.Ambie
                                             this@MediaPlayerActivity, intentAndroid,
                                             ConfirmationResultReceiver(this@MediaPlayerActivity)
                                         )
-                                    }
-                                    else -> {
+
+                                        // Navigate
+                                        startActivity(
+                                            Intent(
+                                                this@MediaPlayerActivity,
+                                                PhoneSyncActivity::class.java
+                                            )
+                                                .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                                        )
+                                        finishAffinity()
                                     }
                                 }
                             }
@@ -208,6 +219,14 @@ class MediaPlayerActivity : WearableListenerActivity(), AmbientModeSupport.Ambie
             }
         })
 
+        binding.retryFab.setOnClickListener {
+            lifecycleScope.launch {
+                updateConnectionStatus()
+                requestPlayerConnect()
+                updatePager()
+            }
+        }
+
         intentFilter = IntentFilter().apply {
             addAction(ACTION_UPDATECONNECTIONSTATUS)
             addAction(ACTION_CHANGED)
@@ -297,6 +316,29 @@ class MediaPlayerActivity : WearableListenerActivity(), AmbientModeSupport.Ambie
 
         lifecycleScope.launch {
             when (messageEvent.path) {
+                WearableHelper.MediaPlayerConnectPath,
+                WearableHelper.MediaPlayerAutoLaunchPath -> {
+                    val actionStatus = ActionStatus.valueOf(messageEvent.data.bytesToString())
+
+                    if (actionStatus == ActionStatus.PERMISSION_DENIED) {
+                        CustomConfirmationOverlay()
+                            .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
+                            .setCustomDrawable(
+                                ContextCompat.getDrawable(
+                                    this@MediaPlayerActivity,
+                                    R.drawable.ic_full_sad
+                                )
+                            )
+                            .setMessage(getString(R.string.error_permissiondenied))
+                            .showOn(this@MediaPlayerActivity)
+
+                        openAppOnPhone(false)
+
+                        showNoPlayersView(true)
+                    } else if (actionStatus == ActionStatus.SUCCESS) {
+                        showNoPlayersView(false)
+                    }
+                }
                 WearableHelper.MediaBrowserItemsClickPath,
                 WearableHelper.MediaBrowserItemsExtraSuggestedClickPath -> {
                     val actionStatus = ActionStatus.valueOf(messageEvent.data.bytesToString())
@@ -307,6 +349,12 @@ class MediaPlayerActivity : WearableListenerActivity(), AmbientModeSupport.Ambie
                 }
             }
         }
+    }
+
+    private fun showNoPlayersView(show: Boolean) {
+        binding.noplayersView.visibility = if (show) View.VISIBLE else View.GONE
+        binding.mediaViewpager.visibility = if (show) View.INVISIBLE else View.VISIBLE
+        binding.mediaViewpagerIndicator.visibility = if (show) View.INVISIBLE else View.VISIBLE
     }
 
     override fun onDataChanged(dataEventBuffer: DataEventBuffer) {
