@@ -108,6 +108,16 @@ class DashboardActivity : WearableListenerActivity(), OnSharedPreferenceChangeLi
                                         )
                                         if (binding.actionsList.isEnabled) binding.actionsList.isEnabled =
                                             false
+
+                                        // Navigate
+                                        startActivity(
+                                            Intent(
+                                                this@DashboardActivity,
+                                                PhoneSyncActivity::class.java
+                                            )
+                                                .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                                        )
+                                        finishAffinity()
                                     }
                                 WearConnectionStatus.CONNECTED ->
                                     lifecycleScope.launch {
