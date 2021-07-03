@@ -29,7 +29,7 @@ class PhoneSyncActivity : WearableListenerActivity() {
         binding = ActivitySetupSyncBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        binding.circularProgress.isIndeterminate = true
+        startProgressBar()
 
         broadcastReceiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context, intent: Intent) {
@@ -48,6 +48,12 @@ class PhoneSyncActivity : WearableListenerActivity() {
                                     R.drawable.ic_phonelink_erase_white_24dp
                                 )
                             )
+                            binding.circularProgress.setOnClickListener {
+                                lifecycleScope.launch {
+                                    startProgressBar()
+                                    updateConnectionStatus()
+                                }
+                            }
                             stopProgressBar()
                         }
                         WearConnectionStatus.CONNECTING -> {
@@ -62,17 +68,22 @@ class PhoneSyncActivity : WearableListenerActivity() {
                         WearConnectionStatus.APPNOTINSTALLED -> {
                             binding.message.setText(R.string.error_notinstalled)
 
-                            binding.circularProgress.setOnClickListener { // Open store on remote device
+                            binding.circularProgress.setOnClickListener {
+                                // Open store on remote device
                                 val intentAndroid = Intent(Intent.ACTION_VIEW)
                                     .addCategory(Intent.CATEGORY_BROWSABLE)
                                     .setData(WearableHelper.getPlayStoreURI())
 
-                                RemoteIntent.startRemoteActivity(this@PhoneSyncActivity, intentAndroid, null)
+                                RemoteIntent.startRemoteActivity(
+                                    this@PhoneSyncActivity,
+                                    intentAndroid,
+                                    null
+                                )
 
                                 // Show open on phone animation
                                 ConfirmationOverlay().setType(ConfirmationOverlay.OPEN_ON_PHONE_ANIMATION)
-                                        .setMessage(this@PhoneSyncActivity.getString(R.string.message_openedonphone))
-                                        .showOn(this@PhoneSyncActivity)
+                                    .setMessage(this@PhoneSyncActivity.getString(R.string.message_openedonphone))
+                                    .showOn(this@PhoneSyncActivity)
                             }
                             binding.button.setImageDrawable(ContextCompat.getDrawable(context, R.drawable.common_full_open_on_phone))
 
@@ -110,6 +121,10 @@ class PhoneSyncActivity : WearableListenerActivity() {
     private fun stopProgressBar() {
         binding.circularProgress.isIndeterminate = false
         binding.circularProgress.totalTime = 1
+    }
+
+    private fun startProgressBar() {
+        binding.circularProgress.isIndeterminate = true
     }
 
     override fun onResume() {
