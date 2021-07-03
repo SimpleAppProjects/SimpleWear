@@ -90,9 +90,11 @@ object PhoneStatusHelper {
     }
 
     fun isMobileDataEnabled(context: Context): Boolean {
+        val mobileDataSettingEnabled =
+            Settings.Global.getInt(context.contentResolver, "mobile_data", 0) == 1
         val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         val cap = cm.getNetworkCapabilities(cm.activeNetwork)
-        return cap != null && cap.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)
+        return cap != null && cap.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) || mobileDataSettingEnabled
     }
 
     fun isLocationEnabled(context: Context): Boolean {
