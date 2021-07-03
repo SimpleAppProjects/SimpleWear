@@ -337,6 +337,7 @@ class MediaPlayerListActivity : WearableListenerActivity(), MessageClient.OnMess
         }
     }
 
+    @Synchronized
     private suspend fun updateMusicPlayers(dataMap: DataMap) {
         val supported_players =
             dataMap.getStringArrayList(WearableHelper.KEY_SUPPORTEDPLAYERS) ?: return
@@ -365,11 +366,13 @@ class MediaPlayerListActivity : WearableListenerActivity(), MessageClient.OnMess
         lifecycleScope.launch {
             val filteredApps = Settings.getMusicPlayersFilter()
 
-            mAdapter.submitList(if (filteredApps.isNullOrEmpty()) mMediaAppsList else mMediaAppsList.filter {
-                filteredApps.contains(
-                    it.packageName
-                )
-            })
+            mAdapter.submitList(
+                if (filteredApps.isNullOrEmpty()) {
+                    mMediaAppsList.toList()
+                } else {
+                    mMediaAppsList.filter { filteredApps.contains(it.packageName) }
+                }
+            )
             showProgressBar(false)
             binding.noplayersView.visibility =
                 if (mMediaAppsList.size > 0) View.GONE else View.VISIBLE
