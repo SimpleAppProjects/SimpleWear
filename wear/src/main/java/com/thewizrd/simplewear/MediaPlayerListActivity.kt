@@ -196,6 +196,16 @@ class MediaPlayerListActivity : WearableListenerActivity(), MessageClient.OnMess
                 val vm = mAdapter.currentList[position]
 
                 lifecycleScope.launch {
+                    if (connect()) {
+                        sendMessage(
+                            mPhoneNodeWithApp!!.id,
+                            WearableHelper.OpenMusicPlayerPath,
+                            JSONParser.serializer(
+                                Pair(vm.packageName, vm.activityName),
+                                Pair::class.java
+                            ).stringToBytes()
+                        )
+                    }
                     startActivity(MediaPlayerActivity.buildIntent(this@MediaPlayerListActivity, vm))
                 }
             }
