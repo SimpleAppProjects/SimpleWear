@@ -86,23 +86,27 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
                     ComponentName(pkgName, activityName)
             }
 
-            // Check if the app has a registered MediaButton BroadcastReceiver
-            val infos = mContext.packageManager.queryBroadcastReceivers(
-                Intent(Intent.ACTION_MEDIA_BUTTON).setPackage(pkgName),
-                PackageManager.GET_RESOLVED_FILTER
-            )
             var playKeyIntent: Intent? = null
-            for (info in infos) {
-                if (pkgName == info.activityInfo.packageName) {
-                    val event = KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_MEDIA_PLAY)
-                    playKeyIntent = Intent().apply {
-                        putExtra(Intent.EXTRA_KEY_EVENT, event)
-                        setAction(Intent.ACTION_MEDIA_BUTTON).component =
-                            ComponentName(pkgName, info.activityInfo.name)
+
+            if (playMusic) {
+                // Check if the app has a registered MediaButton BroadcastReceiver
+                val infos = mContext.packageManager.queryBroadcastReceivers(
+                    Intent(Intent.ACTION_MEDIA_BUTTON).setPackage(pkgName),
+                    PackageManager.GET_RESOLVED_FILTER
+                )
+                for (info in infos) {
+                    if (pkgName == info.activityInfo.packageName) {
+                        val event = KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_MEDIA_PLAY)
+                        playKeyIntent = Intent().apply {
+                            putExtra(Intent.EXTRA_KEY_EVENT, event)
+                            setAction(Intent.ACTION_MEDIA_BUTTON).component =
+                                ComponentName(pkgName, info.activityInfo.name)
+                        }
+                        break
                     }
-                    break
                 }
             }
+
             if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
                 mContext.startActivity(appIntent)
                 if (playMusic) {
