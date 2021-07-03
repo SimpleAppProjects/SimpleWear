@@ -183,11 +183,12 @@ class AppLauncherActivity : WearableListenerActivity(), OnDataChangedListener {
 
                 lifecycleScope.launch {
                     when (status) {
-                        ActionStatus.SUCCESS ->
+                        ActionStatus.SUCCESS -> {
                             CustomConfirmationOverlay()
                                 .setType(CustomConfirmationOverlay.SUCCESS_ANIMATION)
                                 .showOn(this@AppLauncherActivity)
-                        ActionStatus.PERMISSION_DENIED ->
+                        }
+                        ActionStatus.PERMISSION_DENIED -> {
                             CustomConfirmationOverlay()
                                 .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
                                 .setCustomDrawable(
@@ -197,8 +198,11 @@ class AppLauncherActivity : WearableListenerActivity(), OnDataChangedListener {
                                     )
                                 )
                                 .setMessage(this@AppLauncherActivity.getString(R.string.error_permissiondenied))
-                                    .showOn(this@AppLauncherActivity)
-                        ActionStatus.FAILURE ->
+                                .showOn(this@AppLauncherActivity)
+
+                            openAppOnPhone(false)
+                        }
+                        ActionStatus.FAILURE -> {
                             CustomConfirmationOverlay()
                                 .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
                                 .setCustomDrawable(
@@ -208,7 +212,8 @@ class AppLauncherActivity : WearableListenerActivity(), OnDataChangedListener {
                                     )
                                 )
                                 .setMessage(this@AppLauncherActivity.getString(R.string.error_actionfailed))
-                                    .showOn(this@AppLauncherActivity)
+                                .showOn(this@AppLauncherActivity)
+                        }
                     }
                 }
             }
