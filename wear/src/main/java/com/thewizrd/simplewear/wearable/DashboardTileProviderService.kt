@@ -328,10 +328,10 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
 
     override fun onCapabilityChanged(capabilityInfo: CapabilityInfo) {
         scope.launch {
+            val connectedNodes = getConnectedNodes()
             mPhoneNodeWithApp = pickBestNodeId(capabilityInfo.nodes)
 
             if (mPhoneNodeWithApp == null) {
-                mConnectionStatus = WearConnectionStatus.APPNOTINSTALLED
                 /*
                  * If a device is disconnected from the wear network, capable nodes are empty
                  *
@@ -340,11 +340,26 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
                  *
                  * Verify if we're connected to any nodes; if not, we're truly disconnected
                  */
-                if (!verifyNodesAvailable()) {
-                    mConnectionStatus = WearConnectionStatus.DISCONNECTED
+                mConnectionStatus = if (connectedNodes.isNullOrEmpty()) {
+                    WearConnectionStatus.DISCONNECTED
+                } else {
+                    WearConnectionStatus.APPNOTINSTALLED
                 }
             } else {
-                mConnectionStatus = WearConnectionStatus.CONNECTED
+                if (mPhoneNodeWithApp!!.isNearby && connectedNodes.any { it.id == mPhoneNodeWithApp!!.id }) {
+                    mConnectionStatus = WearConnectionStatus.CONNECTED
+                } else {
+                    try {
+                        sendPing(mPhoneNodeWithApp!!.id)
+                        mConnectionStatus = WearConnectionStatus.CONNECTED
+                    } catch (e: ApiException) {
+                        if (e.statusCode == WearableStatusCodes.TARGET_NODE_NOT_CONNECTED) {
+                            mConnectionStatus = WearConnectionStatus.DISCONNECTED
+                        } else {
+                            Logger.writeLine(Log.ERROR, e)
+                        }
+                    }
+                }
             }
 
             if (mInFocus && !isIdForDummyData(id)) {
@@ -354,12 +369,38 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
     }
 
     protected suspend fun checkConnectionStatus() {
+        val connectedNodes = getConnectedNodes()
         mPhoneNodeWithApp = checkIfPhoneHasApp()
 
-        mConnectionStatus = if (mPhoneNodeWithApp == null) {
-            WearConnectionStatus.APPNOTINSTALLED
+        if (mPhoneNodeWithApp == null) {
+            /*
+             * If a device is disconnected from the wear network, capable nodes are empty
+             *
+             * No capable nodes can mean the app is not installed on the remote device or the
+             * device is disconnected.
+             *
+             * Verify if we're connected to any nodes; if not, we're truly disconnected
+             */
+            mConnectionStatus = if (connectedNodes.isNullOrEmpty()) {
+                WearConnectionStatus.DISCONNECTED
+            } else {
+                WearConnectionStatus.APPNOTINSTALLED
+            }
         } else {
-            WearConnectionStatus.CONNECTED
+            if (mPhoneNodeWithApp!!.isNearby && connectedNodes.any { it.id == mPhoneNodeWithApp!!.id }) {
+                mConnectionStatus = WearConnectionStatus.CONNECTED
+            } else {
+                try {
+                    sendPing(mPhoneNodeWithApp!!.id)
+                    mConnectionStatus = WearConnectionStatus.CONNECTED
+                } catch (e: ApiException) {
+                    if (e.statusCode == WearableStatusCodes.TARGET_NODE_NOT_CONNECTED) {
+                        mConnectionStatus = WearConnectionStatus.DISCONNECTED
+                    } else {
+                        Logger.writeLine(Log.ERROR, e)
+                    }
+                }
+            }
         }
 
         if (mInFocus && !isIdForDummyData(id)) {
@@ -433,17 +474,16 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
         return bestNode
     }
 
-    private suspend fun verifyNodesAvailable(): Boolean {
+    private suspend fun getConnectedNodes(): List<Node> {
         try {
-            val connectedNodes = Wearable.getNodeClient(this)
+            return Wearable.getNodeClient(this)
                 .connectedNodes
                 .await()
-            return connectedNodes.isNotEmpty()
         } catch (e: Exception) {
             Logger.writeLine(Log.ERROR, e)
         }
 
-        return false
+        return emptyList()
     }
 
     protected suspend fun sendMessage(nodeID: String, path: String, data: ByteArray?) {
@@ -463,6 +503,20 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
                 }
             }
 
+            Logger.writeLine(Log.ERROR, e)
+        }
+    }
+
+    @Throws(ApiException::class)
+    private suspend fun sendPing(nodeID: String) {
+        try {
+            Wearable.getMessageClient(this@DashboardTileProviderService)
+                .sendMessage(nodeID, WearableHelper.PingPath, null).await()
+        } catch (e: Exception) {
+            if (e is ApiException || e.cause is ApiException) {
+                val apiException = e.cause as? ApiException ?: e as ApiException
+                throw apiException
+            }
             Logger.writeLine(Log.ERROR, e)
         }
     }
