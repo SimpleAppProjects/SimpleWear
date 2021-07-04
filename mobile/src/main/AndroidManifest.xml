@@ -21,6 +21,21 @@
         android:name="android.software.companion_device_setup"
         android:required="false" />
 
+    <queries>
+        <package android:name="com.thewizrd.simplesleeptimer" />
+        <package android:name="com.thewizrd.simplesleeptimer.debug" />
+
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.MEDIA_BUTTON" />
+        </intent>
+        <intent>
+            <action android:name="android.media.browse.MediaBrowserService" />
+        </intent>
+    </queries>
+
     <application
         android:name=".App"
         android:allowBackup="false"
@@ -36,7 +51,6 @@
             android:theme="@style/AppTheme.Launcher">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
