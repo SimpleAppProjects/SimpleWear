@@ -3,5 +3,7 @@
     <item>
         <color android:color="@color/colorPrimary" />
     </item>
-    <item android:drawable="@drawable/ic_launcher_foreground" />
+    <item
+        android:drawable="@drawable/ic_logo"
+        android:gravity="center" />
 </layer-list>
