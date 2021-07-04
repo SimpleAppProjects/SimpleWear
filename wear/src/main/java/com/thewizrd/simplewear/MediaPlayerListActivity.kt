@@ -8,6 +8,7 @@ import android.util.Log
 import android.view.View
 import android.widget.Switch
 import androidx.core.content.ContextCompat
+import androidx.core.util.Pair
 import androidx.lifecycle.lifecycleScope
 import androidx.wear.widget.WearableLinearLayoutManager
 import androidx.wear.widget.drawer.WearableDrawerLayout
@@ -201,7 +202,7 @@ class MediaPlayerListActivity : WearableListenerActivity(), MessageClient.OnMess
                             mPhoneNodeWithApp!!.id,
                             WearableHelper.OpenMusicPlayerPath,
                             JSONParser.serializer(
-                                Pair(vm.packageName, vm.activityName),
+                                Pair.create(vm.packageName, vm.activityName),
                                 Pair::class.java
                             ).stringToBytes()
                         )
