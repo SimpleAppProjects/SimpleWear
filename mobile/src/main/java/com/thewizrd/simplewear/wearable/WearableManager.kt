@@ -108,7 +108,16 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
             }
 
             if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
-                mContext.startActivity(appIntent)
+                try {
+                    mContext.startActivity(appIntent)
+                } catch (e: ActivityNotFoundException) {
+                    sendMessage(
+                        nodeID,
+                        WearableHelper.PlayCommandPath,
+                        ActionStatus.FAILURE.name.stringToBytes()
+                    )
+                    return
+                }
                 if (playMusic) {
                     // Give the system enough time to start the app
                     delay(4500)
@@ -118,7 +127,14 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
                     // a broadcast to the most recent music session, which should be the
                     // app activity we just started
                     if (playKeyIntent != null) {
-                        sendMessage(nodeID, WearableHelper.PlayCommandPath, PhoneStatusHelper.sendPlayMusicCommand(mContext, playKeyIntent).name.stringToBytes())
+                        sendMessage(
+                            nodeID,
+                            WearableHelper.PlayCommandPath,
+                            PhoneStatusHelper.sendPlayMusicCommand(
+                                mContext,
+                                playKeyIntent
+                            ).name.stringToBytes()
+                        )
                     } else {
                         sendMessage(nodeID, WearableHelper.PlayCommandPath, PhoneStatusHelper.sendPlayMusicCommand(mContext).name.stringToBytes())
                     }
@@ -133,7 +149,16 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
                     // No devices associated; send message to user
                     sendMessage(nodeID, WearableHelper.PlayCommandPath, ActionStatus.PERMISSION_DENIED.name.stringToBytes())
                 } else {
-                    mContext.startActivity(appIntent)
+                    try {
+                        mContext.startActivity(appIntent)
+                    } catch (e: ActivityNotFoundException) {
+                        sendMessage(
+                            nodeID,
+                            WearableHelper.PlayCommandPath,
+                            ActionStatus.FAILURE.name.stringToBytes()
+                        )
+                        return
+                    }
                     if (playMusic) {
                         // Give the system enough time to start the app
                         delay(4500)
@@ -143,7 +168,14 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
                         // a broadcast to the most recent music session, which should be the
                         // app activity we just started
                         if (playKeyIntent != null) {
-                            sendMessage(nodeID, WearableHelper.PlayCommandPath, PhoneStatusHelper.sendPlayMusicCommand(mContext, playKeyIntent).name.stringToBytes())
+                            sendMessage(
+                                nodeID,
+                                WearableHelper.PlayCommandPath,
+                                PhoneStatusHelper.sendPlayMusicCommand(
+                                    mContext,
+                                    playKeyIntent
+                                ).name.stringToBytes()
+                            )
                         } else {
                             sendMessage(nodeID, WearableHelper.PlayCommandPath, PhoneStatusHelper.sendPlayMusicCommand(mContext).name.stringToBytes())
                         }
