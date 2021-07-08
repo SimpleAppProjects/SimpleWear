@@ -280,42 +280,50 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
         val data = messageEvent.data ?: return
 
         scope.launch {
-            if (messageEvent.path.contains(WearableHelper.WifiPath)) {
-                val wifiStatus = data[0].toInt()
-                var enabled = false
-                when (wifiStatus) {
-                    WifiManager.WIFI_STATE_DISABLING,
-                    WifiManager.WIFI_STATE_DISABLED,
-                    WifiManager.WIFI_STATE_UNKNOWN -> enabled = false
-                    WifiManager.WIFI_STATE_ENABLING,
-                    WifiManager.WIFI_STATE_ENABLED -> enabled = true
+            when {
+                messageEvent.path.contains(WearableHelper.WifiPath) -> {
+                    val wifiStatus = data[0].toInt()
+                    var enabled = false
+
+                    when (wifiStatus) {
+                        WifiManager.WIFI_STATE_DISABLING,
+                        WifiManager.WIFI_STATE_DISABLED,
+                        WifiManager.WIFI_STATE_UNKNOWN -> enabled = false
+                        WifiManager.WIFI_STATE_ENABLING,
+                        WifiManager.WIFI_STATE_ENABLED -> enabled = true
+                    }
+
+                    wifiAction = ToggleAction(Actions.WIFI, enabled)
                 }
+                messageEvent.path.contains(WearableHelper.BluetoothPath) -> {
+                    val bt_status = data[0].toInt()
+                    var enabled = false
 
-                wifiAction = ToggleAction(Actions.WIFI, enabled)
-            } else if (messageEvent.path.contains(WearableHelper.BluetoothPath)) {
-                val bt_status = data[0].toInt()
-                var enabled = false
+                    when (bt_status) {
+                        BluetoothAdapter.STATE_OFF,
+                        BluetoothAdapter.STATE_TURNING_OFF -> enabled = false
+                        BluetoothAdapter.STATE_ON,
+                        BluetoothAdapter.STATE_TURNING_ON -> enabled = true
+                    }
 
-                when (bt_status) {
-                    BluetoothAdapter.STATE_OFF,
-                    BluetoothAdapter.STATE_TURNING_OFF -> enabled = false
-                    BluetoothAdapter.STATE_ON,
-                    BluetoothAdapter.STATE_TURNING_ON -> enabled = true
+                    btAction = ToggleAction(Actions.BLUETOOTH, enabled)
                 }
+                messageEvent.path == WearableHelper.BatteryPath -> {
+                    val jsonData: String = data.bytesToString()
+                    battStatus = JSONParser.deserializer(jsonData, BatteryStatus::class.java)
+                }
+                messageEvent.path == WearableHelper.ActionsPath -> {
+                    val jsonData: String = data.bytesToString()
+                    val action = JSONParser.deserializer(jsonData, Action::class.java)
 
-                btAction = ToggleAction(Actions.BLUETOOTH, enabled)
-            } else if (messageEvent.path == WearableHelper.BatteryPath) {
-                val jsonData: String = data.bytesToString()
-                battStatus = JSONParser.deserializer(jsonData, BatteryStatus::class.java)
-            } else if (messageEvent.path == WearableHelper.ActionsPath) {
-                val jsonData: String = data.bytesToString()
-                val action = JSONParser.deserializer(jsonData, Action::class.java)!!
-                when (action.actionType) {
-                    Actions.WIFI -> wifiAction = action as ToggleAction
-                    Actions.BLUETOOTH -> btAction = action as ToggleAction
-                    Actions.TORCH -> torchAction = action as ToggleAction
-                    Actions.DONOTDISTURB -> dndAction = if (action is ToggleAction) action else action as MultiChoiceAction
-                    Actions.RINGER -> ringerAction = action as MultiChoiceAction
+                    when (action?.actionType) {
+                        Actions.WIFI -> wifiAction = action as ToggleAction
+                        Actions.BLUETOOTH -> btAction = action as ToggleAction
+                        Actions.TORCH -> torchAction = action as ToggleAction
+                        Actions.DONOTDISTURB -> dndAction =
+                            if (action is ToggleAction) action else action as MultiChoiceAction
+                        Actions.RINGER -> ringerAction = action as MultiChoiceAction
+                    }
                 }
             }
 
@@ -500,6 +508,7 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
                     if (mInFocus && !isIdForDummyData(id)) {
                         sendRemoteViews()
                     }
+                    return
                 }
             }
 
