@@ -20,9 +20,8 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
-import androidx.fragment.app.Fragment
-import androidx.lifecycle.lifecycleScope
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import com.thewizrd.shared_resources.lifecycle.LifecycleAwareFragment
 import com.thewizrd.shared_resources.tasks.delayLaunch
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.simplewear.databinding.FragmentPermcheckBinding
@@ -33,10 +32,9 @@ import com.thewizrd.simplewear.services.NotificationListener
 import com.thewizrd.simplewear.wearable.WearableDataListenerService
 import com.thewizrd.simplewear.wearable.WearableWorker
 import com.thewizrd.simplewear.wearable.WearableWorker.Companion.enqueueAction
-import kotlinx.coroutines.launch
 import java.util.regex.Pattern
 
-class PermissionCheckFragment : Fragment() {
+class PermissionCheckFragment : LifecycleAwareFragment() {
     companion object {
         private const val TAG = "PermissionCheckFragment"
         private const val CAMERA_REQCODE = 0
@@ -47,7 +45,11 @@ class PermissionCheckFragment : Fragment() {
     private lateinit var binding: FragmentPermcheckBinding
     private var timer: CountDownTimer? = null
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
         // Inflate the layout for this fragment
         binding = FragmentPermcheckBinding.inflate(inflater, container, false)
         binding.torchPref.setOnClickListener {
@@ -57,7 +59,8 @@ class PermissionCheckFragment : Fragment() {
         }
         binding.deviceadminPref.setOnClickListener {
             if (!isDeviceAdminEnabled(requireContext())) {
-                val mScreenLockAdmin = ComponentName(requireContext(), ScreenLockAdminReceiver::class.java)
+                val mScreenLockAdmin =
+                    ComponentName(requireContext(), ScreenLockAdminReceiver::class.java)
 
                 // Launch the activity to have the user enable our admin.
                 val intent = Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN)
@@ -127,8 +130,8 @@ class PermissionCheckFragment : Fragment() {
 
     @TargetApi(Build.VERSION_CODES.Q)
     private fun pairDevice(deviceName: String?) {
-        viewLifecycleOwner.lifecycleScope.launch {
-            if (deviceName.isNullOrBlank()) return@launch
+        runWithView {
+            if (deviceName.isNullOrBlank()) return@runWithView
 
             val deviceManager =
                 requireContext().getSystemService(Context.COMPANION_DEVICE_SERVICE) as CompanionDeviceManager
@@ -168,14 +171,16 @@ class PermissionCheckFragment : Fragment() {
 
             Toast.makeText(requireContext(), R.string.message_watchbtdiscover, Toast.LENGTH_LONG).show()
 
-            viewLifecycleOwner.lifecycleScope.delayLaunch(timeMillis = 5000) {
+            delayLaunch(timeMillis = 5000) {
                 Logger.writeLine(Log.INFO, "%s: sending pair request", TAG)
                 deviceManager.associate(request, object : CompanionDeviceManager.Callback() {
                     override fun onDeviceFound(chooserLauncher: IntentSender) {
                         if (context == null) return
                         try {
-                            startIntentSenderForResult(chooserLauncher,
-                                SELECT_DEVICE_REQUEST_CODE, null, 0, 0, 0, null)
+                            startIntentSenderForResult(
+                                chooserLauncher,
+                                SELECT_DEVICE_REQUEST_CODE, null, 0, 0, 0, null
+                            )
                         } catch (e: SendIntentException) {
                             Logger.writeLine(Log.ERROR, e)
                         }

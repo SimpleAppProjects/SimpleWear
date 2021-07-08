@@ -20,6 +20,7 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.wear.widget.WearableLinearLayoutManager
 import com.google.android.gms.wearable.*
 import com.thewizrd.shared_resources.helpers.WearableHelper
+import com.thewizrd.shared_resources.lifecycle.LifecycleAwareFragment
 import com.thewizrd.shared_resources.utils.ImageUtils
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.simplewear.databinding.AppItemBinding
@@ -30,7 +31,7 @@ import kotlinx.coroutines.tasks.await
 import java.util.*
 import kotlin.collections.ArrayList
 
-class MediaQueueFragment : Fragment(), DataClient.OnDataChangedListener {
+class MediaQueueFragment : LifecycleAwareFragment(), DataClient.OnDataChangedListener {
     private lateinit var binding: FragmentBrowserListBinding
     private lateinit var mQueueItemsAdapter: MediaQueueItemsAdapter
     private lateinit var mLayoutManager: WearableLinearLayoutManager
@@ -232,7 +233,7 @@ class MediaQueueFragment : Fragment(), DataClient.OnDataChangedListener {
 
         val newQueueId = dataMap.getLong(WearableHelper.KEY_MEDIA_ACTIVEQUEUEITEM_ID, -1)
 
-        viewLifecycleOwner.lifecycleScope.launch {
+        runWithView {
             showLoading(false)
 
             if (newQueueId != mQueueItemsAdapter.mActiveQueueItemId) {

@@ -15,6 +15,7 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.wear.widget.WearableLinearLayoutManager
 import com.google.android.gms.wearable.*
 import com.thewizrd.shared_resources.helpers.WearableHelper
+import com.thewizrd.shared_resources.lifecycle.LifecycleAwareFragment
 import com.thewizrd.shared_resources.utils.ImageUtils
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.simplewear.R
@@ -26,7 +27,7 @@ import kotlinx.coroutines.tasks.await
 import java.util.*
 import kotlin.collections.ArrayList
 
-class MediaBrowserFragment : Fragment(), DataClient.OnDataChangedListener {
+class MediaBrowserFragment : LifecycleAwareFragment(), DataClient.OnDataChangedListener {
     private lateinit var binding: FragmentBrowserListBinding
     private lateinit var mBrowserAdapter: MediaBrowserItemsAdapter
 
@@ -205,7 +206,7 @@ class MediaBrowserFragment : Fragment(), DataClient.OnDataChangedListener {
             })
         }
 
-        viewLifecycleOwner.lifecycleScope.launch {
+        runWithView {
             showLoading(false)
             mBrowserAdapter.submitList(mediaItems)
         }

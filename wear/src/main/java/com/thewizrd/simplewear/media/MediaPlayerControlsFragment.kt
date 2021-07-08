@@ -20,6 +20,7 @@ import androidx.wear.ambient.AmbientModeSupport
 import com.google.android.gms.wearable.*
 import com.thewizrd.shared_resources.actions.*
 import com.thewizrd.shared_resources.helpers.WearableHelper
+import com.thewizrd.shared_resources.lifecycle.LifecycleAwareFragment
 import com.thewizrd.shared_resources.media.PlaybackState
 import com.thewizrd.shared_resources.utils.ImageUtils
 import com.thewizrd.shared_resources.utils.JSONParser
@@ -33,7 +34,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.tasks.await
 import kotlin.random.Random
 
-class MediaPlayerControlsFragment : Fragment(), MessageClient.OnMessageReceivedListener,
+class MediaPlayerControlsFragment : LifecycleAwareFragment(), MessageClient.OnMessageReceivedListener,
     DataClient.OnDataChangedListener {
     private lateinit var binding: MediaPlayerControlsBinding
 
@@ -328,7 +329,7 @@ class MediaPlayerControlsFragment : Fragment(), MessageClient.OnMessageReceivedL
     }
 
     private fun updatePlayerState(dataMap: DataMap) {
-        viewLifecycleOwner.lifecycleScope.launch {
+        runWithView {
             val stateName = dataMap.getString(WearableHelper.KEY_MEDIA_PLAYBACKSTATE)
             val playbackState = stateName?.let { PlaybackState.valueOf(it) } ?: PlaybackState.NONE
             val title = dataMap.getString(WearableHelper.KEY_MEDIA_METADATA_TITLE)

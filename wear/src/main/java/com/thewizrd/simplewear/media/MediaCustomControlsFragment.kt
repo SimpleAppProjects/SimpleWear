@@ -17,6 +17,7 @@ import androidx.wear.widget.WearableLinearLayoutManager
 import com.google.android.gms.wearable.*
 import com.thewizrd.shared_resources.actions.ActionStatus
 import com.thewizrd.shared_resources.helpers.WearableHelper
+import com.thewizrd.shared_resources.lifecycle.LifecycleAwareFragment
 import com.thewizrd.shared_resources.utils.ImageUtils
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.shared_resources.utils.bytesToString
@@ -30,7 +31,7 @@ import kotlinx.coroutines.tasks.await
 import java.util.*
 import kotlin.collections.ArrayList
 
-class MediaCustomControlsFragment : Fragment(), MessageClient.OnMessageReceivedListener,
+class MediaCustomControlsFragment : LifecycleAwareFragment(), MessageClient.OnMessageReceivedListener,
     DataClient.OnDataChangedListener {
     private lateinit var binding: FragmentBrowserListBinding
     private lateinit var mCustomControlsAdapter: MediaCustomControlsItemsAdapter
@@ -199,7 +200,7 @@ class MediaCustomControlsFragment : Fragment(), MessageClient.OnMessageReceivedL
             })
         }
 
-        viewLifecycleOwner.lifecycleScope.launch {
+        runWithView {
             showLoading(false)
             mCustomControlsAdapter.submitList(mediaItems)
         }
