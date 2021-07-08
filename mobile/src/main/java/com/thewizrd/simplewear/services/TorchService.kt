@@ -94,15 +94,21 @@ class TorchService : Service() {
         return null
     }
 
-    override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         startForeground(JOB_ID, getForegroundNotification())
-        if (ACTION_START_LIGHT == intent.action) {
-            turnOnFlashLight()
-        } else if (ACTION_END_LIGHT == intent.action) {
-            turnOffFlashLight()
-            stopSelf()
+
+        when (intent?.action) {
+            ACTION_START_LIGHT -> {
+                turnOnFlashLight()
+            }
+            ACTION_END_LIGHT -> {
+                turnOffFlashLight()
+                stopSelf()
+            }
         }
+
         WearableWorker.sendActionUpdate(applicationContext, Actions.TORCH)
+
         return START_STICKY
     }
 
