@@ -8,6 +8,7 @@ import android.content.pm.PackageManager
 import android.content.res.Resources
 import android.media.session.MediaController
 import android.media.session.MediaSessionManager
+import android.support.v4.media.session.PlaybackStateCompat
 import android.util.Log
 import java.util.*
 
@@ -65,5 +66,18 @@ object MediaAppControllerUtils {
             )
         }
         return mediaApps
+    }
+
+    fun isMediaActive(
+        context: Context,
+        listenerComponent: ComponentName
+    ): Boolean {
+        val mMediaSessionManager = context.getSystemService(MediaSessionManager::class.java)
+        val activeSessions = mMediaSessionManager.getActiveSessions(listenerComponent)
+        return activeSessions.any {
+            it.playbackState != null &&
+                    (it.playbackState!!.state == PlaybackStateCompat.STATE_PLAYING
+                            || it.playbackState!!.state != PlaybackStateCompat.STATE_NONE)
+        }
     }
 }

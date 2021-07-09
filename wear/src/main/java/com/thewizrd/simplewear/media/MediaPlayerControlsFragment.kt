@@ -11,7 +11,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.Observer
 import androidx.lifecycle.lifecycleScope
@@ -19,6 +18,7 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.wear.ambient.AmbientModeSupport
 import com.google.android.gms.wearable.*
 import com.thewizrd.shared_resources.actions.*
+import com.thewizrd.shared_resources.helpers.MediaHelper
 import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.shared_resources.lifecycle.LifecycleAwareFragment
 import com.thewizrd.shared_resources.media.PlaybackState
@@ -27,7 +27,6 @@ import com.thewizrd.shared_resources.utils.JSONParser
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.shared_resources.utils.bytesToString
 import com.thewizrd.simplewear.R
-import com.thewizrd.simplewear.WearableListenerActivity
 import com.thewizrd.simplewear.controls.CustomConfirmationOverlay
 import com.thewizrd.simplewear.databinding.MediaPlayerControlsBinding
 import kotlinx.coroutines.*
@@ -141,29 +140,11 @@ class MediaPlayerControlsFragment : LifecycleAwareFragment(), MessageClient.OnMe
         binding = MediaPlayerControlsBinding.inflate(inflater, container, false)
 
         binding.volUpButton.setOnClickListener {
-            val actionData = VolumeAction(ValueDirection.UP, AudioStreamType.MUSIC)
-
-            LocalBroadcastManager.getInstance(requireContext())
-                .sendBroadcast(
-                    Intent(WearableListenerActivity.ACTION_CHANGED)
-                        .putExtra(
-                            WearableListenerActivity.EXTRA_ACTIONDATA,
-                            JSONParser.serializer(actionData, Action::class.java)
-                        )
-                )
+            requestVolumeUp()
         }
 
         binding.volDownButton.setOnClickListener {
-            val actionData = VolumeAction(ValueDirection.DOWN, AudioStreamType.MUSIC)
-
-            LocalBroadcastManager.getInstance(requireContext())
-                .sendBroadcast(
-                    Intent(WearableListenerActivity.ACTION_CHANGED)
-                        .putExtra(
-                            WearableListenerActivity.EXTRA_ACTIONDATA,
-                            JSONParser.serializer(actionData, Action::class.java)
-                        )
-                )
+            requestVolumeDown()
         }
 
         binding.playpauseButton.isCheckable = true
@@ -248,7 +229,7 @@ class MediaPlayerControlsFragment : LifecycleAwareFragment(), MessageClient.OnMe
         Wearable.getDataClient(requireContext()).addListener(this)
 
         // Request connect to media player
-        requestAudioStreamState()
+        requestVolumeStatus()
         updatePlayerState()
     }
 
@@ -269,19 +250,19 @@ class MediaPlayerControlsFragment : LifecycleAwareFragment(), MessageClient.OnMe
             for (event in dataEventBuffer) {
                 if (event.type == DataEvent.TYPE_CHANGED) {
                     val item = event.dataItem
-                    if (WearableHelper.MediaPlayerStatePath == item.uri.path) {
+                    if (MediaHelper.MediaPlayerStatePath == item.uri.path) {
                         deleteJob?.cancel()
                         val dataMap = DataMapItem.fromDataItem(item).dataMap
                         updatePlayerState(dataMap)
                     }
                 } else if (event.type == DataEvent.TYPE_DELETED) {
                     val item = event.dataItem
-                    if (WearableHelper.MediaPlayerStatePath == item.uri.path) {
+                    if (MediaHelper.MediaPlayerStatePath == item.uri.path) {
                         deleteJob?.cancel()
-                        deleteJob = lifecycleScope.launch {
+                        deleteJob = lifecycleScope.launch delete@{
                             delay(1000)
 
-                            if (!isActive) return@launch
+                            if (!isActive) return@delete
 
                             updatePlayerState(DataMap())
                         }
@@ -293,36 +274,40 @@ class MediaPlayerControlsFragment : LifecycleAwareFragment(), MessageClient.OnMe
 
     override fun onMessageReceived(messageEvent: MessageEvent) {
         lifecycleScope.launch {
-            if (messageEvent.path == WearableHelper.AudioStatusPath) {
-                val status = messageEvent.data?.let {
-                    JSONParser.deserializer(it.bytesToString(), AudioStreamState::class.java)
-                }
+            when (messageEvent.path) {
+                WearableHelper.AudioStatusPath,
+                MediaHelper.MediaVolumeStatusPath -> {
+                    val status = messageEvent.data?.let {
+                        JSONParser.deserializer(it.bytesToString(), AudioStreamState::class.java)
+                    }
 
-                lifecycleScope.launch {
-                    if (status == null) {
-                        binding.volumeProgressBar.progress = 0
-                    } else {
-                        binding.volumeProgressBar.max = status.maxVolume
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                            binding.volumeProgressBar.min = status.minVolume
+                    lifecycleScope.launch {
+                        if (status == null) {
+                            binding.volumeProgressBar.progress = 0
+                        } else {
+                            binding.volumeProgressBar.max = status.maxVolume
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                binding.volumeProgressBar.min = status.minVolume
+                            }
+                            binding.volumeProgressBar.progress = status.currentVolume
                         }
-                        binding.volumeProgressBar.progress = status.currentVolume
                     }
                 }
-            } else if (messageEvent.path == WearableHelper.MediaPlayPath) {
-                val actionStatus = ActionStatus.valueOf(messageEvent.data.bytesToString())
+                MediaHelper.MediaPlayPath -> {
+                    val actionStatus = ActionStatus.valueOf(messageEvent.data.bytesToString())
 
-                if (actionStatus == ActionStatus.TIMEOUT) {
-                    CustomConfirmationOverlay()
-                        .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
-                        .setCustomDrawable(
-                            ContextCompat.getDrawable(
-                                requireContext(),
-                                R.drawable.ic_full_sad
+                    if (actionStatus == ActionStatus.TIMEOUT) {
+                        CustomConfirmationOverlay()
+                            .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
+                            .setCustomDrawable(
+                                ContextCompat.getDrawable(
+                                    requireContext(),
+                                    R.drawable.ic_full_sad
+                                )
                             )
-                        )
-                        .setMessage(getString(R.string.error_playback_failed))
-                        .showAbove(binding.root)
+                            .setMessage(getString(R.string.error_playback_failed))
+                            .showAbove(binding.root)
+                    }
                 }
             }
         }
@@ -330,14 +315,14 @@ class MediaPlayerControlsFragment : LifecycleAwareFragment(), MessageClient.OnMe
 
     private fun updatePlayerState(dataMap: DataMap) {
         runWithView {
-            val stateName = dataMap.getString(WearableHelper.KEY_MEDIA_PLAYBACKSTATE)
+            val stateName = dataMap.getString(MediaHelper.KEY_MEDIA_PLAYBACKSTATE)
             val playbackState = stateName?.let { PlaybackState.valueOf(it) } ?: PlaybackState.NONE
-            val title = dataMap.getString(WearableHelper.KEY_MEDIA_METADATA_TITLE)
-            val artist = dataMap.getString(WearableHelper.KEY_MEDIA_METADATA_ARTIST)
+            val title = dataMap.getString(MediaHelper.KEY_MEDIA_METADATA_TITLE)
+            val artist = dataMap.getString(MediaHelper.KEY_MEDIA_METADATA_ARTIST)
             val artBitmap = try {
                 ImageUtils.bitmapFromAssetStream(
                     Wearable.getDataClient(requireContext()),
-                    dataMap.getAsset(WearableHelper.KEY_MEDIA_METADATA_ART)
+                    dataMap.getAsset(MediaHelper.KEY_MEDIA_METADATA_ART)
                 )
             } catch (e: Exception) {
                 null
@@ -382,13 +367,6 @@ class MediaPlayerControlsFragment : LifecycleAwareFragment(), MessageClient.OnMe
         }
     }
 
-    private fun requestAudioStreamState() {
-        lifecycleScope.launch {
-            LocalBroadcastManager.getInstance(requireContext())
-                .sendBroadcast(Intent(WearableHelper.AudioStatusPath))
-        }
-    }
-
     private fun updatePlayerState() {
         lifecycleScope.launch(Dispatchers.IO) {
             try {
@@ -396,14 +374,14 @@ class MediaPlayerControlsFragment : LifecycleAwareFragment(), MessageClient.OnMe
                     .getDataItems(
                         WearableHelper.getWearDataUri(
                             "*",
-                            WearableHelper.MediaPlayerStatePath
+                            MediaHelper.MediaPlayerStatePath
                         )
                     )
                     .await()
 
                 for (i in 0 until buff.count) {
                     val item = buff[i]
-                    if (WearableHelper.MediaPlayerStatePath == item.uri.path) {
+                    if (MediaHelper.MediaPlayerStatePath == item.uri.path) {
                         val dataMap = DataMapItem.fromDataItem(item).dataMap
                         updatePlayerState(dataMap)
                     }
@@ -419,21 +397,42 @@ class MediaPlayerControlsFragment : LifecycleAwareFragment(), MessageClient.OnMe
     private fun requestPlayPauseAction(checked: Boolean) {
         lifecycleScope.launch {
             LocalBroadcastManager.getInstance(requireContext())
-                .sendBroadcast(Intent(if (checked) WearableHelper.MediaPlayPath else WearableHelper.MediaPausePath))
+                .sendBroadcast(Intent(if (checked) MediaHelper.MediaPlayPath else MediaHelper.MediaPausePath))
         }
     }
 
     private fun requestSkipToPreviousAction() {
         lifecycleScope.launch {
             LocalBroadcastManager.getInstance(requireContext())
-                .sendBroadcast(Intent(WearableHelper.MediaPreviousPath))
+                .sendBroadcast(Intent(MediaHelper.MediaPreviousPath))
         }
     }
 
     private fun requestSkipToNextAction() {
         lifecycleScope.launch {
             LocalBroadcastManager.getInstance(requireContext())
-                .sendBroadcast(Intent(WearableHelper.MediaNextPath))
+                .sendBroadcast(Intent(MediaHelper.MediaNextPath))
+        }
+    }
+
+    private fun requestVolumeUp() {
+        lifecycleScope.launch {
+            LocalBroadcastManager.getInstance(requireContext())
+                .sendBroadcast(Intent(MediaHelper.MediaVolumeUpPath))
+        }
+    }
+
+    private fun requestVolumeDown() {
+        lifecycleScope.launch {
+            LocalBroadcastManager.getInstance(requireContext())
+                .sendBroadcast(Intent(MediaHelper.MediaVolumeDownPath))
+        }
+    }
+
+    private fun requestVolumeStatus() {
+        lifecycleScope.launch {
+            LocalBroadcastManager.getInstance(requireContext())
+                .sendBroadcast(Intent(MediaHelper.MediaVolumeStatusPath))
         }
     }
 

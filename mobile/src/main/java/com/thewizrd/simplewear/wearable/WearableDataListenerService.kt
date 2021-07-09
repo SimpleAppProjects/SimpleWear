@@ -9,10 +9,12 @@ import com.thewizrd.shared_resources.actions.Action
 import com.thewizrd.shared_resources.actions.ActionStatus
 import com.thewizrd.shared_resources.actions.AudioStreamType
 import com.thewizrd.shared_resources.helpers.AppState
+import com.thewizrd.shared_resources.helpers.MediaHelper
 import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.shared_resources.utils.*
 import com.thewizrd.simplewear.MainActivity
 import com.thewizrd.simplewear.helpers.PhoneStatusHelper
+import com.thewizrd.simplewear.media.MediaAppControllerUtils
 import com.thewizrd.simplewear.media.MediaControllerService
 import com.thewizrd.simplewear.services.NotificationListener
 import kotlinx.coroutines.Dispatchers
@@ -59,7 +61,7 @@ class WearableDataListenerService : WearableListenerService() {
                     mWearMgr.sendStatusUpdate(messageEvent.sourceNodeId, null)
                     mWearMgr.sendActionsUpdate(messageEvent.sourceNodeId)
                 }
-            } else if (messageEvent.path.startsWith(WearableHelper.MusicPlayersPath)) {
+            } else if (messageEvent.path.startsWith(MediaHelper.MusicPlayersPath)) {
                 if (NotificationListener.isEnabled(ctx)) {
                     mWearMgr.sendSupportedMusicPlayers()
                     mWearMgr.sendMessage(
@@ -72,13 +74,13 @@ class WearableDataListenerService : WearableListenerService() {
                         ActionStatus.PERMISSION_DENIED.name.stringToBytes()
                     )
                 }
-            } else if (messageEvent.path == WearableHelper.OpenMusicPlayerPath) {
+            } else if (messageEvent.path == MediaHelper.OpenMusicPlayerPath) {
                 val jsonData = messageEvent.data.bytesToString()
                 val pair = JSONParser.deserializer(jsonData, Pair::class.java)
                 val pkgName = pair?.first.toString()
                 val activityName = pair?.second.toString()
                 mWearMgr.startMusicPlayer(messageEvent.sourceNodeId, pkgName, activityName, false)
-            } else if (messageEvent.path == WearableHelper.PlayCommandPath) {
+            } else if (messageEvent.path == MediaHelper.PlayCommandPath) {
                 val jsonData = messageEvent.data.bytesToString()
                 val pair = JSONParser.deserializer(jsonData, Pair::class.java)
                 val pkgName = pair?.first.toString()
@@ -87,8 +89,10 @@ class WearableDataListenerService : WearableListenerService() {
             } else if (messageEvent.path == WearableHelper.BtDiscoverPath) {
                 val deviceName = messageEvent.data.bytesToString()
                 LocalBroadcastManager.getInstance(ctx)
-                    .sendBroadcast(Intent(ACTION_GETCONNECTEDNODE)
-                        .putExtra(EXTRA_NODEDEVICENAME, deviceName))
+                    .sendBroadcast(
+                        Intent(ACTION_GETCONNECTEDNODE)
+                            .putExtra(EXTRA_NODEDEVICENAME, deviceName)
+                    )
             } else if (messageEvent.data != null && messageEvent.path == WearableHelper.AudioStatusPath) {
                 mWearMgr.sendAudioModeStatus(messageEvent.sourceNodeId, AudioStreamType.valueOf(messageEvent.data.bytesToString()))
             } else if (messageEvent.path.startsWith(WearableHelper.StatusPath)) {
@@ -101,7 +105,7 @@ class WearableDataListenerService : WearableListenerService() {
                 val pkgName = pair?.first.toString()
                 val activityName = pair?.second.toString()
                 mWearMgr.launchApp(messageEvent.sourceNodeId, pkgName, activityName)
-            } else if (messageEvent.path == WearableHelper.MediaPlayerConnectPath) {
+            } else if (messageEvent.path == MediaHelper.MediaPlayerConnectPath) {
                 if (NotificationListener.isEnabled(ctx)) {
                     val isAutoLaunch =
                         messageEvent.data.size == 1 && messageEvent.data.bytesToBool()
@@ -128,16 +132,20 @@ class WearableDataListenerService : WearableListenerService() {
                         ActionStatus.PERMISSION_DENIED.name.stringToBytes()
                     )
                 }
-            } else if (messageEvent.path == WearableHelper.MediaPlayerDisconnectPath) {
+            } else if (messageEvent.path == MediaHelper.MediaPlayerDisconnectPath) {
                 MediaControllerService.enqueueWork(
                     ctx, Intent(ctx, MediaControllerService::class.java)
                         .setAction(MediaControllerService.ACTION_DISCONNECTCONTROLLER)
                 )
-            } else if (messageEvent.path == WearableHelper.MediaPlayerAutoLaunchPath) {
-                val isActive = PhoneStatusHelper.isMusicActive(ctx, false)
+            } else if (messageEvent.path == MediaHelper.MediaPlayerAutoLaunchPath) {
+                if (NotificationListener.isEnabled(ctx)) {
+                    val status = PhoneStatusHelper.isMusicActive(ctx, false)
 
-                if (isActive == ActionStatus.SUCCESS) {
-                    if (NotificationListener.isEnabled(ctx)) {
+                    if (status == ActionStatus.SUCCESS || MediaAppControllerUtils.isMediaActive(
+                            ctx,
+                            NotificationListener.getComponentName(ctx)
+                        )
+                    ) {
                         MediaControllerService.enqueueWork(
                             ctx, Intent(ctx, MediaControllerService::class.java)
                                 .setAction(MediaControllerService.ACTION_CONNECTCONTROLLER)
@@ -146,16 +154,16 @@ class WearableDataListenerService : WearableListenerService() {
 
                         mWearMgr.sendMessage(
                             messageEvent.sourceNodeId,
-                            WearableHelper.MediaPlayerAutoLaunchPath,
+                            MediaHelper.MediaPlayerAutoLaunchPath,
                             ActionStatus.SUCCESS.name.stringToBytes()
                         )
-                    } else {
-                        mWearMgr.sendMessage(
-                            messageEvent.sourceNodeId,
-                            WearableHelper.MediaPlayerAutoLaunchPath,
-                            ActionStatus.PERMISSION_DENIED.name.stringToBytes()
-                        )
                     }
+                } else {
+                    mWearMgr.sendMessage(
+                        messageEvent.sourceNodeId,
+                        MediaHelper.MediaPlayerAutoLaunchPath,
+                        ActionStatus.PERMISSION_DENIED.name.stringToBytes()
+                    )
                 }
             }
             return@runBlocking

@@ -16,7 +16,7 @@ import androidx.wear.ambient.AmbientModeSupport
 import com.google.android.gms.wearable.*
 import com.google.android.wearable.intent.RemoteIntent
 import com.thewizrd.shared_resources.actions.ActionStatus
-import com.thewizrd.shared_resources.actions.AudioStreamType
+import com.thewizrd.shared_resources.helpers.MediaHelper
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
 import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.shared_resources.utils.*
@@ -130,35 +130,35 @@ class MediaPlayerActivity : WearableListenerActivity(), AmbientModeSupport.Ambie
                                     }
                                 }
                             }
-                            WearableHelper.AudioStatusPath -> {
-                                requestAudioStreamState()
-                            }
-                            WearableHelper.MediaPlayPath,
-                            WearableHelper.MediaPausePath,
-                            WearableHelper.MediaPreviousPath,
-                            WearableHelper.MediaNextPath,
-                            WearableHelper.MediaBrowserItemsBackPath -> {
+                            MediaHelper.MediaPlayPath,
+                            MediaHelper.MediaPausePath,
+                            MediaHelper.MediaPreviousPath,
+                            MediaHelper.MediaNextPath,
+                            MediaHelper.MediaBrowserItemsBackPath,
+                            MediaHelper.MediaVolumeUpPath,
+                            MediaHelper.MediaVolumeDownPath,
+                            MediaHelper.MediaVolumeStatusPath -> {
                                 lifecycleScope.launch {
                                     if (connect()) {
                                         sendMessage(
                                             mPhoneNodeWithApp!!.id,
-                                            WearableHelper.MediaPlayerConnectPath,
+                                            MediaHelper.MediaPlayerConnectPath,
                                             if (isAutoLaunch) isAutoLaunch.booleanToBytes() else mMediaPlayerDetails.packageName?.stringToBytes()
                                         )
                                         sendMessage(mPhoneNodeWithApp!!.id, intent.action!!, null)
                                     }
                                 }
                             }
-                            WearableHelper.MediaBrowserItemsClickPath,
-                            WearableHelper.MediaBrowserItemsExtraSuggestedClickPath,
-                            WearableHelper.MediaQueueItemsClickPath -> {
-                                val id = intent.getStringExtra(WearableHelper.KEY_MEDIAITEM_ID)
+                            MediaHelper.MediaBrowserItemsClickPath,
+                            MediaHelper.MediaBrowserItemsExtraSuggestedClickPath,
+                            MediaHelper.MediaQueueItemsClickPath -> {
+                                val id = intent.getStringExtra(MediaHelper.KEY_MEDIAITEM_ID)
 
                                 lifecycleScope.launch {
                                     if (connect()) {
                                         sendMessage(
                                             mPhoneNodeWithApp!!.id,
-                                            WearableHelper.MediaPlayerConnectPath,
+                                            MediaHelper.MediaPlayerConnectPath,
                                             if (isAutoLaunch) isAutoLaunch.booleanToBytes() else mMediaPlayerDetails.packageName?.stringToBytes()
                                         )
                                         sendMessage(
@@ -169,15 +169,15 @@ class MediaPlayerActivity : WearableListenerActivity(), AmbientModeSupport.Ambie
                                     }
                                 }
                             }
-                            WearableHelper.MediaActionsClickPath -> {
+                            MediaHelper.MediaActionsClickPath -> {
                                 val id =
-                                    intent.getStringExtra(WearableHelper.KEY_MEDIA_ACTIONITEM_ACTION)
+                                    intent.getStringExtra(MediaHelper.KEY_MEDIA_ACTIONITEM_ACTION)
 
                                 lifecycleScope.launch {
                                     if (connect()) {
                                         sendMessage(
                                             mPhoneNodeWithApp!!.id,
-                                            WearableHelper.MediaPlayerConnectPath,
+                                            MediaHelper.MediaPlayerConnectPath,
                                             if (isAutoLaunch) isAutoLaunch.booleanToBytes() else mMediaPlayerDetails.packageName?.stringToBytes()
                                         )
                                         sendMessage(
@@ -229,16 +229,17 @@ class MediaPlayerActivity : WearableListenerActivity(), AmbientModeSupport.Ambie
 
         intentFilter = IntentFilter().apply {
             addAction(ACTION_UPDATECONNECTIONSTATUS)
-            addAction(ACTION_CHANGED)
-            addAction(WearableHelper.AudioStatusPath)
-            addAction(WearableHelper.MediaPlayPath)
-            addAction(WearableHelper.MediaPausePath)
-            addAction(WearableHelper.MediaPreviousPath)
-            addAction(WearableHelper.MediaNextPath)
-            addAction(WearableHelper.MediaBrowserItemsClickPath)
-            addAction(WearableHelper.MediaBrowserItemsBackPath)
-            addAction(WearableHelper.MediaActionsClickPath)
-            addAction(WearableHelper.MediaQueueItemsClickPath)
+            addAction(MediaHelper.MediaPlayPath)
+            addAction(MediaHelper.MediaPausePath)
+            addAction(MediaHelper.MediaPreviousPath)
+            addAction(MediaHelper.MediaNextPath)
+            addAction(MediaHelper.MediaBrowserItemsClickPath)
+            addAction(MediaHelper.MediaBrowserItemsBackPath)
+            addAction(MediaHelper.MediaActionsClickPath)
+            addAction(MediaHelper.MediaQueueItemsClickPath)
+            addAction(MediaHelper.MediaVolumeUpPath)
+            addAction(MediaHelper.MediaVolumeDownPath)
+            addAction(MediaHelper.MediaVolumeStatusPath)
         }
 
         mAmbientController = AmbientModeSupport.attach(this)
@@ -316,8 +317,8 @@ class MediaPlayerActivity : WearableListenerActivity(), AmbientModeSupport.Ambie
 
         lifecycleScope.launch {
             when (messageEvent.path) {
-                WearableHelper.MediaPlayerConnectPath,
-                WearableHelper.MediaPlayerAutoLaunchPath -> {
+                MediaHelper.MediaPlayerConnectPath,
+                MediaHelper.MediaPlayerAutoLaunchPath -> {
                     val actionStatus = ActionStatus.valueOf(messageEvent.data.bytesToString())
 
                     if (actionStatus == ActionStatus.PERMISSION_DENIED) {
@@ -339,8 +340,8 @@ class MediaPlayerActivity : WearableListenerActivity(), AmbientModeSupport.Ambie
                         showNoPlayersView(false)
                     }
                 }
-                WearableHelper.MediaBrowserItemsClickPath,
-                WearableHelper.MediaBrowserItemsExtraSuggestedClickPath -> {
+                MediaHelper.MediaBrowserItemsClickPath,
+                MediaHelper.MediaBrowserItemsExtraSuggestedClickPath -> {
                     val actionStatus = ActionStatus.valueOf(messageEvent.data.bytesToString())
 
                     if (actionStatus == ActionStatus.SUCCESS) {
@@ -368,13 +369,13 @@ class MediaPlayerActivity : WearableListenerActivity(), AmbientModeSupport.Ambie
                 } else if (event.type == DataEvent.TYPE_DELETED) {
                     val item = event.dataItem
                     when (item.uri.path) {
-                        WearableHelper.MediaBrowserItemsPath -> {
+                        MediaHelper.MediaBrowserItemsPath -> {
                             supportsBrowser = false
                         }
-                        WearableHelper.MediaActionsPath -> {
+                        MediaHelper.MediaActionsPath -> {
                             supportsCustomActions = false
                         }
-                        WearableHelper.MediaQueueItemsPath -> {
+                        MediaHelper.MediaQueueItemsPath -> {
                             supportsQueue = false
                         }
                     }
@@ -430,30 +431,30 @@ class MediaPlayerActivity : WearableListenerActivity(), AmbientModeSupport.Ambie
 
     private fun updatePager(item: DataItem) {
         when (item.uri.path) {
-            WearableHelper.MediaBrowserItemsPath -> {
+            MediaHelper.MediaBrowserItemsPath -> {
                 try {
                     val dataMap = DataMapItem.fromDataItem(item).dataMap
-                    val items = dataMap.getDataMapArrayList(WearableHelper.KEY_MEDIAITEMS)
+                    val items = dataMap.getDataMapArrayList(MediaHelper.KEY_MEDIAITEMS)
                     supportsBrowser = !items.isNullOrEmpty()
                 } catch (e: Exception) {
                     Logger.writeLine(Log.ERROR, e)
                     supportsBrowser = false
                 }
             }
-            WearableHelper.MediaActionsPath -> {
+            MediaHelper.MediaActionsPath -> {
                 try {
                     val dataMap = DataMapItem.fromDataItem(item).dataMap
-                    val items = dataMap.getDataMapArrayList(WearableHelper.KEY_MEDIAITEMS)
+                    val items = dataMap.getDataMapArrayList(MediaHelper.KEY_MEDIAITEMS)
                     supportsCustomActions = !items.isNullOrEmpty()
                 } catch (e: Exception) {
                     Logger.writeLine(Log.ERROR, e)
                     supportsCustomActions = false
                 }
             }
-            WearableHelper.MediaQueueItemsPath -> {
+            MediaHelper.MediaQueueItemsPath -> {
                 try {
                     val dataMap = DataMapItem.fromDataItem(item).dataMap
-                    val items = dataMap.getDataMapArrayList(WearableHelper.KEY_MEDIAITEMS)
+                    val items = dataMap.getDataMapArrayList(MediaHelper.KEY_MEDIAITEMS)
                     supportsQueue = !items.isNullOrEmpty()
                 } catch (e: Exception) {
                     Logger.writeLine(Log.ERROR, e)
@@ -468,7 +469,7 @@ class MediaPlayerActivity : WearableListenerActivity(), AmbientModeSupport.Ambie
             if (connect()) {
                 sendMessage(
                     mPhoneNodeWithApp!!.id,
-                    WearableHelper.MediaPlayerConnectPath,
+                    MediaHelper.MediaPlayerConnectPath,
                     if (isAutoLaunch) isAutoLaunch.booleanToBytes() else mMediaPlayerDetails.packageName?.stringToBytes()
                 )
             }
@@ -478,7 +479,7 @@ class MediaPlayerActivity : WearableListenerActivity(), AmbientModeSupport.Ambie
     private fun requestPlayerDisconnect() {
         lifecycleScope.launch {
             if (connect()) {
-                sendMessage(mPhoneNodeWithApp!!.id, WearableHelper.MediaPlayerDisconnectPath, null)
+                sendMessage(mPhoneNodeWithApp!!.id, MediaHelper.MediaPlayerDisconnectPath, null)
             }
         }
     }
@@ -500,18 +501,6 @@ class MediaPlayerActivity : WearableListenerActivity(), AmbientModeSupport.Ambie
         Wearable.getMessageClient(this).removeListener(this)
         Wearable.getDataClient(this).removeListener(this)
         super.onPause()
-    }
-
-    private fun requestAudioStreamState() {
-        lifecycleScope.launch {
-            if (connect()) {
-                sendMessage(
-                    mPhoneNodeWithApp!!.id,
-                    WearableHelper.AudioStatusPath,
-                    AudioStreamType.MUSIC.name.stringToBytes()
-                )
-            }
-        }
     }
 
     override fun onNewIntent(intent: Intent?) {

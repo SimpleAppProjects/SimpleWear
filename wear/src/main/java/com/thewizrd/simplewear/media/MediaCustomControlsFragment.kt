@@ -7,7 +7,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.recyclerview.widget.DiffUtil
@@ -16,6 +15,7 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.wear.widget.WearableLinearLayoutManager
 import com.google.android.gms.wearable.*
 import com.thewizrd.shared_resources.actions.ActionStatus
+import com.thewizrd.shared_resources.helpers.MediaHelper
 import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.shared_resources.lifecycle.LifecycleAwareFragment
 import com.thewizrd.shared_resources.utils.ImageUtils
@@ -59,8 +59,8 @@ class MediaCustomControlsFragment : LifecycleAwareFragment(), MessageClient.OnMe
             override fun onClick(item: MediaItemModel) {
                 LocalBroadcastManager.getInstance(requireContext())
                     .sendBroadcast(
-                        Intent(WearableHelper.MediaActionsClickPath)
-                            .putExtra(WearableHelper.KEY_MEDIA_ACTIONITEM_ACTION, item.id)
+                        Intent(MediaHelper.MediaActionsClickPath)
+                            .putExtra(MediaHelper.KEY_MEDIA_ACTIONITEM_ACTION, item.id)
                     )
             }
         })
@@ -158,14 +158,14 @@ class MediaCustomControlsFragment : LifecycleAwareFragment(), MessageClient.OnMe
                     .getDataItems(
                         WearableHelper.getWearDataUri(
                             "*",
-                            WearableHelper.MediaActionsPath
+                            MediaHelper.MediaActionsPath
                         )
                     )
                     .await()
 
                 for (i in 0 until buff.count) {
                     val item = buff[i]
-                    if (WearableHelper.MediaActionsPath == item.uri.path) {
+                    if (MediaHelper.MediaActionsPath == item.uri.path) {
                         val dataMap = DataMapItem.fromDataItem(item).dataMap
                         updateCustomControls(dataMap)
                     }
@@ -179,20 +179,20 @@ class MediaCustomControlsFragment : LifecycleAwareFragment(), MessageClient.OnMe
     }
 
     private suspend fun updateCustomControls(dataMap: DataMap) {
-        val items = dataMap.getDataMapArrayList(WearableHelper.KEY_MEDIAITEMS) ?: emptyList()
+        val items = dataMap.getDataMapArrayList(MediaHelper.KEY_MEDIAITEMS) ?: emptyList()
         val mediaItems = ArrayList<MediaItemModel>(items.size)
 
         for (item in items) {
-            val id = item.getString(WearableHelper.KEY_MEDIA_ACTIONITEM_ACTION)
+            val id = item.getString(MediaHelper.KEY_MEDIA_ACTIONITEM_ACTION)
             val icon = try {
                 ImageUtils.bitmapFromAssetStream(
                     Wearable.getDataClient(requireContext()),
-                    item.getAsset(WearableHelper.KEY_MEDIA_ACTIONITEM_ICON)
+                    item.getAsset(MediaHelper.KEY_MEDIA_ACTIONITEM_ICON)
                 )
             } catch (e: Exception) {
                 null
             }
-            val title = item.getString(WearableHelper.KEY_MEDIA_ACTIONITEM_TITLE)
+            val title = item.getString(MediaHelper.KEY_MEDIA_ACTIONITEM_TITLE)
 
             mediaItems.add(MediaItemModel(id).apply {
                 this.icon = icon
@@ -208,7 +208,7 @@ class MediaCustomControlsFragment : LifecycleAwareFragment(), MessageClient.OnMe
 
     override fun onMessageReceived(messageEvent: MessageEvent) {
         lifecycleScope.launch {
-            if (messageEvent.path == WearableHelper.MediaPlayPath) {
+            if (messageEvent.path == MediaHelper.MediaPlayPath) {
                 val actionStatus = ActionStatus.valueOf(messageEvent.data.bytesToString())
 
                 if (actionStatus == ActionStatus.TIMEOUT) {
@@ -232,7 +232,7 @@ class MediaCustomControlsFragment : LifecycleAwareFragment(), MessageClient.OnMe
             for (event in dataEventBuffer) {
                 if (event.type == DataEvent.TYPE_CHANGED) {
                     val item = event.dataItem
-                    if (WearableHelper.MediaActionsPath == item.uri.path) {
+                    if (MediaHelper.MediaActionsPath == item.uri.path) {
                         try {
                             val dataMap = DataMapItem.fromDataItem(item).dataMap
                             updateCustomControls(dataMap)

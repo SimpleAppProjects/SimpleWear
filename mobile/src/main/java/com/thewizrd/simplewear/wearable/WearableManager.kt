@@ -18,6 +18,7 @@ import androidx.media.MediaBrowserServiceCompat
 import com.google.android.gms.wearable.*
 import com.google.android.gms.wearable.CapabilityClient.OnCapabilityChangedListener
 import com.thewizrd.shared_resources.actions.*
+import com.thewizrd.shared_resources.helpers.MediaHelper
 import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.shared_resources.utils.ImageUtils
 import com.thewizrd.shared_resources.utils.JSONParser
@@ -55,7 +56,7 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
         if (mWearNodesWithApp == null) {
             mWearNodesWithApp = findWearDevicesWithApp()
         }
-        return mWearNodesWithApp != null && !mWearNodesWithApp!!.isEmpty()
+        return !mWearNodesWithApp.isNullOrEmpty()
     }
 
     override fun onCapabilityChanged(capabilityInfo: CapabilityInfo) {
@@ -113,7 +114,7 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
                 } catch (e: ActivityNotFoundException) {
                     sendMessage(
                         nodeID,
-                        WearableHelper.PlayCommandPath,
+                        MediaHelper.PlayCommandPath,
                         ActionStatus.FAILURE.name.stringToBytes()
                     )
                     return
@@ -129,14 +130,18 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
                     if (playKeyIntent != null) {
                         sendMessage(
                             nodeID,
-                            WearableHelper.PlayCommandPath,
+                            MediaHelper.PlayCommandPath,
                             PhoneStatusHelper.sendPlayMusicCommand(
                                 mContext,
                                 playKeyIntent
                             ).name.stringToBytes()
                         )
                     } else {
-                        sendMessage(nodeID, WearableHelper.PlayCommandPath, PhoneStatusHelper.sendPlayMusicCommand(mContext).name.stringToBytes())
+                        sendMessage(
+                            nodeID,
+                            MediaHelper.PlayCommandPath,
+                            PhoneStatusHelper.sendPlayMusicCommand(mContext).name.stringToBytes()
+                        )
                     }
                 }
             } else { // Android Q+ Devices
@@ -147,14 +152,18 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
                 val associated_devices = deviceManager.associations
                 if (associated_devices.isEmpty()) {
                     // No devices associated; send message to user
-                    sendMessage(nodeID, WearableHelper.PlayCommandPath, ActionStatus.PERMISSION_DENIED.name.stringToBytes())
+                    sendMessage(
+                        nodeID,
+                        MediaHelper.PlayCommandPath,
+                        ActionStatus.PERMISSION_DENIED.name.stringToBytes()
+                    )
                 } else {
                     try {
                         mContext.startActivity(appIntent)
                     } catch (e: ActivityNotFoundException) {
                         sendMessage(
                             nodeID,
-                            WearableHelper.PlayCommandPath,
+                            MediaHelper.PlayCommandPath,
                             ActionStatus.FAILURE.name.stringToBytes()
                         )
                         return
@@ -170,14 +179,18 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
                         if (playKeyIntent != null) {
                             sendMessage(
                                 nodeID,
-                                WearableHelper.PlayCommandPath,
+                                MediaHelper.PlayCommandPath,
                                 PhoneStatusHelper.sendPlayMusicCommand(
                                     mContext,
                                     playKeyIntent
                                 ).name.stringToBytes()
                             )
                         } else {
-                            sendMessage(nodeID, WearableHelper.PlayCommandPath, PhoneStatusHelper.sendPlayMusicCommand(mContext).name.stringToBytes())
+                            sendMessage(
+                                nodeID,
+                                MediaHelper.PlayCommandPath,
+                                PhoneStatusHelper.sendPlayMusicCommand(mContext).name.stringToBytes()
+                            )
                         }
                     }
                 }
@@ -199,7 +212,7 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
             )
         )
 
-        val mapRequest = PutDataMapRequest.create(WearableHelper.MusicPlayersPath)
+        val mapRequest = PutDataMapRequest.create(MediaHelper.MusicPlayersPath)
 
         // Sort result
         Collections.sort(
@@ -253,7 +266,7 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
             addPlayerInfo(info)
         }
 
-        mapRequest.dataMap.putStringArrayList(WearableHelper.KEY_SUPPORTEDPLAYERS, supportedPlayers)
+        mapRequest.dataMap.putStringArrayList(MediaHelper.KEY_SUPPORTEDPLAYERS, supportedPlayers)
         mapRequest.setUrgent()
         try {
             Wearable.getDataClient(mContext)

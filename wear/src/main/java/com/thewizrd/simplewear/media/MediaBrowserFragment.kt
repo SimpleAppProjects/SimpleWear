@@ -6,7 +6,6 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.recyclerview.widget.DiffUtil
@@ -14,6 +13,7 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import androidx.wear.widget.WearableLinearLayoutManager
 import com.google.android.gms.wearable.*
+import com.thewizrd.shared_resources.helpers.MediaHelper
 import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.shared_resources.lifecycle.LifecycleAwareFragment
 import com.thewizrd.shared_resources.utils.ImageUtils
@@ -51,14 +51,14 @@ class MediaBrowserFragment : LifecycleAwareFragment(), DataClient.OnDataChangedL
 
         mBrowserAdapter.setOnClickListener(object : MediaBrowserItemsAdapter.OnClickListener {
             override fun onClick(item: MediaItemModel) {
-                if (item.id == WearableHelper.ACTIONITEM_BACK) {
+                if (item.id == MediaHelper.ACTIONITEM_BACK) {
                     LocalBroadcastManager.getInstance(requireContext())
-                        .sendBroadcast(Intent(WearableHelper.MediaBrowserItemsBackPath))
+                        .sendBroadcast(Intent(MediaHelper.MediaBrowserItemsBackPath))
                 } else {
                     LocalBroadcastManager.getInstance(requireContext())
                         .sendBroadcast(
-                            Intent(WearableHelper.MediaBrowserItemsClickPath)
-                                .putExtra(WearableHelper.KEY_MEDIAITEM_ID, item.id)
+                            Intent(MediaHelper.MediaBrowserItemsClickPath)
+                                .putExtra(MediaHelper.KEY_MEDIAITEM_ID, item.id)
                         )
                 }
             }
@@ -129,7 +129,7 @@ class MediaBrowserFragment : LifecycleAwareFragment(), DataClient.OnDataChangedL
             }
 
             fun bind(model: MediaItemModel) {
-                if (model.id == WearableHelper.ACTIONITEM_BACK) {
+                if (model.id == MediaHelper.ACTIONITEM_BACK) {
                     binding.appIcon.setImageResource(R.drawable.ic_baseline_arrow_back_24)
                     binding.appName.setText(R.string.label_back)
                 } else {
@@ -160,14 +160,14 @@ class MediaBrowserFragment : LifecycleAwareFragment(), DataClient.OnDataChangedL
                     .getDataItems(
                         WearableHelper.getWearDataUri(
                             "*",
-                            WearableHelper.MediaBrowserItemsPath
+                            MediaHelper.MediaBrowserItemsPath
                         )
                     )
                     .await()
 
                 for (i in 0 until buff.count) {
                     val item = buff[i]
-                    if (WearableHelper.MediaBrowserItemsPath == item.uri.path) {
+                    if (MediaHelper.MediaBrowserItemsPath == item.uri.path) {
                         val dataMap = DataMapItem.fromDataItem(item).dataMap
                         updateBrowserItems(dataMap)
                     }
@@ -181,24 +181,24 @@ class MediaBrowserFragment : LifecycleAwareFragment(), DataClient.OnDataChangedL
     }
 
     private suspend fun updateBrowserItems(dataMap: DataMap) {
-        val isRoot = dataMap.getBoolean(WearableHelper.KEY_MEDIAITEM_ISROOT)
-        val items = dataMap.getDataMapArrayList(WearableHelper.KEY_MEDIAITEMS) ?: emptyList()
+        val isRoot = dataMap.getBoolean(MediaHelper.KEY_MEDIAITEM_ISROOT)
+        val items = dataMap.getDataMapArrayList(MediaHelper.KEY_MEDIAITEMS) ?: emptyList()
         val mediaItems = ArrayList<MediaItemModel>(if (isRoot) items.size else items.size + 1)
         if (!isRoot) {
-            mediaItems.add(MediaItemModel(WearableHelper.ACTIONITEM_BACK))
+            mediaItems.add(MediaItemModel(MediaHelper.ACTIONITEM_BACK))
         }
 
         for (item in items) {
-            val id = item.getString(WearableHelper.KEY_MEDIAITEM_ID)
+            val id = item.getString(MediaHelper.KEY_MEDIAITEM_ID)
             val icon = try {
                 ImageUtils.bitmapFromAssetStream(
                     Wearable.getDataClient(requireContext()),
-                    item.getAsset(WearableHelper.KEY_MEDIAITEM_ICON)
+                    item.getAsset(MediaHelper.KEY_MEDIAITEM_ICON)
                 )
             } catch (e: Exception) {
                 null
             }
-            val title = item.getString(WearableHelper.KEY_MEDIAITEM_TITLE)
+            val title = item.getString(MediaHelper.KEY_MEDIAITEM_TITLE)
 
             mediaItems.add(MediaItemModel(id).apply {
                 this.icon = icon
@@ -217,7 +217,7 @@ class MediaBrowserFragment : LifecycleAwareFragment(), DataClient.OnDataChangedL
             for (event in dataEventBuffer) {
                 if (event.type == DataEvent.TYPE_CHANGED) {
                     val item = event.dataItem
-                    if (WearableHelper.MediaBrowserItemsPath == item.uri.path) {
+                    if (MediaHelper.MediaBrowserItemsPath == item.uri.path) {
                         try {
                             val dataMap = DataMapItem.fromDataItem(item).dataMap
                             updateBrowserItems(dataMap)

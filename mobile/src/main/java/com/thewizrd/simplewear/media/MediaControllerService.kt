@@ -25,6 +25,7 @@ import androidx.core.content.res.ResourcesCompat
 import androidx.media.MediaBrowserServiceCompat
 import com.google.android.gms.wearable.*
 import com.thewizrd.shared_resources.actions.*
+import com.thewizrd.shared_resources.helpers.MediaHelper
 import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.shared_resources.media.PlaybackState
 import com.thewizrd.shared_resources.utils.*
@@ -153,8 +154,8 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
         mMessageClient.addListener(this)
 
         mCustomControlsAdapter = CustomControlsAdapter()
-        //mBrowseMediaItemsAdapter = BrowseMediaItemsAdapter(WearableHelper.MediaItemsPath)
-        //mBrowseMediaItemsExtraSuggestedAdapter = BrowseMediaItemsAdapter(WearableHelper.MediaItemsExtraSuggestedPath)
+        //mBrowseMediaItemsAdapter = BrowseMediaItemsAdapter(MediaHelper.MediaItemsPath)
+        //mBrowseMediaItemsExtraSuggestedAdapter = BrowseMediaItemsAdapter(MediaHelper.MediaItemsExtraSuggestedPath)
         mQueueItemsAdapter = QueueItemsAdapter()
 
         playFromSearchTimer = object : CountDownTimer(3000, 500) {
@@ -165,7 +166,7 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
                     scope.launch {
                         mWearableManager.sendMessage(
                             null,
-                            WearableHelper.MediaPlayPath,
+                            MediaHelper.MediaPlayPath,
                             ActionStatus.TIMEOUT.name.stringToBytes()
                         )
                     }
@@ -232,16 +233,16 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
         scope.launch {
             Log.d(TAG, "removeMediaState")
             mDataClient.deleteDataItems(
-                WearableHelper.getWearDataUri(WearableHelper.MediaPlayerStatePath)
+                WearableHelper.getWearDataUri(MediaHelper.MediaPlayerStatePath)
             ).await()
             mDataClient.deleteDataItems(
-                WearableHelper.getWearDataUri(WearableHelper.MediaBrowserItemsPath)
+                WearableHelper.getWearDataUri(MediaHelper.MediaBrowserItemsPath)
             ).await()
             mDataClient.deleteDataItems(
-                WearableHelper.getWearDataUri(WearableHelper.MediaActionsPath)
+                WearableHelper.getWearDataUri(MediaHelper.MediaActionsPath)
             ).await()
             mDataClient.deleteDataItems(
-                WearableHelper.getWearDataUri(WearableHelper.MediaQueueItemsPath)
+                WearableHelper.getWearDataUri(MediaHelper.MediaQueueItemsPath)
             ).await()
         }
     }
@@ -250,7 +251,7 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
         scope.launch {
             Log.d(TAG, "removeBrowserItems")
             mDataClient.deleteDataItems(
-                WearableHelper.getWearDataUri(WearableHelper.MediaBrowserItemsPath)
+                WearableHelper.getWearDataUri(MediaHelper.MediaBrowserItemsPath)
             ).await()
         }
     }
@@ -494,9 +495,7 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
         }
 
         override fun onAudioInfoChanged(info: MediaControllerCompat.PlaybackInfo?) {
-            scope.launch {
-                mWearableManager.sendAudioModeStatus(null, AudioStreamType.MUSIC)
-            }
+            sendVolumeStatus()
         }
 
         override fun onSessionDestroyed() {
@@ -512,7 +511,7 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
                 Log.e(TAG, "Failed to update queue info, null MediaController.")
                 scope.launch {
                     mDataClient.deleteDataItems(
-                        WearableHelper.getWearDataUri(WearableHelper.MediaQueueItemsPath)
+                        WearableHelper.getWearDataUri(MediaHelper.MediaQueueItemsPath)
                     ).await()
                 }
                 return
@@ -523,16 +522,16 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
     }
 
     private fun sendControllerUnavailable() {
-        val mapRequest = PutDataMapRequest.create(WearableHelper.MediaPlayerStatePath)
+        val mapRequest = PutDataMapRequest.create(MediaHelper.MediaPlayerStatePath)
 
         mapRequest.dataMap.putString(
-            WearableHelper.KEY_MEDIA_PLAYBACKSTATE,
+            MediaHelper.KEY_MEDIA_PLAYBACKSTATE,
             PlaybackState.NONE.name
         )
 
         // Check if supports play from search
         mapRequest.dataMap.putBoolean(
-            WearableHelper.KEY_MEDIA_SUPPORTS_PLAYFROMSEARCH,
+            MediaHelper.KEY_MEDIA_SUPPORTS_PLAYFROMSEARCH,
             supportsPlayFromSearch()
         )
 
@@ -547,7 +546,7 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
     }
 
     private fun sendMediaInfo() {
-        val mapRequest = PutDataMapRequest.create(WearableHelper.MediaPlayerStatePath)
+        val mapRequest = PutDataMapRequest.create(MediaHelper.MediaPlayerStatePath)
 
         if (mController == null) {
             Log.e(TAG, "Failed to update media info, null MediaController.")
@@ -584,29 +583,31 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
             }
         }
 
-        mapRequest.dataMap.putString(WearableHelper.KEY_MEDIA_PLAYBACKSTATE, stateName.name)
+        mapRequest.dataMap.putString(MediaHelper.KEY_MEDIA_PLAYBACKSTATE, stateName.name)
 
         val mediaMetadata = mController?.metadata
         if (mediaMetadata != null && !mediaMetadata.isNullOrEmpty()) {
             mapRequest.dataMap.putString(
-                WearableHelper.KEY_MEDIA_METADATA_TITLE,
-                mediaMetadata.getString(MediaMetadataCompat.METADATA_KEY_TITLE)
+                MediaHelper.KEY_MEDIA_METADATA_TITLE,
+                mediaMetadata.getString(MediaMetadataCompat.METADATA_KEY_DISPLAY_TITLE)
+                    ?: mediaMetadata.getString(MediaMetadataCompat.METADATA_KEY_TITLE)
             )
             mapRequest.dataMap.putString(
-                WearableHelper.KEY_MEDIA_METADATA_ARTIST,
+                MediaHelper.KEY_MEDIA_METADATA_ARTIST,
                 mediaMetadata.getString(MediaMetadataCompat.METADATA_KEY_ARTIST)
+                    ?: mediaMetadata.getString(MediaMetadataCompat.METADATA_KEY_ALBUM_ARTIST)
             )
 
             val art = mediaMetadata.getBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART)
             if (art != null) {
                 mapRequest.dataMap.putAsset(
-                    WearableHelper.KEY_MEDIA_METADATA_ART,
+                    MediaHelper.KEY_MEDIA_METADATA_ART,
                     ImageUtils.createAssetFromBitmap(art)
                 )
             }
         } else {
             mapRequest.dataMap.putString(
-                WearableHelper.KEY_MEDIA_PLAYBACKSTATE,
+                MediaHelper.KEY_MEDIA_PLAYBACKSTATE,
                 PlaybackState.NONE.name
             )
         }
@@ -623,39 +624,39 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
 
     override fun onMessageReceived(messageEvent: MessageEvent) {
         when (messageEvent.path) {
-            WearableHelper.MediaActionsClickPath -> {
+            MediaHelper.MediaActionsClickPath -> {
                 if (!isNotificationListenerEnabled(messageEvent)) return
                 val actionId = messageEvent.data.bytesToString()
                 mCustomControlsAdapter.onItemClicked(actionId)
             }
-            WearableHelper.MediaQueueItemsClickPath -> {
+            MediaHelper.MediaQueueItemsClickPath -> {
                 if (!isNotificationListenerEnabled(messageEvent)) return
                 val queueId = messageEvent.data.bytesToString().toLong()
                 mQueueItemsAdapter.onItemClicked(queueId)
             }
-            WearableHelper.MediaBrowserItemsClickPath -> {
+            MediaHelper.MediaBrowserItemsClickPath -> {
                 if (!isNotificationListenerEnabled(messageEvent)) return
                 /*
                 val mediaId = messageEvent.data.bytesToString()
                 mBrowseMediaItemsAdapter.onItemClicked(mediaId)
                 */
             }
-            WearableHelper.MediaBrowserItemsExtraSuggestedClickPath -> {
+            MediaHelper.MediaBrowserItemsExtraSuggestedClickPath -> {
                 if (!isNotificationListenerEnabled(messageEvent)) return
                 /*
                 val mediaId = messageEvent.data.bytesToString()
                 mBrowseMediaItemsExtraSuggestedAdapter.onItemClicked(mediaId)
                 */
             }
-            WearableHelper.MediaBrowserItemsBackPath -> {
+            MediaHelper.MediaBrowserItemsBackPath -> {
                 if (!isNotificationListenerEnabled(messageEvent)) return
                 //mBrowseMediaItemsAdapter.onBackPressed()
             }
-            WearableHelper.MediaBrowserItemsExtraSuggestedBackPath -> {
+            MediaHelper.MediaBrowserItemsExtraSuggestedBackPath -> {
                 if (!isNotificationListenerEnabled(messageEvent)) return
                 //mBrowseMediaItemsExtraSuggestedAdapter.onBackPressed()
             }
-            WearableHelper.MediaPlayPath -> {
+            MediaHelper.MediaPlayPath -> {
                 if (!isNotificationListenerEnabled(messageEvent)) return
                 if (mController != null && !mController!!.metadata.isNullOrEmpty()) {
                     mController!!.transportControls.play()
@@ -669,21 +670,41 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
                     }
                 }
             }
-            WearableHelper.MediaPausePath -> {
+            MediaHelper.MediaPausePath -> {
                 if (!isNotificationListenerEnabled(messageEvent)) return
                 mController?.transportControls?.pause()
             }
-            WearableHelper.MediaPreviousPath -> {
+            MediaHelper.MediaPreviousPath -> {
                 if (!isNotificationListenerEnabled(messageEvent)) return
                 mController?.transportControls?.skipToPrevious()
             }
-            WearableHelper.MediaNextPath -> {
+            MediaHelper.MediaNextPath -> {
                 if (!isNotificationListenerEnabled(messageEvent)) return
                 mController?.transportControls?.skipToNext()
             }
-            WearableHelper.MediaPlayFromSearchPath -> {
+            MediaHelper.MediaPlayFromSearchPath -> {
                 if (!isNotificationListenerEnabled(messageEvent)) return
                 playFromSearchController(null)
+            }
+            MediaHelper.MediaVolumeUpPath -> {
+                if (!isNotificationListenerEnabled(messageEvent)) return
+                if (mController != null) {
+                    mController!!.adjustVolume(AudioManager.ADJUST_RAISE, 0)
+                } else {
+                    PhoneStatusHelper.setVolume(this, ValueDirection.UP, AudioStreamType.MUSIC)
+                }
+            }
+            MediaHelper.MediaVolumeDownPath -> {
+                if (!isNotificationListenerEnabled(messageEvent)) return
+                if (mController != null) {
+                    mController!!.adjustVolume(AudioManager.ADJUST_LOWER, 0)
+                } else {
+                    PhoneStatusHelper.setVolume(this, ValueDirection.DOWN, AudioStreamType.MUSIC)
+                }
+            }
+            MediaHelper.MediaVolumeStatusPath -> {
+                if (!isNotificationListenerEnabled(messageEvent)) return
+                sendVolumeStatus(messageEvent.sourceNodeId)
             }
         }
     }
@@ -746,10 +767,37 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
             scope.launch {
                 delay(3000)
                 mWearableManager.sendMessage(
-                    null, WearableHelper.PlayCommandPath,
+                    null, MediaHelper.PlayCommandPath,
                     PhoneStatusHelper.sendPlayMusicCommand(this@MediaControllerService).name.stringToBytes()
                 )
             }
+        }
+    }
+
+    private fun sendVolumeStatus(nodeID: String? = null) {
+        scope.launch {
+            val volStatus = if (mController?.playbackInfo != null) {
+                val info = mController!!.playbackInfo
+                AudioStreamState(
+                    info.currentVolume,
+                    0,
+                    info.maxVolume,
+                    AudioStreamType.MUSIC
+                )
+            } else {
+                PhoneStatusHelper.getStreamVolume(
+                    this@MediaControllerService,
+                    AudioStreamType.MUSIC
+                )
+            }
+
+            mWearableManager.sendMessage(
+                nodeID, MediaHelper.MediaVolumeStatusPath,
+                JSONParser.serializer(
+                    volStatus,
+                    AudioStreamState::class.java
+                )?.stringToBytes()
+            )
         }
     }
 
@@ -768,7 +816,7 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
 
                 if (!isActive) return@launch
 
-                val mapRequest = PutDataMapRequest.create(WearableHelper.MediaActionsPath)
+                val mapRequest = PutDataMapRequest.create(MediaHelper.MediaActionsPath)
 
                 if (mActions.isEmpty() && !supportsPlayFromSearch) {
                     // Remove all items (datamap)
@@ -785,11 +833,11 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
                 if (supportsPlayFromSearch) {
                     val d = DataMap().apply {
                         putString(
-                            WearableHelper.KEY_MEDIA_ACTIONITEM_ACTION,
-                            WearableHelper.ACTIONITEM_PLAY
+                            MediaHelper.KEY_MEDIA_ACTIONITEM_ACTION,
+                            MediaHelper.ACTIONITEM_PLAY
                         )
                         putString(
-                            WearableHelper.KEY_MEDIA_ACTIONITEM_TITLE,
+                            MediaHelper.KEY_MEDIA_ACTIONITEM_TITLE,
                             getString(R.string.action_musicplayback)
                         )
 
@@ -804,7 +852,7 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
                         ).toInt()
 
                         putAsset(
-                            WearableHelper.KEY_MEDIA_ACTIONITEM_ICON,
+                            MediaHelper.KEY_MEDIA_ACTIONITEM_ICON,
                             ImageUtils.createAssetFromBitmap(
                                 ImageUtils.bitmapFromDrawable(iconDrawable!!, size, size)
                             )
@@ -816,8 +864,8 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
 
                 mActions.forEach {
                     val d = DataMap().apply {
-                        putString(WearableHelper.KEY_MEDIA_ACTIONITEM_ACTION, it.action)
-                        putString(WearableHelper.KEY_MEDIA_ACTIONITEM_TITLE, it.name.toString())
+                        putString(MediaHelper.KEY_MEDIA_ACTIONITEM_ACTION, it.action)
+                        putString(MediaHelper.KEY_MEDIA_ACTIONITEM_TITLE, it.name.toString())
                         if (mMediaAppResources != null) {
                             val iconDrawable = ResourcesCompat.getDrawable(
                                 mMediaAppResources!!, it.icon,  /* theme = */null
@@ -830,7 +878,7 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
                                 ).toInt()
 
                                 putAsset(
-                                    WearableHelper.KEY_MEDIA_ACTIONITEM_ICON,
+                                    MediaHelper.KEY_MEDIA_ACTIONITEM_ICON,
                                     ImageUtils.createAssetFromBitmap(
                                         ImageUtils.bitmapFromDrawable(iconDrawable, size, size)
                                     )
@@ -842,7 +890,7 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
                     dataMapList.add(d)
                 }
 
-                mapRequest.dataMap.putDataMapArrayList(WearableHelper.KEY_MEDIAITEMS, dataMapList)
+                mapRequest.dataMap.putDataMapArrayList(MediaHelper.KEY_MEDIAITEMS, dataMapList)
 
                 val request = mapRequest.asPutDataRequest()
                 request.setUrgent()
@@ -854,7 +902,7 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
         }
 
         fun onItemClicked(actionID: String) {
-            if (actionID == WearableHelper.ACTIONITEM_PLAY) {
+            if (actionID == MediaHelper.ACTIONITEM_PLAY) {
                 mControls?.playFromSearch(null, Bundle.EMPTY) ?: playFromSearchIntent(null)
                 playFromSearchTimer.start()
             } else {
@@ -949,14 +997,14 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
                 val dataMapList = ArrayList<DataMap>(mItems!!.size)
                 mItems!!.forEach {
                     val d = DataMap().apply {
-                        putString(WearableHelper.KEY_MEDIAITEM_ID, it.mediaId)
+                        putString(MediaHelper.KEY_MEDIAITEM_ID, it.mediaId)
                         putString(
-                            WearableHelper.KEY_MEDIAITEM_TITLE,
+                            MediaHelper.KEY_MEDIAITEM_TITLE,
                             it.description.title.toString()
                         )
                         if (it.description.iconBitmap != null) {
                             putAsset(
-                                WearableHelper.KEY_MEDIAITEM_ICON,
+                                MediaHelper.KEY_MEDIAITEM_ICON,
                                 ImageUtils.createAssetFromBitmap(it.description.iconBitmap!!)
                             )
                         }
@@ -965,8 +1013,8 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
                     dataMapList.add(d)
                 }
 
-                mapRequest.dataMap.putDataMapArrayList(WearableHelper.KEY_MEDIAITEMS, dataMapList)
-                mapRequest.dataMap.putBoolean(WearableHelper.KEY_MEDIAITEM_ISROOT, treeDepth() <= 1)
+                mapRequest.dataMap.putDataMapArrayList(MediaHelper.KEY_MEDIAITEMS, dataMapList)
+                mapRequest.dataMap.putBoolean(MediaHelper.KEY_MEDIAITEM_ISROOT, treeDepth() <= 1)
 
                 val request = mapRequest.asPutDataRequest()
                 request.setUrgent()
@@ -1064,7 +1112,7 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
 
                 if (!isActive) return@launch
 
-                val mapRequest = PutDataMapRequest.create(WearableHelper.MediaQueueItemsPath)
+                val mapRequest = PutDataMapRequest.create(MediaHelper.MediaQueueItemsPath)
 
                 if (mQueueItems.isEmpty()) {
                     // Remove all items (datamap)
@@ -1079,14 +1127,14 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
 
                 mQueueItems.forEach {
                     val d = DataMap().apply {
-                        putLong(WearableHelper.KEY_MEDIAITEM_ID, it.queueId)
+                        putLong(MediaHelper.KEY_MEDIAITEM_ID, it.queueId)
                         putString(
-                            WearableHelper.KEY_MEDIAITEM_TITLE,
+                            MediaHelper.KEY_MEDIAITEM_TITLE,
                             it.description.title.toString()
                         )
                         if (it.description.iconBitmap != null) {
                             putAsset(
-                                WearableHelper.KEY_MEDIAITEM_ICON,
+                                MediaHelper.KEY_MEDIAITEM_ICON,
                                 ImageUtils.createAssetFromBitmap(it.description.iconBitmap!!)
                             )
                         }
@@ -1095,9 +1143,9 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
                     dataMapList.add(d)
                 }
 
-                mapRequest.dataMap.putDataMapArrayList(WearableHelper.KEY_MEDIAITEMS, dataMapList)
+                mapRequest.dataMap.putDataMapArrayList(MediaHelper.KEY_MEDIAITEMS, dataMapList)
                 mapRequest.dataMap.putLong(
-                    WearableHelper.KEY_MEDIA_ACTIVEQUEUEITEM_ID,
+                    MediaHelper.KEY_MEDIA_ACTIVEQUEUEITEM_ID,
                     mActiveQueueItemId
                 )
 

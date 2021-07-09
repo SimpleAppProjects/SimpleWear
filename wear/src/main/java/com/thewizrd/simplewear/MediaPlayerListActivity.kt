@@ -17,6 +17,7 @@ import com.google.android.gms.wearable.*
 import com.google.android.gms.wearable.DataClient.OnDataChangedListener
 import com.google.android.wearable.intent.RemoteIntent
 import com.thewizrd.shared_resources.actions.ActionStatus
+import com.thewizrd.shared_resources.helpers.MediaHelper
 import com.thewizrd.shared_resources.helpers.RecyclerOnClickListenerInterface
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
 import com.thewizrd.shared_resources.helpers.WearableHelper
@@ -200,7 +201,7 @@ class MediaPlayerListActivity : WearableListenerActivity(), MessageClient.OnMess
                     if (connect()) {
                         sendMessage(
                             mPhoneNodeWithApp!!.id,
-                            WearableHelper.OpenMusicPlayerPath,
+                            MediaHelper.OpenMusicPlayerPath,
                             JSONParser.serializer(
                                 Pair.create(vm.packageName, vm.activityName),
                                 Pair::class.java
@@ -236,7 +237,7 @@ class MediaPlayerListActivity : WearableListenerActivity(), MessageClient.OnMess
                 if (connect()) {
                     sendMessage(
                         mPhoneNodeWithApp!!.id,
-                        WearableHelper.MediaPlayerAutoLaunchPath,
+                        MediaHelper.MediaPlayerAutoLaunchPath,
                         null
                     )
                 }
@@ -254,7 +255,7 @@ class MediaPlayerListActivity : WearableListenerActivity(), MessageClient.OnMess
         super.onMessageReceived(messageEvent)
 
         when (messageEvent.path) {
-            WearableHelper.MusicPlayersPath -> {
+            MediaHelper.MusicPlayersPath -> {
                 val status = ActionStatus.valueOf(messageEvent.data.bytesToString())
 
                 if (status == ActionStatus.PERMISSION_DENIED) {
@@ -274,7 +275,7 @@ class MediaPlayerListActivity : WearableListenerActivity(), MessageClient.OnMess
                     refreshMusicPlayers()
                 }
             }
-            WearableHelper.MediaPlayerAutoLaunchPath -> {
+            MediaHelper.MediaPlayerAutoLaunchPath -> {
                 val status = ActionStatus.valueOf(messageEvent.data.bytesToString())
 
                 if (status == ActionStatus.SUCCESS) {
@@ -293,7 +294,7 @@ class MediaPlayerListActivity : WearableListenerActivity(), MessageClient.OnMess
             for (event in dataEventBuffer) {
                 if (event.type == DataEvent.TYPE_CHANGED) {
                     val item = event.dataItem
-                    if (WearableHelper.MusicPlayersPath == item.uri.path) {
+                    if (MediaHelper.MusicPlayersPath == item.uri.path) {
                         try {
                             val dataMap = DataMapItem.fromDataItem(item).dataMap
                             updateMusicPlayers(dataMap)
@@ -313,14 +314,14 @@ class MediaPlayerListActivity : WearableListenerActivity(), MessageClient.OnMess
                     .getDataItems(
                         WearableHelper.getWearDataUri(
                             "*",
-                            WearableHelper.MusicPlayersPath
+                            MediaHelper.MusicPlayersPath
                         )
                     )
                     .await()
 
                 for (i in 0 until buff.count) {
                     val item = buff[i]
-                    if (WearableHelper.MusicPlayersPath == item.uri.path) {
+                    if (MediaHelper.MusicPlayersPath == item.uri.path) {
                         try {
                             val dataMap = DataMapItem.fromDataItem(item).dataMap
                             updateMusicPlayers(dataMap)
@@ -341,7 +342,7 @@ class MediaPlayerListActivity : WearableListenerActivity(), MessageClient.OnMess
     @Synchronized
     private suspend fun updateMusicPlayers(dataMap: DataMap) {
         val supported_players =
-            dataMap.getStringArrayList(WearableHelper.KEY_SUPPORTEDPLAYERS) ?: return
+            dataMap.getStringArrayList(MediaHelper.KEY_SUPPORTEDPLAYERS) ?: return
 
         mMediaAppsList.clear()
 
@@ -389,7 +390,15 @@ class MediaPlayerListActivity : WearableListenerActivity(), MessageClient.OnMess
     private fun requestPlayersUpdate() {
         lifecycleScope.launch {
             if (connect()) {
-                sendMessage(mPhoneNodeWithApp!!.id, WearableHelper.MusicPlayersPath, null)
+                sendMessage(mPhoneNodeWithApp!!.id, MediaHelper.MusicPlayersPath, null)
+            }
+        }
+    }
+
+    private fun requestPlayerDisconnect() {
+        lifecycleScope.launch {
+            if (connect()) {
+                sendMessage(mPhoneNodeWithApp!!.id, MediaHelper.MediaPlayerDisconnectPath, null)
             }
         }
     }
@@ -410,6 +419,7 @@ class MediaPlayerListActivity : WearableListenerActivity(), MessageClient.OnMess
     }
 
     override fun onPause() {
+        requestPlayerDisconnect()
         Wearable.getDataClient(this).removeListener(this)
         super.onPause()
     }

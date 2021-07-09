@@ -11,7 +11,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.ViewTreeObserver
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.recyclerview.widget.DiffUtil
@@ -19,6 +18,7 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import androidx.wear.widget.WearableLinearLayoutManager
 import com.google.android.gms.wearable.*
+import com.thewizrd.shared_resources.helpers.MediaHelper
 import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.shared_resources.lifecycle.LifecycleAwareFragment
 import com.thewizrd.shared_resources.utils.ImageUtils
@@ -62,8 +62,8 @@ class MediaQueueFragment : LifecycleAwareFragment(), DataClient.OnDataChangedLis
             override fun onClick(item: MediaItemModel) {
                 LocalBroadcastManager.getInstance(requireContext())
                     .sendBroadcast(
-                        Intent(WearableHelper.MediaQueueItemsClickPath)
-                            .putExtra(WearableHelper.KEY_MEDIAITEM_ID, item.id)
+                        Intent(MediaHelper.MediaQueueItemsClickPath)
+                            .putExtra(MediaHelper.KEY_MEDIAITEM_ID, item.id)
                     )
             }
         })
@@ -189,14 +189,14 @@ class MediaQueueFragment : LifecycleAwareFragment(), DataClient.OnDataChangedLis
                     .getDataItems(
                         WearableHelper.getWearDataUri(
                             "*",
-                            WearableHelper.MediaQueueItemsPath
+                            MediaHelper.MediaQueueItemsPath
                         )
                     )
                     .await()
 
                 for (i in 0 until buff.count) {
                     val item = buff[i]
-                    if (WearableHelper.MediaQueueItemsPath == item.uri.path) {
+                    if (MediaHelper.MediaQueueItemsPath == item.uri.path) {
                         val dataMap = DataMapItem.fromDataItem(item).dataMap
                         updateQueueItems(dataMap, true)
                     }
@@ -210,20 +210,20 @@ class MediaQueueFragment : LifecycleAwareFragment(), DataClient.OnDataChangedLis
     }
 
     private suspend fun updateQueueItems(dataMap: DataMap, scrollToActive: Boolean = false) {
-        val items = dataMap.getDataMapArrayList(WearableHelper.KEY_MEDIAITEMS) ?: emptyList()
+        val items = dataMap.getDataMapArrayList(MediaHelper.KEY_MEDIAITEMS) ?: emptyList()
         val mediaItems = ArrayList<MediaItemModel>(items.size)
 
         for (item in items) {
-            val id = item.getLong(WearableHelper.KEY_MEDIAITEM_ID)
+            val id = item.getLong(MediaHelper.KEY_MEDIAITEM_ID)
             val icon = try {
                 ImageUtils.bitmapFromAssetStream(
                     Wearable.getDataClient(requireContext()),
-                    item.getAsset(WearableHelper.KEY_MEDIAITEM_ICON)
+                    item.getAsset(MediaHelper.KEY_MEDIAITEM_ICON)
                 )
             } catch (e: Exception) {
                 null
             }
-            val title = item.getString(WearableHelper.KEY_MEDIAITEM_TITLE)
+            val title = item.getString(MediaHelper.KEY_MEDIAITEM_TITLE)
 
             mediaItems.add(MediaItemModel(id.toString()).apply {
                 this.icon = icon
@@ -231,7 +231,7 @@ class MediaQueueFragment : LifecycleAwareFragment(), DataClient.OnDataChangedLis
             })
         }
 
-        val newQueueId = dataMap.getLong(WearableHelper.KEY_MEDIA_ACTIVEQUEUEITEM_ID, -1)
+        val newQueueId = dataMap.getLong(MediaHelper.KEY_MEDIA_ACTIVEQUEUEITEM_ID, -1)
 
         runWithView {
             showLoading(false)
@@ -289,7 +289,7 @@ class MediaQueueFragment : LifecycleAwareFragment(), DataClient.OnDataChangedLis
             for (event in dataEventBuffer) {
                 if (event.type == DataEvent.TYPE_CHANGED) {
                     val item = event.dataItem
-                    if (WearableHelper.MediaQueueItemsPath == item.uri.path) {
+                    if (MediaHelper.MediaQueueItemsPath == item.uri.path) {
                         deleteJob?.cancel()
                         try {
                             val dataMap = DataMapItem.fromDataItem(item).dataMap
@@ -300,7 +300,7 @@ class MediaQueueFragment : LifecycleAwareFragment(), DataClient.OnDataChangedLis
                     }
                 } else if (event.type == DataEvent.TYPE_DELETED) {
                     val item = event.dataItem
-                    if (WearableHelper.MediaQueueItemsPath == item.uri.path) {
+                    if (MediaHelper.MediaQueueItemsPath == item.uri.path) {
                         deleteJob = lifecycleScope.launch {
                             delay(1000)
 
