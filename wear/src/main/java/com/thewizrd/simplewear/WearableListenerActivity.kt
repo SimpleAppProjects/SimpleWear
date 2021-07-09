@@ -153,9 +153,11 @@ abstract class WearableListenerActivity : AppCompatActivity(), OnMessageReceived
                 }
             } else {
                 // Send message to device to start activity
-                val result = Wearable.getMessageClient(this@WearableListenerActivity)
-                        .sendMessage(mPhoneNodeWithApp!!.id, WearableHelper.StartActivityPath, ByteArray(0))
-                        .await()
+                val result = sendMessage(
+                    mPhoneNodeWithApp!!.id,
+                    WearableHelper.StartActivityPath,
+                    ByteArray(0)
+                )
 
                 LocalBroadcastManager.getInstance(this@WearableListenerActivity)
                         .sendBroadcast(Intent(ACTION_OPENONPHONE)
@@ -418,9 +420,9 @@ abstract class WearableListenerActivity : AppCompatActivity(), OnMessageReceived
         return emptyList()
     }
 
-    protected suspend fun sendMessage(nodeID: String, path: String, data: ByteArray?) {
+    protected suspend fun sendMessage(nodeID: String, path: String, data: ByteArray?): Int? {
         try {
-            Wearable.getMessageClient(this@WearableListenerActivity)
+            return Wearable.getMessageClient(this@WearableListenerActivity)
                 .sendMessage(nodeID, path, data).await()
         } catch (e: Exception) {
             if (e is ApiException || e.cause is ApiException) {
@@ -438,6 +440,8 @@ abstract class WearableListenerActivity : AppCompatActivity(), OnMessageReceived
 
             Logger.writeLine(Log.ERROR, e)
         }
+
+        return -1
     }
 
     @Throws(ApiException::class)
