@@ -14,21 +14,13 @@ public final class Codecs {
     private Codecs() {
     }
 
-    public static boolean createBoolean(Parcel var0) {
-        return var0.readInt() != 0;
-    }
-
-    public static CharSequence createCharSequence(Parcel var0) {
-        return var0.readInt() != 0 ? (CharSequence) TextUtils.CHAR_SEQUENCE_CREATOR.createFromParcel(var0) : null;
-    }
-
     public static Parcelable createParcelable(Parcel var0, Creator var1) {
         return var0.readInt() != 0 ? (Parcelable) var1.createFromParcel(var0) : null;
     }
 
-//    public static void writeBoolean(Parcel var0, boolean var1) {
-//        var0.writeInt(var1);
-//    }
+    public static void writeStrongBinder(Parcel var0, IInterface var1) {
+        var0.writeStrongBinder(var1.asBinder());
+    }
 
     public static void writeParcelable(Parcel var0, Parcelable var1) {
         if (var1 != null) {
@@ -39,7 +31,15 @@ public final class Codecs {
         }
     }
 
-    public static void writeStrongBinder(Parcel var0, IInterface var1) {
-        var0.writeStrongBinder(var1.asBinder());
+//    public static void writeBoolean(Parcel var0, boolean var1) {
+//        var0.writeInt(var1);
+//    }
+
+    public static boolean createBoolean(Parcel var0) {
+        return var0.readInt() != 0;
+    }
+
+    public static CharSequence createCharSequence(Parcel var0) {
+        return var0.readInt() != 0 ? (CharSequence) TextUtils.CHAR_SEQUENCE_CREATOR.createFromParcel(var0) : null;
     }
 }

@@ -47,7 +47,13 @@ public abstract class TileProviderService extends Service {
 
     public abstract void onTileUpdate(int tileId);
 
-    public final void sendData(int var1, TileData var2) {
+    // Use sendUpdate() instead. This method was named wrong when the unofficial API was first released.
+    @Deprecated
+    public final void sendData(int tileId, TileData tileData) {
+        sendUpdate(tileId, tileData);
+    }
+
+    public final void sendUpdate(int tileId, TileData tileData) {
         Trace.beginSection("sendUpdate");
         Iterator var3 = this.hosts.iterator();
 
@@ -55,7 +61,7 @@ public abstract class TileProviderService extends Service {
             ITilesHost var4 = (ITilesHost) var3.next();
             if (var4 != null) {
                 try {
-                    var4.updateTileData(var1, var2);
+                    var4.updateTileData(tileId, tileData);
                 } catch (RemoteException var5) {
                     Log.w("TileProviderService", "Error sending update.", var5);
                 }

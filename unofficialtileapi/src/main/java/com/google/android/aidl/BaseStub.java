@@ -11,12 +11,12 @@ public class BaseStub extends Binder implements IInterface {
         this.attachInterface(this, var1);
     }
 
-    public final IBinder asBinder() {
-        return this;
+    public boolean dispatchTransaction(int var1, Parcel var2, Parcel var3) throws RemoteException {
+        throw null;
     }
 
-    public boolean dispatchTransaction$514KOOBECHP6UQB45TNN6BQGC5P66PBC7D662RJ4E9NMIP1FDTPIUK31E9HMAR1R94KLK___0(int var1, Parcel var2, Parcel var3) throws RemoteException {
-        throw null;
+    public final IBinder asBinder() {
+        return this;
     }
 
     public final boolean onTransact(int var1, Parcel var2, Parcel var3, int var4) throws RemoteException {
@@ -26,6 +26,6 @@ public class BaseStub extends Binder implements IInterface {
             return true;
         }
 
-        return this.dispatchTransaction$514KOOBECHP6UQB45TNN6BQGC5P66PBC7D662RJ4E9NMIP1FDTPIUK31E9HMAR1R94KLK___0(var1, var2, var3);
+        return this.dispatchTransaction(var1, var2, var3);
     }
 }

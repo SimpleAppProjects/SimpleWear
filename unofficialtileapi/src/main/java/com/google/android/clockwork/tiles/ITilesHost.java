@@ -22,7 +22,7 @@ public interface ITilesHost extends IInterface {
             super("com.google.android.clockwork.tiles.ITilesHost");
         }
 
-        public final boolean dispatchTransaction$514KOOBECHP6UQB45TNN6BQGC5P66PBC7D662RJ4E9NMIP1FDTPIUK31E9HMAR1R94KLK___0(int var1, Parcel var2, Parcel var3) throws RemoteException {
+        public final boolean dispatchTransaction(int var1, Parcel var2, Parcel var3) throws RemoteException {
             if (var1 != 1) {
                 if (var1 != 2) {
                     if (var1 != 3) {
@@ -50,15 +50,15 @@ public interface ITilesHost extends IInterface {
                 throw null;
             }
 
+            public final void updateWithOutdatedTime(int var1, RemoteViews var2, long var3) {
+                throw null;
+            }
+
             public final void updateTileData(int var1, TileData var2) throws RemoteException {
                 Parcel var3 = this.obtainAndWriteInterfaceToken();
                 var3.writeInt(var1);
                 Codecs.writeParcelable(var3, var2);
                 this.transactAndReadExceptionReturnVoid(3, var3);
-            }
-
-            public final void updateWithOutdatedTime(int var1, RemoteViews var2, long var3) {
-                throw null;
             }
         }
     }

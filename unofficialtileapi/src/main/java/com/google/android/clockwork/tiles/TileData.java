@@ -19,16 +19,16 @@ public class TileData implements Parcelable {
         this.fields = var1.readBundle(this.getClass().getClassLoader());
     }
 
-    public final int describeContents() {
-        return 0;
-    }
-
     public final RemoteViews getRemoteViews() {
         return (RemoteViews) this.fields.getParcelable("REMOTE_VIEWS");
     }
 
     public final boolean isLoading() {
         return this.fields.getBoolean("LOADING");
+    }
+
+    public final int describeContents() {
+        return 0;
     }
 
     public final String toString() {

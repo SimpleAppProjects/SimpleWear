@@ -6,25 +6,21 @@ import android.os.Parcel;
 import android.os.RemoteException;
 
 public class BaseProxy implements IInterface {
-    private final String mDescriptor;
     private final IBinder mRemote;
+    private final String mDescriptor;
 
-    public BaseProxy(IBinder var1, String var2) {
+    protected BaseProxy(IBinder var1, String var2) {
         this.mRemote = var1;
         this.mDescriptor = var2;
     }
 
-    public final IBinder asBinder() {
-        return this.mRemote;
-    }
-
-    public final Parcel obtainAndWriteInterfaceToken() {
+    protected final Parcel obtainAndWriteInterfaceToken() {
         Parcel var1 = Parcel.obtain();
         var1.writeInterfaceToken(this.mDescriptor);
         return var1;
     }
 
-    public final Parcel transactAndReadException(int var1, Parcel var2) throws RemoteException {
+    protected final Parcel transactAndReadException(int var1, Parcel var2) throws RemoteException {
         Parcel var3 = Parcel.obtain();
 
         try {
@@ -40,7 +36,11 @@ public class BaseProxy implements IInterface {
         return var3;
     }
 
-    public final void transactAndReadExceptionReturnVoid(int var1, Parcel var2) throws RemoteException {
+    public final IBinder asBinder() {
+        return this.mRemote;
+    }
+
+    protected final void transactAndReadExceptionReturnVoid(int var1, Parcel var2) throws RemoteException {
         Parcel var3 = Parcel.obtain();
 
         try {
@@ -53,7 +53,7 @@ public class BaseProxy implements IInterface {
 
     }
 
-    public final void transactOneway(int var1, Parcel var2) throws RemoteException {
+    protected final void transactOneway(int var1, Parcel var2) throws RemoteException {
         try {
             this.mRemote.transact(var1, var2, (Parcel) null, 1);
         } finally {

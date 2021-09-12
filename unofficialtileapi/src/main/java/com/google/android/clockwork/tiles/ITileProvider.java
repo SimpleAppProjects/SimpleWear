@@ -30,7 +30,7 @@ public interface ITileProvider extends IInterface {
             this.serviceRef = new WeakReference<>(var1);
         }
 
-        public final boolean dispatchTransaction$514KOOBECHP6UQB45TNN6BQGC5P66PBC7D662RJ4E9NMIP1FDTPIUK31E9HMAR1R94KLK___0(int var1, Parcel var2, Parcel var3) {
+        public final boolean dispatchTransaction(int var1, Parcel var2, Parcel var3) {
             if (var1 != 1) {
                 if (var1 != 2) {
                     if (var1 != 3) {
