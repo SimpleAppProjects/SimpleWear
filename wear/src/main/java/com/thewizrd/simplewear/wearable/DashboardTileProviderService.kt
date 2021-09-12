@@ -92,7 +92,7 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
                 .setRemoteViews(updateViews)
                 .build()
 
-            sendData(id, tileData)
+            sendUpdate(id, tileData)
         }
     }
 
