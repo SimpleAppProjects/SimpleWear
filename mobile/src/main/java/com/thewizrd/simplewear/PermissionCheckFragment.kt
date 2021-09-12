@@ -10,6 +10,7 @@ import android.content.*
 import android.content.IntentSender.SendIntentException
 import android.content.pm.PackageManager
 import android.graphics.Color
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.CountDownTimer
@@ -103,6 +104,21 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
                     startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
                 } catch (e: ActivityNotFoundException) {
                 }
+            }
+        }
+
+        binding.uninstallPref.setOnClickListener {
+            if (!isDeviceAdminEnabled(requireContext())) {
+                // Uninstall app
+                requestUninstall()
+            } else {
+                // Deactivate device admin
+                val mDPM =
+                    requireContext().getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
+                val mScreenLockAdmin =
+                    ComponentName(requireContext(), ScreenLockAdminReceiver::class.java)
+                mDPM.removeActiveAdmin(mScreenLockAdmin)
+                requestUninstall()
             }
         }
 
@@ -206,6 +222,7 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
             updatePairPermText(deviceManager.associations.isNotEmpty())
         }
         updateNotifListenerText(NotificationListener.isEnabled(requireContext()))
+        updateUninstallText(mDPM.isAdminActive(mScreenLockAdmin))
     }
 
     private fun updateCamPermText(enabled: Boolean) {
@@ -231,6 +248,11 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
     private fun updateNotifListenerText(enabled: Boolean) {
         binding.notiflistenerSummary.setText(if (enabled) R.string.prompt_notifservice_enabled else R.string.prompt_notifservice_disabled)
         binding.notiflistenerSummary.setTextColor(if (enabled) Color.GREEN else Color.RED)
+    }
+
+    private fun updateUninstallText(enabled: Boolean) {
+        binding.uninstallTitle.setText(if (enabled) R.string.permission_title_deactivate_uninstall else R.string.permission_title_uninstall)
+        binding.uninstallSummary.visibility = if (enabled) View.VISIBLE else View.GONE
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -262,6 +284,26 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
                     updateCamPermText(false)
                     Toast.makeText(context, "Permission denied", Toast.LENGTH_SHORT).show()
                 }
+        }
+    }
+
+    private fun requestUninstall() {
+        val ctx = requireContext()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            try {
+                startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                    data = Uri.parse("package:${ctx.packageName}")
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                })
+            } catch (e: ActivityNotFoundException) {
+            }
+        } else {
+            try {
+                startActivity(Intent(Intent.ACTION_UNINSTALL_PACKAGE).apply {
+                    data = Uri.parse("package:${ctx.packageName}")
+                })
+            } catch (e: ActivityNotFoundException) {
+            }
         }
     }
 }

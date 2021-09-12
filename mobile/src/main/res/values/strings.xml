@@ -25,4 +25,8 @@
     <string name="not_title_mediacontroller_running">Media Controller active</string>
     <string name="not_content_mediacontroller_tap2disable">@string/not_torch_turnoff_summary</string>
 
+    <string name="permission_title_uninstall">Uninstall</string>
+    <string name="permission_title_deactivate_uninstall">Deactivate and uninstall</string>
+    <string name="message_deactivate_deviceadmin">To uninstall the app, click here to deactivate device admin access or deactivate from "Settings -> Security -> Device admin (apps)"</string>
+
 </resources>

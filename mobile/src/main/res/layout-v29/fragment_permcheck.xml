@@ -32,7 +32,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:minHeight="64dp"
-        android:padding="16dp">
+        android:padding="16dp"
+        android:background="?selectableItemBackground">
 
         <TextView
             android:id="@+id/torch_pref_title"
@@ -68,7 +69,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:minHeight="64dp"
-        android:padding="16dp">
+        android:padding="16dp"
+        android:background="?selectableItemBackground">
 
         <TextView
             android:id="@+id/deviceadmin_title"
@@ -104,7 +106,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:minHeight="64dp"
-        android:padding="16dp">
+        android:padding="16dp"
+        android:background="?selectableItemBackground">
 
         <TextView
             android:id="@+id/dnd_title"
@@ -140,7 +143,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:minHeight="64dp"
-        android:padding="16dp">
+        android:padding="16dp"
+        android:background="?selectableItemBackground">
 
         <TextView
             android:id="@+id/companion_pair_title"
@@ -188,7 +192,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:minHeight="64dp"
-        android:padding="16dp">
+        android:padding="16dp"
+        android:background="?selectableItemBackground">
 
         <TextView
             android:id="@+id/notiflistener_title"
@@ -213,5 +218,42 @@
             android:textAppearance="@style/TextAppearance.AppCompat.Small" />
 
     </RelativeLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@drawable/abc_list_divider_material" />
+
+    <LinearLayout
+        android:id="@+id/uninstall_pref"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:minHeight="64dp"
+        android:padding="16dp"
+        android:gravity="center_vertical"
+        android:orientation="vertical"
+        android:background="?selectableItemBackground">
+
+        <TextView
+            android:id="@+id/uninstall_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:ellipsize="marquee"
+            android:fadingEdge="horizontal"
+            android:singleLine="true"
+            android:text="@string/permission_title_uninstall"
+            android:textAppearance="@style/TextAppearance.AppCompat"
+            android:textSize="18sp" />
+
+        <TextView
+            android:id="@+id/uninstall_summary"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:maxLines="4"
+            android:textAppearance="@style/TextAppearance.AppCompat.Small"
+            android:text="@string/message_deactivate_deviceadmin"
+            android:visibility="gone" />
+
+    </LinearLayout>
 
 </LinearLayout>
