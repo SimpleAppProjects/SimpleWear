@@ -1,7 +1,9 @@
 package com.thewizrd.shared_resources.helpers
 
+import android.content.Intent
 import android.net.Uri
 import android.util.Log
+import androidx.core.net.toUri
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.GoogleApiAvailability
 import com.google.android.gms.wearable.PutDataRequest
@@ -74,5 +76,12 @@ object WearableHelper {
             .scheme(PutDataRequest.WEAR_URI_SCHEME)
             .path(Path)
             .build()
+    }
+
+    fun getRemoteIntentForPackage(packageName: String): Intent {
+        return Intent(Intent.ACTION_VIEW).apply {
+            data = "android-app://${packageName}".toUri()
+            addCategory(Intent.CATEGORY_BROWSABLE)
+        }
     }
 }
