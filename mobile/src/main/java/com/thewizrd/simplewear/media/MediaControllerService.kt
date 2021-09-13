@@ -118,11 +118,12 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
         val notif = NotificationCompat.Builder(context, NOT_CHANNEL_ID).apply {
             setSmallIcon(R.drawable.ic_baseline_music_note_24)
             setContentTitle(context.getString(R.string.not_title_mediacontroller_running))
-            setContentText(context.getString(R.string.not_content_mediacontroller_tap2disable))
             setOnlyAlertOnce(true)
             setNotificationSilent()
-            priority = NotificationCompat.PRIORITY_LOW
-            setContentIntent(
+            priority = NotificationCompat.PRIORITY_DEFAULT
+            addAction(
+                0,
+                context.getString(R.string.action_disconnect),
                 PendingIntent.getService(
                     context, 0,
                     Intent(context, MediaControllerService::class.java)

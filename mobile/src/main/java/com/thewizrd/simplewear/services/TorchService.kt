@@ -1,7 +1,6 @@
 package com.thewizrd.simplewear.services
 
 import android.Manifest
-import android.annotation.TargetApi
 import android.app.*
 import android.content.Context
 import android.content.Intent
@@ -10,11 +9,11 @@ import android.hardware.camera2.CameraManager
 import android.os.Build
 import android.os.IBinder
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.thewizrd.shared_resources.actions.Actions
 import com.thewizrd.shared_resources.utils.Logger
-import com.thewizrd.simplewear.App
 import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.receivers.PhoneBroadcastReceiver
 import com.thewizrd.simplewear.wearable.WearableWorker
@@ -34,50 +33,6 @@ class TorchService : Service() {
                 context.startService(work)
             }
         }
-
-        private fun initChannel() {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                // Gets an instance of the NotificationManager service
-                val context = App.instance.appContext
-                val mNotifyMgr =
-                    context.getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-                var mChannel = mNotifyMgr.getNotificationChannel(NOT_CHANNEL_ID)
-                if (mChannel == null) {
-                    val notchannel_name = context.getString(R.string.not_channel_name_torch)
-                    mChannel = NotificationChannel(
-                        NOT_CHANNEL_ID,
-                        notchannel_name,
-                        NotificationManager.IMPORTANCE_LOW
-                    )
-                    // Configure the notification channel.
-                    mChannel.setShowBadge(false)
-                    mChannel.enableLights(false)
-                    mChannel.enableVibration(false)
-                    mNotifyMgr.createNotificationChannel(mChannel)
-                }
-            }
-        }
-
-        @TargetApi(Build.VERSION_CODES.O)
-        private fun getForegroundNotification(): Notification {
-            val context = App.instance.appContext
-            val mBuilder = NotificationCompat.Builder(context, NOT_CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_lightbulb_outline_white_24dp)
-                .setContentTitle(context.getString(R.string.action_torch))
-                .setContentText(context.getString(R.string.not_torch_turnoff_summary))
-                .setContentIntent(
-                    PendingIntent.getBroadcast(
-                        context, JOB_ID,
-                        Intent(context, PhoneBroadcastReceiver::class.java)
-                            .setAction(ACTION_END_LIGHT),
-                        PendingIntent.FLAG_UPDATE_CURRENT
-                    )
-                )
-                .setColor(ContextCompat.getColor(context, R.color.colorPrimary))
-                .setOnlyAlertOnce(true)
-                .setPriority(NotificationCompat.PRIORITY_HIGH)
-            return mBuilder.build()
-        }
     }
 
     private var mFlashEnabled = false
@@ -87,15 +42,63 @@ class TorchService : Service() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             initChannel()
         }
-        startForeground(JOB_ID, getForegroundNotification())
+        startForeground(JOB_ID, getForegroundNotification(applicationContext))
     }
 
     override fun onBind(intent: Intent): IBinder? {
         return null
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun initChannel() {
+        // Gets an instance of the NotificationManager service
+        val mNotifyMgr =
+            applicationContext.getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+        var mChannel = mNotifyMgr.getNotificationChannel(NOT_CHANNEL_ID)
+        val notChannelName = applicationContext.getString(R.string.not_channel_name_torch)
+        if (mChannel == null) {
+            mChannel = NotificationChannel(
+                NOT_CHANNEL_ID,
+                notChannelName,
+                NotificationManager.IMPORTANCE_DEFAULT
+            )
+        }
+
+        // Configure the notification channel.
+        mChannel.name = notChannelName
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            if (!mChannel.hasUserSetImportance()) {
+                mChannel.importance = NotificationManager.IMPORTANCE_DEFAULT
+            }
+        }
+        mChannel.setShowBadge(false)
+        mChannel.enableLights(false)
+        mChannel.enableVibration(false)
+        mNotifyMgr.createNotificationChannel(mChannel)
+    }
+
+    private fun getForegroundNotification(context: Context): Notification {
+        val mBuilder = NotificationCompat.Builder(context, NOT_CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_lightbulb_outline_white_24dp)
+            .setContentTitle(context.getString(R.string.action_torch))
+            .addAction(
+                0,
+                context.getString(R.string.action_turnoff),
+                PendingIntent.getBroadcast(
+                    context, JOB_ID,
+                    Intent(context, PhoneBroadcastReceiver::class.java)
+                        .setAction(ACTION_END_LIGHT),
+                    PendingIntent.FLAG_UPDATE_CURRENT
+                )
+            )
+            .setColor(ContextCompat.getColor(context, R.color.colorPrimary))
+            .setOnlyAlertOnce(true)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+        return mBuilder.build()
+    }
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        startForeground(JOB_ID, getForegroundNotification())
+        startForeground(JOB_ID, getForegroundNotification(applicationContext))
 
         when (intent?.action) {
             ACTION_START_LIGHT -> {

@@ -24,6 +24,8 @@
     <string name="not_channel_name_mediacontroller" translatable="false">@string/title_media_controller</string>
     <string name="not_title_mediacontroller_running">Media Controller active</string>
     <string name="not_content_mediacontroller_tap2disable">@string/not_torch_turnoff_summary</string>
+    <string name="action_disconnect">Disconnect</string>
+    <string name="action_turnoff">Turn off</string>
 
     <string name="permission_title_uninstall">Uninstall</string>
     <string name="permission_title_deactivate_uninstall">Deactivate and uninstall</string>
