@@ -127,15 +127,12 @@ class MediaQueueFragment : LifecycleAwareFragment(), DataClient.OnDataChangedLis
 
         inner class ViewHolder(val binding: AppItemBinding) :
             RecyclerView.ViewHolder(binding.root) {
-            init {
-                binding.root.setOnClickListener {
-                    onClickListener?.onClick(getItem(adapterPosition))
-                }
-            }
-
             fun bind(model: MediaItemModel, isActive: Boolean) {
                 binding.appIcon.setImageBitmap(model.icon)
                 bindTitle(model, isActive)
+                binding.root.setOnClickListener {
+                    onClickListener?.onClick(model)
+                }
             }
 
             fun bindTitle(model: MediaItemModel, isActive: Boolean) {
@@ -264,14 +261,15 @@ class MediaQueueFragment : LifecycleAwareFragment(), DataClient.OnDataChangedLis
                                         this
                                     )
                                     binding.listView.postOnAnimation {
-                                        val view = mLayoutManager.findViewByPosition(0)!!
-                                        val containerHeight = binding.listView.measuredHeight
-                                        val totalViewsInContainer =
-                                            containerHeight / view.measuredHeight
-                                        mLayoutManager.scrollToPositionWithOffset(
-                                            position + 1,
-                                            view.measuredHeight * (totalViewsInContainer / 2)
-                                        )
+                                        mLayoutManager.findViewByPosition(0)?.let {
+                                            val containerHeight = binding.listView.measuredHeight
+                                            val totalViewsInContainer =
+                                                containerHeight / it.measuredHeight
+                                            mLayoutManager.scrollToPositionWithOffset(
+                                                position + 1,
+                                                it.measuredHeight * (totalViewsInContainer / 2)
+                                            )
+                                        }
                                     }
                                 }
                             })

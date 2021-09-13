@@ -140,12 +140,14 @@ class MediaPlayerActivity : WearableListenerActivity(), AmbientModeSupport.Ambie
                             MediaHelper.MediaVolumeStatusPath -> {
                                 lifecycleScope.launch {
                                     if (connect()) {
-                                        sendMessage(
-                                            mPhoneNodeWithApp!!.id,
-                                            MediaHelper.MediaPlayerConnectPath,
-                                            if (isAutoLaunch) isAutoLaunch.booleanToBytes() else mMediaPlayerDetails.packageName?.stringToBytes()
-                                        )
-                                        sendMessage(mPhoneNodeWithApp!!.id, intent.action!!, null)
+                                        mPhoneNodeWithApp?.id?.let { nodeID ->
+                                            sendMessage(
+                                                nodeID,
+                                                MediaHelper.MediaPlayerConnectPath,
+                                                if (isAutoLaunch) isAutoLaunch.booleanToBytes() else mMediaPlayerDetails.packageName?.stringToBytes()
+                                            )
+                                            sendMessage(nodeID, intent.action!!, null)
+                                        }
                                     }
                                 }
                             }
@@ -156,16 +158,18 @@ class MediaPlayerActivity : WearableListenerActivity(), AmbientModeSupport.Ambie
 
                                 lifecycleScope.launch {
                                     if (connect()) {
-                                        sendMessage(
-                                            mPhoneNodeWithApp!!.id,
-                                            MediaHelper.MediaPlayerConnectPath,
-                                            if (isAutoLaunch) isAutoLaunch.booleanToBytes() else mMediaPlayerDetails.packageName?.stringToBytes()
-                                        )
-                                        sendMessage(
-                                            mPhoneNodeWithApp!!.id,
-                                            intent.action!!,
-                                            id!!.stringToBytes()
-                                        )
+                                        mPhoneNodeWithApp?.id?.let { nodeID ->
+                                            sendMessage(
+                                                nodeID,
+                                                MediaHelper.MediaPlayerConnectPath,
+                                                if (isAutoLaunch) isAutoLaunch.booleanToBytes() else mMediaPlayerDetails.packageName?.stringToBytes()
+                                            )
+                                            sendMessage(
+                                                nodeID,
+                                                intent.action!!,
+                                                id!!.stringToBytes()
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -175,16 +179,18 @@ class MediaPlayerActivity : WearableListenerActivity(), AmbientModeSupport.Ambie
 
                                 lifecycleScope.launch {
                                     if (connect()) {
-                                        sendMessage(
-                                            mPhoneNodeWithApp!!.id,
-                                            MediaHelper.MediaPlayerConnectPath,
-                                            if (isAutoLaunch) isAutoLaunch.booleanToBytes() else mMediaPlayerDetails.packageName?.stringToBytes()
-                                        )
-                                        sendMessage(
-                                            mPhoneNodeWithApp!!.id,
-                                            intent.action!!,
-                                            id!!.stringToBytes()
-                                        )
+                                        mPhoneNodeWithApp?.id?.let { nodeID ->
+                                            sendMessage(
+                                                nodeID,
+                                                MediaHelper.MediaPlayerConnectPath,
+                                                if (isAutoLaunch) isAutoLaunch.booleanToBytes() else mMediaPlayerDetails.packageName?.stringToBytes()
+                                            )
+                                            sendMessage(
+                                                nodeID,
+                                                intent.action!!,
+                                                id!!.stringToBytes()
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -432,33 +438,33 @@ class MediaPlayerActivity : WearableListenerActivity(), AmbientModeSupport.Ambie
     private fun updatePager(item: DataItem) {
         when (item.uri.path) {
             MediaHelper.MediaBrowserItemsPath -> {
-                try {
+                supportsBrowser = try {
                     val dataMap = DataMapItem.fromDataItem(item).dataMap
                     val items = dataMap.getDataMapArrayList(MediaHelper.KEY_MEDIAITEMS)
-                    supportsBrowser = !items.isNullOrEmpty()
+                    !items.isNullOrEmpty()
                 } catch (e: Exception) {
                     Logger.writeLine(Log.ERROR, e)
-                    supportsBrowser = false
+                    false
                 }
             }
             MediaHelper.MediaActionsPath -> {
-                try {
+                supportsCustomActions = try {
                     val dataMap = DataMapItem.fromDataItem(item).dataMap
                     val items = dataMap.getDataMapArrayList(MediaHelper.KEY_MEDIAITEMS)
-                    supportsCustomActions = !items.isNullOrEmpty()
+                    !items.isNullOrEmpty()
                 } catch (e: Exception) {
                     Logger.writeLine(Log.ERROR, e)
-                    supportsCustomActions = false
+                    false
                 }
             }
             MediaHelper.MediaQueueItemsPath -> {
-                try {
+                supportsQueue = try {
                     val dataMap = DataMapItem.fromDataItem(item).dataMap
                     val items = dataMap.getDataMapArrayList(MediaHelper.KEY_MEDIAITEMS)
-                    supportsQueue = !items.isNullOrEmpty()
+                    !items.isNullOrEmpty()
                 } catch (e: Exception) {
                     Logger.writeLine(Log.ERROR, e)
-                    supportsQueue = false
+                    false
                 }
             }
         }

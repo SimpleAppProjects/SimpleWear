@@ -6,7 +6,6 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.recyclerview.widget.DiffUtil
@@ -125,15 +124,13 @@ class MediaCustomControlsFragment : LifecycleAwareFragment(), MessageClient.OnMe
 
         inner class ViewHolder(val binding: AppItemBinding) :
             RecyclerView.ViewHolder(binding.root) {
-            init {
-                binding.root.setOnClickListener {
-                    onClickListener?.onClick(getItem(adapterPosition))
-                }
-            }
 
             fun bind(model: MediaItemModel) {
                 binding.appIcon.setImageBitmap(model.icon)
                 binding.appName.text = model.title
+                binding.root.setOnClickListener {
+                    onClickListener?.onClick(model)
+                }
             }
         }
 
@@ -214,13 +211,8 @@ class MediaCustomControlsFragment : LifecycleAwareFragment(), MessageClient.OnMe
                 if (actionStatus == ActionStatus.TIMEOUT) {
                     CustomConfirmationOverlay()
                         .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
-                        .setCustomDrawable(
-                            ContextCompat.getDrawable(
-                                requireContext(),
-                                R.drawable.ic_full_sad
-                            )
-                        )
-                        .setMessage(getString(R.string.error_playback_failed))
+                        .setCustomDrawable(R.drawable.ic_full_sad)
+                        .setMessage(R.string.error_playback_failed)
                         .showAbove(binding.root)
                 }
             }

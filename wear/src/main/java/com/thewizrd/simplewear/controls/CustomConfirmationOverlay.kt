@@ -35,10 +35,7 @@ import android.view.animation.Animation
 import android.view.animation.AnimationUtils
 import android.widget.ImageView
 import android.widget.TextView
-import androidx.annotation.IntDef
-import androidx.annotation.MainThread
-import androidx.annotation.RestrictTo
-import androidx.annotation.VisibleForTesting
+import androidx.annotation.*
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
 import androidx.wear.R
@@ -133,11 +130,15 @@ class CustomConfirmationOverlay {
     private var mType = SUCCESS_ANIMATION
     private var mDurationMillis = DEFAULT_ANIMATION_DURATION_MS
     private var mListener: OnAnimationFinishedListener? = null
-    private var mMessage: String? = null
+    private var mMessage: CharSequence? = null
+    @StringRes
+    private var mMessageStringResId: Int? = null
     private var mOverlayView: View? = null
     private var mOverlayDrawable: Drawable? = null
     private var mIsShowing = false
     private var mCustomDrawable: Drawable? = null
+    @DrawableRes
+    private var mCustomDrawableResId: Int? = null
     private val mMainThreadHandler = Handler(Looper.getMainLooper())
     private val mHideRunnable = Runnable { hide() }
 
@@ -146,7 +147,7 @@ class CustomConfirmationOverlay {
      *
      * @return `this` object for method chaining.
      */
-    fun setMessage(message: String?): CustomConfirmationOverlay {
+    fun setMessage(message: CharSequence?): CustomConfirmationOverlay {
         mMessage = message
         return this
     }
@@ -194,6 +195,7 @@ class CustomConfirmationOverlay {
             return
         }
         mIsShowing = true
+
         updateOverlayView(view.context)
         (view.rootView as ViewGroup).addView(mOverlayView)
         animateAndHideAfterDelay()
@@ -209,6 +211,7 @@ class CustomConfirmationOverlay {
             return
         }
         mIsShowing = true
+
         updateOverlayView(activity)
         activity.window.addContentView(mOverlayView, mOverlayView!!.layoutParams)
         animateAndHideAfterDelay()
@@ -256,7 +259,14 @@ class CustomConfirmationOverlay {
     @SuppressLint("ClickableViewAccessibility")
     private fun updateOverlayView(context: Context) {
         if (mOverlayView == null) {
-            mOverlayView = LayoutInflater.from(context).inflate(if (mType == CUSTOM_ANIMATION) com.thewizrd.simplewear.R.layout.ws_customoverlay_confirmation else R.layout.ws_overlay_confirmation, null)
+            mOverlayView = LayoutInflater.from(context).inflate(
+                if (mType == CUSTOM_ANIMATION) {
+                    com.thewizrd.simplewear.R.layout.ws_customoverlay_confirmation
+                } else {
+                    R.layout.ws_overlay_confirmation
+                },
+                null
+            )
         }
         mOverlayView!!.setOnTouchListener { v, event -> true }
         mOverlayView!!.layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
@@ -266,19 +276,27 @@ class CustomConfirmationOverlay {
 
     @MainThread
     private fun updateMessageView(context: Context, overlayView: View?) {
-        val messageView = overlayView!!.findViewById<TextView>(R.id.wearable_support_confirmation_overlay_message)
-        if (mMessage != null) {
+        val messageView =
+            overlayView!!.findViewById<TextView>(R.id.wearable_support_confirmation_overlay_message)
+
+        if (mMessage != null || (mMessageStringResId != null && mMessageStringResId != 0)) {
             val screenWidthPx = ResourcesUtils.getScreenWidthPx(context)
             val topMarginPx = ResourcesUtils.getFractionOfScreenPx(
-                    context, screenWidthPx, R.fraction.confirmation_overlay_margin_above_text)
+                context, screenWidthPx, R.fraction.confirmation_overlay_margin_above_text
+            )
             val sideMarginPx = ResourcesUtils.getFractionOfScreenPx(
-                    context, screenWidthPx, R.fraction.confirmation_overlay_margin_side)
+                context, screenWidthPx, R.fraction.confirmation_overlay_margin_side
+            )
             val layoutParams = messageView.layoutParams as MarginLayoutParams
             layoutParams.topMargin = topMarginPx
             layoutParams.leftMargin = sideMarginPx
             layoutParams.rightMargin = sideMarginPx
             messageView.layoutParams = layoutParams
-            messageView.text = mMessage
+            if (mMessageStringResId != null) {
+                messageView.setText(mMessageStringResId!!)
+            } else {
+                messageView.text = mMessage
+            }
             messageView.visibility = View.VISIBLE
         } else {
             messageView.visibility = View.GONE
@@ -293,21 +311,48 @@ class CustomConfirmationOverlay {
             FAILURE_ANIMATION -> ContextCompat.getDrawable(context, R.drawable.ws_full_sad)
             OPEN_ON_PHONE_ANIMATION -> ContextCompat.getDrawable(context, R.drawable.ws_open_on_phone_animation)
             CUSTOM_ANIMATION -> {
-                checkNotNull(mCustomDrawable) { "Custom drawable is invalid" }
-                mCustomDrawable
+                if (mCustomDrawableResId != null) {
+                    ContextCompat.getDrawable(context, mCustomDrawableResId!!)
+                } else {
+                    checkNotNull(mCustomDrawable) { "Custom drawable is invalid" }
+                    mCustomDrawable
+                }
             }
             else -> {
                 val errorMessage = String.format(Locale.US, "Invalid ConfirmationOverlay type [%d]", mType)
                 throw IllegalStateException(errorMessage)
             }
         }
-        val imageView = overlayView!!.findViewById<ImageView>(R.id.wearable_support_confirmation_overlay_image)
+
+        val imageView =
+            overlayView!!.findViewById<ImageView>(R.id.wearable_support_confirmation_overlay_image)
         imageView.setImageDrawable(mOverlayDrawable)
         if (imageView.layoutParams is ConstraintLayout.LayoutParams) {
             val lp = imageView.layoutParams as ConstraintLayout.LayoutParams
             if (mMessage.isNullOrBlank()) lp.verticalBias = 0.5f
             imageView.layoutParams = lp
         }
+    }
+
+    /**
+     * Sets a message which will be displayed at the same time as the animation.
+     *
+     * @return `this` object for method chaining.
+     */
+    fun setMessage(@StringRes resId: Int?): CustomConfirmationOverlay {
+        mMessageStringResId = resId
+        return this
+    }
+
+    /**
+     * Sets the custom image drawable which will be displayed.
+     * This will be used if type is set to CUSTOM_ANIMATION
+     *
+     * @return `this` object for method chaining.
+     */
+    fun setCustomDrawable(@DrawableRes resId: Int?): CustomConfirmationOverlay {
+        mCustomDrawableResId = resId
+        return this
     }
 
     /**

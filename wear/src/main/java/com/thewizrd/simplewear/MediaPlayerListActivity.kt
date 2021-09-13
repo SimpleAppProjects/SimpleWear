@@ -17,10 +17,7 @@ import com.google.android.gms.wearable.*
 import com.google.android.gms.wearable.DataClient.OnDataChangedListener
 import com.google.android.wearable.intent.RemoteIntent
 import com.thewizrd.shared_resources.actions.ActionStatus
-import com.thewizrd.shared_resources.helpers.MediaHelper
-import com.thewizrd.shared_resources.helpers.RecyclerOnClickListenerInterface
-import com.thewizrd.shared_resources.helpers.WearConnectionStatus
-import com.thewizrd.shared_resources.helpers.WearableHelper
+import com.thewizrd.shared_resources.helpers.*
 import com.thewizrd.shared_resources.utils.*
 import com.thewizrd.simplewear.adapters.MusicPlayerListAdapter
 import com.thewizrd.simplewear.controls.AppItemViewModel
@@ -193,22 +190,26 @@ class MediaPlayerListActivity : WearableListenerActivity(), MessageClient.OnMess
 
         binding.playerList.layoutManager = WearableLinearLayoutManager(this)
         mAdapter = MusicPlayerListAdapter()
-        mAdapter.setOnClickListener(object : RecyclerOnClickListenerInterface {
-            override fun onClick(view: View, position: Int) {
-                val vm = mAdapter.currentList[position]
-
+        mAdapter.setOnClickListener(object : ListAdapterOnClickInterface<AppItemViewModel> {
+            override fun onClick(view: View, position: Int, item: AppItemViewModel) {
                 lifecycleScope.launch {
                     if (connect()) {
+                        val nodeID = mPhoneNodeWithApp!!.id
                         sendMessage(
-                            mPhoneNodeWithApp!!.id,
+                            nodeID,
                             MediaHelper.OpenMusicPlayerPath,
                             JSONParser.serializer(
-                                Pair.create(vm.packageName, vm.activityName),
+                                Pair.create(item.packageName, item.activityName),
                                 Pair::class.java
                             ).stringToBytes()
                         )
                     }
-                    startActivity(MediaPlayerActivity.buildIntent(this@MediaPlayerListActivity, vm))
+                    startActivity(
+                        MediaPlayerActivity.buildIntent(
+                            this@MediaPlayerListActivity,
+                            item
+                        )
+                    )
                 }
             }
         })

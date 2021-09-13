@@ -4,25 +4,21 @@ import android.annotation.SuppressLint
 import android.view.ViewGroup
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import com.thewizrd.shared_resources.helpers.RecyclerOnClickListenerInterface
+import com.thewizrd.shared_resources.helpers.ListAdapterOnClickInterface
 import com.thewizrd.simplewear.controls.AppItem
 import com.thewizrd.simplewear.controls.AppItemViewModel
 
 class AppsListAdapter : ListAdapter<AppItemViewModel, AppsListAdapter.ViewHolder>(AppItemDiffer()) {
-    private var onClickListener: RecyclerOnClickListenerInterface? = null
+    private var onClickListener: ListAdapterOnClickInterface<AppItemViewModel>? = null
 
-    fun setOnClickListener(onClickListener: RecyclerOnClickListenerInterface?) {
+    fun setOnClickListener(onClickListener: ListAdapterOnClickInterface<AppItemViewModel>?) {
         this.onClickListener = onClickListener
     }
 
     // Provide a reference to the views for each data item
     // Complex data items may need more than one view per item, and
     // you provide access to all the views for a data item in a view holder
-    inner class ViewHolder(var mItem: AppItem) : RecyclerView.ViewHolder(mItem) {
-        init {
-            mItem.setOnClickListener { v -> onClickListener?.onClick(v, adapterPosition) }
-        }
-    }
+    inner class ViewHolder(var mItem: AppItem) : RecyclerView.ViewHolder(mItem)
 
     @SuppressLint("NewApi")  // Create new views (invoked by the layout manager)
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -37,5 +33,8 @@ class AppsListAdapter : ListAdapter<AppItemViewModel, AppsListAdapter.ViewHolder
         // - replace the contents of the view with that element
         val viewModel = getItem(position)
         holder.mItem.updateItem(viewModel)
+        holder.mItem.setOnClickListener { v ->
+            onClickListener?.onClick(v, position, viewModel)
+        }
     }
 }

@@ -207,7 +207,11 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
                 }
             }
             ACTION_DISCONNECTCONTROLLER -> {
-                stopSelf()
+                scope.launch {
+                    // Delay in case service was just started as foreground
+                    delay(1000)
+                    stopSelf()
+                }
             }
         }
 
@@ -379,11 +383,12 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
 
         // Should now have a viable details.. connect to browser and service as needed.
         if (mSelectedMediaApp?.componentName != null) {
+            val mediaAppCmpName = mSelectedMediaApp!!.componentName
             // This has to be on main thread
             mMainHandler.post {
                 mBrowser = MediaBrowserCompat(
                     this.applicationContext,
-                    mSelectedMediaApp!!.componentName,
+                    mediaAppCmpName,
                     object : MediaBrowserCompat.ConnectionCallback() {
                         override fun onConnected() {
                             setupMediaController()
@@ -409,7 +414,7 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
                     putBoolean(MediaBrowserServiceCompat.BrowserRoot.EXTRA_SUGGESTED, true)
                 }
 
-                mBrowserExtraSuggested = MediaBrowserCompat(this, mSelectedMediaApp!!.componentName, object : MediaBrowserCompat.ConnectionCallback() {
+                mBrowserExtraSuggested = MediaBrowserCompat(this, mediaAppCmpName, object : MediaBrowserCompat.ConnectionCallback() {
                     override fun onConnected() {
                         mBrowseMediaItemsExtraSuggestedAdapter.setRoot(mBrowserExtraSuggested!!.root)
                     }
@@ -776,20 +781,17 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
 
     private fun sendVolumeStatus(nodeID: String? = null) {
         scope.launch {
-            val volStatus = if (mController?.playbackInfo != null) {
-                val info = mController!!.playbackInfo
+            val volStatus = mController?.playbackInfo?.let {
                 AudioStreamState(
-                    info.currentVolume,
+                    it.currentVolume,
                     0,
-                    info.maxVolume,
+                    it.maxVolume,
                     AudioStreamType.MUSIC
                 )
-            } else {
-                PhoneStatusHelper.getStreamVolume(
-                    this@MediaControllerService,
-                    AudioStreamType.MUSIC
-                )
-            }
+            } ?: PhoneStatusHelper.getStreamVolume(
+                this@MediaControllerService,
+                AudioStreamType.MUSIC
+            )
 
             mWearableManager.sendMessage(
                 nodeID, MediaHelper.MediaVolumeStatusPath,
@@ -867,9 +869,15 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
                         putString(MediaHelper.KEY_MEDIA_ACTIONITEM_ACTION, it.action)
                         putString(MediaHelper.KEY_MEDIA_ACTIONITEM_TITLE, it.name.toString())
                         if (mMediaAppResources != null) {
-                            val iconDrawable = ResourcesCompat.getDrawable(
-                                mMediaAppResources!!, it.icon,  /* theme = */null
-                            )
+                            val iconDrawable = try {
+                                ResourcesCompat.getDrawable(
+                                    mMediaAppResources!!, it.icon,  /* theme = */null
+                                )
+                            } catch (e: Exception) {
+                                Logger.writeLine(Log.ERROR, e)
+                                null
+                            }
+
                             if (iconDrawable != null) {
                                 val size = TypedValue.applyDimension(
                                     TypedValue.COMPLEX_UNIT_DIP,

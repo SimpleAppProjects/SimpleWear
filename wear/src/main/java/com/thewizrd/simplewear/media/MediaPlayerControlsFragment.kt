@@ -10,7 +10,6 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.Observer
 import androidx.lifecycle.lifecycleScope
@@ -299,13 +298,8 @@ class MediaPlayerControlsFragment : LifecycleAwareFragment(), MessageClient.OnMe
                     if (actionStatus == ActionStatus.TIMEOUT) {
                         CustomConfirmationOverlay()
                             .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
-                            .setCustomDrawable(
-                                ContextCompat.getDrawable(
-                                    requireContext(),
-                                    R.drawable.ic_full_sad
-                                )
-                            )
-                            .setMessage(getString(R.string.error_playback_failed))
+                            .setCustomDrawable(R.drawable.ic_full_sad)
+                            .setMessage(R.string.error_playback_failed)
                             .showAbove(binding.root)
                     }
                 }
@@ -321,7 +315,7 @@ class MediaPlayerControlsFragment : LifecycleAwareFragment(), MessageClient.OnMe
             val artist = dataMap.getString(MediaHelper.KEY_MEDIA_METADATA_ARTIST)
             val artBitmap = try {
                 ImageUtils.bitmapFromAssetStream(
-                    Wearable.getDataClient(requireContext()),
+                    Wearable.getDataClient(binding.albumArtImageview.context),
                     dataMap.getAsset(MediaHelper.KEY_MEDIA_METADATA_ART)
                 )
             } catch (e: Exception) {
@@ -336,7 +330,8 @@ class MediaPlayerControlsFragment : LifecycleAwareFragment(), MessageClient.OnMe
                 binding.subtitleView.visibility =
                     if (artist.isNullOrBlank()) View.GONE else View.VISIBLE
             } else {
-                binding.titleView.text = getString(R.string.message_playback_stopped)
+                binding.titleView.text =
+                    binding.titleView.context.getString(R.string.message_playback_stopped)
                 binding.subtitleView.text = ""
                 binding.albumArtImageview.setImageBitmap(null)
 

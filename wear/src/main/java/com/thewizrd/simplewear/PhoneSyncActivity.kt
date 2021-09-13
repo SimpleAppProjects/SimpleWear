@@ -85,7 +85,12 @@ class PhoneSyncActivity : WearableListenerActivity() {
                                     .setMessage(this@PhoneSyncActivity.getString(R.string.message_openedonphone))
                                     .showOn(this@PhoneSyncActivity)
                             }
-                            binding.button.setImageDrawable(ContextCompat.getDrawable(context, R.drawable.common_full_open_on_phone))
+                            binding.button.setImageDrawable(
+                                ContextCompat.getDrawable(
+                                    context,
+                                    R.drawable.open_on_phone
+                                )
+                            )
 
                             stopProgressBar()
                         }

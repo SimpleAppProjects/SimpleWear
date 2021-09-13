@@ -16,7 +16,7 @@ import com.google.android.gms.wearable.*
 import com.google.android.gms.wearable.DataClient.OnDataChangedListener
 import com.google.android.wearable.intent.RemoteIntent
 import com.thewizrd.shared_resources.actions.ActionStatus
-import com.thewizrd.shared_resources.helpers.RecyclerOnClickListenerInterface
+import com.thewizrd.shared_resources.helpers.ListAdapterOnClickInterface
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
 import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.shared_resources.utils.*
@@ -110,15 +110,15 @@ class AppLauncherActivity : WearableListenerActivity(), OnDataChangedListener {
 
         binding.appList.layoutManager = WearableLinearLayoutManager(this)
         mAdapter = AppsListAdapter()
-        mAdapter.setOnClickListener(object : RecyclerOnClickListenerInterface {
-            override fun onClick(view: View, position: Int) {
-                val vm = mAdapter.currentList[position]
+        mAdapter.setOnClickListener(object : ListAdapterOnClickInterface<AppItemViewModel> {
+            override fun onClick(view: View, position: Int, item: AppItemViewModel) {
                 lifecycleScope.launch {
                     if (connect()) {
+                        val nodeID = mPhoneNodeWithApp!!.id
                         sendMessage(
-                            mPhoneNodeWithApp!!.id, WearableHelper.LaunchAppPath,
+                            nodeID, WearableHelper.LaunchAppPath,
                             JSONParser.serializer(
-                                Pair.create(vm.packageName, vm.activityName),
+                                Pair.create(item.packageName, item.activityName),
                                 Pair::class.java
                             ).stringToBytes()
                         )

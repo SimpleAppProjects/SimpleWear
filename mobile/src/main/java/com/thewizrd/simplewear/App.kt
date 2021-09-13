@@ -145,23 +145,29 @@ class App : Application(), ApplicationLib, ActivityLifecycleCallbacks, Configura
         contentResolver.registerContentObserver(setting, false, mContentObserver)
 
         // Register connectivity listener
-        val connMgr = appContext.getSystemService(ConnectivityManager::class.java)
-        connMgr.registerNetworkCallback(
-            NetworkRequest.Builder()
-                .addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR)
-                .build(),
-            object : ConnectivityManager.NetworkCallback() {
-                override fun onAvailable(network: Network) {
-                    super.onAvailable(network)
-                    WearableWorker.sendActionUpdate(appContext, Actions.MOBILEDATA)
-                }
+        runCatching {
+            val connMgr = appContext.getSystemService(ConnectivityManager::class.java)
+            connMgr.registerNetworkCallback(
+                NetworkRequest.Builder()
+                    .addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR)
+                    .build(),
+                object : ConnectivityManager.NetworkCallback() {
+                    override fun onAvailable(network: Network) {
+                        super.onAvailable(network)
+                        WearableWorker.sendActionUpdate(appContext, Actions.MOBILEDATA)
+                    }
 
-                override fun onUnavailable() {
-                    super.onUnavailable()
-                    WearableWorker.sendActionUpdate(appContext, Actions.MOBILEDATA)
+                    override fun onUnavailable() {
+                        super.onUnavailable()
+                        WearableWorker.sendActionUpdate(appContext, Actions.MOBILEDATA)
+                    }
                 }
-            }
-        )
+            )
+        }.onFailure {
+            // SecurityException: Package android does not belong to xxxxx
+            // https://issuetracker.google.com/issues/175055271
+            Logger.writeLine(Log.ERROR, it)
+        }
 
         val oldHandler = Thread.getDefaultUncaughtExceptionHandler()
         Thread.setDefaultUncaughtExceptionHandler { t, e ->

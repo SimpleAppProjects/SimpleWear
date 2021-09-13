@@ -122,11 +122,6 @@ class MediaBrowserFragment : LifecycleAwareFragment(), DataClient.OnDataChangedL
 
         inner class ViewHolder(val binding: AppItemBinding) :
             RecyclerView.ViewHolder(binding.root) {
-            init {
-                binding.root.setOnClickListener {
-                    onClickListener?.onClick(getItem(adapterPosition))
-                }
-            }
 
             fun bind(model: MediaItemModel) {
                 if (model.id == MediaHelper.ACTIONITEM_BACK) {
@@ -135,6 +130,9 @@ class MediaBrowserFragment : LifecycleAwareFragment(), DataClient.OnDataChangedL
                 } else {
                     binding.appIcon.setImageBitmap(model.icon)
                     binding.appName.text = model.title
+                }
+                binding.root.setOnClickListener {
+                    onClickListener?.onClick(model)
                 }
             }
         }

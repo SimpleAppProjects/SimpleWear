@@ -21,7 +21,7 @@
         app:layout_constraintEnd_toStartOf="@id/button_label"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@drawable/ic_full_cancel" />
+        app:srcCompat="@drawable/ic_close_white_24dp" />
 
     <androidx.appcompat.widget.AppCompatTextView
         android:id="@+id/button_label"
