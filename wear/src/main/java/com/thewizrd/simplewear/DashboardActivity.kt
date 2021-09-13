@@ -6,7 +6,6 @@ import android.content.res.Resources
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.support.wearable.input.RotaryEncoder
-import android.support.wearable.view.ConfirmationOverlay
 import android.util.ArrayMap
 import android.util.Log
 import android.view.MotionEvent
@@ -19,6 +18,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.GridLayoutManager
+import androidx.wear.widget.ConfirmationOverlay
 import androidx.wear.widget.WearableLinearLayoutManager
 import androidx.wear.widget.drawer.WearableDrawerLayout
 import androidx.wear.widget.drawer.WearableDrawerView
