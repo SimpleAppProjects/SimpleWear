@@ -5,6 +5,7 @@ import android.annotation.TargetApi
 import android.app.Activity
 import android.app.admin.DevicePolicyManager
 import android.bluetooth.BluetoothDevice
+import android.bluetooth.le.ScanFilter
 import android.companion.*
 import android.content.*
 import android.content.IntentSender.SendIntentException
@@ -26,6 +27,7 @@ import com.thewizrd.shared_resources.lifecycle.LifecycleAwareFragment
 import com.thewizrd.shared_resources.tasks.delayLaunch
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.simplewear.databinding.FragmentPermcheckBinding
+import com.thewizrd.simplewear.helpers.PhoneStatusHelper
 import com.thewizrd.simplewear.helpers.PhoneStatusHelper.isCameraPermissionEnabled
 import com.thewizrd.simplewear.helpers.PhoneStatusHelper.isDeviceAdminEnabled
 import com.thewizrd.simplewear.helpers.PhoneStatusHelper.isNotificationAccessAllowed
@@ -41,6 +43,11 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
         private const val CAMERA_REQCODE = 0
         private const val DEVADMIN_REQCODE = 1
         private const val SELECT_DEVICE_REQUEST_CODE = 42
+
+        // WearOS device filter
+        private val BLE_WEAR_MATCH_DATA = byteArrayOf(0, 20)
+        private val BLE_WEAR_MATCH_DATA_LEGACY = byteArrayOf(0, 19)
+        private val BLE_WEAR_MATCH_MASK = byteArrayOf(0, -1)
     }
 
     private lateinit var binding: FragmentPermcheckBinding
@@ -147,48 +154,76 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
     @TargetApi(Build.VERSION_CODES.Q)
     private fun pairDevice(deviceName: String?) {
         runWithView {
-            if (deviceName.isNullOrBlank()) return@runWithView
-
             val deviceManager =
                 requireContext().getSystemService(Context.COMPANION_DEVICE_SERVICE) as CompanionDeviceManager
 
             for (assoc in deviceManager.associations) {
-                deviceManager.disassociate(assoc)
+                if (assoc != null) {
+                    runCatching {
+                        deviceManager.disassociate(assoc)
+                    }.onFailure {
+                        Logger.writeLine(Log.ERROR, it)
+                    }
+                }
             }
             updatePairPermText(false)
 
-            val request = AssociationRequest.Builder()
-                .addDeviceFilter(
-                    BluetoothDeviceFilter.Builder()
-                        .setNamePattern(Pattern.compile("$deviceName.*", Pattern.DOTALL))
-                        .build()
-                )
-                .addDeviceFilter(
+            val request = AssociationRequest.Builder().apply {
+                if (!deviceName.isNullOrBlank()) {
+                    addDeviceFilter(
+                        BluetoothDeviceFilter.Builder()
+                            .setNamePattern(Pattern.compile(".*$deviceName.*", Pattern.DOTALL))
+                            .build()
+                    )
+                    addDeviceFilter(
+                        WifiDeviceFilter.Builder()
+                            .setNamePattern(Pattern.compile(".*$deviceName.*", Pattern.DOTALL))
+                            .build()
+                    )
+                    addDeviceFilter(
+                        BluetoothLeDeviceFilter.Builder()
+                            .setNamePattern(Pattern.compile(".*$deviceName.*", Pattern.DOTALL))
+                            .build()
+                    )
+                }
+
+                // https://stackoverflow.com/questions/66222673/how-to-filter-nearby-bluetooth-devices-by-type
+                addDeviceFilter(
                     BluetoothLeDeviceFilter.Builder()
-                        .setNamePattern(Pattern.compile("$deviceName.*", Pattern.DOTALL))
-                        .build()
-                )
-                .addDeviceFilter(
-                    WifiDeviceFilter.Builder()
-                        .setNamePattern(Pattern.compile("$deviceName.*", Pattern.DOTALL))
-                        .build()
-                )
-                .apply {
-                    if (BuildConfig.DEBUG) {
-                        addDeviceFilter(
-                            WifiDeviceFilter.Builder()
-                                .setNamePattern(Pattern.compile(".*", Pattern.DOTALL))
+                        .setScanFilter(
+                            ScanFilter.Builder()
+                                .setManufacturerData(
+                                    0xE0,
+                                    BLE_WEAR_MATCH_DATA_LEGACY,
+                                    BLE_WEAR_MATCH_MASK
+                                )
                                 .build()
                         )
-                    }
+                        .setNamePattern(Pattern.compile(".*", Pattern.DOTALL))
+                        .build()
+                )
+
+                if (BuildConfig.DEBUG) {
+                    addDeviceFilter(
+                        WifiDeviceFilter.Builder()
+                            .setNamePattern(Pattern.compile(".*", Pattern.DOTALL))
+                            .build()
+                    )
                 }
-                .setSingleDevice(true)
+            }
+                .setSingleDevice(false)
                 .build()
 
             Toast.makeText(requireContext(), R.string.message_watchbtdiscover, Toast.LENGTH_LONG).show()
 
             delayLaunch(timeMillis = 5000) {
                 Logger.writeLine(Log.INFO, "%s: sending pair request", TAG)
+                // Enable Bluetooth to discover devices
+                context?.let {
+                    if (!PhoneStatusHelper.isBluetoothEnabled(it)) {
+                        PhoneStatusHelper.setBluetoothEnabled(it, true)
+                    }
+                }
                 deviceManager.associate(request, object : CompanionDeviceManager.Callback() {
                     override fun onDeviceFound(chooserLauncher: IntentSender) {
                         if (context == null) return
@@ -204,6 +239,12 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
 
                     override fun onFailure(error: CharSequence) {
                         Logger.writeLine(Log.ERROR, "%s: failed to find any devices; $error", TAG)
+                        if (context == null) return
+                        Toast.makeText(
+                            context,
+                            R.string.message_nodevices_found,
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }
                 }, null)
             }
@@ -217,8 +258,9 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
         val mScreenLockAdmin = ComponentName(requireContext(), ScreenLockAdminReceiver::class.java)
         updateDeviceAdminText(mDPM.isAdminActive(mScreenLockAdmin))
         updateDNDAccessText(isNotificationAccessAllowed(requireContext()))
-        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
-            val deviceManager = requireContext().getSystemService(Context.COMPANION_DEVICE_SERVICE) as CompanionDeviceManager
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val deviceManager =
+                requireContext().getSystemService(Context.COMPANION_DEVICE_SERVICE) as CompanionDeviceManager
             updatePairPermText(deviceManager.associations.isNotEmpty())
         }
         updateNotifListenerText(NotificationListener.isEnabled(requireContext()))
@@ -258,7 +300,7 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         when (requestCode) {
             DEVADMIN_REQCODE -> updateDeviceAdminText(resultCode == Activity.RESULT_OK)
-            SELECT_DEVICE_REQUEST_CODE -> if (data != null && Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
+            SELECT_DEVICE_REQUEST_CODE -> if (data != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 val parcel =
                     data.getParcelableExtra<Parcelable>(CompanionDeviceManager.EXTRA_DEVICE)
                 if (parcel is BluetoothDevice) {

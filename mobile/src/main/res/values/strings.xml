@@ -15,8 +15,8 @@
     <string name="permission_pairdevice_enabled">App is paired with WearOS device</string>
     <string name="permission_pairdevice_disabled">WearOS device not paired with app. Please click to pair device. This is needed to start the media player</string>
     <string name="message_watchbtdiscover">Please enable Bluetooth discovery on your WearOS device</string>
-
     <string name="message_watchbttimeout">Please ensure Bluetooth is enabled on your WearOS device</string>
+    <string name="message_nodevices_found">No devices found</string>
 
     <string name="permission_title_notifservice">Media Player</string>
     <string name="prompt_notifservice_enabled">Notification access enabled</string>
