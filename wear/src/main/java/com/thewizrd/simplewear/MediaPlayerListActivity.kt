@@ -3,10 +3,10 @@ package com.thewizrd.simplewear
 import android.content.*
 import android.os.Bundle
 import android.os.CountDownTimer
-import android.support.wearable.view.WearableDialogHelper
 import android.util.Log
 import android.view.View
 import android.widget.Switch
+import androidx.activity.viewModels
 import androidx.core.content.ContextCompat
 import androidx.core.util.Pair
 import androidx.lifecycle.lifecycleScope
@@ -23,9 +23,11 @@ import com.thewizrd.simplewear.adapters.MusicPlayerListAdapter
 import com.thewizrd.simplewear.controls.AppItemViewModel
 import com.thewizrd.simplewear.controls.CustomConfirmationOverlay
 import com.thewizrd.simplewear.databinding.ActivityMusicplayerlistBinding
+import com.thewizrd.simplewear.helpers.AppItemComparator
 import com.thewizrd.simplewear.helpers.ConfirmationResultReceiver
 import com.thewizrd.simplewear.media.MediaPlayerActivity
 import com.thewizrd.simplewear.preferences.Settings
+import com.thewizrd.simplewear.viewmodels.MediaPlayerListViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
@@ -42,7 +44,8 @@ class MediaPlayerListActivity : WearableListenerActivity(), MessageClient.OnMess
     private lateinit var mAdapter: MusicPlayerListAdapter
     private var timer: CountDownTimer? = null
 
-    private val mMediaAppsList: MutableList<AppItemViewModel> = ArrayList()
+    private val mMediaAppsList: MutableSet<AppItemViewModel> = TreeSet(AppItemComparator())
+    private val viewModel: MediaPlayerListViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -143,46 +146,11 @@ class MediaPlayerListActivity : WearableListenerActivity(), MessageClient.OnMess
         }
 
         findViewById<View>(R.id.filter_apps_btn).setOnClickListener { v ->
-            val filteredApps = Settings.getMusicPlayersFilter()
+            val fragment = MediaPlayerFilterFragment()
 
-            val appItems = arrayOfNulls<CharSequence>(mMediaAppsList.size)
-            val checkedItems = BooleanArray(mMediaAppsList.size)
-            val selectedItems = filteredApps.toMutableSet()
-
-            mMediaAppsList.forEachIndexed { i, it ->
-                appItems[i] = it.appLabel
-                checkedItems[i] = filteredApps.contains(it.packageName)
-            }
-
-            val dialog = WearableDialogHelper.DialogBuilder(v.context, R.style.WearDialogTheme)
-                .setPositiveIcon(R.drawable.round_button_ok)
-                .setNegativeIcon(R.drawable.round_button_cancel)
-                .setTitle(R.string.title_filter_apps)
-                .setMultiChoiceItems(appItems, checkedItems) { d, which, isChecked ->
-                    val appName = appItems[which]
-
-                    // Insert/Remove from collection
-                    val model =
-                        mMediaAppsList.find { it.appLabel == appName } ?: return@setMultiChoiceItems
-                    if (isChecked) {
-                        selectedItems.add(model.packageName!!)
-                    } else {
-                        selectedItems.remove(model.packageName)
-                    }
-                }
-                .setCancelable(true)
-                .setOnDismissListener {
-                    // Update filtered apps
-                    Settings.setMusicPlayersFilter(selectedItems)
-
-                    // Update list
-                    updateAppsList()
-                }
-                .setPositiveButton(android.R.string.ok, null)
-                .setNegativeButton(android.R.string.cancel, null)
-                .show()
-
-            dialog.listView?.requestFocus()
+            supportFragmentManager.beginTransaction()
+                .replace(android.R.id.content, fragment)
+                .commit()
         }
 
         binding.playerList.setHasFixedSize(true)
@@ -244,6 +212,17 @@ class MediaPlayerListActivity : WearableListenerActivity(), MessageClient.OnMess
                 }
             }
         }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        viewModel.filteredAppsList.value = Settings.getMusicPlayersFilter()
+
+        viewModel.filteredAppsList.observe(this, {
+            if (mMediaAppsList.isNotEmpty()) {
+                updateAppsList()
+            }
+        })
     }
 
     private fun showProgressBar(show: Boolean) {
@@ -362,6 +341,7 @@ class MediaPlayerListActivity : WearableListenerActivity(), MessageClient.OnMess
             mMediaAppsList.add(model)
         }
 
+        viewModel.mediaAppsList.postValue(mMediaAppsList.toList())
         updateAppsList()
     }
 

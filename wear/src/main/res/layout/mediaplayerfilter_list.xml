@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.wear.widget.SwipeDismissFrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/buttonDisabled">
+
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/scrollView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:descendantFocusability="blocksDescendants"
+        android:fillViewport="true"
+        android:focusable="true"
+        android:focusableInTouchMode="true">
+
+        <LinearLayout
+            android:id="@+id/scrollViewContent"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            android:paddingTop="8dp"
+            android:paddingBottom="@dimen/inner_layout_padding"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <androidx.appcompat.widget.AppCompatTextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/inner_layout_padding"
+                android:layout_marginBottom="8dp"
+                android:gravity="center"
+                android:padding="4dp"
+                android:text="@string/title_filter_apps"
+                android:textAppearance="@style/TextAppearance.AppCompat.Title" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/player_list"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:descendantFocusability="afterDescendants"
+                android:focusable="false"
+                android:focusableInTouchMode="false"
+                android:orientation="vertical"
+                android:overScrollMode="never"
+                android:paddingBottom="8dp"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                tools:listitem="@layout/mediaplayerlist_item" />
+
+            <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+                android:id="@+id/clear_button"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minHeight="54dp"
+                android:text="@string/clear_all"
+                android:textAllCaps="false"
+                android:textColor="@android:color/white"
+                app:icon="@drawable/ic_clear_all_24dp"
+                app:iconTint="@color/colorPrimaryLight"
+                app:strokeColor="@color/colorPrimaryLight" />
+
+            <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+                android:id="@+id/confirm_button"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minHeight="60dp"
+                android:contentDescription="@android:string/ok"
+                android:insetLeft="6dp"
+                android:insetTop="6dp"
+                android:insetRight="6dp"
+                android:insetBottom="6dp"
+                android:textAllCaps="false"
+                android:textColor="@android:color/white"
+                app:icon="@drawable/ic_check_white_24dp"
+                app:iconTint="@color/colorPrimaryLight"
+                app:strokeColor="@color/colorPrimaryLight" />
+
+        </LinearLayout>
+
+    </androidx.core.widget.NestedScrollView>
+
+    <ProgressBar
+        android:id="@+id/progressBar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:indeterminateOnly="true" />
+
+</androidx.wear.widget.SwipeDismissFrameLayout>

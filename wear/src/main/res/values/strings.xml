@@ -38,6 +38,7 @@
     <string name="error_sleeptimer_notinstalled">SleepTimer app not installed.\nPlease install to continue.</string>
 
     <string name="title_filter_apps">Filter Apps</string>
+    <string name="clear_all">Clear all</string>
     <string name="message_playback_stopped">Playback stopped</string>
     <string name="error_playback_failed">Failed to play. Please check media queue</string>
     <string name="label_back">Back</string>
