@@ -1,11 +1,11 @@
 package com.thewizrd.simplewear
 
-import android.content.BroadcastReceiver
-import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
+import android.bluetooth.BluetoothAdapter
+import android.content.*
 import android.os.Bundle
 import android.support.wearable.view.ConfirmationOverlay
+import android.view.View
+import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.google.android.wearable.intent.RemoteIntent
@@ -28,6 +28,15 @@ class PhoneSyncActivity : WearableListenerActivity() {
         // Create your application here
         binding = ActivitySetupSyncBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        binding.bluetoothButton.setOnClickListener {
+            runCatching {
+                startActivity(
+                    Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
+                        .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                )
+            }
+        }
 
         startProgressBar()
 
@@ -54,6 +63,7 @@ class PhoneSyncActivity : WearableListenerActivity() {
                                     updateConnectionStatus()
                                 }
                             }
+                            checkBluetoothStatus()
                             stopProgressBar()
                         }
                         WearConnectionStatus.CONNECTING -> {
@@ -64,6 +74,7 @@ class PhoneSyncActivity : WearableListenerActivity() {
                                     android.R.drawable.ic_popup_sync
                                 )
                             )
+                            binding.bluetoothButton.visibility = View.GONE
                         }
                         WearConnectionStatus.APPNOTINSTALLED -> {
                             binding.message.setText(R.string.error_notinstalled)
@@ -91,12 +102,14 @@ class PhoneSyncActivity : WearableListenerActivity() {
                                     R.drawable.open_on_phone
                                 )
                             )
+                            binding.bluetoothButton.visibility = View.GONE
 
                             stopProgressBar()
                         }
                         WearConnectionStatus.CONNECTED -> {
                             binding.message.setText(R.string.status_connected)
                             binding.button.setImageDrawable(ContextCompat.getDrawable(context, android.R.drawable.ic_popup_sync))
+                            binding.bluetoothButton.visibility = View.GONE
 
                             // Continue operation
                             startActivity(Intent(this@PhoneSyncActivity, DashboardActivity::class.java)
@@ -138,6 +151,18 @@ class PhoneSyncActivity : WearableListenerActivity() {
         // Update statuses
         lifecycleScope.launch {
             updateConnectionStatus()
+        }
+    }
+
+    private fun checkBluetoothStatus() {
+        val btAdapter = BluetoothAdapter.getDefaultAdapter()
+        if (btAdapter != null) {
+            binding.bluetoothButton.visibility = View.VISIBLE
+            if (!btAdapter.isEnabled) {
+                Toast.makeText(this, R.string.message_enablebt, Toast.LENGTH_SHORT).show()
+            }
+        } else {
+            binding.bluetoothButton.visibility = View.GONE
         }
     }
 }

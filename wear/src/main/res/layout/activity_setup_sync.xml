@@ -20,10 +20,10 @@
             android:layout_height="wrap_content"
             android:gravity="center"
             android:textColor="@android:color/white"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintBottom_toTopOf="@id/circular_progress"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
             tools:text="Syncing data from device..." />
 
         <androidx.wear.widget.CircularProgressLayout
@@ -35,10 +35,9 @@
             app:colorSchemeColors="@color/white"
             app:indeterminate="true"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/message"
-            app:layout_constraintVertical_bias="1.0"
+            app:layout_constraintEnd_toStartOf="@id/bluetooth_button"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/message"
             app:strokeWidth="4dp">
 
             <androidx.appcompat.widget.AppCompatImageView
@@ -50,6 +49,22 @@
                 app:srcCompat="@android:drawable/ic_popup_sync" />
 
         </androidx.wear.widget.CircularProgressLayout>
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/bluetooth_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:contentDescription="@string/action_bt"
+            android:padding="4dp"
+            android:src="@drawable/ic_bluetooth_white_24dp"
+            android:visibility="gone"
+            app:backgroundTint="@color/colorPrimary"
+            app:fabCustomSize="48dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/circular_progress"
+            app:layout_constraintTop_toBottomOf="@id/message"
+            tools:visibility="visible" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
