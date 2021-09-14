@@ -22,8 +22,8 @@ android {
         minSdkVersion 23
         targetSdkVersion 30
         // NOTE: Version Code Format (TargetSDK, Version Name, Build Number, Variant Code (Android: 00, WearOS: 01)
-        versionCode 301600400
-        versionName "1.6.0"
+        versionCode 301700000
+        versionName "1.7.0"
 
         vectorDrawables.useSupportLibrary = true
     }
@@ -62,8 +62,6 @@ android {
 
 dependencies {
     implementation project(":shared_resources")
-    wearApp project(':wear')
-    implementation fileTree(dir: 'libs', include: ['*.jar'])
 
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:1.1.5'
 
