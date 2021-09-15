@@ -157,9 +157,11 @@ class PhoneSyncActivity : WearableListenerActivity() {
     private fun checkBluetoothStatus() {
         val btAdapter = BluetoothAdapter.getDefaultAdapter()
         if (btAdapter != null) {
-            binding.bluetoothButton.visibility = View.VISIBLE
             if (!btAdapter.isEnabled) {
                 Toast.makeText(this, R.string.message_enablebt, Toast.LENGTH_SHORT).show()
+                binding.bluetoothButton.visibility = View.VISIBLE
+            } else {
+                binding.bluetoothButton.visibility = View.GONE
             }
         } else {
             binding.bluetoothButton.visibility = View.GONE

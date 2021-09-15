@@ -1,71 +1,68 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.wear.widget.BoxInsetLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="@dimen/box_inset_layout_padding"
     tools:context="com.thewizrd.simplewear.PhoneSyncActivity"
     tools:deviceIds="wear">
 
-    <androidx.constraintlayout.widget.ConstraintLayout
+    <TextView
+        android:id="@+id/message"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:padding="@dimen/inner_frame_layout_padding"
-        app:layout_boxedEdges="all">
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:paddingTop="@dimen/inner_layout_padding"
+        android:paddingStart="@dimen/inner_layout_padding"
+        android:paddingEnd="@dimen/inner_layout_padding"
+        android:textColor="@android:color/white"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:text="Syncing data from device..." />
 
-        <TextView
-            android:id="@+id/message"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:textColor="@android:color/white"
-            app:layout_constraintBottom_toTopOf="@id/circular_progress"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            tools:text="Syncing data from device..." />
+    <androidx.wear.widget.CircularProgressLayout
+        android:id="@+id/circular_progress"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="4dp"
+        app:backgroundColor="@color/colorPrimary"
+        app:colorSchemeColors="@color/white"
+        app:indeterminate="true"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/bluetooth_button"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/message"
+        app:layout_constraintVertical_bias="0.5"
+        app:layout_constraintHorizontal_chainStyle="packed"
+        app:strokeWidth="4dp">
 
-        <androidx.wear.widget.CircularProgressLayout
-            android:id="@+id/circular_progress"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+        <androidx.appcompat.widget.AppCompatImageView
+            android:id="@+id/button"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:adjustViewBounds="true"
             android:padding="4dp"
-            app:backgroundColor="@color/colorPrimary"
-            app:colorSchemeColors="@color/white"
-            app:indeterminate="true"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toStartOf="@id/bluetooth_button"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/message"
-            app:strokeWidth="4dp">
+            app:srcCompat="@drawable/ic_sync_24dp" />
 
-            <androidx.appcompat.widget.AppCompatImageView
-                android:id="@+id/button"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:adjustViewBounds="true"
-                android:padding="12dp"
-                app:srcCompat="@android:drawable/ic_popup_sync" />
+    </androidx.wear.widget.CircularProgressLayout>
 
-        </androidx.wear.widget.CircularProgressLayout>
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/bluetooth_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintVertical_bias="0.5"
+        android:contentDescription="@string/action_bt"
+        android:layout_marginVertical="4dp"
+        android:layout_marginHorizontal="8dp"
+        android:src="@drawable/ic_bluetooth_white_24dp"
+        android:visibility="gone"
+        app:backgroundTint="@color/colorPrimary"
+        app:fabCustomSize="36dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/circular_progress"
+        app:layout_constraintTop_toBottomOf="@id/message"
+        tools:visibility="visible" />
 
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/bluetooth_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:contentDescription="@string/action_bt"
-            android:padding="4dp"
-            android:src="@drawable/ic_bluetooth_white_24dp"
-            android:visibility="gone"
-            app:backgroundTint="@color/colorPrimary"
-            app:fabCustomSize="48dp"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toEndOf="@id/circular_progress"
-            app:layout_constraintTop_toBottomOf="@id/message"
-            tools:visibility="visible" />
-
-    </androidx.constraintlayout.widget.ConstraintLayout>
-
-</androidx.wear.widget.BoxInsetLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>
