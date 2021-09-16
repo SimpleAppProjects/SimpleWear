@@ -14,9 +14,16 @@ import com.google.android.wearable.intent.RemoteIntent
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
 import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.simplewear.databinding.ActivitySetupSyncBinding
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 class PhoneSyncActivity : WearableListenerActivity() {
+    companion object {
+        private const val ENABLE_BT_REQUEST_CODE = 0
+    }
+
     override lateinit var broadcastReceiver: BroadcastReceiver
         private set
     override lateinit var intentFilter: IntentFilter
@@ -39,7 +46,10 @@ class PhoneSyncActivity : WearableListenerActivity() {
 
         binding.bluetoothButton.setOnClickListener {
             runCatching {
-                startActivity(Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE))
+                startActivityForResult(
+                    Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE),
+                    ENABLE_BT_REQUEST_CODE
+                )
             }
         }
 
@@ -79,6 +89,7 @@ class PhoneSyncActivity : WearableListenerActivity() {
                                     android.R.drawable.ic_popup_sync
                                 )
                             )
+                            binding.wifiButton.visibility = View.GONE
                             binding.bluetoothButton.visibility = View.GONE
                         }
                         WearConnectionStatus.APPNOTINSTALLED -> {
@@ -107,6 +118,7 @@ class PhoneSyncActivity : WearableListenerActivity() {
                                     R.drawable.open_on_phone
                                 )
                             )
+                            binding.wifiButton.visibility = View.GONE
                             binding.bluetoothButton.visibility = View.GONE
 
                             stopProgressBar()
@@ -143,7 +155,6 @@ class PhoneSyncActivity : WearableListenerActivity() {
 
     private fun stopProgressBar() {
         binding.circularProgress.isIndeterminate = false
-        binding.circularProgress.totalTime = 1
     }
 
     private fun startProgressBar() {
@@ -159,14 +170,33 @@ class PhoneSyncActivity : WearableListenerActivity() {
         }
     }
 
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        when (requestCode) {
+            ENABLE_BT_REQUEST_CODE -> {
+                if (resultCode == RESULT_OK) {
+                    lifecycleScope.launch(Dispatchers.Main) {
+                        delay(2000)
+                        startProgressBar()
+                        delay(10000)
+                        if (isActive) {
+                            stopProgressBar()
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     private fun checkNetworkStatus() {
         val btAdapter = BluetoothAdapter.getDefaultAdapter()
         if (btAdapter != null) {
-            if (!btAdapter.isEnabled) {
+            if (btAdapter.isEnabled || btAdapter.state == BluetoothAdapter.STATE_TURNING_ON) {
+                binding.bluetoothButton.visibility = View.GONE
+            } else {
                 Toast.makeText(this, R.string.message_enablebt, Toast.LENGTH_SHORT).show()
                 binding.bluetoothButton.visibility = View.VISIBLE
-            } else {
-                binding.bluetoothButton.visibility = View.GONE
             }
         } else {
             binding.bluetoothButton.visibility = View.GONE
