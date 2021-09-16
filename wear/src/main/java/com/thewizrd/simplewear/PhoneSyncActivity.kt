@@ -125,13 +125,32 @@ class PhoneSyncActivity : WearableListenerActivity() {
                         }
                         WearConnectionStatus.CONNECTED -> {
                             binding.message.setText(R.string.status_connected)
-                            binding.button.setImageDrawable(ContextCompat.getDrawable(context, android.R.drawable.ic_popup_sync))
+                            binding.button.setImageDrawable(
+                                ContextCompat.getDrawable(
+                                    context,
+                                    android.R.drawable.ic_popup_sync
+                                )
+                            )
                             binding.bluetoothButton.visibility = View.GONE
 
-                            // Continue operation
-                            startActivity(Intent(this@PhoneSyncActivity, DashboardActivity::class.java)
-                                    .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK))
-                            stopProgressBar()
+                            lifecycleScope.launch {
+                                // Verify connection by sending a 'ping'
+                                runCatching {
+                                    sendPing(mPhoneNodeWithApp!!.id)
+                                }.onSuccess {
+                                    // Continue operation
+                                    startActivity(
+                                        Intent(
+                                            this@PhoneSyncActivity,
+                                            DashboardActivity::class.java
+                                        )
+                                            .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                                    )
+                                    stopProgressBar()
+                                }.onFailure {
+                                    setConnectionStatus(WearConnectionStatus.DISCONNECTED)
+                                }
+                            }
                         }
                     }
                 } else if (ACTION_OPENONPHONE == intent.action) {

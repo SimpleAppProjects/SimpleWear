@@ -8,6 +8,8 @@ import android.net.wifi.WifiManager
 import android.support.wearable.phone.PhoneDeviceType
 import android.util.Log
 import android.widget.Toast
+import androidx.annotation.RestrictTo
+import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
@@ -89,7 +91,7 @@ abstract class WearableListenerActivity : AppCompatActivity(), OnMessageReceived
 
     @Volatile
     protected var mPhoneNodeWithApp: Node? = null
-    private var mConnectionStatus = WearConnectionStatus.DISCONNECTED
+    private var mConnectionStatus = WearConnectionStatus.CONNECTING
 
     protected abstract val broadcastReceiver: BroadcastReceiver
     protected abstract val intentFilter: IntentFilter
@@ -342,6 +344,11 @@ abstract class WearableListenerActivity : AppCompatActivity(), OnMessageReceived
         }
     }
 
+    suspend fun getConnectionStatus(): WearConnectionStatus {
+        checkConnectionStatus()
+        return mConnectionStatus
+    }
+
     protected suspend fun checkIfPhoneHasApp(): Node? {
         var node: Node? = null
 
@@ -445,10 +452,10 @@ abstract class WearableListenerActivity : AppCompatActivity(), OnMessageReceived
     }
 
     @Throws(ApiException::class)
-    private suspend fun sendPing(nodeID: String) {
+    protected suspend fun sendPing(nodeID: String) {
         try {
             Wearable.getMessageClient(this@WearableListenerActivity)
-                    .sendMessage(nodeID, WearableHelper.PingPath, null).await()
+                .sendMessage(nodeID, WearableHelper.PingPath, null).await()
         } catch (e: Exception) {
             if (e is ApiException || e.cause is ApiException) {
                 val apiException = e.cause as? ApiException ?: e as ApiException
@@ -456,5 +463,17 @@ abstract class WearableListenerActivity : AppCompatActivity(), OnMessageReceived
             }
             Logger.writeLine(Log.ERROR, e)
         }
+    }
+
+    @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
+    @RestrictTo(RestrictTo.Scope.SUBCLASSES)
+    protected fun setConnectionStatus(status: WearConnectionStatus) {
+        mConnectionStatus = status
+
+        LocalBroadcastManager.getInstance(this@WearableListenerActivity)
+            .sendBroadcast(
+                Intent(ACTION_UPDATECONNECTIONSTATUS)
+                    .putExtra(EXTRA_CONNECTIONSTATUS, mConnectionStatus.value)
+            )
     }
 }
