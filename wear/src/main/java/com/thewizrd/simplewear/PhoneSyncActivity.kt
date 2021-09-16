@@ -2,7 +2,9 @@ package com.thewizrd.simplewear
 
 import android.bluetooth.BluetoothAdapter
 import android.content.*
+import android.net.wifi.WifiManager
 import android.os.Bundle
+import android.provider.Settings
 import android.support.wearable.view.ConfirmationOverlay
 import android.view.View
 import android.widget.Toast
@@ -29,12 +31,15 @@ class PhoneSyncActivity : WearableListenerActivity() {
         binding = ActivitySetupSyncBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        binding.wifiButton.setOnClickListener {
+            runCatching {
+                startActivity(Intent(Settings.ACTION_WIFI_SETTINGS))
+            }
+        }
+
         binding.bluetoothButton.setOnClickListener {
             runCatching {
-                startActivity(
-                    Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
-                        .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                )
+                startActivity(Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE))
             }
         }
 
@@ -63,7 +68,7 @@ class PhoneSyncActivity : WearableListenerActivity() {
                                     updateConnectionStatus()
                                 }
                             }
-                            checkBluetoothStatus()
+                            checkNetworkStatus()
                             stopProgressBar()
                         }
                         WearConnectionStatus.CONNECTING -> {
@@ -154,7 +159,7 @@ class PhoneSyncActivity : WearableListenerActivity() {
         }
     }
 
-    private fun checkBluetoothStatus() {
+    private fun checkNetworkStatus() {
         val btAdapter = BluetoothAdapter.getDefaultAdapter()
         if (btAdapter != null) {
             if (!btAdapter.isEnabled) {
@@ -165,6 +170,17 @@ class PhoneSyncActivity : WearableListenerActivity() {
             }
         } else {
             binding.bluetoothButton.visibility = View.GONE
+        }
+
+        val wifiMgr = ContextCompat.getSystemService(this, WifiManager::class.java)
+        if (wifiMgr != null) {
+            if (!wifiMgr.isWifiEnabled) {
+                binding.wifiButton.visibility = View.VISIBLE
+            } else {
+                binding.wifiButton.visibility = View.GONE
+            }
+        } else {
+            binding.wifiButton.visibility = View.GONE
         }
     }
 }
