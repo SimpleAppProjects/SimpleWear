@@ -2,6 +2,7 @@ package com.thewizrd.simplewear
 
 import android.bluetooth.BluetoothAdapter
 import android.content.*
+import android.content.pm.PackageManager
 import android.net.wifi.WifiManager
 import android.os.Bundle
 import android.provider.Settings
@@ -222,7 +223,7 @@ class PhoneSyncActivity : WearableListenerActivity() {
         }
 
         val wifiMgr = ContextCompat.getSystemService(this, WifiManager::class.java)
-        if (wifiMgr != null) {
+        if (wifiMgr != null && packageManager.hasSystemFeature(PackageManager.FEATURE_WIFI)) {
             if (!wifiMgr.isWifiEnabled) {
                 binding.wifiButton.visibility = View.VISIBLE
             } else {
