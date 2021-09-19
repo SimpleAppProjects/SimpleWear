@@ -31,4 +31,14 @@
         <item name="android:windowBackground">@color/buttonDisabled</item>
     </style>
 
+    <style name="Widget.MaterialButton.OutlinedButton.IconOnly" parent="@style/Widget.MaterialComponents.Button.OutlinedButton">
+        <item name="iconPadding">0dp</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="android:paddingLeft">12dp</item>
+        <item name="android:paddingRight">12dp</item>
+        <item name="android:minWidth">48dp</item>
+        <item name="android:minHeight">48dp</item>
+    </style>
+
 </resources>

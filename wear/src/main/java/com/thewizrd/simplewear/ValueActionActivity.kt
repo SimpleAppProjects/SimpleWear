@@ -25,7 +25,12 @@ import com.thewizrd.simplewear.databinding.ActivityValueactionBinding
 import com.thewizrd.simplewear.helpers.ConfirmationResultReceiver
 import kotlinx.coroutines.launch
 
+// TODO: Move volume actions into separate VolumeActionActivity
 class ValueActionActivity : WearableListenerActivity() {
+    companion object {
+        const val EXTRA_STREAMTYPE = "SimpleWear.Droid.Wear.extra.STREAM_TYPE"
+    }
+
     override lateinit var broadcastReceiver: BroadcastReceiver
         private set
     override lateinit var intentFilter: IntentFilter
@@ -51,6 +56,10 @@ class ValueActionActivity : WearableListenerActivity() {
                 // Not a ValueAction
                 setResult(RESULT_CANCELED)
                 finish()
+            }
+            if (intent.hasExtra(EXTRA_STREAMTYPE)) {
+                mStreamType = intent.getSerializableExtra(EXTRA_STREAMTYPE) as? AudioStreamType
+                    ?: AudioStreamType.MUSIC
             }
         } else {
             // No action given
@@ -125,19 +134,19 @@ class ValueActionActivity : WearableListenerActivity() {
                                         }
                                         ActionStatus.PERMISSION_DENIED -> {
                                             CustomConfirmationOverlay()
-                                                    .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
-                                                    .setCustomDrawable(ContextCompat.getDrawable(this@ValueActionActivity, R.drawable.ic_full_sad))
-                                                    .setMessage(getString(R.string.error_permissiondenied))
-                                                    .showOn(this@ValueActionActivity)
+                                                .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
+                                                .setCustomDrawable(ContextCompat.getDrawable(this@ValueActionActivity, R.drawable.ic_full_sad))
+                                                .setMessage(getString(R.string.error_permissiondenied))
+                                                .showOn(this@ValueActionActivity)
 
                                             openAppOnPhone(false)
                                         }
                                         ActionStatus.TIMEOUT -> {
                                             CustomConfirmationOverlay()
-                                                    .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
-                                                    .setCustomDrawable(ContextCompat.getDrawable(this@ValueActionActivity, R.drawable.ic_full_sad))
-                                                    .setMessage(getString(R.string.error_sendmessage))
-                                                    .showOn(this@ValueActionActivity)
+                                                .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
+                                                .setCustomDrawable(ContextCompat.getDrawable(this@ValueActionActivity, R.drawable.ic_full_sad))
+                                                .setMessage(getString(R.string.error_sendmessage))
+                                                .showOn(this@ValueActionActivity)
                                         }
                                         ActionStatus.SUCCESS -> {
                                         }
@@ -190,13 +199,13 @@ class ValueActionActivity : WearableListenerActivity() {
                 ValueAction(mAction!!, ValueDirection.UP)
             }
             LocalBroadcastManager.getInstance(this@ValueActionActivity)
-                    .sendBroadcast(
-                        Intent(ACTION_CHANGED)
-                            .putExtra(
-                                EXTRA_ACTIONDATA,
-                                JSONParser.serializer(actionData, Action::class.java)
-                            )
-                    )
+                .sendBroadcast(
+                    Intent(ACTION_CHANGED)
+                        .putExtra(
+                            EXTRA_ACTIONDATA,
+                            JSONParser.serializer(actionData, Action::class.java)
+                        )
+                )
         }
         binding.decreaseBtn.setOnClickListener {
             val actionData = if (mAction == Actions.VOLUME && mStreamType != null) {
@@ -205,13 +214,13 @@ class ValueActionActivity : WearableListenerActivity() {
                 ValueAction(mAction!!, ValueDirection.DOWN)
             }
             LocalBroadcastManager.getInstance(this@ValueActionActivity)
-                    .sendBroadcast(
-                        Intent(ACTION_CHANGED)
-                            .putExtra(
-                                EXTRA_ACTIONDATA,
-                                JSONParser.serializer(actionData, Action::class.java)
-                            )
-                    )
+                .sendBroadcast(
+                    Intent(ACTION_CHANGED)
+                        .putExtra(
+                            EXTRA_ACTIONDATA,
+                            JSONParser.serializer(actionData, Action::class.java)
+                        )
+                )
         }
         binding.actionIcon.setOnClickListener {
             if (mStreamType != null && mAction == Actions.VOLUME) {

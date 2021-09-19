@@ -22,6 +22,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.core.content.ContextCompat
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.thewizrd.shared_resources.lifecycle.LifecycleAwareFragment
 import com.thewizrd.shared_resources.tasks.delayLaunch
@@ -42,6 +43,7 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
         private const val TAG = "PermissionCheckFragment"
         private const val CAMERA_REQCODE = 0
         private const val DEVADMIN_REQCODE = 1
+        private const val MANAGECALLS_REQCODE = 2
         private const val SELECT_DEVICE_REQUEST_CODE = 42
 
         // WearOS device filter
@@ -126,6 +128,19 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
                     ComponentName(requireContext(), ScreenLockAdminReceiver::class.java)
                 mDPM.removeActiveAdmin(mScreenLockAdmin)
                 requestUninstall()
+            }
+        }
+
+        binding.callcontrolPref.setOnClickListener {
+            if (ContextCompat.checkSelfPermission(
+                    requireContext(),
+                    Manifest.permission.READ_PHONE_STATE
+                ) == PackageManager.PERMISSION_DENIED
+            ) {
+                requestPermissions(
+                    arrayOf(Manifest.permission.READ_PHONE_STATE),
+                    MANAGECALLS_REQCODE
+                )
             }
         }
 
@@ -265,6 +280,12 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
         }
         updateNotifListenerText(NotificationListener.isEnabled(requireContext()))
         updateUninstallText(mDPM.isAdminActive(mScreenLockAdmin))
+        updateManageCallsText(
+            NotificationListener.isEnabled(requireContext()) && ContextCompat.checkSelfPermission(
+                requireContext(),
+                Manifest.permission.READ_PHONE_STATE
+            ) == PackageManager.PERMISSION_GRANTED
+        )
     }
 
     private fun updateCamPermText(enabled: Boolean) {
@@ -297,6 +318,11 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
         binding.uninstallSummary.visibility = if (enabled) View.VISIBLE else View.GONE
     }
 
+    private fun updateManageCallsText(enabled: Boolean) {
+        binding.callcontrolSummary.setText(if (enabled) R.string.permission_callmanager_enabled else R.string.permission_callmanager_disabled)
+        binding.callcontrolSummary.setTextColor(if (enabled) Color.GREEN else Color.RED)
+    }
+
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         when (requestCode) {
             DEVADMIN_REQCODE -> updateDeviceAdminText(resultCode == Activity.RESULT_OK)
@@ -314,7 +340,7 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
         when (requestCode) {
-            CAMERA_REQCODE ->
+            CAMERA_REQCODE -> {
                 // If request is cancelled, the result arrays are empty.
                 if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     // permission was granted, yay!
@@ -324,8 +350,17 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
                     // permission denied, boo! Disable the
                     // functionality that depends on this permission.
                     updateCamPermText(false)
-                    Toast.makeText(context, "Permission denied", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, R.string.error_permissiondenied, Toast.LENGTH_SHORT)
+                        .show()
                 }
+            }
+            MANAGECALLS_REQCODE -> {
+                updateManageCallsText(
+                    grantResults.isNotEmpty() && !grantResults.contains(
+                        PackageManager.PERMISSION_DENIED
+                    )
+                )
+            }
         }
     }
 

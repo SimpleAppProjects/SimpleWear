@@ -39,5 +39,9 @@
     <string name="title_settings">Settings</string>
 
     <string name="action_apps">Apps</string>
+    <string name="action_phone">Phone</string>
+
+    <string name="message_callactive">Call in progress…</string>
+    <string name="action_hangup">Hangup</string>
 
 </resources>

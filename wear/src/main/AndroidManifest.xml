@@ -72,6 +72,19 @@
         <activity
             android:name=".media.MediaPlayerActivity"
             android:theme="@style/WearAppTheme" />
+        <activity
+            android:name=".CallManagerActivity"
+            android:icon="@drawable/ic_phone_24dp"
+            android:label="InCall Controller"
+            android:theme="@style/WearAppTheme"
+            android:clearTaskOnLaunch="true"
+            android:launchMode="singleTask"
+            android:parentActivityName=".DashboardActivity">
+            <!--<intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>-->
+        </activity>
 
         <service
             android:name=".wearable.WearableDataListenerService"

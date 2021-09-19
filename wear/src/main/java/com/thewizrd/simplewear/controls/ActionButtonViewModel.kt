@@ -96,6 +96,9 @@ class ActionButtonViewModel(val action: Action) {
         } else if (action is NormalAction && action.actionType == Actions.APPS) {
             val intent = Intent(activityContext, AppLauncherActivity::class.java)
             activityContext.startActivityForResult(intent, -1)
+        } else if (action is NormalAction && action.actionType == Actions.PHONE) {
+            val intent = Intent(activityContext, CallManagerActivity::class.java)
+            activityContext.startActivityForResult(intent, -1)
         } else {
             if (action is ToggleAction) {
                 val tA = action
@@ -110,9 +113,9 @@ class ActionButtonViewModel(val action: Action) {
             }
 
             LocalBroadcastManager.getInstance(activityContext)
-                    .sendBroadcast(Intent(WearableListenerActivity.ACTION_CHANGED)
-                            .putExtra(WearableListenerActivity.EXTRA_ACTIONDATA,
-                                    serializer(action, Action::class.java)))
+                .sendBroadcast(Intent(WearableListenerActivity.ACTION_CHANGED)
+                    .putExtra(WearableListenerActivity.EXTRA_ACTIONDATA,
+                        serializer(action, Action::class.java)))
         }
     }
 
@@ -257,6 +260,11 @@ class ActionButtonViewModel(val action: Action) {
             Actions.APPS -> {
                 drawableID = R.drawable.ic_apps_white_24dp
                 actionLabel = context.getString(R.string.action_apps)
+                stateLabel = null
+            }
+            Actions.PHONE -> {
+                drawableID = R.drawable.ic_phone_24dp
+                actionLabel = context.getString(R.string.action_phone)
                 stateLabel = null
             }
         }

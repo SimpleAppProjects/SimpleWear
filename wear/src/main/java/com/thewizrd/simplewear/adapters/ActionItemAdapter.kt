@@ -42,16 +42,19 @@ class ActionItemAdapter(activity: Activity) : RecyclerView.Adapter<ActionItemAda
                 Actions.TORCH ->
                     mDataset.add(ActionButtonViewModel(ToggleAction(action, true)))
                 Actions.LOCATION ->
-                    mDataset.add(ActionButtonViewModel(
+                    mDataset.add(
+                        ActionButtonViewModel(
                             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P)
                                 MultiChoiceAction(action)
                             else
                                 ToggleAction(action, true)
-                    ))
+                        )
+                    )
                 Actions.LOCKSCREEN,
                 Actions.MUSICPLAYBACK,
                 Actions.SLEEPTIMER,
-                Actions.APPS ->
+                Actions.APPS,
+                Actions.PHONE ->
                     mDataset.add(ActionButtonViewModel(NormalAction(action)))
                 Actions.VOLUME ->
                     mDataset.add(ActionButtonViewModel(ValueAction(action, ValueDirection.UP)))
@@ -153,7 +156,7 @@ class ActionItemAdapter(activity: Activity) : RecyclerView.Adapter<ActionItemAda
                 ActionItemType.TOGGLE_ACTION
             }
             Actions.LOCATION -> ActionItemType.TOGGLE_ACTION
-            Actions.LOCKSCREEN, Actions.MUSICPLAYBACK, Actions.SLEEPTIMER, Actions.APPS -> {
+            Actions.LOCKSCREEN, Actions.MUSICPLAYBACK, Actions.SLEEPTIMER, Actions.APPS, Actions.PHONE -> {
                 ActionItemType.ACTION
             }
             Actions.VOLUME -> ActionItemType.VALUE_ACTION

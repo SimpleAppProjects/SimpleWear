@@ -13,7 +13,7 @@
 
     <string name="permission_title_pairdevice">Pair with WearOS device</string>
     <string name="permission_pairdevice_enabled">App is paired with WearOS device</string>
-    <string name="permission_pairdevice_disabled">WearOS device not paired with app. Please click to pair device. This is needed to start the media player</string>
+    <string name="permission_pairdevice_disabled">WearOS device not paired with app. Please click to pair device. This is needed to start the media player, launch apps and/or manage calls</string>
     <string name="message_watchbtdiscover">Please enable Bluetooth discovery on your WearOS device</string>
     <string name="message_watchbttimeout">Please ensure Bluetooth is enabled on your WearOS device</string>
     <string name="message_nodevices_found">No devices found</string>
@@ -30,5 +30,15 @@
     <string name="permission_title_uninstall">Uninstall</string>
     <string name="permission_title_deactivate_uninstall">Deactivate and uninstall</string>
     <string name="message_deactivate_deviceadmin">To uninstall the app, click here to deactivate device admin access or deactivate from "Settings -> Security -> Device admin (apps)"</string>
+
+    <string name="not_channel_name_callcontroller">Call Controller</string>
+    <string name="not_title_callcontroller_running">Call Controller active</string>
+    <string name="error_permissiondenied">Permission denied</string>
+    <string name="permission_callmanager_enabled">Phone state access enabled</string>
+    <string name="permission_callmanager_disabled">Phone state access disabled</string>
+    <string name="action_mute">Mute</string>
+    <string name="action_unmute">Unmute</string>
+    <string name="action_speakerphone_off">Speakerphone off</string>
+    <string name="action_speakerphone_on">Speakerphone on</string>
 
 </resources>

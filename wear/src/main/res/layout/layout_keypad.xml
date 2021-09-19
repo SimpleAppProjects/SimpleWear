@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.wear.widget.SwipeDismissFrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:background="@android:color/black">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <androidx.appcompat.widget.AppCompatEditText
+            android:id="@+id/keypad_text"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:background="@color/dark_grey"
+            android:focusable="false"
+            android:focusableInTouchMode="false"
+            android:inputType="phone"
+            android:paddingHorizontal="@dimen/dialer_text_padding"
+            android:paddingBottom="4dp"
+            android:textIsSelectable="false"
+            android:textColor="@android:color/white"
+            android:textSize="18sp"
+            android:maxLines="1"
+            android:gravity="center_horizontal|bottom"
+            tools:text="01234567891110"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toTopOf="@id/divider" />
+
+        <androidx.constraintlayout.widget.Guideline
+            android:id="@+id/divider"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            app:layout_constraintGuide_percent="0.20" />
+
+        <androidx.constraintlayout.helper.widget.Flow
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_marginHorizontal="@dimen/list_default_padding"
+            android:layout_marginBottom="@dimen/list_default_padding"
+            app:flow_maxElementsWrap="3"
+            app:flow_wrapMode="chain"
+            app:layout_constraintTop_toBottomOf="@id/divider"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:constraint_referenced_ids="keypad_1,keypad_2,keypad_3,keypad_4,keypad_5,keypad_6,keypad_7,keypad_8,keypad_9,keypad_star,keypad_0,keypad_pound" />
+
+        <TextView
+            android:id="@+id/keypad_1"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:background="?selectableItemBackgroundBorderless"
+            android:gravity="center"
+            android:textColor="@android:color/white"
+            android:text="1" />
+
+        <TextView
+            android:id="@+id/keypad_2"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:background="?selectableItemBackgroundBorderless"
+            android:gravity="center"
+            android:textColor="@android:color/white"
+            android:text="2" />
+
+        <TextView
+            android:id="@+id/keypad_3"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:background="?selectableItemBackgroundBorderless"
+            android:gravity="center"
+            android:textColor="@android:color/white"
+            android:text="3" />
+
+        <TextView
+            android:id="@+id/keypad_4"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:background="?selectableItemBackgroundBorderless"
+            android:gravity="center"
+            android:textColor="@android:color/white"
+            android:text="4" />
+
+        <TextView
+            android:id="@+id/keypad_5"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:background="?selectableItemBackgroundBorderless"
+            android:gravity="center"
+            android:textColor="@android:color/white"
+            android:text="5" />
+
+        <TextView
+            android:id="@+id/keypad_6"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:background="?selectableItemBackgroundBorderless"
+            android:gravity="center"
+            android:textColor="@android:color/white"
+            android:text="6" />
+
+        <TextView
+            android:id="@+id/keypad_7"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:background="?selectableItemBackgroundBorderless"
+            android:gravity="center"
+            android:textColor="@android:color/white"
+            android:text="7" />
+
+        <TextView
+            android:id="@+id/keypad_8"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:background="?selectableItemBackgroundBorderless"
+            android:gravity="center"
+            android:textColor="@android:color/white"
+            android:text="8" />
+
+        <TextView
+            android:id="@+id/keypad_9"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:background="?selectableItemBackgroundBorderless"
+            android:gravity="center"
+            android:textColor="@android:color/white"
+            android:text="9" />
+
+        <TextView
+            android:id="@+id/keypad_0"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:background="?selectableItemBackgroundBorderless"
+            android:gravity="center"
+            android:textColor="@android:color/white"
+            android:text="0" />
+
+        <TextView
+            android:id="@+id/keypad_star"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:background="?selectableItemBackgroundBorderless"
+            android:gravity="center"
+            android:textColor="@android:color/white"
+            android:text="*" />
+
+        <TextView
+            android:id="@+id/keypad_pound"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:background="?selectableItemBackgroundBorderless"
+            android:gravity="center"
+            android:textColor="@android:color/white"
+            android:text="#" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</androidx.wear.widget.SwipeDismissFrameLayout>

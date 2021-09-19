@@ -1,6 +1,7 @@
 package com.thewizrd.simplewear.wearable
 
 import android.content.Intent
+import android.os.Build
 import androidx.core.util.Pair
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.google.android.gms.wearable.MessageEvent
@@ -9,6 +10,7 @@ import com.thewizrd.shared_resources.actions.Action
 import com.thewizrd.shared_resources.actions.ActionStatus
 import com.thewizrd.shared_resources.actions.AudioStreamType
 import com.thewizrd.shared_resources.helpers.AppState
+import com.thewizrd.shared_resources.helpers.InCallUIHelper
 import com.thewizrd.shared_resources.helpers.MediaHelper
 import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.shared_resources.utils.*
@@ -16,6 +18,7 @@ import com.thewizrd.simplewear.MainActivity
 import com.thewizrd.simplewear.helpers.PhoneStatusHelper
 import com.thewizrd.simplewear.media.MediaAppControllerUtils
 import com.thewizrd.simplewear.media.MediaControllerService
+import com.thewizrd.simplewear.services.CallControllerService
 import com.thewizrd.simplewear.services.NotificationListener
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
@@ -162,6 +165,29 @@ class WearableDataListenerService : WearableListenerService() {
                     mWearMgr.sendMessage(
                         messageEvent.sourceNodeId,
                         MediaHelper.MediaPlayerAutoLaunchPath,
+                        ActionStatus.PERMISSION_DENIED.name.stringToBytes()
+                    )
+                }
+            }
+            /* InCall Actions */
+            else if (messageEvent.path == InCallUIHelper.CallStatePath) {
+                if (PhoneStatusHelper.callStatePermissionEnabled(ctx) &&
+                    (Build.VERSION.SDK_INT < Build.VERSION_CODES.O ||
+                            Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
+                            PhoneStatusHelper.companionDeviceAssociated(ctx))
+                ) {
+                    CallControllerService.enqueueWork(
+                        ctx, Intent(ctx, CallControllerService::class.java)
+                            .setAction(CallControllerService.ACTION_CONNECTCONTROLLER)
+                    )
+
+                    mWearMgr.sendMessage(
+                        messageEvent.sourceNodeId, messageEvent.path,
+                        ActionStatus.SUCCESS.name.stringToBytes()
+                    )
+                } else {
+                    mWearMgr.sendMessage(
+                        messageEvent.sourceNodeId, messageEvent.path,
                         ActionStatus.PERMISSION_DENIED.name.stringToBytes()
                     )
                 }

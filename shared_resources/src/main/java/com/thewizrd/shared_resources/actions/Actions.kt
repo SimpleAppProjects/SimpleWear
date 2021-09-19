@@ -14,7 +14,8 @@ enum class Actions(val value: Int) {
     RINGER(8),
     MUSICPLAYBACK(9),
     SLEEPTIMER(10),
-    APPS(11);
+    APPS(11),
+    PHONE(12);
 
     companion object {
         private val map = SparseArray<Actions>()

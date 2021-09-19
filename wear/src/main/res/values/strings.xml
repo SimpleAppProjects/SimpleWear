@@ -43,5 +43,6 @@
     <string name="error_playback_failed">Failed to play. Please check media queue</string>
     <string name="label_back">Back</string>
     <string name="message_enablebt">Please enable Bluetooth for a reliable connection</string>
+    <string name="message_nocall_active">No call active</string>
 
 </resources>

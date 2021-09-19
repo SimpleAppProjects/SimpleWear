@@ -13,6 +13,9 @@
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <!-- TODO: Android 12 <uses-permission android:name="android.permission.MANAGE_ONGOING_CALLS" />-->
+
     <uses-permission
         android:name="android.permission.QUERY_ALL_PACKAGES"
         tools:ignore="QueryAllPackagesPermission" />
@@ -93,6 +96,18 @@
             android:name=".media.MediaControllerService"
             android:enabled="true"
             android:exported="false" />
+        <service
+            android:name=".services.CallControllerService"
+            android:enabled="true"
+            android:exported="false" />
+        <!-- TODO: Android 12
+        <service
+            android:name=".services.InCallManagerService"
+            android:permission="android.permission.BIND_INCALL_SERVICE">
+            <intent-filter>
+                <action android:name="android.telecom.InCallService"/>
+            </intent-filter>
+        </service>-->
 
         <receiver
             android:name=".ScreenLockAdminReceiver"

@@ -5,6 +5,7 @@ import android.app.ActivityManager
 import android.app.NotificationManager
 import android.app.admin.DevicePolicyManager
 import android.bluetooth.BluetoothAdapter
+import android.companion.CompanionDeviceManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -359,6 +360,49 @@ object PhoneStatusHelper {
         if (delay) delay(1000)
         val musicActive = audioMan.isMusicActive
         return if (musicActive) ActionStatus.SUCCESS else ActionStatus.FAILURE
+    }
+
+    fun muteMicrophone(context: Context, mute: Boolean): ActionStatus {
+        return try {
+            val audioMan = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+            audioMan.isMicrophoneMute = mute
+            ActionStatus.SUCCESS
+        } catch (e: SecurityException) {
+            Logger.writeLine(Log.ERROR, e)
+            ActionStatus.PERMISSION_DENIED
+        } catch (e: Exception) {
+            Logger.writeLine(Log.ERROR, e)
+            ActionStatus.FAILURE
+        }
+    }
+
+    fun setSpeakerphoneOn(context: Context, on: Boolean): ActionStatus {
+        return try {
+            val audioMan = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+            audioMan.isSpeakerphoneOn = on
+            ActionStatus.SUCCESS
+        } catch (e: SecurityException) {
+            Logger.writeLine(Log.ERROR, e)
+            ActionStatus.PERMISSION_DENIED
+        } catch (e: Exception) {
+            Logger.writeLine(Log.ERROR, e)
+            ActionStatus.FAILURE
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun companionDeviceAssociated(context: Context): Boolean {
+        val deviceManager =
+            context.getSystemService(Context.COMPANION_DEVICE_SERVICE) as CompanionDeviceManager
+        val associatedDevices = deviceManager.associations
+        return associatedDevices.isNotEmpty()
+    }
+
+    fun callStatePermissionEnabled(context: Context): Boolean {
+        return ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.READ_PHONE_STATE
+        ) == PackageManager.PERMISSION_GRANTED
     }
 
     fun openMobileDataSettings(context: Context): ActionStatus {
