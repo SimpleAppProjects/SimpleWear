@@ -143,7 +143,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_gravity="bottom"
-        android:background="@color/buttonDisabled"
+        android:background="?colorSurface"
         app:drawerContent="@id/drawer_content"
         app:peekView="@id/peek_view">
 
@@ -155,7 +155,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
             android:orientation="horizontal"
-            android:background="@color/buttonDisabled"
+            android:background="?colorSurface"
             android:paddingTop="@dimen/ws_peek_view_top_padding"
             android:paddingBottom="@dimen/ws_peek_view_bottom_padding">
 

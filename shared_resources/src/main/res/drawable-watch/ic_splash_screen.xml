@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:gravity="fill">
+        <color android:color="?android:attr/colorBackground" />
+    </item>
+    <item
+        android:height="48dp"
+        android:width="48dp"
+        android:drawable="@mipmap/ic_launcher_round"
+        android:gravity="center" />
+</layer-list>

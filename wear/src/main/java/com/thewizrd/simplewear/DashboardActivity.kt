@@ -2,7 +2,6 @@ package com.thewizrd.simplewear
 
 import android.content.*
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener
-import android.content.res.Resources
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.util.ArrayMap
@@ -10,7 +9,6 @@ import android.util.Log
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
-import android.view.ViewTreeObserver
 import android.widget.TextView
 import android.widget.Toast
 import androidx.core.content.ContextCompat
@@ -330,39 +328,6 @@ class DashboardActivity : WearableListenerActivity(), OnSharedPreferenceChangeLi
             }
             binding.swipeLayout.isRefreshing = false
         }
-
-        binding.swipeLayout.viewTreeObserver.addOnPreDrawListener(object :
-            ViewTreeObserver.OnPreDrawListener {
-            /* BoxInsetLayout impl */
-            private val FACTOR = 0.146447f //(1 - sqrt(2)/2)/2
-            private val mIsRound = resources.configuration.isScreenRound
-
-            override fun onPreDraw(): Boolean {
-                binding.swipeLayout.viewTreeObserver.removeOnPreDrawListener(this)
-
-                val innerLayout = binding.scrollView.getChildAt(0)
-                val peekContainer =
-                    binding.bottomActionDrawer.findViewById<View>(R.id.ws_drawer_view_peek_container)
-
-                lifecycleScope.launch {
-                    val verticalPadding =
-                        resources.getDimensionPixelSize(R.dimen.inner_frame_layout_padding)
-                    val mScreenHeight = Resources.getSystem().displayMetrics.heightPixels
-                    val mScreenWidth = Resources.getSystem().displayMetrics.widthPixels
-                    val rightEdge = Math.min(binding.swipeLayout.measuredWidth, mScreenWidth)
-                    val bottomEdge = Math.min(binding.swipeLayout.measuredHeight, mScreenHeight)
-                    val verticalInset = (FACTOR * Math.max(rightEdge, bottomEdge)).toInt()
-                    innerLayout.setPaddingRelative(
-                        innerLayout.paddingStart,
-                        if (mIsRound) verticalInset else verticalPadding,
-                        innerLayout.paddingEnd,
-                        peekContainer.height
-                    )
-                }
-
-                return true
-            }
-        })
 
         binding.deviceStatText.setText(R.string.message_gettingstatus)
 

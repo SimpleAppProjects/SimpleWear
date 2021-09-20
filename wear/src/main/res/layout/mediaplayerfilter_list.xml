@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/buttonDisabled">
+    android:background="?colorSurface">
 
     <androidx.core.widget.NestedScrollView
         android:id="@+id/scrollView"
