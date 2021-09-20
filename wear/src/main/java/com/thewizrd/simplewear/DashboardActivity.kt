@@ -5,15 +5,18 @@ import android.content.SharedPreferences.OnSharedPreferenceChangeListener
 import android.content.res.Resources
 import android.os.Bundle
 import android.os.CountDownTimer
-import android.support.wearable.input.RotaryEncoder
 import android.util.ArrayMap
 import android.util.Log
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewConfiguration
 import android.view.ViewTreeObserver
 import android.widget.TextView
 import android.widget.Toast
 import androidx.core.content.ContextCompat
+import androidx.core.view.InputDeviceCompat
+import androidx.core.view.MotionEventCompat
+import androidx.core.view.ViewConfigurationCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.preference.PreferenceManager
@@ -23,7 +26,6 @@ import androidx.wear.widget.WearableLinearLayoutManager
 import androidx.wear.widget.drawer.WearableDrawerLayout
 import androidx.wear.widget.drawer.WearableDrawerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
-import com.google.android.wearable.intent.RemoteIntent
 import com.thewizrd.shared_resources.actions.Action
 import com.thewizrd.shared_resources.actions.ActionStatus
 import com.thewizrd.shared_resources.actions.Actions
@@ -37,8 +39,10 @@ import com.thewizrd.simplewear.adapters.ActionItemAdapter
 import com.thewizrd.simplewear.controls.ActionButtonViewModel
 import com.thewizrd.simplewear.controls.CustomConfirmationOverlay
 import com.thewizrd.simplewear.databinding.ActivityDashboardBinding
-import com.thewizrd.simplewear.helpers.ConfirmationResultReceiver
+import com.thewizrd.simplewear.helpers.showConfirmationOverlay
 import com.thewizrd.simplewear.preferences.Settings
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.guava.await
 import kotlinx.coroutines.launch
 import java.util.*
 import kotlin.math.roundToInt
@@ -74,70 +78,72 @@ class DashboardActivity : WearableListenerActivity(), OnSharedPreferenceChangeLi
                                     0
                                 )
                             )) {
-                                WearConnectionStatus.DISCONNECTED ->
-                                    lifecycleScope.launch {
-                                        binding.deviceStatText.setText(R.string.status_disconnected)
+                                WearConnectionStatus.DISCONNECTED -> {
+                                    binding.deviceStatText.setText(R.string.status_disconnected)
 
-                                        // Navigate
-                                        startActivity(
-                                            Intent(
-                                                this@DashboardActivity,
-                                                PhoneSyncActivity::class.java
-                                            )
-                                                .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                                    // Navigate
+                                    startActivity(
+                                        Intent(
+                                            this@DashboardActivity,
+                                            PhoneSyncActivity::class.java
                                         )
-                                        finishAffinity()
-                                    }
-                                WearConnectionStatus.CONNECTING ->
-                                    lifecycleScope.launch {
-                                        binding.deviceStatText.setText(R.string.status_connecting)
-                                        if (binding.actionsList.isEnabled) binding.actionsList.isEnabled =
-                                            false
-                                    }
-                                WearConnectionStatus.APPNOTINSTALLED ->
-                                    lifecycleScope.launch {
-                                        binding.deviceStatText.setText(R.string.error_notinstalled)
+                                            .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                                    )
+                                    finishAffinity()
+                                }
+                                WearConnectionStatus.CONNECTING -> {
+                                    binding.deviceStatText.setText(R.string.status_connecting)
+                                    if (binding.actionsList.isEnabled) binding.actionsList.isEnabled =
+                                        false
+                                }
+                                WearConnectionStatus.APPNOTINSTALLED -> {
+                                    binding.deviceStatText.setText(R.string.error_notinstalled)
 
-                                        // Open store on remote device
-                                        val intentAndroid = Intent(Intent.ACTION_VIEW)
-                                            .addCategory(Intent.CATEGORY_BROWSABLE)
-                                            .setData(WearableHelper.getPlayStoreURI())
-                                        RemoteIntent.startRemoteActivity(
-                                            this@DashboardActivity, intentAndroid,
-                                            ConfirmationResultReceiver(this@DashboardActivity)
-                                        )
-                                        if (binding.actionsList.isEnabled) binding.actionsList.isEnabled =
-                                            false
+                                    // Open store on remote device
+                                    val intentAndroid = Intent(Intent.ACTION_VIEW)
+                                        .addCategory(Intent.CATEGORY_BROWSABLE)
+                                        .setData(WearableHelper.getPlayStoreURI())
 
-                                        // Navigate
-                                        startActivity(
-                                            Intent(
-                                                this@DashboardActivity,
-                                                PhoneSyncActivity::class.java
-                                            )
-                                                .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                                    runCatching {
+                                        remoteActivityHelper.startRemoteActivity(intentAndroid)
+                                            .await()
+
+                                        showConfirmationOverlay(true)
+                                    }.onFailure {
+                                        if (it !is CancellationException) {
+                                            showConfirmationOverlay(false)
+                                        }
+                                    }
+
+                                    if (binding.actionsList.isEnabled) binding.actionsList.isEnabled =
+                                        false
+
+                                    // Navigate
+                                    startActivity(
+                                        Intent(
+                                            this@DashboardActivity,
+                                            PhoneSyncActivity::class.java
                                         )
-                                        finishAffinity()
-                                    }
-                                WearConnectionStatus.CONNECTED ->
-                                    lifecycleScope.launch {
-                                        binding.deviceStatText.setText(R.string.status_connected)
-                                        if (!binding.actionsList.isEnabled) binding.actionsList.isEnabled =
-                                            true
-                                    }
+                                            .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                                    )
+                                    finishAffinity()
+                                }
+                                WearConnectionStatus.CONNECTED -> {
+                                    binding.deviceStatText.setText(R.string.status_connected)
+                                    if (!binding.actionsList.isEnabled) binding.actionsList.isEnabled =
+                                        true
+                                }
                             }
                         } else if (ACTION_OPENONPHONE == intent.action) {
                             val success = intent.getBooleanExtra(EXTRA_SUCCESS, false)
                             val showAni = intent.getBooleanExtra(EXTRA_SHOWANIMATION, false)
                             if (showAni) {
-                                lifecycleScope.launch {
                                     ConfirmationOverlay()
                                         .setType(if (success) ConfirmationOverlay.OPEN_ON_PHONE_ANIMATION else ConfirmationOverlay.FAILURE_ANIMATION)
                                         .showOn(this@DashboardActivity)
                                     if (!success) {
                                         binding.deviceStatText.setText(R.string.error_syncing)
                                     }
-                                }
                             }
                         } else if (WearableHelper.BatteryPath == intent.action) {
                             showProgressBar(false)
@@ -145,7 +151,6 @@ class DashboardActivity : WearableListenerActivity(), OnSharedPreferenceChangeLi
                             cancelTimer(TIMER_SYNC_NORESPONSE)
 
                             val jsonData = intent.getStringExtra(EXTRA_STATUS)
-                            lifecycleScope.launch {
                                 var value = getString(R.string.state_unknown)
                                 if (!jsonData.isNullOrBlank()) {
                                     val status =
@@ -158,118 +163,107 @@ class DashboardActivity : WearableListenerActivity(), OnSharedPreferenceChangeLi
                                     )
                                 }
                                 binding.battStatText.text = value
-                            }
                         } else if (WearableHelper.ActionsPath == intent.action) {
                             val jsonData = intent.getStringExtra(EXTRA_ACTIONDATA)
                             val action = JSONParser.deserializer(jsonData, Action::class.java)!!
 
                             cancelTimer(action.actionType)
 
-                            lifecycleScope.launch {
-                                mAdapter.updateButton(ActionButtonViewModel(action))
-                            }
+                            mAdapter.updateButton(ActionButtonViewModel(action))
 
                             if (!action.isActionSuccessful) {
                                 when (action.actionStatus) {
                                     ActionStatus.UNKNOWN, ActionStatus.FAILURE ->
-                                        lifecycleScope.launch {
+                                        CustomConfirmationOverlay()
+                                            .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
+                                            .setCustomDrawable(
+                                                ContextCompat.getDrawable(
+                                                    this@DashboardActivity,
+                                                    R.drawable.ws_full_sad
+                                                )
+                                            )
+                                            .setMessage(this@DashboardActivity.getString(R.string.error_actionfailed))
+                                            .showOn(this@DashboardActivity)
+                                    ActionStatus.PERMISSION_DENIED -> {
+                                        if (action.actionType == Actions.TORCH) {
                                             CustomConfirmationOverlay()
                                                 .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
                                                 .setCustomDrawable(
                                                     ContextCompat.getDrawable(
                                                         this@DashboardActivity,
-                                                        R.drawable.ic_full_sad
+                                                        R.drawable.ws_full_sad
                                                     )
                                                 )
-                                                .setMessage(this@DashboardActivity.getString(R.string.error_actionfailed))
+                                                .setMessage(this@DashboardActivity.getString(R.string.error_torch_action))
                                                 .showOn(this@DashboardActivity)
-                                        }
-                                    ActionStatus.PERMISSION_DENIED -> {
-                                        lifecycleScope.launch {
-                                            if (action.actionType == Actions.TORCH) {
-                                                CustomConfirmationOverlay()
-                                                    .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
-                                                    .setCustomDrawable(
-                                                        ContextCompat.getDrawable(
-                                                            this@DashboardActivity,
-                                                            R.drawable.ic_full_sad
-                                                        )
-                                                    )
-                                                    .setMessage(this@DashboardActivity.getString(R.string.error_torch_action))
-                                                    .showOn(this@DashboardActivity)
-                                            } else if (action.actionType == Actions.SLEEPTIMER) {
-                                                // Open store on device
-                                                val intentAndroid = Intent(Intent.ACTION_VIEW)
-                                                    .addCategory(Intent.CATEGORY_BROWSABLE)
-                                                    .setData(SleepTimerHelper.getPlayStoreURI())
+                                        } else if (action.actionType == Actions.SLEEPTIMER) {
+                                            // Open store on device
+                                            val intentAndroid = Intent(Intent.ACTION_VIEW)
+                                                .addCategory(Intent.CATEGORY_BROWSABLE)
+                                                .setData(SleepTimerHelper.getPlayStoreURI())
 
-                                                if (intentAndroid.resolveActivity(packageManager) != null) {
-                                                    startActivity(intentAndroid)
-                                                    Toast.makeText(
-                                                        this@DashboardActivity,
-                                                        R.string.error_sleeptimer_notinstalled,
-                                                        Toast.LENGTH_LONG
-                                                    ).show()
-                                                } else {
-                                                    CustomConfirmationOverlay()
-                                                        .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
-                                                        .setCustomDrawable(
-                                                            ContextCompat.getDrawable(
-                                                                this@DashboardActivity,
-                                                                R.drawable.ic_full_sad
-                                                            )
-                                                        )
-                                                        .setMessage(
-                                                            this@DashboardActivity.getString(
-                                                                R.string.error_sleeptimer_notinstalled
-                                                            )
-                                                        )
-                                                        .showOn(this@DashboardActivity)
-                                                }
+                                            if (intentAndroid.resolveActivity(packageManager) != null) {
+                                                startActivity(intentAndroid)
+                                                Toast.makeText(
+                                                    this@DashboardActivity,
+                                                    R.string.error_sleeptimer_notinstalled,
+                                                    Toast.LENGTH_LONG
+                                                ).show()
                                             } else {
                                                 CustomConfirmationOverlay()
                                                     .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
                                                     .setCustomDrawable(
                                                         ContextCompat.getDrawable(
                                                             this@DashboardActivity,
-                                                            R.drawable.ic_full_sad
+                                                            R.drawable.ws_full_sad
                                                         )
                                                     )
-                                                    .setMessage(this@DashboardActivity.getString(R.string.error_permissiondenied))
+                                                    .setMessage(
+                                                        this@DashboardActivity.getString(
+                                                            R.string.error_sleeptimer_notinstalled
+                                                        )
+                                                    )
                                                     .showOn(this@DashboardActivity)
                                             }
-                                        }
-
-                                        openAppOnPhone(false)
-                                    }
-                                    ActionStatus.TIMEOUT ->
-                                        lifecycleScope.launch {
+                                        } else {
                                             CustomConfirmationOverlay()
                                                 .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
                                                 .setCustomDrawable(
                                                     ContextCompat.getDrawable(
                                                         this@DashboardActivity,
-                                                        R.drawable.ic_full_sad
+                                                        R.drawable.ws_full_sad
                                                     )
                                                 )
-                                                .setMessage(this@DashboardActivity.getString(R.string.error_sendmessage))
+                                                .setMessage(this@DashboardActivity.getString(R.string.error_permissiondenied))
                                                 .showOn(this@DashboardActivity)
                                         }
+
+                                        openAppOnPhone(false)
+                                    }
+                                    ActionStatus.TIMEOUT -> {
+                                        CustomConfirmationOverlay()
+                                            .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
+                                            .setCustomDrawable(
+                                                ContextCompat.getDrawable(
+                                                    this@DashboardActivity,
+                                                    R.drawable.ws_full_sad
+                                                )
+                                            )
+                                            .setMessage(this@DashboardActivity.getString(R.string.error_sendmessage))
+                                            .showOn(this@DashboardActivity)
+                                    }
                                     ActionStatus.SUCCESS -> {
                                     }
                                 }
                             }
 
-                            lifecycleScope.launch {
-                                // Re-enable click action
-                                mAdapter.isItemsClickable = true
-                            }
+                            // Re-enable click action
+                            mAdapter.isItemsClickable = true
                         } else if (ACTION_CHANGED == intent.action) {
                             val jsonData = intent.getStringExtra(EXTRA_ACTIONDATA)
                             val action = JSONParser.deserializer(jsonData, Action::class.java)!!
                             requestAction(jsonData)
 
-                            lifecycleScope.launch {
                                 val timer: CountDownTimer = object : CountDownTimer(3000, 500) {
                                     override fun onTick(millisUntilFinished: Long) {}
 
@@ -293,7 +287,6 @@ class DashboardActivity : WearableListenerActivity(), OnSharedPreferenceChangeLi
 
                                 // Disable click action for all items until a response is received
                                 mAdapter.isItemsClickable = false
-                            }
                         } else {
                             Logger.writeLine(
                                 Log.INFO,
@@ -418,7 +411,7 @@ class DashboardActivity : WearableListenerActivity(), OnSharedPreferenceChangeLi
                         .setCustomDrawable(
                             ContextCompat.getDrawable(
                                 this@DashboardActivity,
-                                R.drawable.ic_full_sad
+                                R.drawable.ws_full_sad
                             )
                         )
                         .setMessage(this@DashboardActivity.getString(R.string.error_sendmessage))
@@ -452,10 +445,12 @@ class DashboardActivity : WearableListenerActivity(), OnSharedPreferenceChangeLi
     }
 
     override fun onGenericMotionEvent(event: MotionEvent): Boolean {
-        if (event.action == MotionEvent.ACTION_SCROLL && RotaryEncoder.isFromRotaryEncoder(event)) {
+        if (event.action == MotionEvent.ACTION_SCROLL && event.isFromSource(InputDeviceCompat.SOURCE_ROTARY_ENCODER)) {
             // Don't forget the negation here
-            val delta = -RotaryEncoder.getRotaryAxisValue(event) * RotaryEncoder.getScaledScrollFactor(
-                    this@DashboardActivity)
+            val delta = -event.getAxisValue(MotionEventCompat.AXIS_SCROLL) *
+                    ViewConfigurationCompat.getScaledVerticalScrollFactor(
+                        ViewConfiguration.get(this@DashboardActivity), this@DashboardActivity
+                    )
 
             // Swap these axes if you want to do horizontal scrolling instead
             binding.scrollView.scrollBy(0, delta.roundToInt())

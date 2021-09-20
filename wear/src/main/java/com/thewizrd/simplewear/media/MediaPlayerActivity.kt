@@ -14,7 +14,6 @@ import androidx.lifecycle.lifecycleScope
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.wear.ambient.AmbientModeSupport
 import com.google.android.gms.wearable.*
-import com.google.android.wearable.intent.RemoteIntent
 import com.thewizrd.shared_resources.actions.ActionStatus
 import com.thewizrd.shared_resources.helpers.MediaHelper
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
@@ -26,8 +25,9 @@ import com.thewizrd.simplewear.WearableListenerActivity
 import com.thewizrd.simplewear.controls.AppItemViewModel
 import com.thewizrd.simplewear.controls.CustomConfirmationOverlay
 import com.thewizrd.simplewear.databinding.ActivityMusicplaybackBinding
-import com.thewizrd.simplewear.helpers.ConfirmationResultReceiver
+import com.thewizrd.simplewear.helpers.showConfirmationOverlay
 import kotlinx.coroutines.*
+import kotlinx.coroutines.guava.await
 import kotlinx.coroutines.tasks.await
 import java.util.*
 
@@ -113,10 +113,16 @@ class MediaPlayerActivity : WearableListenerActivity(), AmbientModeSupport.Ambie
                                             .addCategory(Intent.CATEGORY_BROWSABLE)
                                             .setData(WearableHelper.getPlayStoreURI())
 
-                                        RemoteIntent.startRemoteActivity(
-                                            this@MediaPlayerActivity, intentAndroid,
-                                            ConfirmationResultReceiver(this@MediaPlayerActivity)
-                                        )
+                                        runCatching {
+                                            remoteActivityHelper.startRemoteActivity(intentAndroid)
+                                                .await()
+
+                                            showConfirmationOverlay(true)
+                                        }.onFailure {
+                                            if (it !is CancellationException) {
+                                                showConfirmationOverlay(false)
+                                            }
+                                        }
 
                                         // Navigate
                                         startActivity(
@@ -333,7 +339,7 @@ class MediaPlayerActivity : WearableListenerActivity(), AmbientModeSupport.Ambie
                             .setCustomDrawable(
                                 ContextCompat.getDrawable(
                                     this@MediaPlayerActivity,
-                                    R.drawable.ic_full_sad
+                                    R.drawable.ws_full_sad
                                 )
                             )
                             .setMessage(getString(R.string.error_permissiondenied))

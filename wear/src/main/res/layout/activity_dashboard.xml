@@ -127,6 +127,7 @@
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toBottomOf="@id/actions_title"
                     app:layout_constraintVertical_bias="0.0"
+                    android:overScrollMode="never"
                     tools:listitem="@layout/control_fabtogglebutton">
 
                 </androidx.wear.widget.WearableRecyclerView>
@@ -162,7 +163,7 @@
                 android:layout_width="@dimen/ws_peek_view_icon_size"
                 android:layout_height="@dimen/ws_peek_view_icon_size"
                 android:layout_gravity="center_horizontal"
-                android:src="@drawable/ic_more_vert_24dp_wht" />
+                android:src="@drawable/ws_ic_more_vert_24dp_wht" />
 
         </FrameLayout>
 

@@ -24,4 +24,6 @@
     <dimen name="ws_peek_view_icon_size">22dp</dimen>
     <dimen name="ws_peek_view_top_padding">4dp</dimen>
 
+    <dimen name="diag_button_size">44dp</dimen>
+
 </resources>

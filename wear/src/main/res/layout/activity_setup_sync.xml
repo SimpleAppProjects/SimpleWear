@@ -45,7 +45,7 @@
         android:layout_height="wrap_content"
         android:padding="4dp"
         app:backgroundColor="@color/colorPrimary"
-        app:colorSchemeColors="@color/white"
+        app:colorSchemeColors="@android:color/white"
         app:indeterminate="true"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@id/bluetooth_button"

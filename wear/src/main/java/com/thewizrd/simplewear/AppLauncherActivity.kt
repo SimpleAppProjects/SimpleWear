@@ -14,7 +14,6 @@ import androidx.lifecycle.lifecycleScope
 import androidx.wear.widget.WearableLinearLayoutManager
 import com.google.android.gms.wearable.*
 import com.google.android.gms.wearable.DataClient.OnDataChangedListener
-import com.google.android.wearable.intent.RemoteIntent
 import com.thewizrd.shared_resources.actions.ActionStatus
 import com.thewizrd.shared_resources.helpers.ListAdapterOnClickInterface
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
@@ -24,8 +23,10 @@ import com.thewizrd.simplewear.adapters.AppsListAdapter
 import com.thewizrd.simplewear.controls.AppItemViewModel
 import com.thewizrd.simplewear.controls.CustomConfirmationOverlay
 import com.thewizrd.simplewear.databinding.ActivityApplauncherBinding
-import com.thewizrd.simplewear.helpers.ConfirmationResultReceiver
+import com.thewizrd.simplewear.helpers.showConfirmationOverlay
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.guava.await
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import java.util.*
@@ -74,10 +75,16 @@ class AppLauncherActivity : WearableListenerActivity(), OnDataChangedListener {
                                         .addCategory(Intent.CATEGORY_BROWSABLE)
                                         .setData(WearableHelper.getPlayStoreURI())
 
-                                    RemoteIntent.startRemoteActivity(
-                                        this@AppLauncherActivity, intentAndroid,
-                                        ConfirmationResultReceiver(this@AppLauncherActivity)
-                                    )
+                                    runCatching {
+                                        remoteActivityHelper.startRemoteActivity(intentAndroid)
+                                            .await()
+
+                                        showConfirmationOverlay(true)
+                                    }.onFailure {
+                                        if (it !is CancellationException) {
+                                            showConfirmationOverlay(false)
+                                        }
+                                    }
 
                                     // Navigate
                                     startActivity(
@@ -194,7 +201,7 @@ class AppLauncherActivity : WearableListenerActivity(), OnDataChangedListener {
                                 .setCustomDrawable(
                                     ContextCompat.getDrawable(
                                         this@AppLauncherActivity,
-                                        R.drawable.ic_full_sad
+                                        R.drawable.ws_full_sad
                                     )
                                 )
                                 .setMessage(this@AppLauncherActivity.getString(R.string.error_permissiondenied))
@@ -208,7 +215,7 @@ class AppLauncherActivity : WearableListenerActivity(), OnDataChangedListener {
                                 .setCustomDrawable(
                                     ContextCompat.getDrawable(
                                         this@AppLauncherActivity,
-                                        R.drawable.ic_full_sad
+                                        R.drawable.ws_full_sad
                                     )
                                 )
                                 .setMessage(this@AppLauncherActivity.getString(R.string.error_actionfailed))

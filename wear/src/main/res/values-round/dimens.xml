@@ -6,4 +6,6 @@
 
     <dimen name="timer_top_margin">16dp</dimen>
     <dimen name="clock_top_margin">8dp</dimen>
+
+    <dimen name="diag_button_size">48dp</dimen>
 </resources>

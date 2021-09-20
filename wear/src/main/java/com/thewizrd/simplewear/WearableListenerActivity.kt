@@ -5,7 +5,7 @@ import android.content.BroadcastReceiver
 import android.content.Intent
 import android.content.IntentFilter
 import android.net.wifi.WifiManager
-import android.support.wearable.phone.PhoneDeviceType
+import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
 import androidx.annotation.RestrictTo
@@ -13,6 +13,8 @@ import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import androidx.wear.phone.interactions.PhoneTypeHelper
+import androidx.wear.remote.interactions.RemoteActivityHelper
 import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.wearable.*
 import com.google.android.gms.wearable.CapabilityClient.OnCapabilityChangedListener
@@ -96,6 +98,14 @@ abstract class WearableListenerActivity : AppCompatActivity(), OnMessageReceived
     protected abstract val broadcastReceiver: BroadcastReceiver
     protected abstract val intentFilter: IntentFilter
 
+    protected lateinit var remoteActivityHelper: RemoteActivityHelper
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        remoteActivityHelper = RemoteActivityHelper(this)
+    }
+
     override fun onResume() {
         super.onResume()
 
@@ -103,7 +113,7 @@ abstract class WearableListenerActivity : AppCompatActivity(), OnMessageReceived
         Wearable.getMessageClient(this).addListener(this)
 
         LocalBroadcastManager.getInstance(this)
-                .registerReceiver(broadcastReceiver, intentFilter)
+            .registerReceiver(broadcastReceiver, intentFilter)
     }
 
     override fun onPause() {
@@ -127,14 +137,14 @@ abstract class WearableListenerActivity : AppCompatActivity(), OnMessageReceived
                     ).show()
                 }
 
-                when (PhoneDeviceType.getPhoneDeviceType(this@WearableListenerActivity)) {
-                    PhoneDeviceType.DEVICE_TYPE_ANDROID -> {
+                when (PhoneTypeHelper.getPhoneDeviceType(this@WearableListenerActivity)) {
+                    PhoneTypeHelper.DEVICE_TYPE_ANDROID -> {
                         LocalBroadcastManager.getInstance(this@WearableListenerActivity)
                             .sendBroadcast(
                                 Intent(ACTION_SHOWSTORELISTING)
                             )
                     }
-                    PhoneDeviceType.DEVICE_TYPE_IOS -> {
+                    PhoneTypeHelper.DEVICE_TYPE_IOS -> {
                         lifecycleScope.launch {
                             Toast.makeText(
                                 this@WearableListenerActivity,

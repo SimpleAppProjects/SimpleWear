@@ -15,7 +15,6 @@ import androidx.wear.widget.drawer.WearableDrawerLayout
 import androidx.wear.widget.drawer.WearableDrawerView
 import com.google.android.gms.wearable.*
 import com.google.android.gms.wearable.DataClient.OnDataChangedListener
-import com.google.android.wearable.intent.RemoteIntent
 import com.thewizrd.shared_resources.actions.ActionStatus
 import com.thewizrd.shared_resources.helpers.*
 import com.thewizrd.shared_resources.utils.*
@@ -24,11 +23,13 @@ import com.thewizrd.simplewear.controls.AppItemViewModel
 import com.thewizrd.simplewear.controls.CustomConfirmationOverlay
 import com.thewizrd.simplewear.databinding.ActivityMusicplayerlistBinding
 import com.thewizrd.simplewear.helpers.AppItemComparator
-import com.thewizrd.simplewear.helpers.ConfirmationResultReceiver
+import com.thewizrd.simplewear.helpers.showConfirmationOverlay
 import com.thewizrd.simplewear.media.MediaPlayerActivity
 import com.thewizrd.simplewear.preferences.Settings
 import com.thewizrd.simplewear.viewmodels.MediaPlayerListViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.guava.await
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import java.util.*
@@ -81,10 +82,16 @@ class MediaPlayerListActivity : WearableListenerActivity(), MessageClient.OnMess
                                         .addCategory(Intent.CATEGORY_BROWSABLE)
                                         .setData(WearableHelper.getPlayStoreURI())
 
-                                    RemoteIntent.startRemoteActivity(
-                                        this@MediaPlayerListActivity, intentAndroid,
-                                        ConfirmationResultReceiver(this@MediaPlayerListActivity)
-                                    )
+                                    runCatching {
+                                        remoteActivityHelper.startRemoteActivity(intentAndroid)
+                                            .await()
+
+                                        showConfirmationOverlay(true)
+                                    }.onFailure {
+                                        if (it !is CancellationException) {
+                                            showConfirmationOverlay(false)
+                                        }
+                                    }
 
                                     // Navigate
                                     startActivity(
@@ -243,7 +250,7 @@ class MediaPlayerListActivity : WearableListenerActivity(), MessageClient.OnMess
 
                     CustomConfirmationOverlay()
                         .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
-                        .setCustomDrawable(ContextCompat.getDrawable(this, R.drawable.ic_full_sad))
+                        .setCustomDrawable(ContextCompat.getDrawable(this, R.drawable.ws_full_sad))
                         .setMessage(getString(R.string.error_permissiondenied))
                         .showOn(this)
 

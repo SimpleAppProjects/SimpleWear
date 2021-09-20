@@ -12,7 +12,6 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.google.android.gms.wearable.MessageEvent
-import com.google.android.wearable.intent.RemoteIntent
 import com.thewizrd.shared_resources.actions.*
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
 import com.thewizrd.shared_resources.helpers.WearableHelper
@@ -22,7 +21,9 @@ import com.thewizrd.shared_resources.utils.bytesToString
 import com.thewizrd.shared_resources.utils.stringToBytes
 import com.thewizrd.simplewear.controls.CustomConfirmationOverlay
 import com.thewizrd.simplewear.databinding.ActivityValueactionBinding
-import com.thewizrd.simplewear.helpers.ConfirmationResultReceiver
+import com.thewizrd.simplewear.helpers.showConfirmationOverlay
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.guava.await
 import kotlinx.coroutines.launch
 
 // TODO: Move volume actions into separate VolumeActionActivity
@@ -95,10 +96,16 @@ class ValueActionActivity : WearableListenerActivity() {
                                         .addCategory(Intent.CATEGORY_BROWSABLE)
                                         .setData(WearableHelper.getPlayStoreURI())
 
-                                    RemoteIntent.startRemoteActivity(
-                                        this@ValueActionActivity, intentAndroid,
-                                        ConfirmationResultReceiver(this@ValueActionActivity)
-                                    )
+                                    runCatching {
+                                        remoteActivityHelper.startRemoteActivity(intentAndroid)
+                                            .await()
+
+                                        showConfirmationOverlay(true)
+                                    }.onFailure {
+                                        if (it !is CancellationException) {
+                                            showConfirmationOverlay(false)
+                                        }
+                                    }
 
                                     // Navigate
                                     startActivity(
@@ -126,7 +133,7 @@ class ValueActionActivity : WearableListenerActivity() {
                                                 .setCustomDrawable(
                                                     ContextCompat.getDrawable(
                                                         this@ValueActionActivity,
-                                                        R.drawable.ic_full_sad
+                                                        R.drawable.ws_full_sad
                                                     )
                                                 )
                                                 .setMessage(getString(R.string.error_actionfailed))
@@ -135,7 +142,12 @@ class ValueActionActivity : WearableListenerActivity() {
                                         ActionStatus.PERMISSION_DENIED -> {
                                             CustomConfirmationOverlay()
                                                 .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
-                                                .setCustomDrawable(ContextCompat.getDrawable(this@ValueActionActivity, R.drawable.ic_full_sad))
+                                                .setCustomDrawable(
+                                                    ContextCompat.getDrawable(
+                                                        this@ValueActionActivity,
+                                                        R.drawable.ws_full_sad
+                                                    )
+                                                )
                                                 .setMessage(getString(R.string.error_permissiondenied))
                                                 .showOn(this@ValueActionActivity)
 
@@ -144,7 +156,12 @@ class ValueActionActivity : WearableListenerActivity() {
                                         ActionStatus.TIMEOUT -> {
                                             CustomConfirmationOverlay()
                                                 .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
-                                                .setCustomDrawable(ContextCompat.getDrawable(this@ValueActionActivity, R.drawable.ic_full_sad))
+                                                .setCustomDrawable(
+                                                    ContextCompat.getDrawable(
+                                                        this@ValueActionActivity,
+                                                        R.drawable.ws_full_sad
+                                                    )
+                                                )
                                                 .setMessage(getString(R.string.error_sendmessage))
                                                 .showOn(this@ValueActionActivity)
                                         }

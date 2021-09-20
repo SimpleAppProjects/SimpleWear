@@ -15,10 +15,10 @@
     <androidx.wear.widget.drawer.PageIndicatorView
         android:id="@+id/media_viewpager_indicator"
         android:layout_width="wrap_content"
-        android:layout_height="@dimen/peek_view_icon_size"
-        android:layout_marginBottom="@dimen/peek_view_bottom_padding"
+        android:layout_height="@dimen/ws_peek_view_icon_size"
+        android:layout_marginBottom="@dimen/ws_peek_view_bottom_padding"
         android:layout_gravity="bottom|center_horizontal"
-        app:pageIndicatorDotFadeWhenIdle="false" />
+        app:wsPageIndicatorDotFadeWhenIdle="false" />
 
     <LinearLayout
         android:id="@+id/noplayers_view"

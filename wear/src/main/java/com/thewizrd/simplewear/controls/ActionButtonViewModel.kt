@@ -33,14 +33,14 @@ class ActionButtonViewModel(val action: Action) {
         private set
 
     init {
-        drawableID = R.drawable.ic_cc_clear
+        drawableID = R.drawable.ic_close_white_24dp
         buttonBackgroundColor = R.color.buttonDisabled
         initialize(action)
     }
 
     private fun initialize(action: Action?) {
         buttonBackgroundColor = R.color.colorPrimary
-        drawableID = R.drawable.ic_cc_clear
+        drawableID = R.drawable.ic_close_white_24dp
 
         if (action is ToggleAction) {
             val tA = action

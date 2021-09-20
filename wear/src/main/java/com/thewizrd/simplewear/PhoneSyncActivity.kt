@@ -6,17 +6,17 @@ import android.content.pm.PackageManager
 import android.net.wifi.WifiManager
 import android.os.Bundle
 import android.provider.Settings
-import android.support.wearable.view.ConfirmationOverlay
 import android.view.View
 import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
-import com.google.android.wearable.intent.RemoteIntent
+import androidx.wear.widget.ConfirmationOverlay
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
 import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.simplewear.databinding.ActivitySetupSyncBinding
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.guava.await
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
@@ -102,16 +102,18 @@ class PhoneSyncActivity : WearableListenerActivity() {
                                     .addCategory(Intent.CATEGORY_BROWSABLE)
                                     .setData(WearableHelper.getPlayStoreURI())
 
-                                RemoteIntent.startRemoteActivity(
-                                    this@PhoneSyncActivity,
-                                    intentAndroid,
-                                    null
-                                )
+                                lifecycleScope.launch {
+                                    runCatching {
+                                        remoteActivityHelper.startRemoteActivity(intentAndroid)
+                                            .await()
 
-                                // Show open on phone animation
-                                ConfirmationOverlay().setType(ConfirmationOverlay.OPEN_ON_PHONE_ANIMATION)
-                                    .setMessage(this@PhoneSyncActivity.getString(R.string.message_openedonphone))
-                                    .showOn(this@PhoneSyncActivity)
+                                        // Show open on phone animation
+                                        ConfirmationOverlay()
+                                            .setType(ConfirmationOverlay.OPEN_ON_PHONE_ANIMATION)
+                                            .setMessage(this@PhoneSyncActivity.getString(R.string.message_openedonphone))
+                                            .showOn(this@PhoneSyncActivity)
+                                    }
+                                }
                             }
                             binding.button.setImageDrawable(
                                 ContextCompat.getDrawable(

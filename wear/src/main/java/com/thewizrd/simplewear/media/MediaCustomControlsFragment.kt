@@ -211,7 +211,7 @@ class MediaCustomControlsFragment : LifecycleAwareFragment(), MessageClient.OnMe
                 if (actionStatus == ActionStatus.TIMEOUT) {
                     CustomConfirmationOverlay()
                         .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
-                        .setCustomDrawable(R.drawable.ic_full_sad)
+                        .setCustomDrawable(R.drawable.ws_full_sad)
                         .setMessage(R.string.error_playback_failed)
                         .showAbove(binding.root)
                 }

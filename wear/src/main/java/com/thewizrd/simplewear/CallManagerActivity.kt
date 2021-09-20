@@ -11,7 +11,6 @@ import android.view.View
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.google.android.gms.wearable.*
-import com.google.android.wearable.intent.RemoteIntent
 import com.thewizrd.shared_resources.actions.ActionStatus
 import com.thewizrd.shared_resources.actions.Actions
 import com.thewizrd.shared_resources.actions.AudioStreamType
@@ -21,8 +20,9 @@ import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.shared_resources.utils.*
 import com.thewizrd.simplewear.controls.CustomConfirmationOverlay
 import com.thewizrd.simplewear.databinding.ActivityCallmanagerBinding
-import com.thewizrd.simplewear.helpers.ConfirmationResultReceiver
+import com.thewizrd.simplewear.helpers.showConfirmationOverlay
 import kotlinx.coroutines.*
+import kotlinx.coroutines.guava.await
 import kotlinx.coroutines.tasks.await
 
 class CallManagerActivity : WearableListenerActivity(), DataClient.OnDataChangedListener {
@@ -68,10 +68,16 @@ class CallManagerActivity : WearableListenerActivity(), DataClient.OnDataChanged
                                         .addCategory(Intent.CATEGORY_BROWSABLE)
                                         .setData(WearableHelper.getPlayStoreURI())
 
-                                    RemoteIntent.startRemoteActivity(
-                                        this@CallManagerActivity, intentAndroid,
-                                        ConfirmationResultReceiver(this@CallManagerActivity)
-                                    )
+                                    runCatching {
+                                        remoteActivityHelper.startRemoteActivity(intentAndroid)
+                                            .await()
+
+                                        showConfirmationOverlay(true)
+                                    }.onFailure {
+                                        if (it !is CancellationException) {
+                                            showConfirmationOverlay(false)
+                                        }
+                                    }
 
                                     // Navigate
                                     startActivity(
@@ -170,7 +176,7 @@ class CallManagerActivity : WearableListenerActivity(), DataClient.OnDataChanged
 
                     CustomConfirmationOverlay()
                         .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
-                        .setCustomDrawable(ContextCompat.getDrawable(this, R.drawable.ic_full_sad))
+                        .setCustomDrawable(ContextCompat.getDrawable(this, R.drawable.ws_full_sad))
                         .setMessage(getString(R.string.error_permissiondenied))
                         .showOn(this)
 
