@@ -65,7 +65,6 @@ class AppLauncherActivity : WearableListenerActivity(), OnDataChangedListener {
                                             this@AppLauncherActivity,
                                             PhoneSyncActivity::class.java
                                         )
-                                            .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
                                     )
                                     finishAffinity()
                                 }
@@ -92,7 +91,6 @@ class AppLauncherActivity : WearableListenerActivity(), OnDataChangedListener {
                                             this@AppLauncherActivity,
                                             PhoneSyncActivity::class.java
                                         )
-                                            .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
                                     )
                                     finishAffinity()
                                 }

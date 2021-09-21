@@ -2,38 +2,51 @@
 <merge xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:clipChildren="false"
-    android:clipToPadding="false"
-    tools:context=".controls.ActionButton">
+    tools:layout_width="match_parent"
+    tools:layout_height="wrap_content"
+    tools:clipChildren="false"
+    tools:clipToPadding="false"
+    tools:background="@drawable/action_button_background"
+    tools:backgroundTint="@color/buttonDisabled"
+    tools:parentTag="androidx.constraintlayout.widget.ConstraintLayout">
 
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fab"
-        android:layout_width="wrap_content"
+    <Space
+        android:id="@+id/start_guideline"
+        android:layout_width="14dp"
         android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:clickable="false"
-        android:focusable="false"
-        app:backgroundTint="@color/buttonDisabled"
-        app:fabCustomSize="36dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@id/button_label"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@drawable/ic_close_white_24dp" />
+        app:layout_constraintStart_toStartOf="parent" />
 
-    <androidx.appcompat.widget.AppCompatTextView
+    <Space
+        android:id="@+id/end_guideline"
+        android:layout_width="14dp"
+        android:layout_height="wrap_content"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <ImageView
+        android:id="@+id/action_icon"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:duplicateParentState="true"
+        android:scaleType="fitCenter"
+        android:visibility="visible"
+        app:layout_constraintEnd_toStartOf="@id/button_label"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toEndOf="@id/start_guideline"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintHorizontal_chainStyle="packed"
+        tools:src="@drawable/ic_network_wifi_white_24dp"
+        tools:ignore="ContentDescription" />
+
+    <TextView
         android:id="@+id/button_label"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:gravity="clip_vertical"
-        android:includeFontPadding="false"
-        android:paddingStart="8dp"
-        android:paddingTop="4dp"
-        android:paddingEnd="8dp"
-        android:paddingBottom="4dp"
-        android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+        android:duplicateParentState="true"
+        android:layout_marginStart="7dp"
+        android:textColor="?attr/colorOnSurface"
+        android:gravity="center_vertical"
+        android:textSize="15sp"
+        android:letterSpacing="0.013"
         android:visibility="gone"
         app:layout_constrainedHeight="true"
         app:layout_constraintBottom_toTopOf="@id/button_state"
@@ -42,33 +55,45 @@
         app:layout_constraintHeight_percent="0.5"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintHorizontal_weight="1"
-        app:layout_constraintStart_toEndOf="@id/fab"
+        app:layout_constraintEnd_toStartOf="@id/end_guideline"
+        app:layout_constraintStart_toEndOf="@id/action_icon"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_weight="1"
-        tools:text="WiFi"
-        tools:visibility="gone" />
+        tools:textColor="@android:color/white"
+        tools:text="@string/action_wifi"
+        tools:visibility="visible" />
 
-    <androidx.appcompat.widget.AppCompatTextView
+    <TextView
         android:id="@+id/button_state"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:includeFontPadding="false"
-        android:paddingStart="8dp"
-        android:paddingTop="4dp"
-        android:paddingEnd="8dp"
-        android:paddingBottom="4dp"
-        android:singleLine="true"
+        android:duplicateParentState="true"
+        android:gravity="top"
+        android:layout_marginStart="7dp"
+        android:letterSpacing="0.023"
+        android:maxLines="1"
+        android:textColor="?attr/colorOnSurface"
+        android:textSize="13sp"
         android:visibility="gone"
         app:layout_constrainedHeight="true"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/end_guideline"
+        app:layout_constraintStart_toEndOf="@id/action_icon"
+        app:layout_constraintTop_toBottomOf="@id/button_label"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintHorizontal_weight="1"
-        app:layout_constraintStart_toEndOf="@id/fab"
-        app:layout_constraintTop_toBottomOf="@id/button_label"
         app:layout_constraintVertical_bias="0.0"
         app:layout_constraintVertical_weight="1"
-        tools:text="Off"
-        tools:visibility="gone" />
+        tools:textColor="@android:color/white"
+        tools:text="@string/state_off"
+        tools:visibility="visible" />
+
+    <androidx.constraintlayout.widget.Group
+        android:id="@+id/spacer_group"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:constraint_referenced_ids="end_guideline,start_guideline"
+        android:visibility="gone"
+        tools:visibility="visible" />
 
 </merge>

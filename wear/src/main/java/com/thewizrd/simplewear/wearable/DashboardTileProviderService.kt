@@ -20,7 +20,7 @@ import com.thewizrd.shared_resources.utils.JSONParser
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.shared_resources.utils.bytesToString
 import com.thewizrd.shared_resources.utils.stringToBytes
-import com.thewizrd.simplewear.LaunchActivity
+import com.thewizrd.simplewear.PhoneSyncActivity
 import com.thewizrd.simplewear.R
 import kotlinx.coroutines.*
 import kotlinx.coroutines.tasks.await
@@ -199,8 +199,7 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
     }
 
     private fun getTapIntent(context: Context?): PendingIntent {
-        val onClickIntent = Intent(context!!.applicationContext, LaunchActivity::class.java)
-                .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+        val onClickIntent = Intent(context!!.applicationContext, PhoneSyncActivity::class.java)
         return PendingIntent.getActivity(context, 0, onClickIntent, 0)
     }
 

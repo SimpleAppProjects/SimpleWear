@@ -22,49 +22,78 @@
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:paddingTop="@dimen/inner_frame_layout_padding"
-                android:paddingBottom="@dimen/inner_frame_layout_padding">
+                android:paddingTop="8dp"
+                android:paddingBottom="8dp">
+
+                <androidx.constraintlayout.widget.Guideline
+                    android:id="@+id/left"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    app:layout_constraintGuide_begin="8dp" />
+
+                <androidx.constraintlayout.widget.Guideline
+                    android:id="@+id/top"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    app:layout_constraintGuide_begin="@dimen/dashboard_top_margin" />
+
+                <androidx.constraintlayout.widget.Guideline
+                    android:id="@+id/right"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    app:layout_constraintGuide_end="8dp" />
+
+                <androidx.constraintlayout.widget.Guideline
+                    android:id="@+id/bottom"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    app:layout_constraintGuide_end="@dimen/dashboard_bottom_margin" />
 
                 <androidx.appcompat.widget.AppCompatImageView
                     android:id="@+id/device_stat_icon"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="@dimen/inner_layout_padding"
                     android:padding="4dp"
+                    android:layout_marginStart="@dimen/dashboard_horizontal_margin"
                     app:layout_constraintEnd_toStartOf="@id/device_stat_text"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintStart_toEndOf="@id/left"
+                    app:layout_constraintBottom_toBottomOf="@id/device_stat_text"
+                    app:layout_constraintTop_toTopOf="@id/device_stat_text"
                     app:srcCompat="@drawable/ic_smartphone_white_24dp" />
 
                 <androidx.appcompat.widget.AppCompatTextView
                     android:id="@+id/device_stat_text"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginEnd="@dimen/inner_layout_padding"
                     android:ellipsize="marquee"
                     android:gravity="center"
                     android:marqueeRepeatLimit="marquee_forever"
                     android:padding="4dp"
                     android:text="@string/state_syncing"
+                    android:layout_marginEnd="@dimen/dashboard_horizontal_margin"
                     app:layout_constrainedHeight="true"
                     app:layout_constrainedWidth="true"
-                    app:layout_constraintBottom_toBottomOf="@id/device_stat_icon"
-                    app:layout_constraintEnd_toEndOf="@+id/actions_list"
+                    app:layout_constraintEnd_toStartOf="@id/right"
                     app:layout_constraintHorizontal_bias="0.5"
                     app:layout_constraintHorizontal_weight="1"
                     app:layout_constraintStart_toEndOf="@id/device_stat_icon"
-                    app:layout_constraintTop_toTopOf="@+id/device_stat_icon"
+                    app:layout_constraintTop_toBottomOf="@id/top"
+                    app:layout_constraintBottom_toTopOf="@id/batt_stat_text"
                     tools:text="Connected" />
 
                 <androidx.appcompat.widget.AppCompatImageView
                     android:id="@+id/batt_stat_icon"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="@dimen/inner_layout_padding"
-                    android:layout_marginEnd="@dimen/inner_layout_padding"
                     android:padding="4dp"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@id/device_stat_icon"
+                    android:layout_marginStart="@dimen/dashboard_horizontal_margin"
+                    app:layout_constraintStart_toEndOf="@id/left"
+                    app:layout_constraintTop_toTopOf="@id/batt_stat_text"
+                    app:layout_constraintBottom_toBottomOf="@id/batt_stat_text"
                     app:srcCompat="@drawable/ic_battery_std_white_24dp" />
 
                 <androidx.appcompat.widget.AppCompatTextView
@@ -76,61 +105,57 @@
                     android:marqueeRepeatLimit="marquee_forever"
                     android:padding="4dp"
                     android:text="@string/state_syncing"
+                    app:layout_goneMarginEnd="@dimen/dashboard_horizontal_margin"
                     app:layout_constrainedHeight="true"
                     app:layout_constrainedWidth="true"
-                    app:layout_constraintBottom_toBottomOf="@id/batt_stat_icon"
                     app:layout_constraintEnd_toStartOf="@+id/progressBar"
                     app:layout_constraintHorizontal_bias="0.5"
                     app:layout_constraintHorizontal_weight="1"
                     app:layout_constraintStart_toEndOf="@id/batt_stat_icon"
-                    app:layout_constraintTop_toTopOf="@+id/batt_stat_icon"
-                    app:layout_goneMarginEnd="@dimen/inner_layout_padding"
+                    app:layout_constraintTop_toBottomOf="@id/device_stat_text"
+                    app:layout_constraintBottom_toTopOf="@id/actions_title"
                     tools:text="99%, Charging" />
 
                 <ProgressBar
                     android:id="@+id/progressBar"
                     android:layout_width="0dp"
                     android:layout_height="0dp"
-                    android:layout_marginEnd="@dimen/inner_layout_padding"
                     android:indeterminate="true"
+                    android:layout_marginEnd="@dimen/dashboard_horizontal_margin"
                     app:layout_constrainedHeight="true"
                     app:layout_constrainedWidth="true"
                     app:layout_constraintBottom_toBottomOf="@id/batt_stat_text"
-                    app:layout_constraintEnd_toEndOf="@+id/actions_list"
+                    app:layout_constraintEnd_toStartOf="@id/right"
                     app:layout_constraintHorizontal_weight="0.25"
                     app:layout_constraintStart_toEndOf="@id/batt_stat_text"
                     app:layout_constraintTop_toTopOf="@+id/batt_stat_text"
-                    tools:visibility="gone" />
+                    tools:visibility="visible" />
 
                 <androidx.appcompat.widget.AppCompatTextView
                     android:id="@+id/actions_title"
-                    android:layout_width="match_parent"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="@dimen/inner_layout_padding"
-                    android:layout_marginEnd="@dimen/inner_layout_padding"
                     android:gravity="center"
                     android:padding="4dp"
                     android:text="@string/title_actions"
                     android:textAppearance="@style/TextAppearance.AppCompat.Body2"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toStartOf="@id/right"
+                    app:layout_constraintStart_toEndOf="@id/left"
                     app:layout_constraintTop_toBottomOf="@id/batt_stat_icon" />
 
-                <androidx.wear.widget.WearableRecyclerView
+                <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/actions_list"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
                     android:clipChildren="false"
                     android:clipToPadding="false"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintBottom_toTopOf="@id/bottom"
+                    app:layout_constraintEnd_toStartOf="@id/right"
+                    app:layout_constraintStart_toEndOf="@id/left"
                     app:layout_constraintTop_toBottomOf="@id/actions_title"
-                    app:layout_constraintVertical_bias="0.0"
-                    android:overScrollMode="never"
-                    tools:listitem="@layout/control_fabtogglebutton">
+                    android:overScrollMode="never">
 
-                </androidx.wear.widget.WearableRecyclerView>
+                </androidx.recyclerview.widget.RecyclerView>
 
             </androidx.constraintlayout.widget.ConstraintLayout>
 

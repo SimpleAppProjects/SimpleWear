@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@drawable/button_background_solid" />
+    <item>
+        <shape
+            android:shape="rectangle"
+            android:tint="@color/action_button_background_color">
+            <corners android:radius="@dimen/button_corner_radius" />
+            <solid android:color="@android:color/white" />
+        </shape>
+    </item>
+</layer-list>

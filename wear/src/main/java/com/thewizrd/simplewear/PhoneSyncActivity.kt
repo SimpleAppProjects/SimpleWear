@@ -9,6 +9,7 @@ import android.provider.Settings
 import android.view.View
 import android.widget.Toast
 import androidx.core.content.ContextCompat
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.lifecycleScope
 import androidx.wear.widget.ConfirmationOverlay
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
@@ -34,6 +35,8 @@ class PhoneSyncActivity : WearableListenerActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        installSplashScreen()
 
         // Create your application here
         binding = ActivitySetupSyncBinding.inflate(layoutInflater)
@@ -146,10 +149,10 @@ class PhoneSyncActivity : WearableListenerActivity() {
                                         Intent(
                                             this@PhoneSyncActivity,
                                             DashboardActivity::class.java
-                                        )
-                                            .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                                        ).addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION)
                                     )
                                     stopProgressBar()
+                                    finishAfterTransition()
                                 }.onFailure {
                                     setConnectionStatus(WearConnectionStatus.DISCONNECTED)
                                 }

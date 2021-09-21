@@ -58,7 +58,6 @@ class CallManagerActivity : WearableListenerActivity(), DataClient.OnDataChanged
                                             this@CallManagerActivity,
                                             PhoneSyncActivity::class.java
                                         )
-                                            .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
                                     )
                                     finishAffinity()
                                 }
@@ -85,7 +84,6 @@ class CallManagerActivity : WearableListenerActivity(), DataClient.OnDataChanged
                                             this@CallManagerActivity,
                                             PhoneSyncActivity::class.java
                                         )
-                                            .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
                                     )
                                     finishAffinity()
                                 }

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="button_end_gradient">#00ffffff</color>
+    <color name="button_start_gradient">#7fffffff</color>
+</resources>

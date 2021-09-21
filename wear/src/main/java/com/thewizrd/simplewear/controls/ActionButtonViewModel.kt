@@ -3,7 +3,6 @@ package com.thewizrd.simplewear.controls
 import android.app.Activity
 import android.content.Intent
 import android.os.Build
-import androidx.annotation.ColorRes
 import androidx.annotation.DrawableRes
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.thewizrd.shared_resources.actions.*
@@ -19,11 +18,6 @@ class ActionButtonViewModel(val action: Action) {
     var drawableID: Int
         private set
 
-    @get:ColorRes
-    @ColorRes
-    var buttonBackgroundColor: Int
-        private set
-
     val actionType: Actions
         get() = action.actionType
 
@@ -32,14 +26,17 @@ class ActionButtonViewModel(val action: Action) {
     var stateLabel: String? = null
         private set
 
+    var buttonState: Boolean? = null
+        private set
+
     init {
         drawableID = R.drawable.ic_close_white_24dp
-        buttonBackgroundColor = R.color.buttonDisabled
+        buttonState = false
         initialize(action)
     }
 
     private fun initialize(action: Action?) {
-        buttonBackgroundColor = R.color.colorPrimary
+        buttonState = true
         drawableID = R.drawable.ic_close_white_24dp
 
         if (action is ToggleAction) {
@@ -50,7 +47,7 @@ class ActionButtonViewModel(val action: Action) {
                 tA.isEnabled = !tA.isEnabled
             }
 
-            buttonBackgroundColor = if (tA.isEnabled) R.color.buttonEnabled else R.color.buttonDisabled
+            buttonState = tA.isEnabled
             updateIconAndLabel()
         } else if (action is MultiChoiceAction) {
             val mA = action
@@ -60,7 +57,7 @@ class ActionButtonViewModel(val action: Action) {
                 mA.choice = mA.choice - 1
             }
 
-            buttonBackgroundColor = if (mA.choice > 0) R.color.buttonEnabled else R.color.buttonDisabled
+            buttonState = mA.choice > 0
             updateIconAndLabel()
         } else if (action != null) {
             updateIconAndLabel()
@@ -103,7 +100,7 @@ class ActionButtonViewModel(val action: Action) {
             if (action is ToggleAction) {
                 val tA = action
                 tA.isEnabled = !tA.isEnabled
-                buttonBackgroundColor = R.color.colorPrimaryDark
+                buttonState = null
             } else if (action is MultiChoiceAction) {
                 val mA = action
                 val currentChoice = mA.choice

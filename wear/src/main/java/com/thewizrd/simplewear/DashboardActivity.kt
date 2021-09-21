@@ -19,8 +19,8 @@ import androidx.lifecycle.lifecycleScope
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.wear.widget.ConfirmationOverlay
-import androidx.wear.widget.WearableLinearLayoutManager
 import androidx.wear.widget.drawer.WearableDrawerLayout
 import androidx.wear.widget.drawer.WearableDrawerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -85,7 +85,6 @@ class DashboardActivity : WearableListenerActivity(), OnSharedPreferenceChangeLi
                                             this@DashboardActivity,
                                             PhoneSyncActivity::class.java
                                         )
-                                            .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
                                     )
                                     finishAffinity()
                                 }
@@ -122,7 +121,6 @@ class DashboardActivity : WearableListenerActivity(), OnSharedPreferenceChangeLi
                                             this@DashboardActivity,
                                             PhoneSyncActivity::class.java
                                         )
-                                            .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
                                     )
                                     finishAffinity()
                                 }
@@ -331,7 +329,6 @@ class DashboardActivity : WearableListenerActivity(), OnSharedPreferenceChangeLi
 
         binding.deviceStatText.setText(R.string.message_gettingstatus)
 
-        binding.actionsList.isEdgeItemsCenteringEnabled = false
         binding.actionsList.isFocusable = false
         binding.actionsList.clearFocus()
 
@@ -404,7 +401,7 @@ class DashboardActivity : WearableListenerActivity(), OnSharedPreferenceChangeLi
         if (Settings.useGridLayout()) {
             binding.actionsList.layoutManager = GridLayoutManager(this, 3)
         } else {
-            binding.actionsList.layoutManager = WearableLinearLayoutManager(this, null)
+            binding.actionsList.layoutManager = LinearLayoutManager(this)
         }
         binding.actionsList.adapter = mAdapter
     }

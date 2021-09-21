@@ -2,15 +2,14 @@ package com.thewizrd.simplewear.adapters
 
 import android.app.Activity
 import android.os.Build
-import android.util.TypedValue
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import androidx.wear.widget.WearableRecyclerView
 import com.thewizrd.shared_resources.actions.*
+import com.thewizrd.shared_resources.helpers.ContextUtils.dpToPx
 import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.controls.ActionButton
 import com.thewizrd.simplewear.controls.ActionButtonViewModel
@@ -79,41 +78,36 @@ class ActionItemAdapter(activity: Activity) : RecyclerView.Adapter<ActionItemAda
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         // create a new view
         val v = ActionButton(parent.context)
-        val recyclerView: RecyclerView = parent as WearableRecyclerView
+        val recyclerView = parent as RecyclerView
         val viewLayoutMgr = recyclerView.layoutManager
-        val vParams = RecyclerView.LayoutParams(
+        val viewParams = RecyclerView.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,
             ViewGroup.LayoutParams.WRAP_CONTENT
         )
-        val innerPadding =
-            parent.getContext().resources.getDimensionPixelSize(R.dimen.inner_layout_padding)
 
         if (viewLayoutMgr is GridLayoutManager) {
-            v.isExpanded = false
-            var horizPadding = 0
-            try {
+            val collapsedSize =
+                parent.context.resources.getDimensionPixelSize(R.dimen.action_button_icon_size)
+            val horizPadding = runCatching {
                 val spanCount = viewLayoutMgr.spanCount
-                val viewWidth = parent.getMeasuredWidth() - innerPadding * 2
+                val viewWidth = parent.getMeasuredWidth() - parent.paddingStart - parent.paddingEnd
                 val colWidth = viewWidth / spanCount
-                horizPadding = colWidth - v.fabCustomSize
-            } catch (ignored: Exception) {
-            }
+                colWidth - collapsedSize
+            }.getOrNull() ?: 0
+            val vertPadding = parent.getContext().dpToPx(6f).toInt()
 
-            val vertPadding = TypedValue.applyDimension(
-                TypedValue.COMPLEX_UNIT_DIP,
-                6f,
-                parent.getContext().resources.displayMetrics
-            ).toInt()
-            v.setPaddingRelative(0, 0, 0, 0)
-            recyclerView.setPaddingRelative(innerPadding, 0, innerPadding, 0)
-            vParams.setMargins(horizPadding / 2, vertPadding, horizPadding / 2, vertPadding)
+            v.isExpanded = false
+            viewParams.width = collapsedSize
+            viewParams.height = collapsedSize
+            viewParams.setMargins(horizPadding / 2, vertPadding, horizPadding / 2, vertPadding)
         } else if (viewLayoutMgr is LinearLayoutManager) {
+            val vertPadding = parent.getContext().dpToPx(2f).toInt()
+
             v.isExpanded = true
-            v.setPaddingRelative(innerPadding, 0, innerPadding, 0)
-            recyclerView.setPaddingRelative(0, 0, 0, 0)
+            viewParams.setMargins(0, vertPadding, 0, vertPadding)
         }
 
-        v.layoutParams = vParams
+        v.layoutParams = viewParams
 
         return ViewHolder(v)
     }

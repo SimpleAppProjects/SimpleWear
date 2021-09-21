@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:parentTag="androidx.constraintlayout.widget.ConstraintLayout">
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/top_guideline"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_begin="7dp" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/bottom_guideline"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_end="7dp" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/start_guideline"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_begin="14dp" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/end_guideline"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_end="14dp" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/top_text_center_line"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_begin="16dp" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/bottom_text_center_line"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_end="16dp" />
+
+    <ImageView
+        android:id="@+id/wear_chip_icon"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:duplicateParentState="true"
+        android:scaleType="fitCenter"
+        android:visibility="gone"
+        tools:visibility="visible"
+        tools:src="@drawable/ic_network_wifi_white_24dp"
+        app:layout_constraintBottom_toBottomOf="@id/bottom_guideline"
+        app:layout_constraintStart_toStartOf="@id/start_guideline"
+        app:layout_constraintTop_toTopOf="@id/top_guideline" />
+
+    <TextView
+        android:id="@+id/wear_chip_primary_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:duplicateParentState="true"
+        android:textSize="15sp"
+        android:visibility="gone"
+        tools:visibility="visible"
+        tools:text="@string/action_wifi"
+        app:layout_constrainedWidth="true"
+        app:layout_constraintBottom_toTopOf="@id/top_text_center_line"
+        app:layout_constraintEnd_toStartOf="@id/end_barrier"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toEndOf="@id/wear_chip_icon"
+        app:layout_constraintTop_toTopOf="@id/top_text_center_line" />
+
+    <TextView
+        android:id="@+id/wear_chip_secondary_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:duplicateParentState="true"
+        android:textSize="13sp"
+        android:visibility="gone"
+        tools:visibility="visible"
+        tools:text="@string/state_off"
+        app:layout_constrainedWidth="true"
+        app:layout_constraintBottom_toTopOf="@id/bottom_text_center_line"
+        app:layout_constraintEnd_toStartOf="@id/end_barrier"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toEndOf="@id/wear_chip_icon"
+        app:layout_constraintTop_toTopOf="@id/bottom_text_center_line" />
+
+    <FrameLayout
+        android:id="@+id/wear_chip_selection_control_container"
+        android:layout_width="52dp"
+        android:layout_height="0.0dip"
+        android:duplicateParentState="true"
+        android:paddingHorizontal="14dp"
+        android:visibility="gone"
+        tools:visibility="visible"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <androidx.constraintlayout.widget.Barrier
+        android:id="@+id/end_barrier"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:barrierDirection="start">
+
+        <tag android:id="@id/wear_chip_selection_control_container" />
+
+        <tag android:id="@id/end_guideline" />
+    </androidx.constraintlayout.widget.Barrier>
+</merge>

@@ -103,7 +103,6 @@ class MediaPlayerActivity : WearableListenerActivity(), AmbientModeSupport.Ambie
                                                 this@MediaPlayerActivity,
                                                 PhoneSyncActivity::class.java
                                             )
-                                                .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
                                         )
                                         finishAffinity()
                                     }
@@ -130,7 +129,6 @@ class MediaPlayerActivity : WearableListenerActivity(), AmbientModeSupport.Ambie
                                                 this@MediaPlayerActivity,
                                                 PhoneSyncActivity::class.java
                                             )
-                                                .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
                                         )
                                         finishAffinity()
                                     }

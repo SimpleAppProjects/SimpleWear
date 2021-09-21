@@ -39,6 +39,7 @@
 
         <activity
             android:name=".PhoneSyncActivity"
+            android:launchMode="singleInstance"
             android:theme="@style/WearAppTheme.Launcher">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -48,6 +49,7 @@
         <activity
             android:name=".DashboardActivity"
             android:label="@string/title_activity_dashboard"
+            android:launchMode="singleInstance"
             android:theme="@style/WearAppTheme" />
         <activity
             android:name=".ValueActionActivity"
@@ -56,9 +58,8 @@
             android:name=".MediaPlayerListActivity"
             android:icon="@drawable/ic_play_circle_simpleblue"
             android:label="@string/title_media_controller"
+            android:launchMode="singleInstance"
             android:theme="@style/WearAppTheme"
-            android:clearTaskOnLaunch="true"
-            android:launchMode="singleTask"
             android:parentActivityName=".DashboardActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -76,8 +77,7 @@
             android:icon="@drawable/ic_phone_24dp"
             android:label="InCall Controller"
             android:theme="@style/WearAppTheme"
-            android:clearTaskOnLaunch="true"
-            android:launchMode="singleTask"
+            android:launchMode="singleInstance"
             android:parentActivityName=".DashboardActivity">
             <!--<intent-filter>
                 <action android:name="android.intent.action.MAIN" />
