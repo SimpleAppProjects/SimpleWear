@@ -18,7 +18,7 @@
         android:layout_marginTop="@dimen/inner_layout_padding"
         android:layout_marginBottom="8dp"
         android:text="@string/title_settings"
-        android:textAppearance="@style/TextAppearance.AppCompat.Body2" />
+        android:textAppearance="?textAppearanceBody2" />
 
     <RelativeLayout
         android:id="@+id/layout_pref"
@@ -50,7 +50,6 @@
             android:fadingEdge="horizontal"
             android:maxLines="2"
             android:text="@string/pref_layout"
-            android:textAppearance="@style/TextAppearance.AppCompat"
             android:textSize="14sp" />
 
         <TextView
@@ -61,7 +60,7 @@
             android:layout_alignStart="@+id/layout_pref_title"
             android:maxLines="1"
             android:text="@string/option_grid"
-            android:textAppearance="@style/TextAppearance.AppCompat.Small"
+            android:textAppearance="?android:textAppearanceSmall"
             android:textSize="12sp" />
 
     </RelativeLayout>

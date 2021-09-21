@@ -34,7 +34,7 @@
                 android:gravity="center"
                 android:padding="4dp"
                 android:text="@string/title_filter_apps"
-                android:textAppearance="@style/TextAppearance.AppCompat.Title" />
+                android:textAppearance="?titleTextAppearance" />
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/player_list"

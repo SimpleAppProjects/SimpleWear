@@ -21,7 +21,7 @@
             android:gravity="center"
             android:padding="4dp"
             android:text="@string/title_actions"
-            android:textAppearance="@style/TextAppearance.AppCompat.Body2"
+            android:textAppearance="?textAppearanceBody2"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />

@@ -22,7 +22,7 @@
             android:paddingEnd="?android:attr/listPreferredItemPaddingRight"
             android:text="@string/cat_title_permissions"
             android:textAlignment="viewStart"
-            android:textAppearance="@style/TextAppearance.MaterialComponents.Body2"
+            android:textAppearance="?textAppearanceBody2"
             android:textColor="?attr/colorPrimary" />
 
     </LinearLayout>
@@ -45,7 +45,6 @@
             android:fadingEdge="horizontal"
             android:singleLine="true"
             android:text="@string/action_torch"
-            android:textAppearance="@style/TextAppearance.AppCompat"
             android:textSize="18sp" />
 
         <TextView
@@ -55,7 +54,7 @@
             android:layout_below="@+id/torch_pref_title"
             android:layout_alignStart="@+id/torch_pref_title"
             android:maxLines="4"
-            android:textAppearance="@style/TextAppearance.AppCompat.Small" />
+            android:textAppearance="?android:textAppearanceSmall" />
 
     </RelativeLayout>
 
@@ -82,7 +81,6 @@
             android:fadingEdge="horizontal"
             android:singleLine="true"
             android:text="@string/action_lockscreen"
-            android:textAppearance="@style/TextAppearance.AppCompat"
             android:textSize="18sp" />
 
         <TextView
@@ -92,7 +90,7 @@
             android:layout_below="@+id/deviceadmin_title"
             android:layout_alignStart="@+id/deviceadmin_title"
             android:maxLines="4"
-            android:textAppearance="@style/TextAppearance.AppCompat.Small" />
+            android:textAppearance="?android:textAppearanceSmall" />
 
     </RelativeLayout>
 
@@ -119,7 +117,6 @@
             android:fadingEdge="horizontal"
             android:singleLine="true"
             android:text="@string/action_dnd"
-            android:textAppearance="@style/TextAppearance.AppCompat"
             android:textSize="18sp" />
 
         <TextView
@@ -129,7 +126,7 @@
             android:layout_below="@+id/dnd_title"
             android:layout_alignStart="@+id/dnd_title"
             android:maxLines="4"
-            android:textAppearance="@style/TextAppearance.AppCompat.Small" />
+            android:textAppearance="?android:textAppearanceSmall" />
 
     </RelativeLayout>
 
@@ -156,7 +153,6 @@
             android:fadingEdge="horizontal"
             android:singleLine="true"
             android:text="@string/permission_title_notifservice"
-            android:textAppearance="@style/TextAppearance.AppCompat"
             android:textSize="18sp" />
 
         <TextView
@@ -166,7 +162,7 @@
             android:layout_below="@+id/notiflistener_title"
             android:layout_alignStart="@+id/notiflistener_title"
             android:maxLines="4"
-            android:textAppearance="@style/TextAppearance.AppCompat.Small" />
+            android:textAppearance="?android:textAppearanceSmall" />
 
     </RelativeLayout>
 
@@ -193,7 +189,6 @@
             android:fadingEdge="horizontal"
             android:singleLine="true"
             android:text="@string/not_channel_name_callcontroller"
-            android:textAppearance="@style/TextAppearance.AppCompat"
             android:textSize="18sp" />
 
         <TextView
@@ -201,7 +196,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:maxLines="4"
-            android:textAppearance="@style/TextAppearance.AppCompat.Small" />
+            android:textAppearance="?android:textAppearanceSmall" />
 
     </LinearLayout>
 
@@ -228,7 +223,6 @@
             android:fadingEdge="horizontal"
             android:singleLine="true"
             android:text="@string/permission_title_uninstall"
-            android:textAppearance="@style/TextAppearance.AppCompat"
             android:textSize="18sp" />
 
         <TextView
@@ -236,7 +230,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:maxLines="4"
-            android:textAppearance="@style/TextAppearance.AppCompat.Small"
+            android:textAppearance="?android:textAppearanceSmall"
             android:text="@string/message_deactivate_deviceadmin"
             android:visibility="gone" />
 

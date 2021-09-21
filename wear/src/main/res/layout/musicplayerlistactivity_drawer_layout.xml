@@ -21,7 +21,7 @@
         android:gravity="center"
         android:padding="4dp"
         android:text="@string/title_settings"
-        android:textAppearance="@style/TextAppearance.AppCompat.Body2" />
+        android:textAppearance="?textAppearanceBody2" />
 
     <RelativeLayout
         android:id="@+id/filter_apps_btn"
@@ -55,7 +55,6 @@
             android:gravity="center_vertical"
             android:maxLines="2"
             android:text="@string/title_filter_apps"
-            android:textAppearance="@style/TextAppearance.AppCompat"
             android:textSize="12sp" />
 
     </RelativeLayout>
@@ -91,7 +90,6 @@
             android:gravity="center_vertical"
             android:maxLines="2"
             android:text="@string/title_autolaunchmediactrls"
-            android:textAppearance="@style/TextAppearance.AppCompat"
             android:textSize="12sp" />
 
     </RelativeLayout>

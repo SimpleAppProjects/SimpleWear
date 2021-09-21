@@ -26,6 +26,9 @@
 
     <dimen name="diag_button_size">44dp</dimen>
 
+    <!-- Material dimens -->
+    <dimen name="shape_corner_radius">8dp</dimen>
+
     <dimen name="button_corner_radius">26dp</dimen>
     <integer name="button_gradient_angle">135</integer>
     <integer name="button_gradient_angle_rtl">45</integer>
