@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="Widget.Wear.WearChipButton" parent="@android:style/Widget">
+        <item name="android:enabled">true</item>
+        <item name="android:clickable">true</item>
+        <item name="android:foreground">@drawable/round_selectable_item</item>
+        <item name="android:checkable">false</item>
+        <item name="android:background">@drawable/button_background_solid</item>
+        <!--<item name="android:minWidth">172dp</item>-->
+        <item name="android:minHeight">52dp</item>
+    </style>
+
+    <style name="Widget.Wear.WearChipButton.Accent" parent="Widget.Wear.WearChipButton">
+        <item name="android:background">@drawable/button_background_accent</item>
+        <item name="backgroundTint">?colorPrimary</item>
+    </style>
+
+    <style name="Widget.Wear.WearChipButton.OnSurface" parent="Widget.Wear.WearChipButton">
+        <item name="android:background">@drawable/button_background_onsurface</item>
+    </style>
+
+    <style name="Widget.Wear.WearChipButton.OnSurface.Accent" parent="Widget.Wear.WearChipButton">
+        <item name="android:background">@drawable/button_background_accent_onsurface</item>
+        <item name="backgroundTint">?colorPrimary</item>
+    </style>
+
+    <style name="Widget.Wear.WearChipButton.Checkable" parent="Widget.Wear.WearChipButton">
+        <item name="android:background">@drawable/button_background_accent</item>
+        <item name="android:checkable">true</item>
+    </style>
+
+    <style name="Widget.Wear.WearChipButton.OnSurface.Checkable" parent="Widget.Wear.WearChipButton">
+        <item name="android:background">@drawable/button_background_accent_onsurface</item>
+        <item name="android:checkable">true</item>
+        <item name="backgroundTint">?colorPrimary</item>
+    </style>
+
+</resources>

@@ -2,6 +2,8 @@
 <merge xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    tools:layout_width="match_parent"
+    tools:layout_height="52dp"
     tools:parentTag="androidx.constraintlayout.widget.ConstraintLayout">
 
     <androidx.constraintlayout.widget.Guideline
@@ -32,20 +34,6 @@
         android:orientation="vertical"
         app:layout_constraintGuide_end="14dp" />
 
-    <androidx.constraintlayout.widget.Guideline
-        android:id="@+id/top_text_center_line"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        app:layout_constraintGuide_begin="16dp" />
-
-    <androidx.constraintlayout.widget.Guideline
-        android:id="@+id/bottom_text_center_line"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        app:layout_constraintGuide_end="16dp" />
-
     <ImageView
         android:id="@+id/wear_chip_icon"
         android:layout_width="24dp"
@@ -54,7 +42,7 @@
         android:scaleType="fitCenter"
         android:visibility="gone"
         tools:visibility="visible"
-        tools:src="@drawable/ic_network_wifi_white_24dp"
+        android:src="@drawable/ic_network_wifi_white_24dp"
         app:layout_constraintBottom_toBottomOf="@id/bottom_guideline"
         app:layout_constraintStart_toStartOf="@id/start_guideline"
         app:layout_constraintTop_toTopOf="@id/top_guideline" />
@@ -64,32 +52,41 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:duplicateParentState="true"
-        android:textSize="15sp"
+        android:ellipsize="marquee"
+        android:layout_marginStart="7dp"
+        android:letterSpacing="0.013"
+        android:textSize="14sp"
         android:visibility="gone"
+        android:gravity="center_vertical"
+        android:textAppearance="?textAppearanceButton"
         tools:visibility="visible"
         tools:text="@string/action_wifi"
         app:layout_constrainedWidth="true"
-        app:layout_constraintBottom_toTopOf="@id/top_text_center_line"
+        app:layout_constraintBottom_toTopOf="@id/wear_chip_secondary_text"
         app:layout_constraintEnd_toStartOf="@id/end_barrier"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toEndOf="@id/wear_chip_icon"
-        app:layout_constraintTop_toTopOf="@id/top_text_center_line" />
+        app:layout_constraintTop_toTopOf="@id/top_guideline" />
 
     <TextView
         android:id="@+id/wear_chip_secondary_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:duplicateParentState="true"
-        android:textSize="13sp"
+        android:gravity="center_vertical"
+        android:letterSpacing="0.023"
+        android:textSize="12sp"
+        android:layout_marginStart="7dp"
         android:visibility="gone"
+        android:textAppearance="?textAppearanceCaption"
         tools:visibility="visible"
         tools:text="@string/state_off"
         app:layout_constrainedWidth="true"
-        app:layout_constraintBottom_toTopOf="@id/bottom_text_center_line"
+        app:layout_constraintBottom_toTopOf="@id/bottom_guideline"
         app:layout_constraintEnd_toStartOf="@id/end_barrier"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toEndOf="@id/wear_chip_icon"
-        app:layout_constraintTop_toTopOf="@id/bottom_text_center_line" />
+        app:layout_constraintTop_toBottomOf="@id/wear_chip_primary_text" />
 
     <FrameLayout
         android:id="@+id/wear_chip_selection_control_container"
@@ -107,10 +104,6 @@
         android:id="@+id/end_barrier"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:barrierDirection="start">
-
-        <tag android:id="@id/wear_chip_selection_control_container" />
-
-        <tag android:id="@id/end_guideline" />
-    </androidx.constraintlayout.widget.Barrier>
+        app:barrierDirection="start"
+        app:constraint_referenced_ids="wear_chip_selection_control_container,end_guideline" />
 </merge>

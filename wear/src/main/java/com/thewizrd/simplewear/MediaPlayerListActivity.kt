@@ -1,11 +1,11 @@
 package com.thewizrd.simplewear
 
+import android.annotation.SuppressLint
 import android.content.*
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.util.Log
 import android.view.View
-import android.widget.Switch
 import androidx.activity.viewModels
 import androidx.core.content.ContextCompat
 import androidx.core.util.Pair
@@ -21,8 +21,10 @@ import com.thewizrd.shared_resources.utils.*
 import com.thewizrd.simplewear.adapters.MusicPlayerListAdapter
 import com.thewizrd.simplewear.controls.AppItemViewModel
 import com.thewizrd.simplewear.controls.CustomConfirmationOverlay
+import com.thewizrd.simplewear.controls.WearChipButton
 import com.thewizrd.simplewear.databinding.ActivityMusicplayerlistBinding
 import com.thewizrd.simplewear.helpers.AppItemComparator
+import com.thewizrd.simplewear.helpers.CustomScrollingLayoutCallback
 import com.thewizrd.simplewear.helpers.showConfirmationOverlay
 import com.thewizrd.simplewear.media.MediaPlayerActivity
 import com.thewizrd.simplewear.preferences.Settings
@@ -48,6 +50,7 @@ class MediaPlayerListActivity : WearableListenerActivity(), MessageClient.OnMess
     private val mMediaAppsList: MutableSet<AppItemViewModel> = TreeSet(AppItemComparator())
     private val viewModel: MediaPlayerListViewModel by viewModels()
 
+    @SuppressLint("UseSwitchCompatOrMaterialCode")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -142,9 +145,9 @@ class MediaPlayerListActivity : WearableListenerActivity(), MessageClient.OnMess
         binding.bottomActionDrawer.setIsAutoPeekEnabled(true)
         binding.bottomActionDrawer.setIsLocked(false)
 
-        val mSwitch = findViewById<Switch>(R.id.autolaunch_pref_switch)
+        val mSwitch = findViewById<WearChipButton>(R.id.autolaunch_pref)
         mSwitch.isChecked = Settings.isAutoLaunchMediaCtrlsEnabled
-        findViewById<View>(R.id.autolaunch_pref).setOnClickListener {
+        mSwitch.setOnClickListener {
             val state = !Settings.isAutoLaunchMediaCtrlsEnabled
             Settings.setAutoLaunchMediaCtrls(state)
             mSwitch.isChecked = state
@@ -161,7 +164,8 @@ class MediaPlayerListActivity : WearableListenerActivity(), MessageClient.OnMess
         binding.playerList.setHasFixedSize(true)
         binding.playerList.isEdgeItemsCenteringEnabled = true
 
-        binding.playerList.layoutManager = WearableLinearLayoutManager(this)
+        binding.playerList.layoutManager =
+            WearableLinearLayoutManager(this, CustomScrollingLayoutCallback())
         mAdapter = MusicPlayerListAdapter()
         mAdapter.setOnClickListener(object : ListAdapterOnClickInterface<AppItemViewModel> {
             override fun onClick(view: View, position: Int, item: AppItemViewModel) {

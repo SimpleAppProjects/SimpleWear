@@ -1,97 +1,54 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/drawer_content"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@null"
-    android:orientation="vertical"
+    android:fillViewport="true"
+    tools:background="?colorSurface"
     tools:context=".MediaPlayerListActivity"
     tools:deviceIds="wear"
     tools:ignore="UseSwitchCompatOrMaterialXml">
 
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="@dimen/inner_layout_padding" />
-
-    <androidx.appcompat.widget.AppCompatTextView
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="center"
-        android:padding="4dp"
-        android:text="@string/title_settings"
-        android:textAppearance="?textAppearanceBody2" />
+        android:orientation="vertical">
 
-    <RelativeLayout
-        android:id="@+id/filter_apps_btn"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        style="@style/SettingPrefLayoutStyle">
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/inner_layout_padding" />
 
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/filter_apps_icon"
-            android:layout_width="wrap_content"
+        <androidx.appcompat.widget.AppCompatTextView
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_alignParentStart="true"
-            android:layout_alignParentTop="true"
-            android:layout_alignParentBottom="false"
-            android:layout_marginEnd="8dp"
-            android:clickable="false"
-            android:src="@drawable/ic_baseline_filter_list_24"
-            app:backgroundTint="@color/colorPrimary"
-            app:fabCustomSize="@dimen/ws_switch_size"
-            app:rippleColor="@null" />
+            android:gravity="center"
+            android:padding="4dp"
+            android:text="@string/title_settings"
+            android:textAppearance="?textAppearanceHeadline6" />
 
-        <TextView
-            android:id="@+id/filter_apps_title"
-            android:layout_width="wrap_content"
+        <com.thewizrd.simplewear.controls.WearChipButton
+            android:id="@+id/filter_apps_btn"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_alignBottom="@id/filter_apps_icon"
-            android:layout_alignParentTop="true"
-            android:layout_alignParentEnd="true"
-            android:layout_toEndOf="@id/filter_apps_icon"
-            android:ellipsize="marquee"
-            android:gravity="center_vertical"
-            android:maxLines="2"
-            android:text="@string/title_filter_apps"
-            android:textSize="12sp" />
+            style="@style/Widget.Wear.WearChipButton.OnSurface"
+            app:icon="@drawable/ic_baseline_filter_list_24"
+            app:primaryText="@string/title_filter_apps" />
 
-    </RelativeLayout>
-
-    <RelativeLayout
-        android:id="@+id/autolaunch_pref"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        style="@style/SettingPrefLayoutStyle">
-
-        <Switch
-            android:id="@+id/autolaunch_pref_switch"
-            style="@style/Widget.Wear.RoundSwitch"
+        <Space
             android:layout_width="wrap_content"
+            android:layout_height="4dp" />
+
+        <com.thewizrd.simplewear.controls.WearChipButton
+            android:id="@+id/autolaunch_pref"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_alignParentStart="true"
-            android:layout_alignTop="@id/autolaunch_pref_switch"
-            android:layout_marginEnd="8dp"
-            android:clickable="false"
-            android:src="@drawable/ic_apps_white_24dp"
-            android:trackTint="#FF444444"
-            app:rippleColor="@null" />
+            style="@style/Widget.Wear.WearChipButton.OnSurface.Accent"
+            app:primaryText="@string/title_autolaunchmediactrls"
+            app:controlType="toggle" />
 
-        <TextView
-            android:id="@+id/autolaunch_pref_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignBottom="@id/autolaunch_pref_switch"
-            android:layout_alignParentTop="true"
-            android:layout_alignParentEnd="true"
-            android:layout_toEndOf="@id/autolaunch_pref_switch"
-            android:ellipsize="marquee"
-            android:gravity="center_vertical"
-            android:maxLines="2"
-            android:text="@string/title_autolaunchmediactrls"
-            android:textSize="12sp" />
+    </LinearLayout>
 
-    </RelativeLayout>
-
-</LinearLayout>
+</androidx.core.widget.NestedScrollView>

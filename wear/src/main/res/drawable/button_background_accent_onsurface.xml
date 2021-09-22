@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@drawable/button_background_onsurface" />
+    <item
+        android:id="@+id/start_accent"
+        android:drawable="@drawable/button_background_gradient_start" />
+    <item
+        android:id="@+id/start_accent_rtl"
+        android:drawable="@drawable/button_background_gradient_start_rtl" />
+    <item
+        android:id="@+id/end_accent"
+        android:drawable="@drawable/button_background_gradient_end" />
+    <item
+        android:id="@+id/end_accent_rtl"
+        android:drawable="@drawable/button_background_gradient_end_rtl" />
+</layer-list>

@@ -10,7 +10,7 @@ import android.util.Log
 import android.widget.Toast
 import androidx.annotation.RestrictTo
 import androidx.annotation.VisibleForTesting
-import androidx.appcompat.app.AppCompatActivity
+import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.wear.phone.interactions.PhoneTypeHelper
@@ -33,12 +33,14 @@ import com.thewizrd.shared_resources.utils.stringToBytes
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
-abstract class WearableListenerActivity : AppCompatActivity(), OnMessageReceivedListener, OnCapabilityChangedListener {
+abstract class WearableListenerActivity : FragmentActivity(), OnMessageReceivedListener,
+    OnCapabilityChangedListener {
     companion object {
         // Actions
         const val ACTION_OPENONPHONE = "SimpleWear.Droid.Wear.action.OPEN_APP_ON_PHONE"
         const val ACTION_SHOWSTORELISTING = "SimpleWear.Droid.Wear.action.SHOW_STORE_LISTING"
-        const val ACTION_UPDATECONNECTIONSTATUS = "SimpleWear.Droid.Wear.action.UPDATE_CONNECTION_STATUS"
+        const val ACTION_UPDATECONNECTIONSTATUS =
+            "SimpleWear.Droid.Wear.action.UPDATE_CONNECTION_STATUS"
         const val ACTION_CHANGED = "SimpleWear.Droid.Wear.action.ACTION_CHANGED"
 
         // Extras

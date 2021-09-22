@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="WearChipButton">
+        <attr name="icon" />
+        <attr name="backgroundTint" />
+        <attr name="android:checkable" />
+        <attr name="android:checked" />
+        <attr name="primaryText" format="string" />
+        <attr name="secondaryText" format="string" />
+        <attr name="controlType">
+            <enum name="none" value="0" />
+            <enum name="checkbox" value="1" />
+            <enum name="radio" value="2" />
+            <enum name="toggle" value="3" />
+        </attr>
+    </declare-styleable>
+</resources>

@@ -23,6 +23,7 @@ import com.thewizrd.simplewear.adapters.AppsListAdapter
 import com.thewizrd.simplewear.controls.AppItemViewModel
 import com.thewizrd.simplewear.controls.CustomConfirmationOverlay
 import com.thewizrd.simplewear.databinding.ActivityApplauncherBinding
+import com.thewizrd.simplewear.helpers.CustomScrollingLayoutCallback
 import com.thewizrd.simplewear.helpers.showConfirmationOverlay
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -113,7 +114,8 @@ class AppLauncherActivity : WearableListenerActivity(), OnDataChangedListener {
         binding.appList.setHasFixedSize(true)
         binding.appList.isEdgeItemsCenteringEnabled = true
 
-        binding.appList.layoutManager = WearableLinearLayoutManager(this)
+        binding.appList.layoutManager =
+            WearableLinearLayoutManager(this, CustomScrollingLayoutCallback())
         mAdapter = AppsListAdapter()
         mAdapter.setOnClickListener(object : ListAdapterOnClickInterface<AppItemViewModel> {
             override fun onClick(view: View, position: Int, item: AppItemViewModel) {

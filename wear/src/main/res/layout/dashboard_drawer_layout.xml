@@ -7,6 +7,8 @@
     android:layout_height="match_parent"
     android:background="@null"
     android:orientation="vertical"
+    android:paddingHorizontal="@dimen/dashboard_horizontal_margin"
+    tools:background="?colorSurface"
     tools:context=".DashboardActivity"
     tools:deviceIds="wear">
 
@@ -18,51 +20,16 @@
         android:layout_marginTop="@dimen/inner_layout_padding"
         android:layout_marginBottom="8dp"
         android:text="@string/title_settings"
-        android:textAppearance="?textAppearanceBody2" />
+        android:textAppearance="?textAppearanceHeadline6" />
 
-    <RelativeLayout
+    <com.thewizrd.simplewear.controls.WearChipButton
         android:id="@+id/layout_pref"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        style="@style/SettingPrefLayoutStyle">
-
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/layout_pref_icon"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentStart="true"
-            android:layout_alignParentTop="true"
-            android:layout_alignParentBottom="false"
-            android:layout_marginEnd="8dp"
-            android:clickable="false"
-            android:src="@drawable/ic_apps_white_24dp"
-            app:backgroundTint="@color/colorPrimary"
-            app:fabCustomSize="36dp"
-            app:rippleColor="@null" />
-
-        <TextView
-            android:id="@+id/layout_pref_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentTop="true"
-            android:layout_toEndOf="@id/layout_pref_icon"
-            android:ellipsize="marquee"
-            android:fadingEdge="horizontal"
-            android:maxLines="2"
-            android:text="@string/pref_layout"
-            android:textSize="14sp" />
-
-        <TextView
-            android:id="@+id/layout_pref_summary"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_below="@+id/layout_pref_title"
-            android:layout_alignStart="@+id/layout_pref_title"
-            android:maxLines="1"
-            android:text="@string/option_grid"
-            android:textAppearance="?android:textAppearanceSmall"
-            android:textSize="12sp" />
-
-    </RelativeLayout>
+        style="@style/Widget.Wear.WearChipButton.OnSurface.Accent"
+        app:backgroundTint="?colorPrimary"
+        app:icon="@drawable/ic_apps_white_24dp"
+        app:primaryText="@string/pref_layout"
+        app:secondaryText="@string/option_grid" />
 
 </LinearLayout>

@@ -9,7 +9,6 @@ import android.util.Log
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
-import android.widget.TextView
 import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.core.view.InputDeviceCompat
@@ -23,7 +22,6 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.wear.widget.ConfirmationOverlay
 import androidx.wear.widget.drawer.WearableDrawerLayout
 import androidx.wear.widget.drawer.WearableDrawerView
-import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.thewizrd.shared_resources.actions.Action
 import com.thewizrd.shared_resources.actions.ActionStatus
 import com.thewizrd.shared_resources.actions.Actions
@@ -36,6 +34,7 @@ import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.simplewear.adapters.ActionItemAdapter
 import com.thewizrd.simplewear.controls.ActionButtonViewModel
 import com.thewizrd.simplewear.controls.CustomConfirmationOverlay
+import com.thewizrd.simplewear.controls.WearChipButton
 import com.thewizrd.simplewear.databinding.ActivityDashboardBinding
 import com.thewizrd.simplewear.helpers.showConfirmationOverlay
 import com.thewizrd.simplewear.preferences.Settings
@@ -391,10 +390,9 @@ class DashboardActivity : WearableListenerActivity(), OnSharedPreferenceChangeLi
 
     private fun updateLayoutPref() {
         val useGridLayout = Settings.useGridLayout()
-        val fab = findViewById<FloatingActionButton>(R.id.layout_pref_icon)
-        val prefSummary = findViewById<TextView>(R.id.layout_pref_summary)
-        fab.setImageResource(if (useGridLayout) R.drawable.ic_apps_white_24dp else R.drawable.ic_view_list_white_24dp)
-        prefSummary.setText(if (useGridLayout) R.string.option_grid else R.string.option_list)
+        val pref = findViewById<WearChipButton>(R.id.layout_pref)
+        pref.setIconResource(if (useGridLayout) R.drawable.ic_apps_white_24dp else R.drawable.ic_view_list_white_24dp)
+        pref.setSecondaryText(if (useGridLayout) R.string.option_grid else R.string.option_list)
     }
 
     private fun setLayoutManager() {
