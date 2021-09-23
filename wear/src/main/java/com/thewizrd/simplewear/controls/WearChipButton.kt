@@ -54,6 +54,7 @@ class WearChipButton @JvmOverloads constructor(
     private val mSelectionControlContainer: ViewGroup
 
     private var buttonBackgroundTint: ColorStateList? = null
+    private var buttonControlTint: ColorStateList? = null
 
     var isCheckable: Boolean = false
         get() = field
@@ -102,6 +103,20 @@ class WearChipButton @JvmOverloads constructor(
                             a.getColorStateList(R.styleable.WearChipButton_backgroundTint)
                     }
                 }
+                if (a.hasValue(R.styleable.WearChipButton_buttonTint)) {
+                    val colorResId = a.getResourceId(R.styleable.WearChipButton_buttonTint, 0)
+                    if (colorResId != 0) {
+                        val tint = ContextCompat.getColorStateList(context, colorResId)
+                        if (tint != null) {
+                            buttonControlTint = tint
+                        }
+                    }
+
+                    if (buttonControlTint == null) {
+                        buttonControlTint =
+                            a.getColorStateList(R.styleable.WearChipButton_buttonTint)
+                    }
+                }
                 if (a.hasValue(R.styleable.WearChipButton_android_checkable)) {
                     isCheckable = a.getBoolean(R.styleable.WearChipButton_android_checkable, false)
                 }
@@ -117,6 +132,7 @@ class WearChipButton @JvmOverloads constructor(
         }
 
         updateBackgroundTint()
+        updateButtonControlTint()
     }
 
     fun setIconResource(@DrawableRes resId: Int) {
@@ -188,43 +204,60 @@ class WearChipButton @JvmOverloads constructor(
         updateBackgroundTint()
     }
 
+    fun getControlButtonColor(): ColorStateList? {
+        return buttonControlTint
+    }
+
+    fun setControlButtonColor(tint: ColorStateList?) {
+        buttonControlTint = tint
+        updateButtonControlTint()
+    }
+
     fun updateControlType(@ControlType controlType: Int) {
         when (controlType) {
             CONTROLTYPE_CHECKBOX -> {
                 setControlView(CheckBox(context).apply {
                     layoutParams = FrameLayout.LayoutParams(
-                        ViewGroup.LayoutParams.MATCH_PARENT,
-                        ViewGroup.LayoutParams.MATCH_PARENT
+                        ViewGroup.LayoutParams.WRAP_CONTENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT
                     ).apply {
                         gravity = Gravity.CENTER
                     }
+                    isClickable = false
                     isDuplicateParentStateEnabled = true
-                    buttonDrawable = ContextCompat.getDrawable(context, R.drawable.wear_check_anim)
+                    buttonDrawable =
+                        ContextCompat.getDrawable(context, R.drawable.wear_checkbox_icon)
+                    buttonTintList = buttonControlTint
                 })
                 setControlViewVisibility(View.VISIBLE)
             }
             CONTROLTYPE_RADIO -> {
                 setControlView(RadioButton(context).apply {
                     layoutParams = FrameLayout.LayoutParams(
-                        ViewGroup.LayoutParams.MATCH_PARENT,
-                        ViewGroup.LayoutParams.MATCH_PARENT
+                        ViewGroup.LayoutParams.WRAP_CONTENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT
                     ).apply {
                         gravity = Gravity.CENTER
                     }
+                    isClickable = false
                     isDuplicateParentStateEnabled = true
-                    buttonDrawable = ContextCompat.getDrawable(context, R.drawable.wear_radio_anim)
+                    buttonDrawable = ContextCompat.getDrawable(context, R.drawable.wear_radio_icon)
+                    buttonTintList = buttonControlTint
                 })
                 setControlViewVisibility(View.VISIBLE)
             }
             CONTROLTYPE_TOGGLE -> {
-                setControlView(Switch(context).apply {
+                setControlView(CheckBox(context).apply {
                     layoutParams = FrameLayout.LayoutParams(
-                        ViewGroup.LayoutParams.MATCH_PARENT,
-                        ViewGroup.LayoutParams.MATCH_PARENT
+                        ViewGroup.LayoutParams.WRAP_CONTENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT
                     ).apply {
                         gravity = Gravity.CENTER
                     }
+                    isClickable = false
                     isDuplicateParentStateEnabled = true
+                    buttonDrawable = ContextCompat.getDrawable(context, R.drawable.wear_switch_icon)
+                    buttonTintList = buttonControlTint
                 })
                 setControlViewVisibility(View.VISIBLE)
             }
@@ -241,9 +274,13 @@ class WearChipButton @JvmOverloads constructor(
                 val layerCount = backgroundDrawable.numberOfLayers
                 for (i in 1 until layerCount) {
                     val layer = backgroundDrawable.getDrawable(i)
-                    val tintable = DrawableCompat.wrap(layer).mutate()
-                    DrawableCompat.setTintList(tintable, buttonBackgroundTint)
-                    backgroundDrawable.setDrawable(i, tintable)
+                    val id = backgroundDrawable.getId(i)
+                    if (id == R.id.start_accent) {
+                        layer.alpha = 0xFF
+                        backgroundDrawable.setDrawable(i, layer.setButtonBackgroundDrawableTint())
+                    } else {
+                        layer.alpha = 0
+                    }
                 }
                 return
             }
@@ -252,6 +289,11 @@ class WearChipButton @JvmOverloads constructor(
             DrawableCompat.setTintList(tintable, buttonBackgroundTint)
             background = tintable
         }
+    }
+
+    private fun updateButtonControlTint() {
+        val control = getControlView() as? CompoundButton
+        control?.buttonTintList = buttonControlTint
     }
 
     private fun Drawable.setButtonBackgroundDrawableTint(): Drawable {
@@ -274,7 +316,7 @@ class WearChipButton @JvmOverloads constructor(
     }
 
     override fun onCreateDrawableState(extraSpace: Int): IntArray {
-        val drawableState = super.onCreateDrawableState(extraSpace + 2)
+        val drawableState = super.onCreateDrawableState(extraSpace + 3)
 
         if (isCheckable) {
             mergeDrawableStates(drawableState, CHECKABLE_STATE_SET)
@@ -282,6 +324,10 @@ class WearChipButton @JvmOverloads constructor(
 
         if (isChecked) {
             mergeDrawableStates(drawableState, CHECKED_STATE_SET)
+        }
+
+        if (isEnabled) {
+            mergeDrawableStates(drawableState, ENABLED_STATE_SET)
         }
 
         return drawableState

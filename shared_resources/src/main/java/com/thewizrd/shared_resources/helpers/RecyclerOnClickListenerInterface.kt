@@ -7,5 +7,5 @@ interface RecyclerOnClickListenerInterface {
 }
 
 interface ListAdapterOnClickInterface<T> {
-    fun onClick(view: View, position: Int, item: T)
+    fun onClick(view: View, item: T)
 }

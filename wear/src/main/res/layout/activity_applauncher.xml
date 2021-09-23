@@ -18,6 +18,7 @@
         android:id="@+id/app_list"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:paddingBottom="48dp"
         tools:listitem="@layout/app_item" />
 
 </androidx.wear.widget.drawer.WearableDrawerLayout>

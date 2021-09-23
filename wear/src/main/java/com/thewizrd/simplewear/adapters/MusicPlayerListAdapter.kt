@@ -1,6 +1,6 @@
 package com.thewizrd.simplewear.adapters
 
-import android.annotation.SuppressLint
+import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.core.graphics.drawable.toDrawable
 import androidx.recyclerview.widget.ListAdapter
@@ -10,46 +10,79 @@ import com.thewizrd.shared_resources.helpers.ListAdapterOnClickInterface
 import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.controls.AppItemViewModel
 import com.thewizrd.simplewear.controls.WearChipButton
+import com.thewizrd.simplewear.databinding.LayoutListHeaderBinding
 
 class MusicPlayerListAdapter :
-    ListAdapter<AppItemViewModel, MusicPlayerListAdapter.ViewHolder>(AppItemDiffer()) {
+    ListAdapter<AppItemViewModel, RecyclerView.ViewHolder>(AppItemDiffer()) {
+    companion object {
+        private const val ITEMTYPE_HEADER = -1
+        private const val ITEMTYPE_APPITEM = 0
+    }
+
     private var onClickListener: ListAdapterOnClickInterface<AppItemViewModel>? = null
 
     fun setOnClickListener(onClickListener: ListAdapterOnClickInterface<AppItemViewModel>?) {
         this.onClickListener = onClickListener
     }
 
-    // Provide a reference to the views for each data item
-    // Complex data items may need more than one view per item, and
-    // you provide access to all the views for a data item in a view holder
     inner class ViewHolder(var mItem: WearChipButton) : RecyclerView.ViewHolder(mItem)
+    inner class HeaderViewHolder(val binding: LayoutListHeaderBinding) :
+        RecyclerView.ViewHolder(binding.root)
 
-    @SuppressLint("NewApi")  // Create new views (invoked by the layout manager)
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        // create a new view
-        val v = WearChipButton(parent.context).apply {
-            val height = parent.context.dpToPx(52f)
-            layoutParams = RecyclerView.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT
-            )
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        return if (viewType == ITEMTYPE_HEADER) {
+            HeaderViewHolder(LayoutListHeaderBinding.inflate(LayoutInflater.from(parent.context))).apply {
+                binding.root.layoutParams = RecyclerView.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+                )
+            }
+        } else {
+            // create a new view
+            val v = WearChipButton(parent.context).apply {
+                val height = parent.context.dpToPx(52f)
+                minHeight = height.toInt()
+                layoutParams = RecyclerView.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+                )
+            }
+            ViewHolder(v)
         }
-        return ViewHolder(v)
     }
 
     // Replace the contents of a view (invoked by the layout manager)
-    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        // - get element from your dataset at this position
-        // - replace the contents of the view with that element
-        val viewModel = getItem(position)
-        if (viewModel.bitmapIcon != null) {
-            holder.mItem.setIconDrawable(viewModel.bitmapIcon?.toDrawable(holder.itemView.context.resources))
-        } else {
-            holder.mItem.setIconResource(R.drawable.ic_play_circle_filled_white_24dp)
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        if (holder is HeaderViewHolder) {
+            holder.binding.header.setText(R.string.action_apps)
+        } else if (holder is ViewHolder) {
+            val viewModel = getItem(position - 1)
+            if (viewModel.bitmapIcon != null) {
+                holder.mItem.setIconDrawable(viewModel.bitmapIcon?.toDrawable(holder.itemView.context.resources))
+            } else {
+                holder.mItem.setIconResource(R.drawable.ic_play_circle_filled_white_24dp)
+            }
+            holder.mItem.setPrimaryText(viewModel.appLabel)
+            holder.mItem.setOnClickListener { v ->
+                onClickListener?.onClick(v, viewModel)
+            }
         }
-        holder.mItem.setPrimaryText(viewModel.appLabel)
-        holder.mItem.setOnClickListener { v ->
-            onClickListener?.onClick(v, position, viewModel)
+    }
+
+    override fun getItemCount(): Int {
+        val dataCount = super.getItemCount()
+        return if (dataCount > 0) {
+            dataCount + 1
+        } else {
+            dataCount
+        }
+    }
+
+    override fun getItemViewType(position: Int): Int {
+        return if (position == 0) {
+            ITEMTYPE_HEADER
+        } else {
+            ITEMTYPE_APPITEM
         }
     }
 }

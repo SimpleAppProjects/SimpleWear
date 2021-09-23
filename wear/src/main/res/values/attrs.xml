@@ -3,6 +3,7 @@
     <declare-styleable name="WearChipButton">
         <attr name="icon" />
         <attr name="backgroundTint" />
+        <attr name="buttonTint" />
         <attr name="android:checkable" />
         <attr name="android:checked" />
         <attr name="primaryText" format="string" />

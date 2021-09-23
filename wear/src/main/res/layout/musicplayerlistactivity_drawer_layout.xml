@@ -15,19 +15,24 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:paddingHorizontal="14dp"
+        android:paddingBottom="48dp">
 
-        <View
+        <Space
             android:layout_width="match_parent"
-            android:layout_height="@dimen/inner_layout_padding" />
+            android:layout_height="24dp" />
 
         <androidx.appcompat.widget.AppCompatTextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:ellipsize="end"
             android:gravity="center"
-            android:padding="4dp"
+            android:paddingHorizontal="16dp"
+            android:maxLines="2"
+            android:minHeight="48dp"
             android:text="@string/title_settings"
-            android:textAppearance="?textAppearanceHeadline6" />
+            android:textAppearance="?textAppearanceButton" />
 
         <com.thewizrd.simplewear.controls.WearChipButton
             android:id="@+id/filter_apps_btn"
@@ -45,7 +50,7 @@
             android:id="@+id/autolaunch_pref"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            style="@style/Widget.Wear.WearChipButton.OnSurface.Accent"
+            style="@style/Widget.Wear.WearChipButton.OnSurface.Checkable"
             app:primaryText="@string/title_autolaunchmediactrls"
             app:controlType="toggle" />
 

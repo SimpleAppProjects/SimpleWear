@@ -17,6 +17,7 @@ import com.google.android.gms.wearable.*
 import com.google.android.gms.wearable.DataClient.OnDataChangedListener
 import com.thewizrd.shared_resources.actions.ActionStatus
 import com.thewizrd.shared_resources.helpers.*
+import com.thewizrd.shared_resources.helpers.ContextUtils.dpToPx
 import com.thewizrd.shared_resources.utils.*
 import com.thewizrd.simplewear.adapters.MusicPlayerListAdapter
 import com.thewizrd.simplewear.controls.AppItemViewModel
@@ -25,6 +26,7 @@ import com.thewizrd.simplewear.controls.WearChipButton
 import com.thewizrd.simplewear.databinding.ActivityMusicplayerlistBinding
 import com.thewizrd.simplewear.helpers.AppItemComparator
 import com.thewizrd.simplewear.helpers.CustomScrollingLayoutCallback
+import com.thewizrd.simplewear.helpers.SpacerItemDecoration
 import com.thewizrd.simplewear.helpers.showConfirmationOverlay
 import com.thewizrd.simplewear.media.MediaPlayerActivity
 import com.thewizrd.simplewear.preferences.Settings
@@ -162,13 +164,19 @@ class MediaPlayerListActivity : WearableListenerActivity(), MessageClient.OnMess
         }
 
         binding.playerList.setHasFixedSize(true)
-        binding.playerList.isEdgeItemsCenteringEnabled = true
+        //binding.playerList.isEdgeItemsCenteringEnabled = true
+        binding.playerList.addItemDecoration(
+            SpacerItemDecoration(
+                dpToPx(16f).toInt(),
+                dpToPx(4f).toInt()
+            )
+        )
 
         binding.playerList.layoutManager =
             WearableLinearLayoutManager(this, CustomScrollingLayoutCallback())
         mAdapter = MusicPlayerListAdapter()
         mAdapter.setOnClickListener(object : ListAdapterOnClickInterface<AppItemViewModel> {
-            override fun onClick(view: View, position: Int, item: AppItemViewModel) {
+            override fun onClick(view: View, item: AppItemViewModel) {
                 lifecycleScope.launch {
                     if (connect()) {
                         val nodeID = mPhoneNodeWithApp!!.id

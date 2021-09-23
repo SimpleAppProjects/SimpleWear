@@ -28,12 +28,15 @@
     <style name="Widget.Wear.WearChipButton.Checkable" parent="Widget.Wear.WearChipButton">
         <item name="android:background">@drawable/button_background_accent</item>
         <item name="android:checkable">true</item>
+        <item name="backgroundTint">@color/button_background_checkable</item>
+        <item name="buttonTint">@color/button_checkable</item>
     </style>
 
     <style name="Widget.Wear.WearChipButton.OnSurface.Checkable" parent="Widget.Wear.WearChipButton">
         <item name="android:background">@drawable/button_background_accent_onsurface</item>
         <item name="android:checkable">true</item>
-        <item name="backgroundTint">?colorPrimary</item>
+        <item name="backgroundTint">@color/button_background_checkable</item>
+        <item name="buttonTint">@color/button_checkable</item>
     </style>
 
 </resources>

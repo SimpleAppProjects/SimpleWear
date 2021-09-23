@@ -7,27 +7,32 @@
     android:layout_height="match_parent"
     android:background="@null"
     android:orientation="vertical"
-    android:paddingHorizontal="@dimen/dashboard_horizontal_margin"
+    android:paddingHorizontal="14dp"
+    android:paddingBottom="48dp"
     tools:background="?colorSurface"
     tools:context=".DashboardActivity"
     tools:deviceIds="wear">
 
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="24dp" />
+
     <androidx.appcompat.widget.AppCompatTextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:ellipsize="end"
         android:gravity="center"
-        android:padding="4dp"
-        android:layout_marginTop="@dimen/inner_layout_padding"
-        android:layout_marginBottom="8dp"
+        android:paddingHorizontal="16dp"
+        android:maxLines="2"
+        android:minHeight="48dp"
         android:text="@string/title_settings"
-        android:textAppearance="?textAppearanceHeadline6" />
+        android:textAppearance="?textAppearanceButton" />
 
     <com.thewizrd.simplewear.controls.WearChipButton
         android:id="@+id/layout_pref"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        style="@style/Widget.Wear.WearChipButton.OnSurface.Accent"
-        app:backgroundTint="?colorPrimary"
+        style="@style/Widget.Wear.WearChipButton.OnSurface"
         app:icon="@drawable/ic_apps_white_24dp"
         app:primaryText="@string/pref_layout"
         app:secondaryText="@string/option_grid" />

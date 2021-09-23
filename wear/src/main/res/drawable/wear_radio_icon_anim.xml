@@ -18,18 +18,18 @@
     xmlns:tools="http://schemas.android.com/tools"
     tools:ignore="NewApi">
     <item
-        android:id="@+id/checked"
+        android:id="@+id/on"
         android:state_checked="true"
-        android:drawable="@drawable/wear_checkbox_checked" />
+        android:drawable="@drawable/ic_wear_radio_on" />
     <item
-        android:id="@+id/unchecked"
-        android:drawable="@drawable/wear_checkbox_uncheck" />
+        android:id="@+id/off"
+        android:drawable="@drawable/ic_wear_radio_off" />
     <transition
-        android:fromId="@+id/unchecked"
-        android:toId="@+id/checked"
-        android:drawable="@drawable/wear_uncheck_to_check_anim" />
+        android:fromId="@+id/on"
+        android:toId="@+id/off"
+        android:drawable="@drawable/btn_radio_on_to_off_mtrl_animation" />
     <transition
-        android:fromId="@+id/checked"
-        android:toId="@+id/unchecked"
-        android:drawable="@drawable/wear_check_to_uncheck_anim" />
+        android:fromId="@+id/off"
+        android:toId="@+id/on"
+        android:drawable="@drawable/btn_radio_off_to_on_mtrl_animation" />
 </animated-selector>

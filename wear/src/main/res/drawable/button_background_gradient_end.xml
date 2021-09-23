@@ -4,7 +4,6 @@
     <corners android:radius="@dimen/button_corner_radius" />
     <gradient
         android:type="linear"
-        android:angle="@integer/button_gradient_angle"
         android:startColor="@color/button_start_gradient"
         android:endColor="@color/button_end_gradient" />
 </shape>

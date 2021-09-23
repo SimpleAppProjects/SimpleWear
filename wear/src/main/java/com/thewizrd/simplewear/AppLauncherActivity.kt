@@ -15,6 +15,7 @@ import androidx.wear.widget.WearableLinearLayoutManager
 import com.google.android.gms.wearable.*
 import com.google.android.gms.wearable.DataClient.OnDataChangedListener
 import com.thewizrd.shared_resources.actions.ActionStatus
+import com.thewizrd.shared_resources.helpers.ContextUtils.dpToPx
 import com.thewizrd.shared_resources.helpers.ListAdapterOnClickInterface
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
 import com.thewizrd.shared_resources.helpers.WearableHelper
@@ -24,6 +25,7 @@ import com.thewizrd.simplewear.controls.AppItemViewModel
 import com.thewizrd.simplewear.controls.CustomConfirmationOverlay
 import com.thewizrd.simplewear.databinding.ActivityApplauncherBinding
 import com.thewizrd.simplewear.helpers.CustomScrollingLayoutCallback
+import com.thewizrd.simplewear.helpers.SpacerItemDecoration
 import com.thewizrd.simplewear.helpers.showConfirmationOverlay
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -112,13 +114,19 @@ class AppLauncherActivity : WearableListenerActivity(), OnDataChangedListener {
         }
 
         binding.appList.setHasFixedSize(true)
-        binding.appList.isEdgeItemsCenteringEnabled = true
+        //binding.appList.isEdgeItemsCenteringEnabled = true
+        binding.appList.addItemDecoration(
+            SpacerItemDecoration(
+                dpToPx(16f).toInt(),
+                dpToPx(4f).toInt()
+            )
+        )
 
         binding.appList.layoutManager =
             WearableLinearLayoutManager(this, CustomScrollingLayoutCallback())
         mAdapter = AppsListAdapter()
         mAdapter.setOnClickListener(object : ListAdapterOnClickInterface<AppItemViewModel> {
-            override fun onClick(view: View, position: Int, item: AppItemViewModel) {
+            override fun onClick(view: View, item: AppItemViewModel) {
                 lifecycleScope.launch {
                     if (connect()) {
                         val nodeID = mPhoneNodeWithApp!!.id
@@ -151,7 +159,7 @@ class AppLauncherActivity : WearableListenerActivity(), OnDataChangedListener {
                                     WearableHelper.AppsPath
                                 )
                             )
-                                .await()
+                            .await()
 
                         for (i in 0 until buff.count) {
                             val item = buff[i]
