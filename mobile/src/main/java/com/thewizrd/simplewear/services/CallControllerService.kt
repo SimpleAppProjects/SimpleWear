@@ -383,6 +383,7 @@ class CallControllerService : Service(), MessageClient.OnMessageReceivedListener
 
         mapRequest.setUrgent()
         try {
+            mDataClient.deleteDataItems(mapRequest.uri).await()
             mDataClient.putDataItem(mapRequest.asPutDataRequest())
                 .await()
         } catch (e: Exception) {

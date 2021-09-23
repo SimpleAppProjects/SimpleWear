@@ -269,7 +269,9 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
         mapRequest.dataMap.putStringArrayList(MediaHelper.KEY_SUPPORTEDPLAYERS, supportedPlayers)
         mapRequest.setUrgent()
         try {
-            Wearable.getDataClient(mContext)
+            val dataClient = Wearable.getDataClient(mContext)
+            dataClient.deleteDataItems(mapRequest.uri).await()
+            dataClient
                 .putDataItem(mapRequest.asPutDataRequest())
                 .await()
         } catch (e: Exception) {
@@ -315,7 +317,9 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
         mapRequest.dataMap.putStringArrayList(WearableHelper.KEY_APPS, availableApps)
         mapRequest.setUrgent()
         try {
-            Wearable.getDataClient(mContext)
+            val dataClient = Wearable.getDataClient(mContext)
+            dataClient.deleteDataItems(mapRequest.uri).await()
+            dataClient
                 .putDataItem(mapRequest.asPutDataRequest())
                 .await()
         } catch (e: Exception) {
