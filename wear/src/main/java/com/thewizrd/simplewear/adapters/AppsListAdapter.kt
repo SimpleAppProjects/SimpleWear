@@ -28,7 +28,6 @@ class AppsListAdapter : ListAdapter<AppItemViewModel, AppsListAdapter.ViewHolder
         // create a new view
         val v = WearChipButton(parent.context).apply {
             val height = parent.context.dpToPx(52f)
-            minHeight = height.toInt()
             layoutParams = RecyclerView.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT

@@ -7,23 +7,39 @@ import android.content.IntentFilter
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.util.Log
-import android.view.View
+import androidx.activity.compose.setContent
+import androidx.compose.foundation.focusable
+import androidx.compose.foundation.layout.*
+import androidx.compose.material.CircularProgressIndicator
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.res.imageResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.core.util.Pair
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.lifecycleScope
-import androidx.wear.widget.WearableLinearLayoutManager
+import androidx.wear.compose.material.*
 import com.google.android.gms.wearable.*
 import com.google.android.gms.wearable.DataClient.OnDataChangedListener
 import com.thewizrd.shared_resources.actions.ActionStatus
-import com.thewizrd.shared_resources.helpers.ListAdapterOnClickInterface
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
 import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.shared_resources.utils.*
-import com.thewizrd.simplewear.adapters.AppsListAdapter
 import com.thewizrd.simplewear.controls.AppItemViewModel
 import com.thewizrd.simplewear.controls.CustomConfirmationOverlay
-import com.thewizrd.simplewear.databinding.ActivityApplauncherBinding
-import com.thewizrd.simplewear.helpers.CustomScrollingLayoutCallback
 import com.thewizrd.simplewear.helpers.showConfirmationOverlay
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -38,15 +54,12 @@ class AppLauncherActivity : WearableListenerActivity(), OnDataChangedListener {
     override lateinit var intentFilter: IntentFilter
         private set
 
-    private lateinit var binding: ActivityApplauncherBinding
-    private lateinit var mAdapter: AppsListAdapter
+    private val mIsLoading = MutableLiveData(true)
+    private val mAppItems = MutableLiveData<List<AppItemViewModel>>(emptyList())
     private var timer: CountDownTimer? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        binding = ActivityApplauncherBinding.inflate(layoutInflater)
-        setContentView(binding.root)
 
         broadcastReceiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context, intent: Intent) {
@@ -111,30 +124,6 @@ class AppLauncherActivity : WearableListenerActivity(), OnDataChangedListener {
             }
         }
 
-        binding.appList.setHasFixedSize(true)
-        binding.appList.isEdgeItemsCenteringEnabled = true
-
-        binding.appList.layoutManager =
-            WearableLinearLayoutManager(this, CustomScrollingLayoutCallback())
-        mAdapter = AppsListAdapter()
-        mAdapter.setOnClickListener(object : ListAdapterOnClickInterface<AppItemViewModel> {
-            override fun onClick(view: View, position: Int, item: AppItemViewModel) {
-                lifecycleScope.launch {
-                    if (connect()) {
-                        val nodeID = mPhoneNodeWithApp!!.id
-                        sendMessage(
-                            nodeID, WearableHelper.LaunchAppPath,
-                            JSONParser.serializer(
-                                Pair.create(item.packageName, item.activityName),
-                                Pair::class.java
-                            ).stringToBytes()
-                        )
-                    }
-                }
-            }
-        })
-        binding.appList.adapter = mAdapter
-
         intentFilter = IntentFilter()
         intentFilter.addAction(ACTION_UPDATECONNECTIONSTATUS)
 
@@ -173,12 +162,14 @@ class AppLauncherActivity : WearableListenerActivity(), OnDataChangedListener {
                 }
             }
         }
+
+        setContent {
+            ActivityContent()
+        }
     }
 
     private fun showProgressBar(show: Boolean) {
-        lifecycleScope.launch {
-            binding.progressBar.visibility = if (show) View.VISIBLE else View.GONE
-        }
+        mIsLoading.postValue(show)
     }
 
     override fun onMessageReceived(messageEvent: MessageEvent) {
@@ -272,9 +263,7 @@ class AppLauncherActivity : WearableListenerActivity(), OnDataChangedListener {
             viewModels.add(model)
         }
 
-        lifecycleScope.launch {
-            mAdapter.submitList(viewModels)
-        }
+        mAppItems.postValue(viewModels)
     }
 
     private fun requestAppsUpdate() {
@@ -289,8 +278,6 @@ class AppLauncherActivity : WearableListenerActivity(), OnDataChangedListener {
         super.onResume()
         Wearable.getDataClient(this).addListener(this)
 
-        binding.appList.requestFocus()
-
         // Update statuses
         lifecycleScope.launch {
             updateConnectionStatus()
@@ -303,5 +290,101 @@ class AppLauncherActivity : WearableListenerActivity(), OnDataChangedListener {
     override fun onPause() {
         Wearable.getDataClient(this).removeListener(this)
         super.onPause()
+    }
+
+    @Preview
+    @Composable
+    private fun ActivityContent() {
+        val isLoading by mIsLoading.observeAsState(true)
+        val appItems by mAppItems.observeAsState(emptyList())
+        val listState = rememberScalingLazyListState()
+        val focusRequester = FocusRequester()
+
+        MaterialTheme {
+            Scaffold(
+                modifier = Modifier.fillMaxSize(),
+                positionIndicator = {
+                    if (!isLoading) {
+                        PositionIndicator(
+                            scalingLazyListState = listState,
+                            modifier = Modifier
+                        )
+                    }
+                }
+            ) {
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    ScalingLazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .focusable(true)
+                            .focusRequester(focusRequester)
+                    ) {
+                        item { Spacer(modifier = Modifier.size(20.dp)) }
+                        if (!isLoading) {
+                            item { ListHeader { Text(stringResource(id = R.string.action_apps)) } }
+                            items(appItems.size) {
+                                val item = appItems[it]
+                                Row(modifier = Modifier.fillMaxWidth()) {
+                                    Chip(
+                                        label = {
+                                            Text(
+                                                text = item.appLabel ?: "",
+                                                color = MaterialTheme.colors.onSurface,
+                                                maxLines = 2,
+                                                modifier = Modifier.align(Alignment.CenterVertically)
+                                            )
+                                        },
+                                        icon = {
+                                            if (item.bitmapIcon != null) {
+                                                Icon(
+                                                    bitmap = item.bitmapIcon!!.asImageBitmap(),
+                                                    contentDescription = null,
+                                                    modifier = Modifier.size(Dp(24f)),
+                                                    tint = Color.Unspecified
+                                                )
+                                            } else {
+                                                Icon(
+                                                    bitmap = ImageBitmap.imageResource(id = R.drawable.ic_baseline_android_24dp),
+                                                    contentDescription = null,
+                                                    modifier = Modifier.size(Dp(24f)),
+                                                    tint = Color.Unspecified
+                                                )
+                                            }
+                                        },
+                                        colors = ChipDefaults.secondaryChipColors(),
+                                        onClick = {
+                                            onItemClick(item)
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                        item { ListHeader { } }
+                    }
+                    if (isLoading) {
+                        CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                    }
+                }
+            }
+        }
+
+        SideEffect {
+            focusRequester.requestFocus()
+        }
+    }
+
+    private fun onItemClick(item: AppItemViewModel) {
+        lifecycleScope.launch {
+            if (connect()) {
+                val nodeID = mPhoneNodeWithApp!!.id
+                sendMessage(
+                    nodeID, WearableHelper.LaunchAppPath,
+                    JSONParser.serializer(
+                        Pair.create(item.packageName, item.activityName),
+                        Pair::class.java
+                    ).stringToBytes()
+                )
+            }
+        }
     }
 }
