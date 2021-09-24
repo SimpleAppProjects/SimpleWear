@@ -4,6 +4,11 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+    <com.thewizrd.simplewear.controls.timetext.TimeText
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:titleTextColor="?colorPrimary" />
+
     <ProgressBar
         android:id="@+id/progressBar"
         android:layout_width="wrap_content"

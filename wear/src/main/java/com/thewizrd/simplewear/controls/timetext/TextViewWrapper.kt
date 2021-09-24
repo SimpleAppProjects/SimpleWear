@@ -26,6 +26,7 @@ interface TextViewWrapper {
     val view: View
     var text: CharSequence?
     var textColor: Int
+    var paintAntiAlias: Boolean
 }
 
 /**
@@ -45,6 +46,10 @@ class CurvedTextViewWrapper(
         set(value) {
             view.textColor = value
         }
+
+    override var paintAntiAlias: Boolean
+        get() = false
+        set(value) {}
 }
 
 /**
@@ -63,5 +68,11 @@ class NormalTextViewWrapper(
         get() = view.currentTextColor
         set(value) {
             view.setTextColor(value)
+        }
+
+    override var paintAntiAlias: Boolean
+        get() = view.paint.isAntiAlias
+        set(value) {
+            view.paint.isAntiAlias = value
         }
 }

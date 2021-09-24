@@ -23,19 +23,23 @@
         android:visibility="gone"
         tools:visibility="visible">
 
-        <TextClock
-            android:id="@+id/timeClock"
+        <com.thewizrd.simplewear.controls.timetext.TimeText
+            android:id="@+id/timeText"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/clock_top_margin"
-            android:gravity="center"
-            android:fontFamily="sans-serif-medium"
-            android:format12Hour="h:mm"
-            android:format24Hour="HH:mm"
-            android:timeZone="America/New_York"
+            android:layout_height="0dp"
+            app:layout_constraintVertical_bias="0.0"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent" />
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            android:titleTextColor="?colorPrimary" />
+
+        <androidx.constraintlayout.widget.Guideline
+            android:id="@+id/timerTextGuide"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            app:layout_constraintGuide_begin="12dp" />
 
         <androidx.constraintlayout.helper.widget.Flow
             android:id="@+id/title_flow"
@@ -46,7 +50,7 @@
             android:orientation="vertical"
             app:flow_verticalAlign="bottom"
             app:constraint_referenced_ids="title_view,subtitle_view"
-            app:layout_constraintTop_toBottomOf="@id/timeClock"
+            app:layout_constraintTop_toBottomOf="@id/timerTextGuide"
             app:layout_constraintBottom_toTopOf="@id/playcontrols"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent" />

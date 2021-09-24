@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.wear.widget.BoxInsetLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -11,25 +11,22 @@
         android:layout_height="match_parent"
         tools:src="#50400080" />
 
+    <com.thewizrd.simplewear.controls.timetext.TimeText
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:titleTextColor="?colorPrimary" />
+
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:padding="@dimen/inner_frame_layout_padding">
 
-        <TextClock
-            android:id="@+id/timeClock"
-            android:layout_width="0dp"
+        <androidx.constraintlayout.widget.Guideline
+            android:id="@+id/timerTextGuide"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/clock_top_margin"
-            android:gravity="center"
-            android:fontFamily="sans-serif-medium"
-            android:format12Hour="h:mm"
-            android:format24Hour="HH:mm"
-            android:timeZone="America/New_York"
-            tools:text="12:00"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent" />
+            android:orientation="horizontal"
+            app:layout_constraintGuide_begin="12dp" />
 
         <TextView
             android:id="@+id/incall_caller_name"
@@ -43,7 +40,7 @@
             android:ellipsize="marquee"
             android:marqueeRepeatLimit="marquee_forever"
             tools:text="Caller Name Goes Here"
-            app:layout_constraintTop_toBottomOf="@id/timeClock"
+            app:layout_constraintTop_toBottomOf="@id/timerTextGuide"
             app:layout_constraintBottom_toTopOf="@id/mute_button"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent" />
@@ -151,4 +148,4 @@
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-</androidx.wear.widget.BoxInsetLayout>
+</FrameLayout>

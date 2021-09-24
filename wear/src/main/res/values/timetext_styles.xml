@@ -13,11 +13,18 @@
      See the License for the specific language governing permissions and
      limitations under the License.
 -->
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
 
-    <style name="TextAppearanceTime">
-        <item name="android:textColor">@android:color/white</item>
+    <style name="TextAppearanceTime" parent="@style/TextAppearance.Roboto.Body2">
+        <item name="android:fontFamily">@font/roboto_medium</item>
+        <item name="fontFamily">@font/roboto_medium</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">?colorOnSurface</item>
         <item name="android:textSize">14sp</item>
         <item name="android:lineSpacingExtra">4sp</item>
+        <item name="android:firstBaselineToTopHeight" tools:ignore="NewApi">14sp</item>
+        <item name="firstBaselineToTopHeight">14sp</item>
+        <item name="android:lastBaselineToBottomHeight" tools:ignore="NewApi">4sp</item>
+        <item name="lastBaselineToBottomHeight">4sp</item>
     </style>
 </resources>

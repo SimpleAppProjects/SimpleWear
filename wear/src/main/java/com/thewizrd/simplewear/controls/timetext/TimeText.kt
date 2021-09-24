@@ -126,6 +126,18 @@ class TimeText @JvmOverloads constructor(
             onTimeChange()
         }
 
+    fun enterLowBitAmbientMode() {
+        timeTextViewBinding.timeTextClock.paintAntiAlias = false
+        timeTextViewBinding.timeTextDivider.paintAntiAlias = false
+        timeTextViewBinding.timeTextTitle.paintAntiAlias = false
+    }
+
+    fun exitLowBitAmbientMode() {
+        timeTextViewBinding.timeTextClock.paintAntiAlias = true
+        timeTextViewBinding.timeTextDivider.paintAntiAlias = true
+        timeTextViewBinding.timeTextTitle.paintAntiAlias = true
+    }
+
     /**
      * The [ContentObserver] listening for a time format change.
      *

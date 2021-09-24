@@ -189,7 +189,7 @@ class MediaPlayerControlsFragment : LifecycleAwareFragment(), MessageClient.OnMe
         binding.playpauseButton.setImageResource(R.drawable.playpause_button_ambient)
 
         if (isLowBitAmbient) {
-            binding.timeClock.paint.isAntiAlias = false
+            binding.timeText.enterLowBitAmbientMode()
             binding.titleView.paint.isAntiAlias = false
             binding.subtitleView.paint.isAntiAlias = false
         }
@@ -211,7 +211,7 @@ class MediaPlayerControlsFragment : LifecycleAwareFragment(), MessageClient.OnMe
         showLoading(showLoading)
 
         if (isLowBitAmbient) {
-            binding.timeClock.paint.isAntiAlias = true
+            binding.timeText.exitLowBitAmbientMode()
             binding.titleView.paint.isAntiAlias = true
             binding.subtitleView.paint.isAntiAlias = true
         }
