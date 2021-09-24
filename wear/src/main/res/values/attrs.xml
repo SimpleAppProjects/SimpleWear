@@ -15,4 +15,7 @@
             <enum name="toggle" value="3" />
         </attr>
     </declare-styleable>
+    <declare-styleable name="ActionButton">
+        <attr name="android:minHeight" />
+    </declare-styleable>
 </resources>

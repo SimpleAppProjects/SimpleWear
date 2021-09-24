@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <attr format="color" name="colorOnSurfaceVariant" />
+    <attr format="color" name="colorOnSurfaceVariant2" />
+
+    <attr format="reference" name="textAppearanceDisplay1" />
+    <attr format="reference" name="textAppearanceDisplay2" />
+    <attr format="reference" name="textAppearanceDisplay3" />
+    <attr format="reference" name="textAppearanceTitle1" />
+    <attr format="reference" name="textAppearanceTitle2" />
+    <attr format="reference" name="textAppearanceTitle3" />
+    <attr format="reference" name="textAppearanceBody1" />
+    <attr format="reference" name="textAppearanceBody2" />
+    <attr format="reference" name="textAppearanceButton" />
+    <attr format="reference" name="textAppearanceCaption1" />
+    <attr format="reference" name="textAppearanceCaption2" />
+</resources>

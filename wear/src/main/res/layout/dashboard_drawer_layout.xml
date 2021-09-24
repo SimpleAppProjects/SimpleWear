@@ -26,13 +26,14 @@
         android:maxLines="2"
         android:minHeight="48dp"
         android:text="@string/title_settings"
+        android:textColor="?colorOnSurfaceVariant2"
         android:textAppearance="?textAppearanceButton" />
 
     <com.thewizrd.simplewear.controls.WearChipButton
         android:id="@+id/layout_pref"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        style="@style/Widget.Wear.WearChipButton.OnSurface"
+        style="@style/Widget.Wear.WearChipButton.Surface"
         app:icon="@drawable/ic_apps_white_24dp"
         app:primaryText="@string/pref_layout"
         app:secondaryText="@string/option_grid" />

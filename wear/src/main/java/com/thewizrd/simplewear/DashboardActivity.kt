@@ -6,9 +6,8 @@ import android.os.Bundle
 import android.os.CountDownTimer
 import android.util.ArrayMap
 import android.util.Log
-import android.view.MotionEvent
-import android.view.View
-import android.view.ViewConfiguration
+import android.view.*
+import android.widget.FrameLayout
 import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.core.view.InputDeviceCompat
@@ -22,10 +21,13 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.wear.widget.ConfirmationOverlay
 import androidx.wear.widget.drawer.WearableDrawerLayout
 import androidx.wear.widget.drawer.WearableDrawerView
+import com.google.android.material.progressindicator.CircularProgressIndicator
 import com.thewizrd.shared_resources.actions.Action
 import com.thewizrd.shared_resources.actions.ActionStatus
 import com.thewizrd.shared_resources.actions.Actions
 import com.thewizrd.shared_resources.actions.BatteryStatus
+import com.thewizrd.shared_resources.helpers.ContextUtils.dpToPx
+import com.thewizrd.shared_resources.helpers.ContextUtils.getAttrColor
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
 import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.shared_resources.sleeptimer.SleepTimerHelper
@@ -76,7 +78,7 @@ class DashboardActivity : WearableListenerActivity(), OnSharedPreferenceChangeLi
                                 )
                             )) {
                                 WearConnectionStatus.DISCONNECTED -> {
-                                    binding.deviceStatText.setText(R.string.status_disconnected)
+                                    binding.deviceState.setPrimaryText(R.string.status_disconnected)
 
                                     // Navigate
                                     startActivity(
@@ -88,12 +90,12 @@ class DashboardActivity : WearableListenerActivity(), OnSharedPreferenceChangeLi
                                     finishAffinity()
                                 }
                                 WearConnectionStatus.CONNECTING -> {
-                                    binding.deviceStatText.setText(R.string.status_connecting)
+                                    binding.deviceState.setPrimaryText(R.string.status_connecting)
                                     if (binding.actionsList.isEnabled) binding.actionsList.isEnabled =
                                         false
                                 }
                                 WearConnectionStatus.APPNOTINSTALLED -> {
-                                    binding.deviceStatText.setText(R.string.error_notinstalled)
+                                    binding.deviceState.setPrimaryText(R.string.error_notinstalled)
 
                                     // Open store on remote device
                                     val intentAndroid = Intent(Intent.ACTION_VIEW)
@@ -124,7 +126,7 @@ class DashboardActivity : WearableListenerActivity(), OnSharedPreferenceChangeLi
                                     finishAffinity()
                                 }
                                 WearConnectionStatus.CONNECTED -> {
-                                    binding.deviceStatText.setText(R.string.status_connected)
+                                    binding.deviceState.setPrimaryText(R.string.status_connected)
                                     if (!binding.actionsList.isEnabled) binding.actionsList.isEnabled =
                                         true
                                 }
@@ -137,7 +139,7 @@ class DashboardActivity : WearableListenerActivity(), OnSharedPreferenceChangeLi
                                         .setType(if (success) ConfirmationOverlay.OPEN_ON_PHONE_ANIMATION else ConfirmationOverlay.FAILURE_ANIMATION)
                                         .showOn(this@DashboardActivity)
                                     if (!success) {
-                                        binding.deviceStatText.setText(R.string.error_syncing)
+                                        binding.deviceState.setPrimaryText(R.string.error_syncing)
                                     }
                             }
                         } else if (WearableHelper.BatteryPath == intent.action) {
@@ -146,18 +148,23 @@ class DashboardActivity : WearableListenerActivity(), OnSharedPreferenceChangeLi
                             cancelTimer(TIMER_SYNC_NORESPONSE)
 
                             val jsonData = intent.getStringExtra(EXTRA_STATUS)
-                                var value = getString(R.string.state_unknown)
-                                if (!jsonData.isNullOrBlank()) {
-                                    val status =
-                                        JSONParser.deserializer(jsonData, BatteryStatus::class.java)
-                                    value = String.format(
-                                        Locale.ROOT, "%d%%, %s", status!!.batteryLevel,
-                                        if (status.isCharging) getString(R.string.batt_state_charging) else getString(
-                                            R.string.batt_state_discharging
-                                        )
+                            var value = getString(R.string.state_unknown)
+                            var battLevel: String? = null
+                            if (!jsonData.isNullOrBlank()) {
+                                val status =
+                                    JSONParser.deserializer(jsonData, BatteryStatus::class.java)
+                                battLevel = "${status!!.batteryLevel}%"
+                                value =
+                                    if (status.isCharging) getString(R.string.batt_state_charging) else getString(
+                                        R.string.batt_state_discharging
                                     )
-                                }
-                                binding.battStatText.text = value
+                            }
+
+                            if (battLevel != null) {
+                                binding.battStat.setText(battLevel, value)
+                            } else {
+                                binding.battStat.setText(value)
+                            }
                         } else if (WearableHelper.ActionsPath == intent.action) {
                             val jsonData = intent.getStringExtra(EXTRA_ACTIONDATA)
                             val action = JSONParser.deserializer(jsonData, Action::class.java)!!
@@ -318,7 +325,7 @@ class DashboardActivity : WearableListenerActivity(), OnSharedPreferenceChangeLi
         binding.bottomActionDrawer.setIsAutoPeekEnabled(true)
         binding.bottomActionDrawer.isPeekOnScrollDownEnabled = true
 
-        binding.swipeLayout.setColorSchemeColors(getColor(R.color.colorPrimary))
+        binding.swipeLayout.setColorSchemeColors(getAttrColor(R.attr.colorPrimary))
         binding.swipeLayout.setOnRefreshListener {
             lifecycleScope.launch {
                 requestUpdate()
@@ -326,7 +333,19 @@ class DashboardActivity : WearableListenerActivity(), OnSharedPreferenceChangeLi
             binding.swipeLayout.isRefreshing = false
         }
 
-        binding.deviceStatText.setText(R.string.message_gettingstatus)
+        binding.deviceState.setPrimaryText(R.string.message_gettingstatus)
+
+        binding.battStat.setControlView(CircularProgressIndicator(this).apply {
+            val height = dpToPx(24f).toInt()
+            layoutParams = FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            ).apply {
+                gravity = Gravity.CENTER
+            }
+            isIndeterminate = true
+            indicatorSize = height
+        })
 
         binding.actionsList.isFocusable = false
         binding.actionsList.clearFocus()
@@ -384,7 +403,7 @@ class DashboardActivity : WearableListenerActivity(), OnSharedPreferenceChangeLi
 
     private fun showProgressBar(show: Boolean) {
         lifecycleScope.launch {
-            binding.progressBar.visibility = if (show) View.VISIBLE else View.GONE
+            binding.battStat.setControlViewVisibility(if (show) View.VISIBLE else View.GONE)
         }
     }
 
@@ -450,7 +469,7 @@ class DashboardActivity : WearableListenerActivity(), OnSharedPreferenceChangeLi
         binding.scrollView.requestFocus()
 
         // Update statuses
-        binding.battStatText.setText(R.string.state_syncing)
+        binding.battStat.setText(R.string.state_syncing)
         showProgressBar(true)
         lifecycleScope.launch {
             updateConnectionStatus()

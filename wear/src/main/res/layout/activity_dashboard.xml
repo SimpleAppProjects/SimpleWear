@@ -31,7 +31,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    app:layout_constraintGuide_begin="8dp" />
+                    app:layout_constraintGuide_begin="14dp" />
 
                 <androidx.constraintlayout.widget.Guideline
                     android:id="@+id/top"
@@ -45,7 +45,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    app:layout_constraintGuide_end="8dp" />
+                    app:layout_constraintGuide_end="14dp" />
 
                 <androidx.constraintlayout.widget.Guideline
                     android:id="@+id/bottom"
@@ -54,99 +54,54 @@
                     android:orientation="horizontal"
                     app:layout_constraintGuide_end="@dimen/dashboard_bottom_margin" />
 
-                <androidx.appcompat.widget.AppCompatImageView
-                    android:id="@+id/device_stat_icon"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:padding="4dp"
-                    android:layout_marginStart="@dimen/dashboard_horizontal_margin"
-                    app:layout_constraintEnd_toStartOf="@id/device_stat_text"
-                    app:layout_constraintStart_toEndOf="@id/left"
-                    app:layout_constraintBottom_toBottomOf="@id/device_stat_text"
-                    app:layout_constraintTop_toTopOf="@id/device_stat_text"
-                    app:srcCompat="@drawable/ic_smartphone_white_24dp" />
-
-                <androidx.appcompat.widget.AppCompatTextView
-                    android:id="@+id/device_stat_text"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:ellipsize="marquee"
-                    android:gravity="center"
-                    android:marqueeRepeatLimit="marquee_forever"
-                    android:padding="4dp"
-                    android:textAppearance="?textAppearanceCaption"
-                    android:text="@string/state_syncing"
-                    android:textSize="14sp"
-                    android:layout_marginEnd="@dimen/dashboard_horizontal_margin"
-                    app:layout_constrainedHeight="true"
-                    app:layout_constrainedWidth="true"
-                    app:layout_constraintEnd_toStartOf="@id/right"
-                    app:layout_constraintHorizontal_bias="0.5"
-                    app:layout_constraintHorizontal_weight="1"
-                    app:layout_constraintStart_toEndOf="@id/device_stat_icon"
-                    app:layout_constraintTop_toBottomOf="@id/top"
-                    app:layout_constraintBottom_toTopOf="@id/batt_stat_text"
-                    tools:text="Connected" />
-
-                <androidx.appcompat.widget.AppCompatImageView
-                    android:id="@+id/batt_stat_icon"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:padding="4dp"
-                    android:layout_marginStart="@dimen/dashboard_horizontal_margin"
-                    app:layout_constraintStart_toEndOf="@id/left"
-                    app:layout_constraintTop_toTopOf="@id/batt_stat_text"
-                    app:layout_constraintBottom_toBottomOf="@id/batt_stat_text"
-                    app:srcCompat="@drawable/ic_battery_std_white_24dp" />
-
-                <androidx.appcompat.widget.AppCompatTextView
-                    android:id="@+id/batt_stat_text"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:ellipsize="marquee"
-                    android:gravity="center"
-                    android:marqueeRepeatLimit="marquee_forever"
-                    android:padding="4dp"
-                    android:textAppearance="?textAppearanceCaption"
-                    android:text="@string/state_syncing"
-                    android:textSize="14sp"
-                    app:layout_goneMarginEnd="@dimen/dashboard_horizontal_margin"
-                    app:layout_constrainedHeight="true"
-                    app:layout_constrainedWidth="true"
-                    app:layout_constraintEnd_toStartOf="@+id/progressBar"
-                    app:layout_constraintHorizontal_bias="0.5"
-                    app:layout_constraintHorizontal_weight="1"
-                    app:layout_constraintStart_toEndOf="@id/batt_stat_icon"
-                    app:layout_constraintTop_toBottomOf="@id/device_stat_text"
-                    app:layout_constraintBottom_toTopOf="@id/actions_title"
-                    tools:text="99%, Charging" />
-
-                <ProgressBar
-                    android:id="@+id/progressBar"
+                <com.thewizrd.simplewear.controls.timetext.TimeText
+                    android:id="@+id/timeText"
                     android:layout_width="0dp"
                     android:layout_height="0dp"
-                    android:indeterminate="true"
-                    android:layout_marginEnd="@dimen/dashboard_horizontal_margin"
-                    app:layout_constrainedHeight="true"
-                    app:layout_constrainedWidth="true"
-                    app:layout_constraintBottom_toBottomOf="@id/batt_stat_text"
-                    app:layout_constraintEnd_toStartOf="@id/right"
-                    app:layout_constraintHorizontal_weight="0.25"
-                    app:layout_constraintStart_toEndOf="@id/batt_stat_text"
-                    app:layout_constraintTop_toTopOf="@+id/batt_stat_text"
-                    tools:visibility="visible" />
+                    app:layout_constraintVertical_bias="0.0"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    android:titleTextColor="?colorPrimary" />
+
+                <com.thewizrd.simplewear.controls.WearChipButton
+                    android:id="@+id/device_state"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:focusable="false"
+                    android:clickable="false"
+                    android:layout_marginHorizontal="@dimen/dashboard_horizontal_margin"
+                    app:layout_constraintTop_toBottomOf="@id/top"
+                    app:backgroundTint="?android:colorBackground"
+                    app:icon="@drawable/ic_smartphone_white_24dp"
+                    app:primaryText="Connected" />
+
+                <com.thewizrd.simplewear.controls.WearChipButton
+                    android:id="@+id/batt_stat"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:focusable="false"
+                    android:clickable="false"
+                    android:layout_marginHorizontal="@dimen/dashboard_horizontal_margin"
+                    app:layout_constraintTop_toBottomOf="@id/device_state"
+                    app:backgroundTint="?android:colorBackground"
+                    app:icon="@drawable/ic_battery_std_white_24dp"
+                    tools:primaryText="Charging"
+                    tools:secondaryText="90%" />
 
                 <androidx.appcompat.widget.AppCompatTextView
                     android:id="@+id/actions_title"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:minHeight="48dp"
                     android:gravity="center"
                     android:padding="4dp"
                     android:text="@string/title_actions"
-                    android:textAppearance="?textAppearanceHeadline6"
+                    android:textAppearance="?textAppearanceButton"
                     app:layout_constraintEnd_toStartOf="@id/right"
                     app:layout_constraintStart_toEndOf="@id/left"
-                    app:layout_constraintTop_toBottomOf="@id/batt_stat_icon" />
+                    app:layout_constraintTop_toBottomOf="@id/batt_stat" />
 
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/actions_list"

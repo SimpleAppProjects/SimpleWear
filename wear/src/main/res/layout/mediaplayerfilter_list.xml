@@ -4,7 +4,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?colorSurface">
+    android:background="?colorSurface"
+    tools:context=".MediaPlayerListActivity">
 
     <androidx.core.widget.NestedScrollView
         android:id="@+id/scrollView"
@@ -21,20 +22,25 @@
             android:layout_height="match_parent"
             android:gravity="center_horizontal"
             android:orientation="vertical"
-            android:paddingTop="8dp"
-            android:paddingBottom="@dimen/inner_layout_padding"
+            android:paddingHorizontal="14dp"
+            android:paddingBottom="48dp"
             android:visibility="gone"
             tools:visibility="visible">
+
+            <Space
+                android:layout_width="match_parent"
+                android:layout_height="24dp" />
 
             <androidx.appcompat.widget.AppCompatTextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/inner_layout_padding"
-                android:layout_marginBottom="8dp"
                 android:gravity="center"
-                android:padding="4dp"
+                android:paddingHorizontal="16dp"
+                android:maxLines="2"
+                android:minHeight="48dp"
                 android:text="@string/title_filter_apps"
-                android:textAppearance="?titleTextAppearance" />
+                android:textColor="?colorOnSurfaceVariant2"
+                android:textAppearance="?textAppearanceButton" />
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/player_list"
@@ -51,33 +57,33 @@
 
             <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
                 android:id="@+id/clear_button"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:minHeight="54dp"
+                android:contentDescription="@string/clear_all"
+                android:gravity="center"
                 android:text="@string/clear_all"
-                android:textAllCaps="false"
-                android:textColor="@android:color/white"
+                app:iconGravity="textStart"
+                app:backgroundTint="?colorOnSurface"
+                android:textColor="?colorSurface"
                 app:icon="@drawable/ic_clear_all_24dp"
-                app:iconTint="@color/colorPrimaryLight"
-                app:strokeColor="@color/colorPrimaryLight" />
+                app:iconTint="?colorSurface" />
+
+            <Space
+                android:layout_width="wrap_content"
+                android:layout_height="4dp" />
 
             <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
                 android:id="@+id/confirm_button"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:minHeight="60dp"
                 android:contentDescription="@android:string/ok"
-                android:insetLeft="6dp"
-                android:insetTop="6dp"
-                android:insetRight="6dp"
-                android:insetBottom="6dp"
-                android:textAllCaps="false"
-                android:textColor="@android:color/white"
+                android:gravity="center"
+                android:text="@android:string/ok"
+                app:iconGravity="textStart"
+                app:backgroundTint="?colorOnSurface"
+                android:textColor="?colorSurface"
                 app:icon="@drawable/ic_check_white_24dp"
-                app:iconTint="@color/colorPrimaryLight"
-                app:strokeColor="@color/colorPrimaryLight" />
+                app:iconTint="?colorSurface" />
 
         </LinearLayout>
 
@@ -88,6 +94,6 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:indeterminateOnly="true" />
+        android:indeterminate="true" />
 
 </androidx.wear.widget.SwipeDismissFrameLayout>

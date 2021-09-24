@@ -6,15 +6,15 @@ import android.text.TextWatcher
 import android.util.AttributeSet
 import android.view.LayoutInflater
 import android.view.MotionEvent
-import android.view.ViewGroup
 import android.widget.Checkable
 import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.core.content.ContextCompat
 import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.databinding.ControlFabtogglebuttonBinding
 
 class ActionButton : ConstraintLayout, Checkable {
     companion object {
+        private const val DEF_STYLE_RES = R.style.Widget_ActionButton
+
         private val ENABLED_STATE_SET = intArrayOf(android.R.attr.state_enabled)
         private val CHECKED_STATE_SET = intArrayOf(android.R.attr.state_checked)
     }
@@ -23,23 +23,35 @@ class ActionButton : ConstraintLayout, Checkable {
     private var _isExpanded = false
     private var _isChecked = false
 
-    constructor(context: Context) : super(context) {
-        initialize(context)
-    }
+    constructor(context: Context) : this(context, null)
+    constructor(context: Context, attrs: AttributeSet?) : this(context, attrs, 0)
+    constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : this(
+        context,
+        attrs,
+        defStyleAttr,
+        DEF_STYLE_RES
+    )
 
-    constructor(context: Context, attrs: AttributeSet?) : super(context, attrs) {
+    constructor(
+        context: Context,
+        attrs: AttributeSet?,
+        defStyleAttr: Int,
+        defStyleRes: Int
+    ) : super(context, attrs, defStyleAttr, defStyleRes) {
         initialize(context)
-    }
 
-    constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(context, attrs, defStyleAttr) {
-        initialize(context)
+        val a = context.obtainStyledAttributes(attrs, R.styleable.ActionButton, 0, DEF_STYLE_RES)
+        try {
+            if (a.hasValue(R.styleable.ActionButton_android_minHeight)) {
+                minimumHeight =
+                    a.getDimensionPixelSize(R.styleable.ActionButton_android_minHeight, 0)
+            }
+        } finally {
+            a.recycle()
+        }
     }
 
     private fun initialize(context: Context) {
-        layoutParams = ViewGroup.LayoutParams(
-            ViewGroup.LayoutParams.WRAP_CONTENT,
-            ViewGroup.LayoutParams.WRAP_CONTENT
-        )
         binding = ControlFabtogglebuttonBinding.inflate(LayoutInflater.from(context), this)
         binding.buttonState.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {}
@@ -51,14 +63,9 @@ class ActionButton : ConstraintLayout, Checkable {
 
             override fun afterTextChanged(s: Editable) {}
         })
-        clipChildren = false
-        clipToPadding = false
-        isClickable = true
-        isFocusable = true
-        this.descendantFocusability = ViewGroup.FOCUS_BLOCK_DESCENDANTS
-        this.foreground = ContextCompat.getDrawable(context, R.drawable.round_selectable_item)
-        this.background = ContextCompat.getDrawable(context, R.drawable.action_button_background)
+
         binding.actionIcon.setImageResource(R.drawable.ic_icon)
+
         isExpanded = _isExpanded
     }
 

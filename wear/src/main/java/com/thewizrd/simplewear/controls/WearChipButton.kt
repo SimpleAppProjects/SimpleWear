@@ -146,8 +146,12 @@ class WearChipButton @JvmOverloads constructor(
     }
 
     fun setPrimaryText(@StringRes resId: Int) {
-        mPrimaryTextView.setText(resId)
-        mPrimaryTextView.visibility = if (resId == 0) View.GONE else View.VISIBLE
+        if (resId == 0) {
+            setPrimaryText(null)
+        } else {
+            mPrimaryTextView.setText(resId)
+            mPrimaryTextView.visibility = if (resId == 0) View.GONE else View.VISIBLE
+        }
     }
 
     fun setPrimaryText(text: CharSequence?) {
@@ -156,12 +160,16 @@ class WearChipButton @JvmOverloads constructor(
     }
 
     fun setSecondaryText(@StringRes resId: Int) {
-        mSecondaryTextView.setText(resId)
-        mSecondaryTextView.visibility = if (resId == 0) View.GONE else View.VISIBLE
         if (resId == 0) {
-            mPrimaryTextView.maxLines = 2
+            setSecondaryText(null)
         } else {
-            mPrimaryTextView.maxLines = 1
+            mSecondaryTextView.setText(resId)
+            mSecondaryTextView.visibility = if (resId == 0) View.GONE else View.VISIBLE
+            if (resId == 0) {
+                mPrimaryTextView.maxLines = 2
+            } else {
+                mPrimaryTextView.maxLines = 1
+            }
         }
     }
 
@@ -173,6 +181,16 @@ class WearChipButton @JvmOverloads constructor(
         } else {
             mPrimaryTextView.maxLines = 1
         }
+    }
+
+    fun setText(@StringRes primaryResId: Int, @StringRes secondaryResId: Int = 0) {
+        setPrimaryText(primaryResId)
+        setSecondaryText(secondaryResId)
+    }
+
+    fun setText(primaryText: CharSequence?, secondaryText: CharSequence? = null) {
+        setPrimaryText(primaryText)
+        setSecondaryText(secondaryText)
     }
 
     fun setControlView(view: View?) {
