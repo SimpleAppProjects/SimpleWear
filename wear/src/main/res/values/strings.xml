@@ -44,5 +44,6 @@
     <string name="label_back">Back</string>
     <string name="message_enablebt">Please enable Bluetooth for a reliable connection</string>
     <string name="message_nocall_active">No call active</string>
+    <string name="error_noapps">Unable to retrieve apps</string>
 
 </resources>

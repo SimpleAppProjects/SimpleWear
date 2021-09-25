@@ -61,7 +61,7 @@ public class MediaAppDetails implements Parcelable {
         appName = info.loadLabel(pm).toString();
 
         Drawable appIcon = info.loadIcon(pm);
-        int size = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 36f, resources.getDisplayMetrics());
+        int size = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 24f, resources.getDisplayMetrics());
         icon = ImageUtils.bitmapFromDrawable(appIcon, size, size);
 
         if (token != null) {

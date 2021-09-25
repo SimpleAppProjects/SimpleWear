@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.drawable.Drawable
+import android.os.Build
 import android.util.Log
 import androidx.core.content.ContextCompat
 import com.google.android.gms.wearable.Asset
@@ -56,8 +57,33 @@ object ImageUtils {
     fun createAssetFromBitmap(bitmap: Bitmap): Asset {
         val byteStream = ByteArrayOutputStream()
         return byteStream.use { stream ->
-            bitmap.compress(Bitmap.CompressFormat.WEBP, 100, stream)
+            bitmap.compress(
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    Bitmap.CompressFormat.WEBP_LOSSLESS
+                } else {
+                    Bitmap.CompressFormat.WEBP
+                }, 100, stream
+            )
             Asset.createFromBytes(stream.toByteArray())
+        }
+    }
+
+    suspend fun Bitmap.toAsset() = withContext(Dispatchers.IO) {
+        val bmp = this@toAsset
+        return@withContext createAssetFromBitmap(bmp)
+    }
+
+    suspend fun Bitmap.toByteArray() = withContext(Dispatchers.IO) {
+        val byteStream = ByteArrayOutputStream()
+        return@withContext byteStream.use { stream ->
+            compress(
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    Bitmap.CompressFormat.WEBP_LOSSLESS
+                } else {
+                    Bitmap.CompressFormat.WEBP
+                }, 100, stream
+            )
+            stream.toByteArray()
         }
     }
 
@@ -84,6 +110,22 @@ object ImageUtils {
                 Logger.writeLine(
                     Log.ERROR,
                     "ImageUtils: bitmapFromAssetStream: Failed to get asset"
+                )
+                return@withContext null
+            }
+        }
+    }
+
+    suspend fun ByteArray.toBitmap(): Bitmap? {
+        return withContext(Dispatchers.IO) {
+            try {
+                this@toBitmap.inputStream().use {
+                    BitmapFactory.decodeStream(it)
+                }
+            } catch (e: Exception) {
+                Logger.writeLine(
+                    Log.ERROR,
+                    "ImageUtils: ByteArray.toBitmap: Error creating bitmap"
                 )
                 return@withContext null
             }

@@ -101,7 +101,7 @@ class WearableDataListenerService : WearableListenerService() {
             } else if (messageEvent.path.startsWith(WearableHelper.StatusPath)) {
                 mWearMgr.sendStatusUpdate(messageEvent.sourceNodeId, messageEvent.path)
             } else if (messageEvent.path == WearableHelper.AppsPath) {
-                mWearMgr.sendApps()
+                mWearMgr.sendAppsViaChannel(messageEvent.sourceNodeId)
             } else if (messageEvent.path == WearableHelper.LaunchAppPath) {
                 val jsonData = messageEvent.data.bytesToString()
                 val pair = JSONParser.deserializer(jsonData, Pair::class.java)

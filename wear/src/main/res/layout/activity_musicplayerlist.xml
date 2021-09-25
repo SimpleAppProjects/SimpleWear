@@ -8,18 +8,11 @@
     tools:context=".MediaPlayerListActivity"
     tools:deviceIds="wear">
 
-    <com.google.android.material.progressindicator.CircularProgressIndicator
-        android:id="@+id/progressBar"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:indeterminate="true"
-        android:indeterminateBehavior="repeat" />
-
     <androidx.wear.widget.WearableRecyclerView
         android:id="@+id/player_list"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:visibility="gone"
         tools:listitem="@layout/app_item"
         tools:visibility="gone" />
 
@@ -41,15 +34,23 @@
             android:padding="4dp"
             android:text="@string/error_nomusicplayers" />
 
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
+        <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
             android:id="@+id/retry_fab"
+            style="@style/Widget.MaterialComponents.ExtendedFloatingActionButton.Icon"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:padding="4dp"
-            app:fabSize="mini"
-            android:src="@drawable/ic_baseline_refresh_24" />
+            app:collapsedSize="36dp"
+            app:icon="@drawable/ic_baseline_refresh_24" />
 
     </LinearLayout>
+
+    <com.google.android.material.progressindicator.CircularProgressIndicator
+        android:id="@+id/progressBar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:indeterminate="true"
+        android:indeterminateBehavior="repeat" />
 
     <androidx.wear.widget.drawer.WearableDrawerView
         android:id="@+id/bottom_action_drawer"

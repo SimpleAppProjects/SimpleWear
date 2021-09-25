@@ -699,6 +699,7 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
                 } else {
                     PhoneStatusHelper.setVolume(this, ValueDirection.UP, AudioStreamType.MUSIC)
                 }
+                sendVolumeStatus(messageEvent.sourceNodeId)
             }
             MediaHelper.MediaVolumeDownPath -> {
                 if (!isNotificationListenerEnabled(messageEvent)) return
@@ -707,6 +708,7 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
                 } else {
                     PhoneStatusHelper.setVolume(this, ValueDirection.DOWN, AudioStreamType.MUSIC)
                 }
+                sendVolumeStatus(messageEvent.sourceNodeId)
             }
             MediaHelper.MediaVolumeStatusPath -> {
                 if (!isNotificationListenerEnabled(messageEvent)) return
@@ -850,7 +852,7 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
                         )
                         val size = TypedValue.applyDimension(
                             TypedValue.COMPLEX_UNIT_DIP,
-                            36f,
+                            24f,
                             resources.displayMetrics
                         ).toInt()
 
@@ -882,7 +884,7 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
                             if (iconDrawable != null) {
                                 val size = TypedValue.applyDimension(
                                     TypedValue.COMPLEX_UNIT_DIP,
-                                    36f,
+                                    24f,
                                     resources.displayMetrics
                                 ).toInt()
 
