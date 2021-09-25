@@ -11,9 +11,14 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.databinding.ControlFabtogglebuttonBinding
 
-class ActionButton : ConstraintLayout, Checkable {
+class ActionButton @JvmOverloads constructor(
+    context: Context,
+    attrs: AttributeSet? = null,
+    defStyleAttr: Int = R.attr.wearActionButtonStyle,
+    defStyleRes: Int = DEF_STYLE_RES
+) : ConstraintLayout(context, attrs, defStyleAttr, defStyleRes), Checkable {
     companion object {
-        private const val DEF_STYLE_RES = R.style.Widget_ActionButton
+        private const val DEF_STYLE_RES = R.style.Widget_Wear_ActionButton
 
         private val ENABLED_STATE_SET = intArrayOf(android.R.attr.state_enabled)
         private val CHECKED_STATE_SET = intArrayOf(android.R.attr.state_checked)
@@ -23,28 +28,19 @@ class ActionButton : ConstraintLayout, Checkable {
     private var _isExpanded = false
     private var _isChecked = false
 
-    constructor(context: Context) : this(context, null)
-    constructor(context: Context, attrs: AttributeSet?) : this(context, attrs, 0)
-    constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : this(
-        context,
-        attrs,
-        defStyleAttr,
-        DEF_STYLE_RES
-    )
-
-    constructor(
-        context: Context,
-        attrs: AttributeSet?,
-        defStyleAttr: Int,
-        defStyleRes: Int
-    ) : super(context, attrs, defStyleAttr, defStyleRes) {
+    init {
         initialize(context)
 
-        val a = context.obtainStyledAttributes(attrs, R.styleable.ActionButton, 0, DEF_STYLE_RES)
+        val a = context.obtainStyledAttributes(
+            attrs,
+            R.styleable.ActionButton,
+            defStyleAttr,
+            defStyleRes
+        )
         try {
-            if (a.hasValue(R.styleable.ActionButton_android_minHeight)) {
-                minimumHeight =
-                    a.getDimensionPixelSize(R.styleable.ActionButton_android_minHeight, 0)
+            if (a.hasValue(R.styleable.ActionButton_minHeight)) {
+                minHeight =
+                    a.getDimensionPixelSize(R.styleable.ActionButton_minHeight, 0)
             }
         } finally {
             a.recycle()

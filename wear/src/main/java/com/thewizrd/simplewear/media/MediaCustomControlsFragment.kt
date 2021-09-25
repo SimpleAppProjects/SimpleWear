@@ -6,14 +6,17 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.graphics.drawable.toDrawable
 import androidx.lifecycle.lifecycleScope
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import androidx.recyclerview.widget.ConcatAdapter
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import androidx.wear.widget.WearableLinearLayoutManager
 import com.google.android.gms.wearable.*
 import com.thewizrd.shared_resources.actions.ActionStatus
+import com.thewizrd.shared_resources.helpers.ContextUtils.dpToPx
 import com.thewizrd.shared_resources.helpers.MediaHelper
 import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.shared_resources.lifecycle.LifecycleAwareFragment
@@ -21,9 +24,12 @@ import com.thewizrd.shared_resources.utils.ImageUtils
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.shared_resources.utils.bytesToString
 import com.thewizrd.simplewear.R
+import com.thewizrd.simplewear.adapters.SpacerAdapter
 import com.thewizrd.simplewear.controls.CustomConfirmationOverlay
-import com.thewizrd.simplewear.databinding.AppItemBinding
+import com.thewizrd.simplewear.controls.WearChipButton
 import com.thewizrd.simplewear.databinding.FragmentBrowserListBinding
+import com.thewizrd.simplewear.helpers.CustomScrollingLayoutCallback
+import com.thewizrd.simplewear.helpers.SpacerItemDecoration
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
@@ -47,11 +53,21 @@ class MediaCustomControlsFragment : LifecycleAwareFragment(), MessageClient.OnMe
         binding = FragmentBrowserListBinding.inflate(inflater, container, false)
 
         binding.listView.setHasFixedSize(true)
-        binding.listView.isEdgeItemsCenteringEnabled = true
-        binding.listView.layoutManager = WearableLinearLayoutManager(requireContext())
-        binding.listView.adapter = MediaCustomControlsItemsAdapter().also {
-            mCustomControlsAdapter = it
-        }
+        binding.listView.isEdgeItemsCenteringEnabled = false
+        binding.listView.layoutManager =
+            WearableLinearLayoutManager(requireContext(), CustomScrollingLayoutCallback())
+        mCustomControlsAdapter = MediaCustomControlsItemsAdapter()
+        binding.listView.adapter = ConcatAdapter(
+            SpacerAdapter(requireContext().dpToPx(48f).toInt()),
+            mCustomControlsAdapter,
+            SpacerAdapter(requireContext().dpToPx(48f).toInt())
+        )
+        binding.listView.addItemDecoration(
+            SpacerItemDecoration(
+                requireContext().dpToPx(16f).toInt(),
+                requireContext().dpToPx(4f).toInt()
+            )
+        )
 
         mCustomControlsAdapter.setOnClickListener(object :
             MediaCustomControlsItemsAdapter.OnClickListener {
@@ -61,6 +77,14 @@ class MediaCustomControlsFragment : LifecycleAwareFragment(), MessageClient.OnMe
                         Intent(MediaHelper.MediaActionsClickPath)
                             .putExtra(MediaHelper.KEY_MEDIA_ACTIONITEM_ACTION, item.id)
                     )
+            }
+        })
+
+        binding.listView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                binding.timeText.apply {
+                    translationY = -recyclerView.computeVerticalScrollOffset().toFloat()
+                }
             }
         })
 
@@ -75,6 +99,8 @@ class MediaCustomControlsFragment : LifecycleAwareFragment(), MessageClient.OnMe
         super.onResume()
         Wearable.getMessageClient(requireContext()).addListener(this)
         Wearable.getDataClient(requireContext()).addListener(this)
+
+        binding.listView.requestFocus()
 
         updateCustomControls()
     }
@@ -94,11 +120,9 @@ class MediaCustomControlsFragment : LifecycleAwareFragment(), MessageClient.OnMe
         binding.listView.visibility = if (show) View.INVISIBLE else View.VISIBLE
     }
 
-    private class MediaCustomControlsItemsAdapter :
-        ListAdapter<MediaItemModel, MediaCustomControlsItemsAdapter.ViewHolder> {
+    private class MediaCustomControlsItemsAdapter() :
+        ListAdapter<MediaItemModel, MediaCustomControlsItemsAdapter.ViewHolder>(diffCallback) {
         private var onClickListener: OnClickListener? = null
-
-        constructor() : super(diffCallback)
 
         companion object {
             private val diffCallback = object : DiffUtil.ItemCallback<MediaItemModel>() {
@@ -122,21 +146,25 @@ class MediaCustomControlsFragment : LifecycleAwareFragment(), MessageClient.OnMe
             this.onClickListener = listener
         }
 
-        inner class ViewHolder(val binding: AppItemBinding) :
-            RecyclerView.ViewHolder(binding.root) {
+        inner class ViewHolder(val button: WearChipButton) :
+            RecyclerView.ViewHolder(button) {
 
             fun bind(model: MediaItemModel) {
-                binding.appIcon.setImageBitmap(model.icon)
-                binding.appName.text = model.title
-                binding.root.setOnClickListener {
+                button.setIconDrawable(model.icon?.toDrawable(button.context.resources))
+                button.setPrimaryText(model.title)
+                button.setOnClickListener {
                     onClickListener?.onClick(model)
                 }
             }
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-            val inflater = LayoutInflater.from(parent.context)
-            return ViewHolder(AppItemBinding.inflate(inflater, parent, false))
+            return ViewHolder(WearChipButton(parent.context).apply {
+                layoutParams = RecyclerView.LayoutParams(
+                    RecyclerView.LayoutParams.MATCH_PARENT,
+                    RecyclerView.LayoutParams.WRAP_CONTENT
+                )
+            })
         }
 
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
@@ -181,13 +209,15 @@ class MediaCustomControlsFragment : LifecycleAwareFragment(), MessageClient.OnMe
 
         for (item in items) {
             val id = item.getString(MediaHelper.KEY_MEDIA_ACTIONITEM_ACTION)
-            val icon = try {
-                ImageUtils.bitmapFromAssetStream(
-                    Wearable.getDataClient(requireContext()),
-                    item.getAsset(MediaHelper.KEY_MEDIA_ACTIONITEM_ICON)
-                )
-            } catch (e: Exception) {
-                null
+            val icon = item.getAsset(MediaHelper.KEY_MEDIA_ACTIONITEM_ICON)?.let {
+                try {
+                    ImageUtils.bitmapFromAssetStream(
+                        Wearable.getDataClient(requireContext()),
+                        it
+                    )
+                } catch (e: Exception) {
+                    null
+                }
             }
             val title = item.getString(MediaHelper.KEY_MEDIA_ACTIONITEM_TITLE)
 

@@ -1,9 +1,10 @@
-package com.thewizrd.simplewear
+package com.thewizrd.simplewear.media
 
 import android.os.Bundle
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
+import androidx.core.view.InputDeviceCompat
+import androidx.core.view.MotionEventCompat
+import androidx.core.view.ViewConfigurationCompat
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.activityViewModels
 import androidx.wear.widget.SwipeDismissFrameLayout
@@ -12,6 +13,7 @@ import com.thewizrd.simplewear.databinding.MediaplayerfilterListBinding
 import com.thewizrd.simplewear.helpers.SimpleRecyclerViewAdapterObserver
 import com.thewizrd.simplewear.preferences.Settings
 import com.thewizrd.simplewear.viewmodels.MediaPlayerListViewModel
+import kotlin.math.roundToInt
 
 class MediaPlayerFilterFragment : DialogFragment() {
     private lateinit var binding: MediaplayerfilterListBinding
@@ -54,6 +56,22 @@ class MediaPlayerFilterFragment : DialogFragment() {
 
         binding.confirmButton.setOnClickListener {
             dismissFragment()
+        }
+
+        binding.root.setOnGenericMotionListener { view, event ->
+            if (event.action == MotionEvent.ACTION_SCROLL && event.isFromSource(InputDeviceCompat.SOURCE_ROTARY_ENCODER)) {
+                // Don't forget the negation here
+                val delta = -event.getAxisValue(MotionEventCompat.AXIS_SCROLL) *
+                        ViewConfigurationCompat.getScaledVerticalScrollFactor(
+                            ViewConfiguration.get(view.context), view.context
+                        )
+
+                // Swap these axes if you want to do horizontal scrolling instead
+                binding.scrollView.scrollBy(0, delta.roundToInt())
+
+                return@setOnGenericMotionListener true
+            }
+            false
         }
 
         return binding.root

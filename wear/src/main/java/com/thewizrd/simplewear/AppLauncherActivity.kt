@@ -11,6 +11,7 @@ import android.view.View
 import androidx.core.content.ContextCompat
 import androidx.core.util.Pair
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.ConcatAdapter
 import androidx.wear.widget.WearableLinearLayoutManager
 import com.google.android.gms.wearable.*
 import com.google.android.gms.wearable.DataClient.OnDataChangedListener
@@ -21,6 +22,8 @@ import com.thewizrd.shared_resources.helpers.WearConnectionStatus
 import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.shared_resources.utils.*
 import com.thewizrd.simplewear.adapters.AppsListAdapter
+import com.thewizrd.simplewear.adapters.ListHeaderAdapter
+import com.thewizrd.simplewear.adapters.SpacerAdapter
 import com.thewizrd.simplewear.controls.AppItemViewModel
 import com.thewizrd.simplewear.controls.CustomConfirmationOverlay
 import com.thewizrd.simplewear.databinding.ActivityApplauncherBinding
@@ -141,7 +144,11 @@ class AppLauncherActivity : WearableListenerActivity(), OnDataChangedListener {
                 }
             }
         })
-        binding.appList.adapter = mAdapter
+        binding.appList.adapter = ConcatAdapter(
+            ListHeaderAdapter(getString(R.string.action_apps)),
+            mAdapter,
+            SpacerAdapter(dpToPx(48f).toInt())
+        )
 
         intentFilter = IntentFilter()
         intentFilter.addAction(ACTION_UPDATECONNECTIONSTATUS)
@@ -268,13 +275,15 @@ class AppLauncherActivity : WearableListenerActivity(), OnDataChangedListener {
                 appLabel = map.getString(WearableHelper.KEY_LABEL)
                 packageName = map.getString(WearableHelper.KEY_PKGNAME)
                 activityName = map.getString(WearableHelper.KEY_ACTIVITYNAME)
-                bitmapIcon = try {
-                    ImageUtils.bitmapFromAssetStream(
-                        Wearable.getDataClient(this@AppLauncherActivity),
-                        map.getAsset(WearableHelper.KEY_ICON)
-                    )
-                } catch (e: Exception) {
-                    null
+                bitmapIcon = map.getAsset(WearableHelper.KEY_ICON)?.let {
+                    try {
+                        ImageUtils.bitmapFromAssetStream(
+                            Wearable.getDataClient(this@AppLauncherActivity),
+                            it
+                        )
+                    } catch (e: Exception) {
+                        null
+                    }
                 }
             }
             viewModels.add(model)

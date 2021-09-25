@@ -7,6 +7,7 @@
     android:layout_height="match_parent"
     android:background="@null"
     android:fillViewport="true"
+    android:scrollbars="vertical"
     tools:background="?colorSurface"
     tools:context=".MediaPlayerListActivity"
     tools:deviceIds="wear"

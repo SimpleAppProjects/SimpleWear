@@ -17,13 +17,14 @@ import androidx.annotation.StringRes
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.DrawableCompat
+import androidx.core.view.ViewCompat
 import com.thewizrd.simplewear.R
 
 @SuppressLint("RestrictedApi")
 class WearChipButton @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
-    defStyleAttr: Int = 0,
+    defStyleAttr: Int = R.attr.wearChipButtonStyle,
     defStyleRes: Int = DEF_STYLE_RES
 ) : ConstraintLayout(context, attrs, defStyleAttr, defStyleRes), Checkable {
     companion object {
@@ -48,10 +49,10 @@ class WearChipButton @JvmOverloads constructor(
     )
     annotation class ControlType
 
-    private val mIconView: ImageView
-    private val mPrimaryTextView: TextView
-    private val mSecondaryTextView: TextView
-    private val mSelectionControlContainer: ViewGroup
+    private lateinit var mIconView: ImageView
+    private lateinit var mPrimaryTextView: TextView
+    private lateinit var mSecondaryTextView: TextView
+    private lateinit var mSelectionControlContainer: ViewGroup
 
     private var buttonBackgroundTint: ColorStateList? = null
     private var buttonControlTint: ColorStateList? = null
@@ -75,60 +76,70 @@ class WearChipButton @JvmOverloads constructor(
         mPrimaryTextView.maxLines = 2
         mSecondaryTextView.maxLines = 1
 
-        if (attrs != null) {
-            val a =
-                context.obtainStyledAttributes(attrs, R.styleable.WearChipButton, 0, DEF_STYLE_RES)
+        val a = context.obtainStyledAttributes(
+            attrs,
+            R.styleable.WearChipButton,
+            defStyleAttr,
+            defStyleRes
+        )
+        ViewCompat.saveAttributeDataForStyleable(
+            this,
+            context, R.styleable.WearChipButton,
+            attrs, a, defStyleAttr, defStyleRes
+        )
 
-            try {
-                if (a.hasValue(R.styleable.WearChipButton_icon)) {
-                    setIconDrawable(a.getDrawable(R.styleable.WearChipButton_icon))
-                }
-                if (a.hasValue(R.styleable.WearChipButton_primaryText)) {
-                    setPrimaryText(a.getString(R.styleable.WearChipButton_primaryText))
-                }
-                if (a.hasValue(R.styleable.WearChipButton_secondaryText)) {
-                    setSecondaryText(a.getString(R.styleable.WearChipButton_secondaryText))
-                }
-                if (a.hasValue(R.styleable.WearChipButton_backgroundTint)) {
-                    val colorResId = a.getResourceId(R.styleable.WearChipButton_backgroundTint, 0)
-                    if (colorResId != 0) {
-                        val tint = ContextCompat.getColorStateList(context, colorResId)
-                        if (tint != null) {
-                            buttonBackgroundTint = tint
-                        }
-                    }
-
-                    if (buttonBackgroundTint == null) {
-                        buttonBackgroundTint =
-                            a.getColorStateList(R.styleable.WearChipButton_backgroundTint)
-                    }
-                }
-                if (a.hasValue(R.styleable.WearChipButton_buttonTint)) {
-                    val colorResId = a.getResourceId(R.styleable.WearChipButton_buttonTint, 0)
-                    if (colorResId != 0) {
-                        val tint = ContextCompat.getColorStateList(context, colorResId)
-                        if (tint != null) {
-                            buttonControlTint = tint
-                        }
-                    }
-
-                    if (buttonControlTint == null) {
-                        buttonControlTint =
-                            a.getColorStateList(R.styleable.WearChipButton_buttonTint)
-                    }
-                }
-                if (a.hasValue(R.styleable.WearChipButton_android_checkable)) {
-                    isCheckable = a.getBoolean(R.styleable.WearChipButton_android_checkable, false)
-                }
-                if (a.hasValue(R.styleable.WearChipButton_android_checked)) {
-                    isChecked = a.getBoolean(R.styleable.WearChipButton_android_checked, false)
-                }
-                if (a.hasValue(R.styleable.WearChipButton_controlType)) {
-                    updateControlType(a.getInt(R.styleable.WearChipButton_controlType, 0))
-                }
-            } finally {
-                a.recycle()
+        try {
+            if (a.hasValue(R.styleable.WearChipButton_icon)) {
+                setIconDrawable(a.getDrawable(R.styleable.WearChipButton_icon))
             }
+            if (a.hasValue(R.styleable.WearChipButton_primaryText)) {
+                setPrimaryText(a.getString(R.styleable.WearChipButton_primaryText))
+            }
+            if (a.hasValue(R.styleable.WearChipButton_secondaryText)) {
+                setSecondaryText(a.getString(R.styleable.WearChipButton_secondaryText))
+            }
+            if (a.hasValue(R.styleable.WearChipButton_backgroundTint)) {
+                val colorResId = a.getResourceId(R.styleable.WearChipButton_backgroundTint, 0)
+                if (colorResId != 0) {
+                    val tint = ContextCompat.getColorStateList(context, colorResId)
+                    if (tint != null) {
+                        buttonBackgroundTint = tint
+                    }
+                }
+
+                if (buttonBackgroundTint == null) {
+                    buttonBackgroundTint =
+                        a.getColorStateList(R.styleable.WearChipButton_backgroundTint)
+                }
+            }
+            if (a.hasValue(R.styleable.WearChipButton_buttonTint)) {
+                val colorResId = a.getResourceId(R.styleable.WearChipButton_buttonTint, 0)
+                if (colorResId != 0) {
+                    val tint = ContextCompat.getColorStateList(context, colorResId)
+                    if (tint != null) {
+                        buttonControlTint = tint
+                    }
+                }
+
+                if (buttonControlTint == null) {
+                    buttonControlTint =
+                        a.getColorStateList(R.styleable.WearChipButton_buttonTint)
+                }
+            }
+            if (a.hasValue(R.styleable.WearChipButton_android_checkable)) {
+                isCheckable = a.getBoolean(R.styleable.WearChipButton_android_checkable, false)
+            }
+            if (a.hasValue(R.styleable.WearChipButton_android_checked)) {
+                isChecked = a.getBoolean(R.styleable.WearChipButton_android_checked, false)
+            }
+            if (a.hasValue(R.styleable.WearChipButton_controlType)) {
+                updateControlType(a.getInt(R.styleable.WearChipButton_controlType, 0))
+            }
+            if (a.hasValue(R.styleable.WearChipButton_minHeight)) {
+                minHeight = a.getDimensionPixelSize(R.styleable.WearChipButton_minHeight, 0)
+            }
+        } finally {
+            a.recycle()
         }
 
         updateBackgroundTint()

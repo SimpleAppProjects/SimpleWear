@@ -5,27 +5,35 @@ import android.media.session.MediaSession
 import android.os.Bundle
 import android.text.Spannable
 import android.text.SpannableString
-import android.text.style.TypefaceSpan
+import android.text.style.ForegroundColorSpan
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.ViewTreeObserver
+import androidx.core.graphics.drawable.toDrawable
 import androidx.lifecycle.lifecycleScope
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import androidx.recyclerview.widget.ConcatAdapter
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import androidx.wear.widget.WearableLinearLayoutManager
 import com.google.android.gms.wearable.*
+import com.thewizrd.shared_resources.helpers.ContextUtils.dpToPx
+import com.thewizrd.shared_resources.helpers.ContextUtils.getAttrColor
 import com.thewizrd.shared_resources.helpers.MediaHelper
 import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.shared_resources.lifecycle.LifecycleAwareFragment
 import com.thewizrd.shared_resources.utils.ImageUtils
 import com.thewizrd.shared_resources.utils.Logger
-import com.thewizrd.simplewear.databinding.AppItemBinding
+import com.thewizrd.simplewear.R
+import com.thewizrd.simplewear.adapters.SpacerAdapter
+import com.thewizrd.simplewear.controls.WearChipButton
 import com.thewizrd.simplewear.databinding.FragmentBrowserListBinding
+import com.thewizrd.simplewear.helpers.CustomScrollingLayoutCallback
 import com.thewizrd.simplewear.helpers.SimpleRecyclerViewAdapterObserver
+import com.thewizrd.simplewear.helpers.SpacerItemDecoration
 import kotlinx.coroutines.*
 import kotlinx.coroutines.tasks.await
 import java.util.*
@@ -50,13 +58,23 @@ class MediaQueueFragment : LifecycleAwareFragment(), DataClient.OnDataChangedLis
         binding = FragmentBrowserListBinding.inflate(inflater, container, false)
 
         binding.listView.setHasFixedSize(true)
-        binding.listView.isEdgeItemsCenteringEnabled = true
-        binding.listView.layoutManager = WearableLinearLayoutManager(requireContext()).also {
-            mLayoutManager = it
-        }
-        binding.listView.adapter = MediaQueueItemsAdapter().also {
-            mQueueItemsAdapter = it
-        }
+        binding.listView.isEdgeItemsCenteringEnabled = false
+        binding.listView.layoutManager =
+            WearableLinearLayoutManager(requireContext(), CustomScrollingLayoutCallback()).also {
+                mLayoutManager = it
+            }
+        mQueueItemsAdapter = MediaQueueItemsAdapter()
+        binding.listView.adapter = ConcatAdapter(
+            SpacerAdapter(requireContext().dpToPx(48f).toInt()),
+            mQueueItemsAdapter,
+            SpacerAdapter(requireContext().dpToPx(48f).toInt())
+        )
+        binding.listView.addItemDecoration(
+            SpacerItemDecoration(
+                requireContext().dpToPx(16f).toInt(),
+                requireContext().dpToPx(4f).toInt()
+            )
+        )
 
         mQueueItemsAdapter.setOnClickListener(object : MediaQueueItemsAdapter.OnClickListener {
             override fun onClick(item: MediaItemModel) {
@@ -65,6 +83,14 @@ class MediaQueueFragment : LifecycleAwareFragment(), DataClient.OnDataChangedLis
                         Intent(MediaHelper.MediaQueueItemsClickPath)
                             .putExtra(MediaHelper.KEY_MEDIAITEM_ID, item.id)
                     )
+            }
+        })
+
+        binding.listView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                binding.timeText.apply {
+                    translationY = -recyclerView.computeVerticalScrollOffset().toFloat()
+                }
             }
         })
 
@@ -78,6 +104,8 @@ class MediaQueueFragment : LifecycleAwareFragment(), DataClient.OnDataChangedLis
     override fun onResume() {
         super.onResume()
         Wearable.getDataClient(requireContext()).addListener(this)
+
+        binding.listView.requestFocus()
 
         updateQueueItems()
     }
@@ -97,11 +125,9 @@ class MediaQueueFragment : LifecycleAwareFragment(), DataClient.OnDataChangedLis
     }
 
     private class MediaQueueItemsAdapter :
-        ListAdapter<MediaItemModel, MediaQueueItemsAdapter.ViewHolder> {
+        ListAdapter<MediaItemModel, MediaQueueItemsAdapter.ViewHolder>(diffCallback) {
         private var onClickListener: OnClickListener? = null
         var mActiveQueueItemId: Long = MediaSession.QueueItem.UNKNOWN_ID.toLong()
-
-        constructor() : super(diffCallback)
 
         companion object {
             private val diffCallback = object : DiffUtil.ItemCallback<MediaItemModel>() {
@@ -125,35 +151,42 @@ class MediaQueueFragment : LifecycleAwareFragment(), DataClient.OnDataChangedLis
             this.onClickListener = listener
         }
 
-        inner class ViewHolder(val binding: AppItemBinding) :
-            RecyclerView.ViewHolder(binding.root) {
+        inner class ViewHolder(val button: WearChipButton) :
+            RecyclerView.ViewHolder(button) {
+            private val inActiveSpan =
+                ForegroundColorSpan(button.context.getAttrColor(R.attr.colorOnSurfaceVariant2))
+
             fun bind(model: MediaItemModel, isActive: Boolean) {
-                binding.appIcon.setImageBitmap(model.icon)
+                button.setIconDrawable(model.icon?.toDrawable(button.context.resources))
                 bindTitle(model, isActive)
-                binding.root.setOnClickListener {
+                button.setOnClickListener {
                     onClickListener?.onClick(model)
                 }
             }
 
             fun bindTitle(model: MediaItemModel, isActive: Boolean) {
-                binding.appName.text = if (isActive) {
+                button.setPrimaryText(if (isActive) {
+                    model.title
+                } else {
                     SpannableString(model.title).apply {
                         setSpan(
-                            TypefaceSpan("sans-serif-medium"),
+                            inActiveSpan,
                             0,
                             this.length,
                             Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
                         )
                     }
-                } else {
-                    model.title
-                }
+                })
             }
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-            val inflater = LayoutInflater.from(parent.context)
-            return ViewHolder(AppItemBinding.inflate(inflater, parent, false))
+            return ViewHolder(WearChipButton(parent.context).apply {
+                layoutParams = RecyclerView.LayoutParams(
+                    RecyclerView.LayoutParams.MATCH_PARENT,
+                    RecyclerView.LayoutParams.WRAP_CONTENT
+                )
+            })
         }
 
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
@@ -212,13 +245,15 @@ class MediaQueueFragment : LifecycleAwareFragment(), DataClient.OnDataChangedLis
 
         for (item in items) {
             val id = item.getLong(MediaHelper.KEY_MEDIAITEM_ID)
-            val icon = try {
-                ImageUtils.bitmapFromAssetStream(
-                    Wearable.getDataClient(requireContext()),
-                    item.getAsset(MediaHelper.KEY_MEDIAITEM_ICON)
-                )
-            } catch (e: Exception) {
-                null
+            val icon = item.getAsset(MediaHelper.KEY_MEDIAITEM_ICON)?.let {
+                try {
+                    ImageUtils.bitmapFromAssetStream(
+                        Wearable.getDataClient(requireContext()),
+                        it
+                    )
+                } catch (e: Exception) {
+                    null
+                }
             }
             val title = item.getString(MediaHelper.KEY_MEDIAITEM_TITLE)
 

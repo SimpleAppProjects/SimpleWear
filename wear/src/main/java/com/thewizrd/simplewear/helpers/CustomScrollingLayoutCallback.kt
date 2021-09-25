@@ -23,10 +23,12 @@ class CustomScrollingLayoutCallback : WearableLinearLayoutManager.LayoutCallback
     override fun onLayoutFinished(child: View, parent: RecyclerView) {
         child.apply {
             val container = parent.parent as ViewGroup
-            val viewportPortHeight = container.height.toFloat()
+            val viewPortStartPx = 0
+            val viewPortEndPx = container.height
+            val viewportPortHeight = (viewPortEndPx - viewPortStartPx).toFloat()
             val itemHeight = height.toFloat()
             val itemEdgeAsFractionOfViewport =
-                min(bottom - container.left, container.right - top) / viewportPortHeight
+                min(bottom - viewPortStartPx, viewPortEndPx - top) / viewportPortHeight
 
             val heightAsFractionOfViewPort = itemHeight / viewportPortHeight
             if (itemEdgeAsFractionOfViewport > 0.0f && itemEdgeAsFractionOfViewport < 1.0f) {

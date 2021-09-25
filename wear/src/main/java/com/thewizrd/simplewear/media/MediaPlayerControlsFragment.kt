@@ -313,13 +313,15 @@ class MediaPlayerControlsFragment : LifecycleAwareFragment(), MessageClient.OnMe
             val playbackState = stateName?.let { PlaybackState.valueOf(it) } ?: PlaybackState.NONE
             val title = dataMap.getString(MediaHelper.KEY_MEDIA_METADATA_TITLE)
             val artist = dataMap.getString(MediaHelper.KEY_MEDIA_METADATA_ARTIST)
-            val artBitmap = try {
-                ImageUtils.bitmapFromAssetStream(
-                    Wearable.getDataClient(binding.albumArtImageview.context),
-                    dataMap.getAsset(MediaHelper.KEY_MEDIA_METADATA_ART)
-                )
-            } catch (e: Exception) {
-                null
+            val artBitmap = dataMap.getAsset(MediaHelper.KEY_MEDIA_METADATA_ART)?.let {
+                try {
+                    ImageUtils.bitmapFromAssetStream(
+                        Wearable.getDataClient(binding.albumArtImageview.context),
+                        it
+                    )
+                } catch (e: Exception) {
+                    null
+                }
             }
 
             if (playbackState != PlaybackState.NONE) {

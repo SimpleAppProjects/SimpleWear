@@ -31,6 +31,9 @@
         <item name="selectableItemBackgroundBorderless">
             ?android:selectableItemBackgroundBorderless
         </item>
+
+        <item name="wearChipButtonStyle">@style/Widget.Wear.WearChipButton</item>
+        <item name="wearActionButtonStyle">@style/Widget.Wear.ActionButton</item>
     </style>
 
     <style name="WearAppTheme.Launcher" parent="Theme.SplashScreen">

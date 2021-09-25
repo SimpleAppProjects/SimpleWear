@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <attr name="wearChipButtonStyle" format="reference" />
+    <attr name="wearActionButtonStyle" format="reference" />
+
     <declare-styleable name="WearChipButton">
         <attr name="icon" />
         <attr name="backgroundTint" />
@@ -14,8 +17,9 @@
             <enum name="radio" value="2" />
             <enum name="toggle" value="3" />
         </attr>
+        <attr name="minHeight" />
     </declare-styleable>
     <declare-styleable name="ActionButton">
-        <attr name="android:minHeight" />
+        <attr name="minHeight" />
     </declare-styleable>
 </resources>

@@ -220,13 +220,15 @@ class CallManagerActivity : WearableListenerActivity(), DataClient.OnDataChanged
     private suspend fun updateCallUI(dataMap: DataMap) {
         val callActive = dataMap.getBoolean(InCallUIHelper.KEY_CALLACTIVE, false)
         val callerName = dataMap.getString(InCallUIHelper.KEY_CALLERNAME)
-        val callerBmp = try {
-            ImageUtils.bitmapFromAssetStream(
-                Wearable.getDataClient(this),
-                dataMap.getAsset(InCallUIHelper.KEY_CALLERBMP)
-            )
-        } catch (e: Exception) {
-            null
+        val callerBmp = dataMap.getAsset(InCallUIHelper.KEY_CALLERBMP)?.let {
+            try {
+                ImageUtils.bitmapFromAssetStream(
+                    Wearable.getDataClient(this),
+                    it
+                )
+            } catch (e: Exception) {
+                null
+            }
         }
 
         lifecycleScope.launch {

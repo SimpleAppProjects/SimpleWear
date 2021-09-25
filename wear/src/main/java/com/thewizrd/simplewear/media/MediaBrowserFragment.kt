@@ -6,21 +6,27 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.graphics.drawable.toDrawable
 import androidx.lifecycle.lifecycleScope
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import androidx.recyclerview.widget.ConcatAdapter
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import androidx.wear.widget.WearableLinearLayoutManager
 import com.google.android.gms.wearable.*
+import com.thewizrd.shared_resources.helpers.ContextUtils.dpToPx
 import com.thewizrd.shared_resources.helpers.MediaHelper
 import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.shared_resources.lifecycle.LifecycleAwareFragment
 import com.thewizrd.shared_resources.utils.ImageUtils
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.simplewear.R
-import com.thewizrd.simplewear.databinding.AppItemBinding
+import com.thewizrd.simplewear.adapters.SpacerAdapter
+import com.thewizrd.simplewear.controls.WearChipButton
 import com.thewizrd.simplewear.databinding.FragmentBrowserListBinding
+import com.thewizrd.simplewear.helpers.CustomScrollingLayoutCallback
+import com.thewizrd.simplewear.helpers.SpacerItemDecoration
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
@@ -43,11 +49,23 @@ class MediaBrowserFragment : LifecycleAwareFragment(), DataClient.OnDataChangedL
         binding = FragmentBrowserListBinding.inflate(inflater, container, false)
 
         binding.listView.setHasFixedSize(true)
-        binding.listView.isEdgeItemsCenteringEnabled = true
-        binding.listView.layoutManager = WearableLinearLayoutManager(requireContext())
-        binding.listView.adapter = MediaBrowserItemsAdapter().also {
-            mBrowserAdapter = it
-        }
+        binding.listView.isEdgeItemsCenteringEnabled = false
+        binding.listView.addItemDecoration(
+            SpacerItemDecoration(
+                requireContext().dpToPx(16f).toInt(),
+                requireContext().dpToPx(4f).toInt()
+            )
+        )
+
+        binding.listView.layoutManager =
+            WearableLinearLayoutManager(requireContext(), CustomScrollingLayoutCallback())
+
+        mBrowserAdapter = MediaBrowserItemsAdapter()
+        binding.listView.adapter = ConcatAdapter(
+            SpacerAdapter(requireContext().dpToPx(48f).toInt()),
+            mBrowserAdapter,
+            SpacerAdapter(requireContext().dpToPx(48f).toInt())
+        )
 
         mBrowserAdapter.setOnClickListener(object : MediaBrowserItemsAdapter.OnClickListener {
             override fun onClick(item: MediaItemModel) {
@@ -64,6 +82,14 @@ class MediaBrowserFragment : LifecycleAwareFragment(), DataClient.OnDataChangedL
             }
         })
 
+        binding.listView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                binding.timeText.apply {
+                    translationY = -recyclerView.computeVerticalScrollOffset().toFloat()
+                }
+            }
+        })
+
         return binding.root
     }
 
@@ -74,6 +100,8 @@ class MediaBrowserFragment : LifecycleAwareFragment(), DataClient.OnDataChangedL
     override fun onResume() {
         super.onResume()
         Wearable.getDataClient(requireContext()).addListener(this)
+
+        binding.listView.requestFocus()
 
         updateBrowserItems()
     }
@@ -93,10 +121,8 @@ class MediaBrowserFragment : LifecycleAwareFragment(), DataClient.OnDataChangedL
     }
 
     private class MediaBrowserItemsAdapter :
-        ListAdapter<MediaItemModel, MediaBrowserItemsAdapter.ViewHolder> {
+        ListAdapter<MediaItemModel, MediaBrowserItemsAdapter.ViewHolder>(diffCallback) {
         private var onClickListener: OnClickListener? = null
-
-        constructor() : super(diffCallback)
 
         companion object {
             private val diffCallback = object : DiffUtil.ItemCallback<MediaItemModel>() {
@@ -120,26 +146,30 @@ class MediaBrowserFragment : LifecycleAwareFragment(), DataClient.OnDataChangedL
             this.onClickListener = listener
         }
 
-        inner class ViewHolder(val binding: AppItemBinding) :
-            RecyclerView.ViewHolder(binding.root) {
+        inner class ViewHolder(val button: WearChipButton) :
+            RecyclerView.ViewHolder(button) {
 
             fun bind(model: MediaItemModel) {
                 if (model.id == MediaHelper.ACTIONITEM_BACK) {
-                    binding.appIcon.setImageResource(R.drawable.ic_baseline_arrow_back_24)
-                    binding.appName.setText(R.string.label_back)
+                    button.setIconResource(R.drawable.ic_baseline_arrow_back_24)
+                    button.setPrimaryText(R.string.label_back)
                 } else {
-                    binding.appIcon.setImageBitmap(model.icon)
-                    binding.appName.text = model.title
+                    button.setIconDrawable(model.icon?.toDrawable(button.context.resources))
+                    button.setPrimaryText(model.title)
                 }
-                binding.root.setOnClickListener {
+                button.setOnClickListener {
                     onClickListener?.onClick(model)
                 }
             }
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-            val inflater = LayoutInflater.from(parent.context)
-            return ViewHolder(AppItemBinding.inflate(inflater, parent, false))
+            return ViewHolder(WearChipButton(parent.context).apply {
+                layoutParams = RecyclerView.LayoutParams(
+                    RecyclerView.LayoutParams.MATCH_PARENT,
+                    RecyclerView.LayoutParams.WRAP_CONTENT
+                )
+            })
         }
 
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
@@ -188,13 +218,15 @@ class MediaBrowserFragment : LifecycleAwareFragment(), DataClient.OnDataChangedL
 
         for (item in items) {
             val id = item.getString(MediaHelper.KEY_MEDIAITEM_ID)
-            val icon = try {
-                ImageUtils.bitmapFromAssetStream(
-                    Wearable.getDataClient(requireContext()),
-                    item.getAsset(MediaHelper.KEY_MEDIAITEM_ICON)
-                )
-            } catch (e: Exception) {
-                null
+            val icon = item.getAsset(MediaHelper.KEY_MEDIAITEM_ICON)?.let {
+                try {
+                    ImageUtils.bitmapFromAssetStream(
+                        Wearable.getDataClient(requireContext()),
+                        it
+                    )
+                } catch (e: Exception) {
+                    null
+                }
             }
             val title = item.getString(MediaHelper.KEY_MEDIAITEM_TITLE)
 

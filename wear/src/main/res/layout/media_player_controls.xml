@@ -39,7 +39,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            app:layout_constraintGuide_begin="12dp" />
+            app:layout_constraintGuide_percent="0.12" />
 
         <androidx.constraintlayout.helper.widget.Flow
             android:id="@+id/title_flow"
@@ -51,7 +51,6 @@
             app:flow_verticalAlign="bottom"
             app:constraint_referenced_ids="title_view,subtitle_view"
             app:layout_constraintTop_toBottomOf="@id/timerTextGuide"
-            app:layout_constraintBottom_toTopOf="@id/playcontrols"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent" />
 
@@ -63,10 +62,8 @@
             android:padding="2dp"
             android:maxLines="1"
             android:ellipsize="marquee"
-            android:fontFamily="sans-serif-medium"
             android:marqueeRepeatLimit="marquee_forever"
-            android:textColor="@android:color/white"
-            android:textSize="14sp"
+            android:textAppearance="?textAppearanceButton"
             tools:text="Title" />
 
         <TextView
@@ -78,14 +75,14 @@
             android:maxLines="1"
             android:ellipsize="marquee"
             android:marqueeRepeatLimit="marquee_forever"
-            android:textSize="14sp"
+            android:textAppearance="?textAppearanceCaption1"
             tools:text="Artist"
-            tools:visibility="gone" />
+            tools:visibility="visible" />
 
         <androidx.constraintlayout.helper.widget.Flow
             android:id="@+id/playcontrols"
             android:layout_width="0dp"
-            android:layout_height="0dp"
+            android:layout_height="wrap_content"
             app:layout_constraintStart_toEndOf="@id/playcontrols_start"
             app:layout_constraintEnd_toStartOf="@id/playcontrols_end"
             app:layout_constraintTop_toBottomOf="@id/title_flow"
@@ -111,19 +108,20 @@
             android:adjustViewBounds="true"
             android:scaleType="fitCenter"
             android:background="?selectableItemBackgroundBorderless"
+            android:contentDescription="Previous"
             android:src="@drawable/ic_baseline_skip_previous_24"
             app:layout_constraintHorizontal_weight="1"
             app:tint="@android:color/white" />
 
-        <ProgressBar
+        <com.google.android.material.progressindicator.CircularProgressIndicator
             android:id="@+id/playback_loadingbar"
             android:layout_width="0dp"
             android:layout_height="36dp"
             android:layout_weight="1"
-            android:indeterminateTint="@android:color/white"
+            android:indeterminateTint="?colorOnSurface"
             app:layout_constraintHorizontal_weight="1"
             android:visibility="gone"
-            tools:visibility="visible" />
+            tools:visibility="gone" />
 
         <com.thewizrd.simplewear.controls.CheckableImageButton
             android:id="@+id/playpause_button"
@@ -133,6 +131,7 @@
             android:scaleType="fitCenter"
             android:background="?selectableItemBackgroundBorderless"
             android:src="@drawable/playpause_button"
+            android:contentDescription="Play/Pause"
             app:tint="@android:color/white"
             app:layout_constraintHorizontal_weight="1"
             tools:visibility="visible" />
@@ -143,6 +142,7 @@
             android:layout_height="36dp"
             android:adjustViewBounds="true"
             android:scaleType="fitCenter"
+            android:contentDescription="Skip"
             android:background="?selectableItemBackgroundBorderless"
             android:src="@drawable/ic_baseline_skip_next_24"
             app:layout_constraintHorizontal_weight="1"
@@ -155,58 +155,63 @@
             android:orientation="vertical"
             app:layout_constraintGuide_end="8dp" />
 
-        <RelativeLayout
+        <androidx.constraintlayout.widget.Guideline
+            android:id="@+id/volume_guide1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            app:layout_constraintGuide_percent="0.78" />
+
+        <androidx.constraintlayout.widget.Guideline
+            android:id="@+id/volume_guide2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            app:layout_constraintGuide_percent="0.88" />
+
+        <androidx.constraintlayout.helper.widget.Flow
             android:id="@+id/volume_controls"
             android:layout_width="match_parent"
-            android:layout_height="0dp"
+            android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:paddingStart="@dimen/inner_layout_padding"
             android:paddingEnd="@dimen/inner_layout_padding"
-            android:paddingBottom="@dimen/inner_layout_padding"
             android:layout_marginStart="8dp"
             android:layout_marginEnd="8dp"
-            app:layout_constraintVertical_weight="1"
-            app:layout_constraintTop_toBottomOf="@id/playcontrols"
-            app:layout_constraintBottom_toBottomOf="parent">
+            app:layout_constraintTop_toTopOf="@id/volume_guide1"
+            app:layout_constraintBottom_toBottomOf="@id/volume_guide2"
+            app:constraint_referenced_ids="vol_down_button,volume_progressBar,vol_up_button" />
 
-            <ImageButton
-                android:id="@+id/vol_down_button"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:src="@drawable/ic_baseline_volume_down_24"
-                android:background="?selectableItemBackgroundBorderless"
-                android:layout_alignParentStart="true" />
+        <ImageButton
+            android:id="@+id/vol_down_button"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/ic_baseline_volume_down_24"
+            android:background="?selectableItemBackgroundBorderless"
+            android:layout_alignParentStart="true" />
 
-            <ProgressBar
-                android:id="@+id/volume_progressBar"
-                style="@style/Widget.AppCompat.ProgressBar.Horizontal"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:gravity="center"
-                android:layout_gravity="center"
-                android:paddingStart="2dp"
-                android:paddingEnd="2dp"
-                android:progressTint="@color/colorPrimary"
-                android:layout_toEndOf="@id/vol_down_button"
-                android:layout_toStartOf="@id/vol_up_button"
-                android:layout_alignTop="@id/vol_up_button"
-                android:layout_alignBottom="@id/vol_up_button"
-                tools:progress="50"
-                tools:max="100" />
+        <com.google.android.material.progressindicator.LinearProgressIndicator
+            android:id="@+id/volume_progressBar"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:paddingStart="2dp"
+            android:paddingEnd="2dp"
+            app:trackCornerRadius="2dp"
+            tools:max="100"
+            tools:progress="50" />
 
-            <ImageButton
-                android:id="@+id/vol_up_button"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:src="@drawable/ic_volume_up_white_24dp"
-                android:background="?selectableItemBackgroundBorderless"
-                android:layout_alignParentEnd="true" />
-
-        </RelativeLayout>
+        <ImageButton
+            android:id="@+id/vol_up_button"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/ic_volume_up_white_24dp"
+            android:background="?selectableItemBackgroundBorderless"
+            android:layout_alignParentEnd="true" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <ProgressBar
+    <com.google.android.material.progressindicator.CircularProgressIndicator
         android:id="@+id/progressBar"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

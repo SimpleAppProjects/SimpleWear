@@ -10,6 +10,7 @@ import androidx.activity.viewModels
 import androidx.core.content.ContextCompat
 import androidx.core.util.Pair
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.ConcatAdapter
 import androidx.wear.widget.WearableLinearLayoutManager
 import androidx.wear.widget.drawer.WearableDrawerLayout
 import androidx.wear.widget.drawer.WearableDrawerView
@@ -19,7 +20,9 @@ import com.thewizrd.shared_resources.actions.ActionStatus
 import com.thewizrd.shared_resources.helpers.*
 import com.thewizrd.shared_resources.helpers.ContextUtils.dpToPx
 import com.thewizrd.shared_resources.utils.*
+import com.thewizrd.simplewear.adapters.ListHeaderAdapter
 import com.thewizrd.simplewear.adapters.MusicPlayerListAdapter
+import com.thewizrd.simplewear.adapters.SpacerAdapter
 import com.thewizrd.simplewear.controls.AppItemViewModel
 import com.thewizrd.simplewear.controls.CustomConfirmationOverlay
 import com.thewizrd.simplewear.controls.WearChipButton
@@ -29,6 +32,7 @@ import com.thewizrd.simplewear.helpers.CustomScrollingLayoutCallback
 import com.thewizrd.simplewear.helpers.SpacerItemDecoration
 import com.thewizrd.simplewear.helpers.showConfirmationOverlay
 import com.thewizrd.simplewear.media.MediaPlayerActivity
+import com.thewizrd.simplewear.media.MediaPlayerFilterFragment
 import com.thewizrd.simplewear.preferences.Settings
 import com.thewizrd.simplewear.viewmodels.MediaPlayerListViewModel
 import kotlinx.coroutines.CancellationException
@@ -198,7 +202,11 @@ class MediaPlayerListActivity : WearableListenerActivity(), MessageClient.OnMess
                 }
             }
         })
-        binding.playerList.adapter = mAdapter
+        binding.playerList.adapter = ConcatAdapter(
+            ListHeaderAdapter(getString(R.string.action_apps)),
+            mAdapter,
+            SpacerAdapter(dpToPx(48f).toInt())
+        )
 
         binding.retryFab.setOnClickListener {
             lifecycleScope.launch {
@@ -350,10 +358,16 @@ class MediaPlayerListActivity : WearableListenerActivity(), MessageClient.OnMess
                 appLabel = map.getString(WearableHelper.KEY_LABEL)
                 packageName = map.getString(WearableHelper.KEY_PKGNAME)
                 activityName = map.getString(WearableHelper.KEY_ACTIVITYNAME)
-                bitmapIcon = ImageUtils.bitmapFromAssetStream(
-                    Wearable.getDataClient(this@MediaPlayerListActivity),
-                    map.getAsset(WearableHelper.KEY_ICON)
-                )
+                bitmapIcon = map.getAsset(WearableHelper.KEY_ICON)?.let {
+                    try {
+                        ImageUtils.bitmapFromAssetStream(
+                            Wearable.getDataClient(this@MediaPlayerListActivity),
+                            it
+                        )
+                    } catch (e: Exception) {
+                        null
+                    }
+                }
             }
             mMediaAppsList.add(model)
         }
