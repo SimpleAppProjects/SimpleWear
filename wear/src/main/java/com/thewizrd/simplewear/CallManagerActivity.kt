@@ -291,6 +291,14 @@ class CallManagerActivity : WearableListenerActivity(), DataClient.OnDataChanged
         }
     }
 
+    private fun requestServiceDisconnect() {
+        lifecycleScope.launch {
+            if (connect()) {
+                sendMessage(mPhoneNodeWithApp!!.id, InCallUIHelper.DisconnectPath, null)
+            }
+        }
+    }
+
     override fun onResume() {
         super.onResume()
         Wearable.getDataClient(this).addListener(this)
@@ -310,6 +318,7 @@ class CallManagerActivity : WearableListenerActivity(), DataClient.OnDataChanged
     }
 
     override fun onPause() {
+        requestServiceDisconnect()
         Wearable.getDataClient(this).removeListener(this)
         super.onPause()
     }

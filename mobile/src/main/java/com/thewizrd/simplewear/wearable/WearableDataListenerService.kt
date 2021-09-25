@@ -191,6 +191,11 @@ class WearableDataListenerService : WearableListenerService() {
                         ActionStatus.PERMISSION_DENIED.name.stringToBytes()
                     )
                 }
+            } else if (messageEvent.path == InCallUIHelper.DisconnectPath) {
+                CallControllerService.enqueueWork(
+                    ctx, Intent(ctx, CallControllerService::class.java)
+                        .setAction(CallControllerService.ACTION_DISCONNECTCONTROLLER)
+                )
             }
             return@runBlocking
         }
