@@ -46,4 +46,6 @@
     <string name="message_nocall_active">No call active</string>
     <string name="error_noapps">Unable to retrieve apps</string>
 
+    <string name="pref_loadicons_title">Load app icons</string>
+
 </resources>

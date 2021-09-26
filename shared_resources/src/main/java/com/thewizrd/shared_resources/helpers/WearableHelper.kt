@@ -36,6 +36,7 @@ object WearableHelper {
     const val BtDiscoverPath = "/bluetooth/discoverable"
     const val PingPath = "/ping"
     const val AppsPath = "/apps"
+    const val AppsIconSettingsPath = "/apps/settings/icon"
     const val LaunchAppPath = "/apps/start-activity"
 
     // For Apps DataMap

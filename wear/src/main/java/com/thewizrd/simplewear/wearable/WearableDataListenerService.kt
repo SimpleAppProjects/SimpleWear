@@ -4,13 +4,12 @@ import android.bluetooth.BluetoothAdapter
 import android.content.Intent
 import android.os.Build
 import android.util.Log
-import com.google.android.gms.wearable.MessageEvent
-import com.google.android.gms.wearable.Wearable
-import com.google.android.gms.wearable.WearableListenerService
+import com.google.android.gms.wearable.*
 import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.shared_resources.utils.stringToBytes
 import com.thewizrd.simplewear.PhoneSyncActivity
+import com.thewizrd.simplewear.preferences.Settings
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -48,6 +47,26 @@ class WearableDataListenerService : WearableListenerService() {
                 .sendMessage(nodeID, path, data).await()
         } catch (e: Exception) {
             Logger.writeLine(Log.ERROR, e)
+        }
+    }
+
+    override fun onDataChanged(dataEventBuffer: DataEventBuffer) {
+        super.onDataChanged(dataEventBuffer)
+
+        for (event in dataEventBuffer) {
+            if (event.type == DataEvent.TYPE_CHANGED) {
+                val item = event.dataItem
+                if (item.uri.path == WearableHelper.AppsIconSettingsPath) {
+                    runCatching {
+                        val dataMap = DataMapItem.fromDataItem(item).dataMap
+                        if (dataMap.containsKey(WearableHelper.KEY_ICON)) {
+                            val loadIcons = dataMap.getBoolean(WearableHelper.KEY_ICON)
+                            Settings.setLoadAppIcons(loadIcons)
+                        }
+                    }
+                    break
+                }
+            }
         }
     }
 }

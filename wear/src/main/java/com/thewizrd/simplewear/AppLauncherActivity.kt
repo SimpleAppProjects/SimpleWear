@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.Bundle
+import android.os.CountDownTimer
 import android.util.Log
 import android.view.View
 import androidx.core.content.ContextCompat
@@ -25,10 +26,12 @@ import com.thewizrd.simplewear.adapters.ListHeaderAdapter
 import com.thewizrd.simplewear.adapters.SpacerAdapter
 import com.thewizrd.simplewear.controls.AppItemViewModel
 import com.thewizrd.simplewear.controls.CustomConfirmationOverlay
+import com.thewizrd.simplewear.controls.WearChipButton
 import com.thewizrd.simplewear.databinding.ActivityApplauncherBinding
 import com.thewizrd.simplewear.helpers.CustomScrollingLayoutCallback
 import com.thewizrd.simplewear.helpers.SpacerItemDecoration
 import com.thewizrd.simplewear.helpers.showConfirmationOverlay
+import com.thewizrd.simplewear.preferences.Settings
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.guava.await
@@ -45,6 +48,7 @@ class AppLauncherActivity : WearableListenerActivity(), OnDataChangedListener {
 
     private lateinit var binding: ActivityApplauncherBinding
     private lateinit var mAdapter: AppsListAdapter
+    private var timer: CountDownTimer? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -156,8 +160,67 @@ class AppLauncherActivity : WearableListenerActivity(), OnDataChangedListener {
             }
         }
 
+        findViewById<WearChipButton>(R.id.icons_pref).also { iconsPref ->
+            iconsPref.setOnClickListener {
+                iconsPref.toggle()
+                Settings.setLoadAppIcons(iconsPref.isChecked)
+                lifecycleScope.launch(Dispatchers.IO) {
+                    val dataRequest = PutDataMapRequest.create(WearableHelper.AppsIconSettingsPath)
+                    dataRequest.dataMap.putBoolean(WearableHelper.KEY_ICON, iconsPref.isChecked)
+                    dataRequest.setUrgent()
+                    runCatching {
+                        Wearable
+                            .getDataClient(this@AppLauncherActivity)
+                            .putDataItem(dataRequest.asPutDataRequest())
+                            .await()
+                    }.onFailure {
+                        Logger.writeLine(Log.ERROR, it)
+                    }
+                }
+            }
+            iconsPref.isChecked = Settings.isLoadAppIcons()
+        }
+
         intentFilter = IntentFilter()
         intentFilter.addAction(ACTION_UPDATECONNECTIONSTATUS)
+
+        // Set timer for retrieving music player data
+        timer = object : CountDownTimer(3000, 1000) {
+            override fun onTick(millisUntilFinished: Long) {}
+            override fun onFinish() {
+                lifecycleScope.launch(Dispatchers.IO) {
+                    try {
+                        val buff = Wearable.getDataClient(this@AppLauncherActivity)
+                            .getDataItems(
+                                WearableHelper.getWearDataUri(
+                                    "*",
+                                    WearableHelper.AppsPath
+                                )
+                            )
+                            .await()
+
+                        for (i in 0 until buff.count) {
+                            val item = buff[i]
+                            if (WearableHelper.AppsPath == item.uri.path) {
+                                val appsList = try {
+                                    val dataMap = DataMapItem.fromDataItem(item).dataMap
+                                    createAppsList(dataMap)
+                                } catch (e: Exception) {
+                                    Logger.writeLine(Log.ERROR, e)
+                                    null
+                                }
+                                updateAppsList(appsList ?: emptyList())
+                                showProgressBar(false)
+                            }
+                        }
+
+                        buff.release()
+                    } catch (e: Exception) {
+                        Logger.writeLine(Log.ERROR, e)
+                    }
+                }
+            }
+        }
     }
 
     private fun showProgressBar(show: Boolean) {
@@ -214,6 +277,9 @@ class AppLauncherActivity : WearableListenerActivity(), OnDataChangedListener {
 
     override fun onDataChanged(dataEventBuffer: DataEventBuffer) {
         lifecycleScope.launch {
+            // Cancel timer
+            timer?.cancel()
+
             for (event in dataEventBuffer) {
                 if (event.type == DataEvent.TYPE_CHANGED) {
                     val item = event.dataItem
@@ -233,7 +299,7 @@ class AppLauncherActivity : WearableListenerActivity(), OnDataChangedListener {
         }
     }
 
-    private suspend fun createAppsList(dataMap: DataMap): List<AppItemViewModel> {
+    private fun createAppsList(dataMap: DataMap): List<AppItemViewModel> {
         val availableApps =
             dataMap.getStringArrayList(WearableHelper.KEY_APPS) ?: return emptyList()
         val viewModels = ArrayList<AppItemViewModel>()
@@ -245,16 +311,6 @@ class AppLauncherActivity : WearableListenerActivity(), OnDataChangedListener {
                 appLabel = map.getString(WearableHelper.KEY_LABEL)
                 packageName = map.getString(WearableHelper.KEY_PKGNAME)
                 activityName = map.getString(WearableHelper.KEY_ACTIVITYNAME)
-                bitmapIcon = map.getAsset(WearableHelper.KEY_ICON)?.let {
-                    try {
-                        ImageUtils.bitmapFromAssetStream(
-                            Wearable.getDataClient(this@AppLauncherActivity),
-                            it
-                        )
-                    } catch (e: Exception) {
-                        null
-                    }
-                }
             }
             viewModels.add(model)
         }
@@ -312,6 +368,8 @@ class AppLauncherActivity : WearableListenerActivity(), OnDataChangedListener {
         lifecycleScope.launch {
             updateConnectionStatus()
             requestAppsUpdate()
+            // Wait for music player update
+            timer!!.start()
         }
     }
 

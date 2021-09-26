@@ -90,6 +90,7 @@
             android:enabled="true">
             <intent-filter>
                 <action android:name="com.google.android.gms.wearable.MESSAGE_RECEIVED" />
+                <action android:name="com.google.android.gms.wearable.DATA_CHANGED" />
 
                 <data
                     android:host="*"
@@ -99,6 +100,10 @@
                     android:host="*"
                     android:scheme="wear"
                     android:path="/start-activity" />
+                <data
+                    android:host="*"
+                    android:scheme="wear"
+                    android:path="/apps/settings/icon" />
             </intent-filter>
         </service>
 

@@ -4,8 +4,7 @@ import android.content.Intent
 import android.os.Build
 import androidx.core.util.Pair
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
-import com.google.android.gms.wearable.MessageEvent
-import com.google.android.gms.wearable.WearableListenerService
+import com.google.android.gms.wearable.*
 import com.thewizrd.shared_resources.actions.Action
 import com.thewizrd.shared_resources.actions.ActionStatus
 import com.thewizrd.shared_resources.actions.AudioStreamType
@@ -18,6 +17,7 @@ import com.thewizrd.simplewear.MainActivity
 import com.thewizrd.simplewear.helpers.PhoneStatusHelper
 import com.thewizrd.simplewear.media.MediaAppControllerUtils
 import com.thewizrd.simplewear.media.MediaControllerService
+import com.thewizrd.simplewear.preferences.Settings
 import com.thewizrd.simplewear.services.CallControllerService
 import com.thewizrd.simplewear.services.NotificationListener
 import kotlinx.coroutines.Dispatchers
@@ -101,7 +101,7 @@ class WearableDataListenerService : WearableListenerService() {
             } else if (messageEvent.path.startsWith(WearableHelper.StatusPath)) {
                 mWearMgr.sendStatusUpdate(messageEvent.sourceNodeId, messageEvent.path)
             } else if (messageEvent.path == WearableHelper.AppsPath) {
-                mWearMgr.sendAppsViaChannel(messageEvent.sourceNodeId)
+                mWearMgr.sendApps(messageEvent.sourceNodeId)
             } else if (messageEvent.path == WearableHelper.LaunchAppPath) {
                 val jsonData = messageEvent.data.bytesToString()
                 val pair = JSONParser.deserializer(jsonData, Pair::class.java)
@@ -198,6 +198,26 @@ class WearableDataListenerService : WearableListenerService() {
                 )
             }
             return@runBlocking
+        }
+    }
+
+    override fun onDataChanged(dataEventBuffer: DataEventBuffer) {
+        super.onDataChanged(dataEventBuffer)
+
+        for (event in dataEventBuffer) {
+            if (event.type == DataEvent.TYPE_CHANGED) {
+                val item = event.dataItem
+                if (item.uri.path == WearableHelper.AppsIconSettingsPath) {
+                    runCatching {
+                        val dataMap = DataMapItem.fromDataItem(item).dataMap
+                        if (dataMap.containsKey(WearableHelper.KEY_ICON)) {
+                            val loadIcons = dataMap.getBoolean(WearableHelper.KEY_ICON)
+                            Settings.setLoadAppIcons(loadIcons)
+                        }
+                    }
+                    break
+                }
+            }
         }
     }
 }

@@ -9,6 +9,7 @@ object Settings {
     const val KEY_LAYOUTMODE = "key_layoutmode"
     private const val KEY_AUTOLAUNCH = "key_autolaunchmediactrls"
     private const val KEY_MUSICFILTER = "key_musicplayerfilter"
+    private const val KEY_LOADAPPICONS = "key_loadappicons"
 
     fun useGridLayout(): Boolean {
         val preferences = PreferenceManager.getDefaultSharedPreferences(App.instance.appContext)
@@ -44,6 +45,18 @@ object Settings {
         val preferences = PreferenceManager.getDefaultSharedPreferences(App.instance.appContext)
         preferences.edit {
             putStringSet(KEY_MUSICFILTER, c)
+        }
+    }
+
+    fun isLoadAppIcons(): Boolean {
+        val preferences = PreferenceManager.getDefaultSharedPreferences(App.instance.appContext)
+        return preferences.getBoolean(KEY_LOADAPPICONS, false)
+    }
+
+    fun setLoadAppIcons(value: Boolean) {
+        val preferences = PreferenceManager.getDefaultSharedPreferences(App.instance.appContext)
+        preferences.edit {
+            putBoolean(KEY_LOADAPPICONS, value)
         }
     }
 }
