@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <dimen name="diag_button_size">54dp</dimen>
+    <dimen name="action_button_collapsed_size">52dp</dimen>
 </resources>

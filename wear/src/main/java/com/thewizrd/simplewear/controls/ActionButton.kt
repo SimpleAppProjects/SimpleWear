@@ -7,7 +7,10 @@ import android.util.AttributeSet
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.widget.Checkable
+import androidx.annotation.Px
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.view.setPadding
+import androidx.core.view.updateLayoutParams
 import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.databinding.ControlFabtogglebuttonBinding
 
@@ -89,6 +92,17 @@ class ActionButton @JvmOverloads constructor(
             binding.buttonState.visibility = if (expanded) VISIBLE else GONE
             binding.spacerGroup.visibility = if (expanded) VISIBLE else GONE
         }
+
+    internal fun setIconSize(@Px size: Int, padding: Int? = null) {
+        binding.actionIcon.updateLayoutParams {
+            height = size
+            width = size
+        }
+
+        if (padding != null) {
+            binding.actionIcon.setPadding(padding)
+        }
+    }
 
     override fun setOnClickListener(l: OnClickListener?) {
         super.setOnClickListener(l)

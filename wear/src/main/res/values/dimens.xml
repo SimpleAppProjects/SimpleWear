@@ -38,6 +38,8 @@
     <dimen name="dashboard_horizontal_margin">0dp</dimen>
     <dimen name="dashboard_top_margin">8dp</dimen>
     <dimen name="dashboard_bottom_margin">8dp</dimen>
-    <dimen name="action_button_icon_size">40dp</dimen>
+
+    <dimen name="action_button_collapsed_size">40dp</dimen>
+    <dimen name="action_button_icon_size">24dp</dimen>
 
 </resources>

@@ -87,7 +87,7 @@ class ActionItemAdapter(activity: Activity) : RecyclerView.Adapter<ActionItemAda
 
         if (viewLayoutMgr is GridLayoutManager) {
             val collapsedSize =
-                parent.context.resources.getDimensionPixelSize(R.dimen.action_button_icon_size)
+                parent.context.resources.getDimensionPixelSize(R.dimen.action_button_collapsed_size)
             val horizPadding = runCatching {
                 val spanCount = viewLayoutMgr.spanCount
                 val viewWidth = parent.getMeasuredWidth() - parent.paddingStart - parent.paddingEnd
@@ -97,6 +97,9 @@ class ActionItemAdapter(activity: Activity) : RecyclerView.Adapter<ActionItemAda
             val vertPadding = parent.getContext().dpToPx(6f).toInt()
 
             v.isExpanded = false
+            val icoSize = collapsedSize / (13f / 9)
+            v.setIconSize(icoSize.toInt(), icoSize.toInt() / 8)
+
             viewParams.width = collapsedSize
             viewParams.height = collapsedSize
             viewParams.setMargins(horizPadding / 2, vertPadding, horizPadding / 2, vertPadding)

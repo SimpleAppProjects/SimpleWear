@@ -81,7 +81,7 @@
             android:gravity="center"
             android:paddingStart="8dp"
             android:paddingEnd="8dp"
-            android:textAppearance="?titleTextAppearance"
+            android:textAppearance="?textAppearanceButton"
             app:layout_constraintBottom_toTopOf="@android:id/message"
             app:layout_constraintEnd_toStartOf="@id/right"
             app:layout_constraintStart_toEndOf="@id/left"
@@ -96,7 +96,7 @@
             android:gravity="center"
             android:paddingStart="8dp"
             android:paddingEnd="8dp"
-            android:textAppearance="?textAppearanceBody1"
+            android:textAppearance="?textAppearanceCaption2"
             android:visibility="gone"
             app:layout_constraintBottom_toTopOf="@id/buttonPanel"
             app:layout_constraintEnd_toStartOf="@id/right"
@@ -123,15 +123,16 @@
             app:layout_constraintStart_toEndOf="@id/left"
             app:layout_constraintVertical_bias="1">
 
-            <com.google.android.material.floatingactionbutton.FloatingActionButton
+            <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
                 android:id="@+id/button_negative"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:contentDescription="@android:string/no"
-                android:src="@drawable/ic_close_white_24dp"
                 android:visibility="gone"
                 app:backgroundTint="?android:colorButtonNormal"
-                app:fabCustomSize="@dimen/diag_button_size"
+                app:collapsedSize="@dimen/diag_button_size"
+                app:icon="@drawable/ic_close_white_24dp"
+                app:iconTint="?colorOnSurface"
                 tools:visibility="visible" />
 
             <Space
@@ -142,15 +143,15 @@
                 android:visibility="gone"
                 tools:visibility="visible" />
 
-            <com.google.android.material.floatingactionbutton.FloatingActionButton
+            <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
                 android:id="@+id/button_positive"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:contentDescription="@android:string/yes"
-                android:src="@drawable/ic_check_white_24dp"
                 android:visibility="gone"
-                app:backgroundTint="?android:colorAccent"
-                app:fabCustomSize="@dimen/diag_button_size"
+                app:collapsedSize="@dimen/diag_button_size"
+                app:icon="@drawable/ic_check_white_24dp"
+                app:iconTint="?colorOnPrimary"
                 tools:visibility="visible" />
         </LinearLayout>
 
