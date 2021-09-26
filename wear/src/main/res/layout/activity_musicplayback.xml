@@ -7,12 +7,13 @@
     tools:context=".MediaPlayerListActivity"
     tools:deviceIds="wear">
 
-    <androidx.viewpager.widget.ViewPager
+    <androidx.viewpager2.widget.ViewPager2
         android:id="@+id/media_viewpager"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        android:orientation="horizontal" />
 
-    <androidx.wear.widget.drawer.PageIndicatorView
+    <com.thewizrd.simplewear.controls.PageIndicatorView2
         android:id="@+id/media_viewpager_indicator"
         android:layout_width="wrap_content"
         android:layout_height="@dimen/ws_peek_view_icon_size"

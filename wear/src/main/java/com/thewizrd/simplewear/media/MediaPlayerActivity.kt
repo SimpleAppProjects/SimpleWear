@@ -1,17 +1,18 @@
 package com.thewizrd.simplewear.media
 
+import android.annotation.SuppressLint
 import android.content.*
-import android.database.DataSetObserver
 import android.os.Bundle
 import android.util.Log
 import android.view.View
 import androidx.activity.viewModels
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.FragmentManager
-import androidx.fragment.app.FragmentPagerAdapter
+import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import androidx.recyclerview.widget.RecyclerView
+import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.wear.ambient.AmbientModeSupport
 import com.google.android.gms.wearable.*
 import com.thewizrd.shared_resources.actions.ActionStatus
@@ -216,18 +217,12 @@ class MediaPlayerActivity : WearableListenerActivity(), AmbientModeSupport.Ambie
             }
         }
 
-        binding.mediaViewpager.adapter = MediaFragmentPagerAdapter(supportFragmentManager).also {
+        binding.mediaViewpager.adapter = MediaFragmentPagerAdapter(this).also {
             mViewPagerAdapter = it
         }
 
         binding.mediaViewpagerIndicator.dotFadeWhenIdle = false
         binding.mediaViewpagerIndicator.setPager(binding.mediaViewpager)
-
-        mViewPagerAdapter.registerDataSetObserver(object : DataSetObserver() {
-            override fun onChanged() {
-                binding.mediaViewpagerIndicator.notifyDataSetChanged()
-            }
-        })
 
         binding.retryFab.setOnClickListener {
             lifecycleScope.launch {
@@ -255,26 +250,30 @@ class MediaPlayerActivity : WearableListenerActivity(), AmbientModeSupport.Ambie
         mAmbientController = AmbientModeSupport.attach(this)
     }
 
-    private enum class MediaPageType {
-        Player,
-        CustomControls,
-        Browser,
-        Queue
+    private enum class MediaPageType(val value: Int) {
+        Player(1),
+        CustomControls(2),
+        Browser(3),
+        Queue(4);
+
+        companion object {
+            fun valueOf(value: Int) = MediaPageType.values().firstOrNull() { it.value == value }
+        }
     }
 
-    private inner class MediaFragmentPagerAdapter(fragmentMgr: FragmentManager) :
-        FragmentPagerAdapter(fragmentMgr) {
+    private inner class MediaFragmentPagerAdapter(activity: FragmentActivity) :
+        FragmentStateAdapter(activity) {
         var isAmbientMode = false
         var isLowBitAmbient = false
         var doBurnInProtection = false
 
         private val supportedPageTypes = mutableListOf(MediaPageType.Player)
 
-        override fun getCount(): Int {
+        override fun getItemCount(): Int {
             return supportedPageTypes.size
         }
 
-        override fun getItem(position: Int): Fragment {
+        override fun createFragment(position: Int): Fragment {
             val type = supportedPageTypes[position]
 
             val args = Bundle().apply {
@@ -301,6 +300,7 @@ class MediaPlayerActivity : WearableListenerActivity(), AmbientModeSupport.Ambie
             }
         }
 
+        @SuppressLint("NotifyDataSetChanged")
         @Synchronized
         fun updateSupportedPages(
             supportsBrowser: Boolean,
@@ -319,6 +319,19 @@ class MediaPlayerActivity : WearableListenerActivity(), AmbientModeSupport.Ambie
                 supportedPageTypes.add(MediaPageType.Browser)
             }
             this.notifyDataSetChanged()
+        }
+
+        override fun getItemId(position: Int): Long {
+            return if (position >= 0 && position < supportedPageTypes.size) {
+                supportedPageTypes[position].value.toLong()
+            } else {
+                RecyclerView.NO_ID
+            }
+        }
+
+        override fun containsItem(itemId: Long): Boolean {
+            val pageType = MediaPageType.valueOf(itemId.toInt())
+            return pageType != null && supportedPageTypes.contains(pageType)
         }
     }
 
