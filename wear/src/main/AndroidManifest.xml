@@ -116,6 +116,10 @@
             <intent-filter>
                 <action android:name="com.google.android.clockwork.ACTION_TILE_UPDATE_REQUEST" />
             </intent-filter>
+
+            <meta-data
+                android:name="com.google.android.clockwork.tiles.PREVIEW"
+                android:resource="@drawable/tile_preview" />
         </service>
 
     </application>
