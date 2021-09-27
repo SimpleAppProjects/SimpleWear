@@ -82,6 +82,8 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
 
         const val EXTRA_PACKAGENAME = "SimpleWear.Droid.extra.PACKAGE_NAME"
         const val EXTRA_AUTOLAUNCH = "SimpleWear.Droid.extra.AUTO_LAUNCH"
+        const val EXTRA_FORCEDISCONNECT = "SimpleWear.Droid.extra.FORCE_DISCONNECT"
+        const val EXTRA_SOFTLAUNCH = "SimpleWear.Droid.extra.SOFT_LAUNCH"
 
         fun enqueueWork(context: Context, work: Intent) {
             if (NotificationListener.isEnabled(context)) {
@@ -192,6 +194,7 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
             ACTION_CONNECTCONTROLLER -> {
                 mSelectedPackageName = intent.getStringExtra(EXTRA_PACKAGENAME)
                 val isAutoLaunch = intent.getBooleanExtra(EXTRA_AUTOLAUNCH, false)
+                val isSoftLaunch = intent.getBooleanExtra(EXTRA_SOFTLAUNCH, false)
 
                 scope.launch {
                     if ((isAutoLaunch || mSelectedPackageName == mSelectedMediaApp?.packageName) && mController != null) return@launch
@@ -204,14 +207,17 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
                         }
                     }
 
-                    connectMediaSession()
+                    connectMediaSession(isSoftLaunch)
                 }
             }
             ACTION_DISCONNECTCONTROLLER -> {
-                scope.launch {
-                    // Delay in case service was just started as foreground
-                    delay(1000)
-                    stopSelf()
+                val disconnect = intent.getBooleanExtra(EXTRA_FORCEDISCONNECT, true)
+                if (disconnect) {
+                    scope.launch {
+                        // Delay in case service was just started as foreground
+                        delay(1000)
+                        stopSelf()
+                    }
                 }
             }
         }
@@ -237,6 +243,9 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
     private fun removeMediaState() {
         scope.launch {
             Log.d(TAG, "removeMediaState")
+            mDataClient.deleteDataItems(
+                WearableHelper.getWearDataUri(MediaHelper.MediaPlayerStateBridgePath)
+            ).await()
             mDataClient.deleteDataItems(
                 WearableHelper.getWearDataUri(MediaHelper.MediaPlayerStatePath)
             ).await()
@@ -294,6 +303,17 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
 
     private fun findActiveMediaSession(activeSessions: List<MediaController>) {
         scope.launch {
+            val firstActiveCtrlr = activeSessions.firstOrNull()
+            if (firstActiveCtrlr != null) {
+                // Check if active session has changed
+                if (firstActiveCtrlr.packageName != mSelectedPackageName) {
+                    // If so reset
+                    disconnectMedia()
+                    mSelectedPackageName = firstActiveCtrlr.packageName
+                    mSelectedMediaApp = null
+                }
+            }
+
             if (mSelectedMediaApp?.sessionToken != null || mBrowser?.isConnected == true) {
                 if (setupMediaController()) return@launch
             }
@@ -313,6 +333,22 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
                 // No active sessions available
                 sendControllerUnavailable()
             }
+        }
+    }
+
+    private fun isPlaybackStateActive(state: Int?): Boolean {
+        return when (state) {
+            PlaybackStateCompat.STATE_BUFFERING,
+            PlaybackStateCompat.STATE_CONNECTING,
+            PlaybackStateCompat.STATE_FAST_FORWARDING,
+            PlaybackStateCompat.STATE_PLAYING,
+            PlaybackStateCompat.STATE_REWINDING,
+            PlaybackStateCompat.STATE_SKIPPING_TO_NEXT,
+            PlaybackStateCompat.STATE_SKIPPING_TO_PREVIOUS,
+            PlaybackStateCompat.STATE_SKIPPING_TO_QUEUE_ITEM -> {
+                true
+            }
+            else -> false
         }
     }
 
@@ -372,9 +408,11 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
         }
     }
 
-    private fun connectMediaSession() {
+    private fun connectMediaSession(softLaunch: Boolean = false) {
         if (mSelectedMediaApp != null) {
-            launchApp()
+            if (!softLaunch) {
+                launchApp()
+            }
             setupMedia()
         }
     }
@@ -548,6 +586,9 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
             Log.d(TAG, "Making request: ${mapRequest.uri}")
             mDataClient.deleteDataItems(mapRequest.uri).await()
             mDataClient.putDataItem(request).await()
+            Log.d(TAG, "Removing media bridge")
+            mDataClient.deleteDataItems(WearableHelper.getWearDataUri(MediaHelper.MediaPlayerStateBridgePath))
+                .await()
         }
     }
 
@@ -558,6 +599,8 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
             Log.e(TAG, "Failed to update media info, null MediaController.")
             scope.launch {
                 mDataClient.deleteDataItems(mapRequest.uri).await()
+                mDataClient.deleteDataItems(WearableHelper.getWearDataUri(MediaHelper.MediaPlayerStateBridgePath))
+                    .await()
             }
             return
         }
@@ -592,11 +635,14 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
         mapRequest.dataMap.putString(MediaHelper.KEY_MEDIA_PLAYBACKSTATE, stateName.name)
 
         val mediaMetadata = mController?.metadata
+        var songTitle: String? = null
         if (mediaMetadata != null && !mediaMetadata.isNullOrEmpty()) {
             mapRequest.dataMap.putString(
                 MediaHelper.KEY_MEDIA_METADATA_TITLE,
-                mediaMetadata.getString(MediaMetadataCompat.METADATA_KEY_DISPLAY_TITLE)
-                    ?: mediaMetadata.getString(MediaMetadataCompat.METADATA_KEY_TITLE)
+                (mediaMetadata.getString(MediaMetadataCompat.METADATA_KEY_DISPLAY_TITLE)
+                    ?: mediaMetadata.getString(MediaMetadataCompat.METADATA_KEY_TITLE)).also {
+                    songTitle = it
+                }
             )
             mapRequest.dataMap.putString(
                 MediaHelper.KEY_MEDIA_METADATA_ARTIST,
@@ -625,6 +671,15 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
             Log.d(TAG, "Making request: ${mapRequest.uri}")
             mDataClient.deleteDataItems(mapRequest.uri).await()
             mDataClient.putDataItem(request).await()
+            Log.d(TAG, "Create media bridge request")
+            mDataClient.putDataItem(
+                PutDataMapRequest.create(MediaHelper.MediaPlayerStateBridgePath).apply {
+                    dataMap.putString(MediaHelper.KEY_MEDIA_METADATA_TITLE, songTitle)
+                    dataMap.putLong("time", SystemClock.uptimeMillis())
+                }
+                    .setUrgent()
+                    .asPutDataRequest()
+            ).await()
         }
     }
 

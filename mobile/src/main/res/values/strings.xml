@@ -31,7 +31,7 @@
     <string name="permission_title_deactivate_uninstall">Deactivate and uninstall</string>
     <string name="message_deactivate_deviceadmin">To uninstall the app, click here to deactivate device admin access or deactivate from "Settings -> Security -> Device admin (apps)"</string>
 
-    <string name="not_channel_name_callcontroller">Call Controller</string>
+    <string name="not_channel_name_callcontroller" translatable="false">@string/title_callcontroller</string>
     <string name="not_title_callcontroller_running">Call Controller active</string>
     <string name="error_permissiondenied">Permission denied</string>
     <string name="permission_callmanager_enabled">Phone state access enabled</string>
@@ -40,5 +40,10 @@
     <string name="action_unmute">Unmute</string>
     <string name="action_speakerphone_off">Speakerphone off</string>
     <string name="action_speakerphone_on">Speakerphone on</string>
+
+    <string name="preference_title_mediabridge">Bridge media notifications</string>
+    <string name="preference_summary_mediabridge">Show media notification on watch when there is an active media session</string>
+    <string name="preference_title_callbridge">Bridge call notifications</string>
+    <string name="preference_summary_callbridge">Show call notification on watch when there is an active call</string>
 
 </resources>

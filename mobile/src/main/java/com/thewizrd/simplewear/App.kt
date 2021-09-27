@@ -29,6 +29,8 @@ import com.thewizrd.shared_resources.actions.BatteryStatus
 import com.thewizrd.shared_resources.helpers.AppState
 import com.thewizrd.shared_resources.utils.JSONParser
 import com.thewizrd.shared_resources.utils.Logger
+import com.thewizrd.simplewear.media.MediaControllerService
+import com.thewizrd.simplewear.services.CallControllerService
 import com.thewizrd.simplewear.wearable.WearableWorker
 import kotlin.system.exitProcess
 
@@ -180,6 +182,21 @@ class App : Application(), ApplicationLib, ActivityLifecycleCallbacks, Configura
         }
 
         WearableWorker.sendStatusUpdate(appContext)
+        if (com.thewizrd.simplewear.preferences.Settings.isBridgeMediaEnabled()) {
+            MediaControllerService.enqueueWork(
+                this,
+                Intent(this, MediaControllerService::class.java)
+                    .setAction(MediaControllerService.ACTION_CONNECTCONTROLLER)
+                    .putExtra(MediaControllerService.EXTRA_SOFTLAUNCH, true)
+            )
+        }
+        if (com.thewizrd.simplewear.preferences.Settings.isBridgeCallsEnabled()) {
+            CallControllerService.enqueueWork(
+                this,
+                Intent(this, CallControllerService::class.java)
+                    .setAction(CallControllerService.ACTION_CONNECTCONTROLLER)
+            )
+        }
     }
 
     override fun onTerminate() {

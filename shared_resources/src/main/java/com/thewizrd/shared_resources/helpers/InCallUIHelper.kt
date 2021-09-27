@@ -2,6 +2,8 @@ package com.thewizrd.shared_resources.helpers
 
 object InCallUIHelper {
     const val CallStatePath = "/incallui"
+    const val CallStateBridgePath = "/incallui/bridge"
+
     const val DisconnectPath = "/incallui/disconnect"
     const val EndCallPath = "/incallui/hangup"
     const val MuteMicPath = "/incallui/mute"

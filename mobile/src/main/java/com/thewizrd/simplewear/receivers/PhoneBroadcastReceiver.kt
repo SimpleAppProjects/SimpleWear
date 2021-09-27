@@ -5,6 +5,9 @@ import android.content.Context
 import android.content.Intent
 import android.util.Log
 import com.thewizrd.shared_resources.utils.Logger
+import com.thewizrd.simplewear.media.MediaControllerService
+import com.thewizrd.simplewear.preferences.Settings
+import com.thewizrd.simplewear.services.CallControllerService
 import com.thewizrd.simplewear.services.TorchService
 import com.thewizrd.simplewear.wearable.WearableWorker
 
@@ -18,6 +21,21 @@ class PhoneBroadcastReceiver : BroadcastReceiver() {
             Intent.ACTION_MY_PACKAGE_REPLACED,
             Intent.ACTION_BOOT_COMPLETED -> {
                 WearableWorker.sendStatusUpdate(context)
+                if (Settings.isBridgeMediaEnabled()) {
+                    MediaControllerService.enqueueWork(
+                        context,
+                        Intent(context, MediaControllerService::class.java)
+                            .setAction(MediaControllerService.ACTION_CONNECTCONTROLLER)
+                            .putExtra(MediaControllerService.EXTRA_SOFTLAUNCH, true)
+                    )
+                }
+                if (Settings.isBridgeCallsEnabled()) {
+                    CallControllerService.enqueueWork(
+                        context,
+                        Intent(context, CallControllerService::class.java)
+                            .setAction(CallControllerService.ACTION_CONNECTCONTROLLER)
+                    )
+                }
             }
             TorchService.ACTION_END_LIGHT -> {
                 TorchService.enqueueWork(

@@ -75,7 +75,7 @@
         <activity
             android:name=".CallManagerActivity"
             android:icon="@drawable/ic_phone_24dp"
-            android:label="InCall Controller"
+            android:label="@string/title_callcontroller"
             android:theme="@style/WearAppTheme"
             android:launchMode="singleInstance"
             android:parentActivityName=".DashboardActivity">
@@ -91,6 +91,7 @@
             <intent-filter>
                 <action android:name="com.google.android.gms.wearable.MESSAGE_RECEIVED" />
                 <action android:name="com.google.android.gms.wearable.DATA_CHANGED" />
+                <action android:name="com.google.android.gms.wearable.CAPABILITY_CHANGED" />
 
                 <data
                     android:host="*"
@@ -104,6 +105,14 @@
                     android:host="*"
                     android:scheme="wear"
                     android:path="/apps/settings/icon" />
+                <data
+                    android:host="*"
+                    android:scheme="wear"
+                    android:path="/incallui/bridge" />
+                <data
+                    android:host="*"
+                    android:scheme="wear"
+                    android:path="/media/playback_state/bridge" />
             </intent-filter>
         </service>
 

@@ -188,6 +188,8 @@ class MediaPlayerControlsFragment : LifecycleAwareFragment(), MessageClient.OnMe
 
         binding.playpauseButton.setImageResource(R.drawable.playpause_button_ambient)
 
+        binding.titleView.isSelected = false
+
         if (isLowBitAmbient) {
             binding.timeText.enterLowBitAmbientMode()
             binding.titleView.paint.isAntiAlias = false
@@ -210,6 +212,8 @@ class MediaPlayerControlsFragment : LifecycleAwareFragment(), MessageClient.OnMe
         showPlaybackLoading(showPlaybackLoading)
         showLoading(showLoading)
 
+        binding.titleView.isSelected = true
+
         if (isLowBitAmbient) {
             binding.timeText.exitLowBitAmbientMode()
             binding.titleView.paint.isAntiAlias = true
@@ -230,6 +234,8 @@ class MediaPlayerControlsFragment : LifecycleAwareFragment(), MessageClient.OnMe
         // Request connect to media player
         requestVolumeStatus()
         updatePlayerState()
+
+        binding.titleView.isSelected = true
     }
 
     override fun onPause() {

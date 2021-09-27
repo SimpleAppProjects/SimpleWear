@@ -61,8 +61,11 @@
             android:gravity="center_horizontal|bottom"
             android:padding="2dp"
             android:maxLines="1"
+            android:focusable="true"
             android:ellipsize="marquee"
             android:marqueeRepeatLimit="marquee_forever"
+            android:scrollHorizontally="true"
+            android:singleLine="true"
             android:textAppearance="?textAppearanceButton"
             tools:text="Title" />
 

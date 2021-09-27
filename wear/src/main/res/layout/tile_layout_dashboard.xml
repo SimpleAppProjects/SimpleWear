@@ -34,6 +34,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:ellipsize="marquee"
+            android:focusable="true"
             android:fontFamily="sans-serif-medium"
             android:gravity="center"
             android:marqueeRepeatLimit="marquee_forever"

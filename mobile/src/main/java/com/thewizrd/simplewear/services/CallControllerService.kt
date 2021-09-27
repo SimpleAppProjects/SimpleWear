@@ -66,6 +66,8 @@ class CallControllerService : Service(), MessageClient.OnMessageReceivedListener
         private const val ACTION_HANGUPCALL = "SimpleWear.Droid.action.HANGUP_CALL"
         private const val EXTRA_TOGGLESTATE = "SimpleWear.Droid.extra.TOGGLE_STATE"
 
+        const val EXTRA_FORCEDISCONNECT = "SimpleWear.Droid.extra.FORCE_DISCONNECT"
+
         fun enqueueWork(context: Context, work: Intent) {
             if (ContextCompat.checkSelfPermission(
                     context,
@@ -235,10 +237,13 @@ class CallControllerService : Service(), MessageClient.OnMessageReceivedListener
                 }
             }
             ACTION_DISCONNECTCONTROLLER -> {
-                scope.launch {
-                    // Delay in case service was just started as foreground
-                    delay(1000)
-                    stopSelf()
+                val disconnect = intent.getBooleanExtra(EXTRA_FORCEDISCONNECT, true)
+                if (disconnect) {
+                    scope.launch {
+                        // Delay in case service was just started as foreground
+                        delay(1000)
+                        stopSelf()
+                    }
                 }
             }
             ACTION_HANGUPCALL -> {
@@ -386,6 +391,14 @@ class CallControllerService : Service(), MessageClient.OnMessageReceivedListener
             mDataClient.deleteDataItems(mapRequest.uri).await()
             mDataClient.putDataItem(mapRequest.asPutDataRequest())
                 .await()
+            if (callActive) {
+                mDataClient.putDataItem(
+                    PutDataRequest.create(InCallUIHelper.CallStateBridgePath).setUrgent()
+                ).await()
+            } else {
+                mDataClient.deleteDataItems(WearableHelper.getWearDataUri(InCallUIHelper.CallStateBridgePath))
+                    .await()
+            }
         } catch (e: Exception) {
             Logger.writeLine(Log.ERROR, e)
         }

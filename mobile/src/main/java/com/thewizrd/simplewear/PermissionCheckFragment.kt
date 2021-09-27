@@ -32,6 +32,8 @@ import com.thewizrd.simplewear.helpers.PhoneStatusHelper
 import com.thewizrd.simplewear.helpers.PhoneStatusHelper.isCameraPermissionEnabled
 import com.thewizrd.simplewear.helpers.PhoneStatusHelper.isDeviceAdminEnabled
 import com.thewizrd.simplewear.helpers.PhoneStatusHelper.isNotificationAccessAllowed
+import com.thewizrd.simplewear.media.MediaControllerService
+import com.thewizrd.simplewear.services.CallControllerService
 import com.thewizrd.simplewear.services.NotificationListener
 import com.thewizrd.simplewear.wearable.WearableDataListenerService
 import com.thewizrd.simplewear.wearable.WearableWorker
@@ -86,15 +88,22 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
                 }
             }
         }
-        binding.companionPairPref?.setOnClickListener {
+        binding.companionPairPref.setOnClickListener {
             LocalBroadcastManager.getInstance(requireContext())
-                    .registerReceiver(mReceiver, IntentFilter(WearableDataListenerService.ACTION_GETCONNECTEDNODE))
+                .registerReceiver(
+                    mReceiver,
+                    IntentFilter(WearableDataListenerService.ACTION_GETCONNECTEDNODE)
+                )
             if (timer == null) {
                 timer = object : CountDownTimer(5000, 1000) {
                     override fun onTick(millisUntilFinished: Long) {}
                     override fun onFinish() {
                         if (context != null) {
-                            Toast.makeText(context, R.string.message_watchbttimeout, Toast.LENGTH_LONG).show()
+                            Toast.makeText(
+                                context,
+                                R.string.message_watchbttimeout,
+                                Toast.LENGTH_LONG
+                            ).show()
                             binding.companionPairProgress?.visibility = View.GONE
                             Logger.writeLine(Log.INFO, "%s: BT Request Timeout", TAG)
                         }
@@ -102,10 +111,12 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
                 }
             }
             timer?.start()
-            binding.companionPairProgress?.visibility = View.VISIBLE
+            binding.companionPairProgress.visibility = View.VISIBLE
             enqueueAction(requireContext(), WearableWorker.ACTION_REQUESTBTDISCOVERABLE)
             Logger.writeLine(Log.INFO, "%s: ACTION_REQUESTBTDISCOVERABLE", TAG)
         }
+        binding.companionPairPref.visibility =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) View.VISIBLE else View.GONE
 
         binding.notiflistenerPref.setOnClickListener {
             if (!NotificationListener.isEnabled(requireContext())) {
@@ -144,6 +155,41 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
             }
         }
 
+        binding.bridgeCallsToggle.isChecked =
+            com.thewizrd.simplewear.preferences.Settings.isBridgeCallsEnabled()
+        binding.bridgeCallsToggle.setOnCheckedChangeListener { _, isChecked ->
+            com.thewizrd.simplewear.preferences.Settings.setBridgeCallsEnabled(isChecked)
+            if (isChecked) {
+                CallControllerService.enqueueWork(
+                    requireContext(),
+                    Intent(context, CallControllerService::class.java)
+                        .setAction(CallControllerService.ACTION_CONNECTCONTROLLER)
+                )
+            }
+        }
+
+        binding.bridgeCallsPref.setOnClickListener {
+            binding.bridgeCallsToggle.toggle()
+        }
+
+        binding.bridgeMediaToggle.isChecked =
+            com.thewizrd.simplewear.preferences.Settings.isBridgeMediaEnabled()
+        binding.bridgeMediaToggle.setOnCheckedChangeListener { _, isChecked ->
+            com.thewizrd.simplewear.preferences.Settings.setBridgeMediaEnabled(isChecked)
+            if (isChecked) {
+                MediaControllerService.enqueueWork(
+                    requireContext(),
+                    Intent(context, MediaControllerService::class.java)
+                        .setAction(MediaControllerService.ACTION_CONNECTCONTROLLER)
+                        .putExtra(MediaControllerService.EXTRA_SOFTLAUNCH, true)
+                )
+            }
+        }
+
+        binding.bridgeMediaPref.setOnClickListener {
+            binding.bridgeMediaToggle.toggle()
+        }
+
         return binding.root
     }
 
@@ -157,7 +203,7 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
         override fun onReceive(context: Context, intent: Intent) {
             if (WearableDataListenerService.ACTION_GETCONNECTEDNODE == intent.action) {
                 timer?.cancel()
-                binding.companionPairProgress?.visibility = View.GONE
+                binding.companionPairProgress.visibility = View.GONE
                 Logger.writeLine(Log.INFO, "%s: node received", TAG)
                 pairDevice(intent.getStringExtra(WearableDataListenerService.EXTRA_NODEDEVICENAME))
                 LocalBroadcastManager.getInstance(context)
@@ -269,7 +315,8 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
     override fun onResume() {
         super.onResume()
         updateCamPermText(isCameraPermissionEnabled(requireContext()))
-        val mDPM = requireContext().getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
+        val mDPM =
+            requireContext().getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
         val mScreenLockAdmin = ComponentName(requireContext(), ScreenLockAdminReceiver::class.java)
         updateDeviceAdminText(mDPM.isAdminActive(mScreenLockAdmin))
         updateDNDAccessText(isNotificationAccessAllowed(requireContext()))
@@ -278,14 +325,25 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
                 requireContext().getSystemService(Context.COMPANION_DEVICE_SERVICE) as CompanionDeviceManager
             updatePairPermText(deviceManager.associations.isNotEmpty())
         }
-        updateNotifListenerText(NotificationListener.isEnabled(requireContext()))
         updateUninstallText(mDPM.isAdminActive(mScreenLockAdmin))
-        updateManageCallsText(
-            NotificationListener.isEnabled(requireContext()) && ContextCompat.checkSelfPermission(
-                requireContext(),
-                Manifest.permission.READ_PHONE_STATE
-            ) == PackageManager.PERMISSION_GRANTED
-        )
+
+        val notListenerEnabled = NotificationListener.isEnabled(requireContext())
+        val phoneStatePermGranted = ContextCompat.checkSelfPermission(
+            requireContext(),
+            Manifest.permission.READ_PHONE_STATE
+        ) == PackageManager.PERMISSION_GRANTED
+
+        updateNotifListenerText(notListenerEnabled)
+        updateManageCallsText(notListenerEnabled && phoneStatePermGranted)
+
+        binding.bridgeMediaPref.isEnabled = notListenerEnabled
+        if (!notListenerEnabled && com.thewizrd.simplewear.preferences.Settings.isBridgeMediaEnabled()) {
+            com.thewizrd.simplewear.preferences.Settings.setBridgeMediaEnabled(false)
+        }
+        binding.bridgeCallsPref.isEnabled = notListenerEnabled && phoneStatePermGranted
+        if ((!notListenerEnabled || !phoneStatePermGranted) && com.thewizrd.simplewear.preferences.Settings.isBridgeCallsEnabled()) {
+            com.thewizrd.simplewear.preferences.Settings.setBridgeCallsEnabled(false)
+        }
     }
 
     private fun updateCamPermText(enabled: Boolean) {
@@ -304,8 +362,8 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
     }
 
     private fun updatePairPermText(enabled: Boolean) {
-        binding.companionPairSummary?.setText(if (enabled) R.string.permission_pairdevice_enabled else R.string.permission_pairdevice_disabled)
-        binding.companionPairSummary?.setTextColor(if (enabled) Color.GREEN else Color.RED)
+        binding.companionPairSummary.setText(if (enabled) R.string.permission_pairdevice_enabled else R.string.permission_pairdevice_disabled)
+        binding.companionPairSummary.setTextColor(if (enabled) Color.GREEN else Color.RED)
     }
 
     private fun updateNotifListenerText(enabled: Boolean) {

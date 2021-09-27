@@ -1,239 +1,417 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".PermissionCheckFragment">
+    android:fillViewport="true"
+    android:scrollbars="vertical"
+    tools:context=".PermissionCheckFragment"
+    tools:background="@color/design_default_color_surface">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:paddingStart="16dp">
+        android:orientation="vertical">
 
-        <TextView
-            android:id="@+id/cat_title"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_gravity="start"
-            android:layout_marginTop="16dp"
-            android:paddingStart="0dp"
-            android:paddingEnd="?android:attr/listPreferredItemPaddingRight"
-            android:text="@string/cat_title_permissions"
-            android:textAlignment="viewStart"
-            android:textAppearance="?textAppearanceBody2"
-            android:textColor="?attr/colorPrimary" />
+            android:orientation="vertical"
+            android:paddingStart="16dp">
+
+            <TextView
+                android:id="@+id/perms_cat_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="start"
+                android:layout_marginTop="16dp"
+                android:paddingStart="0dp"
+                android:paddingEnd="?android:attr/listPreferredItemPaddingRight"
+                android:text="@string/cat_title_permissions"
+                android:textAlignment="viewStart"
+                android:textAppearance="?textAppearanceBody2"
+                android:textColor="?attr/colorPrimary"
+                tools:textColor="@color/colorPrimary" />
+
+        </LinearLayout>
+
+        <RelativeLayout
+            android:id="@+id/torch_pref"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="64dp"
+            android:padding="16dp"
+            android:background="?selectableItemBackground">
+
+            <TextView
+                android:id="@+id/torch_pref_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
+                android:layout_alignParentTop="true"
+                android:ellipsize="marquee"
+                android:fadingEdge="horizontal"
+                android:singleLine="true"
+                android:text="@string/action_torch"
+                android:textAppearance="?textAppearanceHeadline5"
+                android:textSize="18sp" />
+
+            <TextView
+                android:id="@+id/torch_pref_summary"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/torch_pref_title"
+                android:layout_alignStart="@+id/torch_pref_title"
+                android:maxLines="4"
+                android:textAppearance="?android:textAppearanceSmall" />
+
+        </RelativeLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@drawable/abc_list_divider_material" />
+
+        <RelativeLayout
+            android:id="@+id/deviceadmin_pref"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="64dp"
+            android:padding="16dp"
+            android:background="?selectableItemBackground">
+
+            <TextView
+                android:id="@+id/deviceadmin_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
+                android:layout_alignParentTop="true"
+                android:ellipsize="marquee"
+                android:fadingEdge="horizontal"
+                android:singleLine="true"
+                android:text="@string/action_lockscreen"
+                android:textAppearance="?textAppearanceHeadline5"
+                android:textSize="18sp" />
+
+            <TextView
+                android:id="@+id/deviceadmin_summary"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/deviceadmin_title"
+                android:layout_alignStart="@+id/deviceadmin_title"
+                android:maxLines="4"
+                android:textAppearance="?android:textAppearanceSmall" />
+
+        </RelativeLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@drawable/abc_list_divider_material" />
+
+        <RelativeLayout
+            android:id="@+id/dnd_pref"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="64dp"
+            android:padding="16dp"
+            android:background="?selectableItemBackground">
+
+            <TextView
+                android:id="@+id/dnd_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
+                android:layout_alignParentTop="true"
+                android:ellipsize="marquee"
+                android:fadingEdge="horizontal"
+                android:singleLine="true"
+                android:text="@string/action_dnd"
+                android:textAppearance="?textAppearanceHeadline5"
+                android:textSize="18sp" />
+
+            <TextView
+                android:id="@+id/dnd_summary"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/dnd_title"
+                android:layout_alignStart="@+id/dnd_title"
+                android:maxLines="4"
+                android:textAppearance="?android:textAppearanceSmall" />
+
+        </RelativeLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@drawable/abc_list_divider_material" />
+
+        <RelativeLayout
+            android:id="@+id/companion_pair_pref"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="64dp"
+            android:padding="16dp"
+            android:background="?selectableItemBackground"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <TextView
+                android:id="@+id/companion_pair_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
+                android:layout_alignParentTop="true"
+                android:ellipsize="marquee"
+                android:fadingEdge="horizontal"
+                android:singleLine="true"
+                android:text="@string/permission_title_pairdevice"
+                android:textAppearance="?textAppearanceHeadline5"
+                android:textSize="18sp" />
+
+            <TextView
+                android:id="@+id/companion_pair_summary"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/companion_pair_title"
+                android:layout_alignStart="@+id/companion_pair_title"
+                android:maxLines="4"
+                android:textAppearance="?android:textAppearanceSmall" />
+
+            <com.google.android.material.progressindicator.LinearProgressIndicator
+                android:id="@+id/companion_pair_progress"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/companion_pair_summary"
+                android:layout_alignParentStart="true"
+                android:layout_alignParentEnd="true"
+                android:indeterminate="true"
+                android:visibility="gone"
+                app:trackCornerRadius="2dp"
+                tools:visibility="visible" />
+
+        </RelativeLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@drawable/abc_list_divider_material" />
+
+        <RelativeLayout
+            android:id="@+id/notiflistener_pref"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="64dp"
+            android:padding="16dp"
+            android:background="?selectableItemBackground">
+
+            <TextView
+                android:id="@+id/notiflistener_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
+                android:layout_alignParentTop="true"
+                android:ellipsize="marquee"
+                android:fadingEdge="horizontal"
+                android:singleLine="true"
+                android:text="@string/permission_title_notifservice"
+                android:textAppearance="?textAppearanceHeadline5"
+                android:textSize="18sp" />
+
+            <TextView
+                android:id="@+id/notiflistener_summary"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/notiflistener_title"
+                android:layout_alignStart="@+id/notiflistener_title"
+                android:maxLines="4"
+                android:textAppearance="?android:textAppearanceSmall" />
+
+        </RelativeLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@drawable/abc_list_divider_material" />
+
+        <LinearLayout
+            android:id="@+id/callcontrol_pref"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="64dp"
+            android:padding="16dp"
+            android:gravity="center_vertical"
+            android:orientation="vertical"
+            android:background="?selectableItemBackground">
+
+            <TextView
+                android:id="@+id/callcontrol_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:ellipsize="marquee"
+                android:fadingEdge="horizontal"
+                android:singleLine="true"
+                android:text="@string/not_channel_name_callcontroller"
+                android:textAppearance="?textAppearanceHeadline5"
+                android:textSize="18sp" />
+
+            <TextView
+                android:id="@+id/callcontrol_summary"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:maxLines="4"
+                android:textAppearance="?android:textAppearanceSmall" />
+
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@drawable/abc_list_divider_material" />
+
+        <LinearLayout
+            android:id="@+id/uninstall_pref"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="64dp"
+            android:padding="16dp"
+            android:gravity="center_vertical"
+            android:orientation="vertical"
+            android:background="?selectableItemBackground">
+
+            <TextView
+                android:id="@+id/uninstall_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:ellipsize="marquee"
+                android:fadingEdge="horizontal"
+                android:singleLine="true"
+                android:text="@string/permission_title_uninstall"
+                android:textAppearance="?textAppearanceHeadline5"
+                android:textSize="18sp" />
+
+            <TextView
+                android:id="@+id/uninstall_summary"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:maxLines="4"
+                android:textAppearance="?android:textAppearanceSmall"
+                android:text="@string/message_deactivate_deviceadmin"
+                android:visibility="gone" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="16dp">
+
+            <TextView
+                android:id="@+id/settings_cat_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="start"
+                android:layout_marginTop="16dp"
+                android:paddingStart="0dp"
+                android:paddingEnd="?android:attr/listPreferredItemPaddingRight"
+                android:text="@string/title_settings"
+                android:textAlignment="viewStart"
+                android:textAppearance="?textAppearanceBody2"
+                android:textColor="?attr/colorPrimary"
+                tools:textColor="@color/colorPrimary" />
+
+        </LinearLayout>
+
+        <RelativeLayout
+            android:id="@+id/bridge_media_pref"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="64dp"
+            android:padding="16dp"
+            android:background="?selectableItemBackground">
+
+            <TextView
+                android:id="@+id/bridge_media_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
+                android:layout_alignParentTop="true"
+                android:layout_toStartOf="@id/bridge_media_toggle"
+                android:ellipsize="marquee"
+                android:fadingEdge="horizontal"
+                android:singleLine="true"
+                android:text="@string/preference_title_mediabridge"
+                android:textAppearance="?textAppearanceHeadline5"
+                android:textSize="18sp" />
+
+            <TextView
+                android:id="@+id/bridge_media_summary"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/bridge_media_title"
+                android:layout_alignStart="@+id/bridge_media_title"
+                android:layout_toStartOf="@id/bridge_media_toggle"
+                android:maxLines="4"
+                android:textAppearance="?android:textAppearanceSmall"
+                android:text="@string/preference_summary_mediabridge" />
+
+            <com.google.android.material.switchmaterial.SwitchMaterial
+                android:id="@+id/bridge_media_toggle"
+                android:duplicateParentState="true"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checked="true"
+                android:layout_alignParentEnd="true"
+                android:layout_centerInParent="true" />
+
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:id="@+id/bridge_calls_pref"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="64dp"
+            android:padding="16dp"
+            android:background="?selectableItemBackground">
+
+            <TextView
+                android:id="@+id/bridge_calls_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
+                android:layout_alignParentTop="true"
+                android:layout_toStartOf="@id/bridge_calls_toggle"
+                android:ellipsize="marquee"
+                android:fadingEdge="horizontal"
+                android:singleLine="true"
+                android:text="@string/preference_title_callbridge"
+                android:textAppearance="?textAppearanceHeadline5"
+                android:textSize="18sp" />
+
+            <TextView
+                android:id="@+id/bridge_calls_summary"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/bridge_calls_title"
+                android:layout_alignStart="@+id/bridge_calls_title"
+                android:layout_toStartOf="@id/bridge_calls_toggle"
+                android:maxLines="4"
+                android:textAppearance="?android:textAppearanceSmall"
+                android:text="@string/preference_summary_callbridge" />
+
+            <com.google.android.material.switchmaterial.SwitchMaterial
+                android:id="@+id/bridge_calls_toggle"
+                android:duplicateParentState="true"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checked="true"
+                android:layout_alignParentEnd="true"
+                android:layout_centerInParent="true" />
+
+        </RelativeLayout>
 
     </LinearLayout>
 
-    <RelativeLayout
-        android:id="@+id/torch_pref"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:minHeight="64dp"
-        android:padding="16dp"
-        android:background="?selectableItemBackground">
-
-        <TextView
-            android:id="@+id/torch_pref_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentStart="true"
-            android:layout_alignParentTop="true"
-            android:ellipsize="marquee"
-            android:fadingEdge="horizontal"
-            android:singleLine="true"
-            android:text="@string/action_torch"
-            android:textSize="18sp" />
-
-        <TextView
-            android:id="@+id/torch_pref_summary"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_below="@+id/torch_pref_title"
-            android:layout_alignStart="@+id/torch_pref_title"
-            android:maxLines="4"
-            android:textAppearance="?android:textAppearanceSmall" />
-
-    </RelativeLayout>
-
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:background="@drawable/abc_list_divider_material" />
-
-    <RelativeLayout
-        android:id="@+id/deviceadmin_pref"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:minHeight="64dp"
-        android:padding="16dp"
-        android:background="?selectableItemBackground">
-
-        <TextView
-            android:id="@+id/deviceadmin_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentStart="true"
-            android:layout_alignParentTop="true"
-            android:ellipsize="marquee"
-            android:fadingEdge="horizontal"
-            android:singleLine="true"
-            android:text="@string/action_lockscreen"
-            android:textSize="18sp" />
-
-        <TextView
-            android:id="@+id/deviceadmin_summary"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_below="@+id/deviceadmin_title"
-            android:layout_alignStart="@+id/deviceadmin_title"
-            android:maxLines="4"
-            android:textAppearance="?android:textAppearanceSmall" />
-
-    </RelativeLayout>
-
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:background="@drawable/abc_list_divider_material" />
-
-    <RelativeLayout
-        android:id="@+id/dnd_pref"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:minHeight="64dp"
-        android:padding="16dp"
-        android:background="?selectableItemBackground">
-
-        <TextView
-            android:id="@+id/dnd_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentStart="true"
-            android:layout_alignParentTop="true"
-            android:ellipsize="marquee"
-            android:fadingEdge="horizontal"
-            android:singleLine="true"
-            android:text="@string/action_dnd"
-            android:textSize="18sp" />
-
-        <TextView
-            android:id="@+id/dnd_summary"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_below="@+id/dnd_title"
-            android:layout_alignStart="@+id/dnd_title"
-            android:maxLines="4"
-            android:textAppearance="?android:textAppearanceSmall" />
-
-    </RelativeLayout>
-
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:background="@drawable/abc_list_divider_material" />
-
-    <RelativeLayout
-        android:id="@+id/notiflistener_pref"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:minHeight="64dp"
-        android:padding="16dp"
-        android:background="?selectableItemBackground">
-
-        <TextView
-            android:id="@+id/notiflistener_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentStart="true"
-            android:layout_alignParentTop="true"
-            android:ellipsize="marquee"
-            android:fadingEdge="horizontal"
-            android:singleLine="true"
-            android:text="@string/permission_title_notifservice"
-            android:textSize="18sp" />
-
-        <TextView
-            android:id="@+id/notiflistener_summary"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_below="@+id/notiflistener_title"
-            android:layout_alignStart="@+id/notiflistener_title"
-            android:maxLines="4"
-            android:textAppearance="?android:textAppearanceSmall" />
-
-    </RelativeLayout>
-
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:background="@drawable/abc_list_divider_material" />
-
-    <LinearLayout
-        android:id="@+id/callcontrol_pref"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:minHeight="64dp"
-        android:padding="16dp"
-        android:gravity="center_vertical"
-        android:orientation="vertical"
-        android:background="?selectableItemBackground">
-
-        <TextView
-            android:id="@+id/callcontrol_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:ellipsize="marquee"
-            android:fadingEdge="horizontal"
-            android:singleLine="true"
-            android:text="@string/not_channel_name_callcontroller"
-            android:textSize="18sp" />
-
-        <TextView
-            android:id="@+id/callcontrol_summary"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:maxLines="4"
-            android:textAppearance="?android:textAppearanceSmall" />
-
-    </LinearLayout>
-
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:background="@drawable/abc_list_divider_material" />
-
-    <LinearLayout
-        android:id="@+id/uninstall_pref"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:minHeight="64dp"
-        android:padding="16dp"
-        android:gravity="center_vertical"
-        android:orientation="vertical"
-        android:background="?selectableItemBackground">
-
-        <TextView
-            android:id="@+id/uninstall_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:ellipsize="marquee"
-            android:fadingEdge="horizontal"
-            android:singleLine="true"
-            android:text="@string/permission_title_uninstall"
-            android:textSize="18sp" />
-
-        <TextView
-            android:id="@+id/uninstall_summary"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:maxLines="4"
-            android:textAppearance="?android:textAppearanceSmall"
-            android:text="@string/message_deactivate_deviceadmin"
-            android:visibility="gone" />
-
-    </LinearLayout>
-
-</LinearLayout>
+</ScrollView>

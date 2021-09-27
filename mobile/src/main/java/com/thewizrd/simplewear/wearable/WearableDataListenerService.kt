@@ -139,6 +139,10 @@ class WearableDataListenerService : WearableListenerService() {
                 MediaControllerService.enqueueWork(
                     ctx, Intent(ctx, MediaControllerService::class.java)
                         .setAction(MediaControllerService.ACTION_DISCONNECTCONTROLLER)
+                        .putExtra(
+                            MediaControllerService.EXTRA_FORCEDISCONNECT,
+                            !Settings.isBridgeMediaEnabled()
+                        )
                 )
             } else if (messageEvent.path == MediaHelper.MediaPlayerAutoLaunchPath) {
                 if (NotificationListener.isEnabled(ctx)) {
@@ -195,6 +199,10 @@ class WearableDataListenerService : WearableListenerService() {
                 CallControllerService.enqueueWork(
                     ctx, Intent(ctx, CallControllerService::class.java)
                         .setAction(CallControllerService.ACTION_DISCONNECTCONTROLLER)
+                        .putExtra(
+                            CallControllerService.EXTRA_FORCEDISCONNECT,
+                            !Settings.isBridgeCallsEnabled()
+                        )
                 )
             }
             return@runBlocking
