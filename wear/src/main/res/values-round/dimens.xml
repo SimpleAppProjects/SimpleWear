@@ -9,9 +9,10 @@
 
     <dimen name="diag_button_size">48dp</dimen>
 
-    <dimen name="dashboard_horizontal_margin">12dp</dimen>
+    <dimen name="dashboard_item_horizontal_margin">12dp</dimen>
     <dimen name="dashboard_top_margin">36dp</dimen>
     <dimen name="dashboard_bottom_margin">48dp</dimen>
+    <dimen name="dashboard_horizontal_margin">14dp</dimen>
 
     <!-- Dash Tile -->
     <dimen name="tile_horizontal_padding">24dp</dimen>

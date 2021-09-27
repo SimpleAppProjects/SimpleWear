@@ -31,7 +31,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    app:layout_constraintGuide_begin="14dp" />
+                    app:layout_constraintGuide_begin="@dimen/dashboard_horizontal_margin" />
 
                 <androidx.constraintlayout.widget.Guideline
                     android:id="@+id/top"
@@ -45,14 +45,14 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    app:layout_constraintGuide_end="14dp" />
+                    app:layout_constraintGuide_end="@dimen/dashboard_horizontal_margin" />
 
                 <androidx.constraintlayout.widget.Guideline
                     android:id="@+id/bottom"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    app:layout_constraintGuide_end="@dimen/dashboard_bottom_margin" />
+                    app:layout_constraintGuide_end="48dp" />
 
                 <com.thewizrd.simplewear.controls.timetext.TimeText
                     android:id="@+id/timeText"
@@ -71,7 +71,7 @@
                     android:layout_height="wrap_content"
                     android:focusable="false"
                     android:clickable="false"
-                    android:layout_marginHorizontal="@dimen/dashboard_horizontal_margin"
+                    android:layout_marginHorizontal="@dimen/dashboard_item_horizontal_margin"
                     app:layout_constraintTop_toBottomOf="@id/top"
                     app:backgroundTint="?android:colorBackground"
                     app:icon="@drawable/ic_smartphone_white_24dp"
@@ -83,7 +83,7 @@
                     android:layout_height="wrap_content"
                     android:focusable="false"
                     android:clickable="false"
-                    android:layout_marginHorizontal="@dimen/dashboard_horizontal_margin"
+                    android:layout_marginHorizontal="@dimen/dashboard_item_horizontal_margin"
                     app:layout_constraintTop_toBottomOf="@id/device_state"
                     app:backgroundTint="?android:colorBackground"
                     app:icon="@drawable/ic_battery_std_white_24dp"
