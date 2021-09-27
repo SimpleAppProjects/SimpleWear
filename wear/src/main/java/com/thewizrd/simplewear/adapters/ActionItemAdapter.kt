@@ -97,8 +97,8 @@ class ActionItemAdapter(activity: Activity) : RecyclerView.Adapter<ActionItemAda
             val vertPadding = parent.getContext().dpToPx(6f).toInt()
 
             v.isExpanded = false
-            val icoSize = collapsedSize / (13f / 9)
-            v.setIconSize(icoSize.toInt(), icoSize.toInt() / 8)
+            val icoSize = collapsedSize / 2
+            v.setIconSize(icoSize, 0)
 
             viewParams.width = collapsedSize
             viewParams.height = collapsedSize
