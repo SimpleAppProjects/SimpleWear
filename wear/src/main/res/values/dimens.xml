@@ -42,4 +42,11 @@
     <dimen name="action_button_collapsed_size">40dp</dimen>
     <dimen name="action_button_icon_size">24dp</dimen>
 
+    <!-- Dash Tile -->
+    <dimen name="tile_horizontal_padding">8dp</dimen>
+    <dimen name="tile_bottom_padding">8dp</dimen>
+    <dimen name="tile_top_padding">8dp</dimen>
+    <dimen name="tile_action_button_size">40dp</dimen>
+    <dimen name="tile_action_button_padding">8dp</dimen>
+
 </resources>

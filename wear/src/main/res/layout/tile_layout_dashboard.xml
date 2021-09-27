@@ -2,51 +2,59 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/tile"
-    android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:background="@android:color/black">
+    android:orientation="vertical"
+    tools:background="@android:color/black"
+    tools:deviceIds="wear"
+    tools:theme="@android:style/Theme.DeviceDefault">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginStart="@dimen/inner_layout_padding"
-        android:layout_marginTop="@dimen/inner_layout_padding"
-        android:layout_marginEnd="@dimen/inner_layout_padding"
-        android:orientation="vertical"
-        android:paddingStart="8dp"
-        android:paddingEnd="8dp">
+        android:layout_marginStart="@dimen/tile_horizontal_padding"
+        android:layout_marginTop="@dimen/tile_top_padding"
+        android:layout_marginEnd="@dimen/tile_horizontal_padding"
+        android:orientation="vertical">
 
         <ImageView
             android:id="@+id/batt_stat_icon"
             android:layout_width="28dp"
             android:layout_height="28dp"
             android:layout_gravity="center"
+            android:adjustViewBounds="true"
+            android:contentDescription="Battery"
             android:padding="4dp"
+            android:scaleType="fitCenter"
             android:src="@drawable/ic_battery_std_white_24dp" />
 
         <TextView
             android:id="@+id/batt_stat_text"
             android:layout_width="match_parent"
-            android:layout_height="24dp"
+            android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:ellipsize="marquee"
+            android:fontFamily="sans-serif-medium"
             android:gravity="center"
             android:marqueeRepeatLimit="marquee_forever"
             android:padding="4dp"
             android:text="@string/state_syncing"
+            android:textAppearance="?android:textAppearanceMedium"
             android:textColor="@android:color/white"
-            android:textSize="12sp"
-            tools:text="100%, Charging" />
+            android:textSize="14sp"
+            tools:text="100%, Charging">
+
+            <requestFocus />
+        </TextView>
 
     </LinearLayout>
 
     <GridLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_marginStart="@dimen/inner_layout_padding"
-        android:layout_marginEnd="@dimen/inner_layout_padding"
-        android:layout_marginBottom="@dimen/inner_layout_padding"
+        android:layout_height="0dp"
+        android:layout_marginHorizontal="@dimen/tile_horizontal_padding"
+        android:layout_marginBottom="@dimen/tile_bottom_padding"
+        android:layout_weight="1"
         android:columnCount="3"
         android:rowCount="2">
 
@@ -57,13 +65,16 @@
             android:layout_columnWeight="1"
             android:layout_gravity="center">
 
-            <ImageView
+            <ImageButton
                 android:id="@+id/wifi_toggle"
-                android:layout_width="36dp"
-                android:layout_height="36dp"
+                android:layout_width="@dimen/tile_action_button_size"
+                android:layout_height="@dimen/tile_action_button_size"
                 android:adjustViewBounds="true"
                 android:background="@drawable/round_button_enabled"
-                android:padding="8dp"
+                android:contentDescription="@string/action_wifi"
+                android:foreground="?android:selectableItemBackgroundBorderless"
+                android:padding="@dimen/tile_action_button_padding"
+                android:scaleType="fitCenter"
                 android:src="@drawable/ic_network_wifi_white_24dp" />
 
         </FrameLayout>
@@ -75,13 +86,16 @@
             android:layout_columnWeight="1"
             android:layout_gravity="center">
 
-            <ImageView
+            <ImageButton
                 android:id="@+id/bt_toggle"
-                android:layout_width="36dp"
-                android:layout_height="36dp"
+                android:layout_width="@dimen/tile_action_button_size"
+                android:layout_height="@dimen/tile_action_button_size"
                 android:adjustViewBounds="true"
                 android:background="@drawable/round_button_enabled"
-                android:padding="8dp"
+                android:contentDescription="@string/action_bt"
+                android:foreground="?android:selectableItemBackgroundBorderless"
+                android:padding="@dimen/tile_action_button_padding"
+                android:scaleType="fitCenter"
                 android:src="@drawable/ic_bluetooth_disabled_white_24dp" />
 
         </FrameLayout>
@@ -93,13 +107,16 @@
             android:layout_columnWeight="1"
             android:layout_gravity="center">
 
-            <ImageView
+            <ImageButton
                 android:id="@+id/lock_toggle"
-                android:layout_width="36dp"
-                android:layout_height="36dp"
+                android:layout_width="@dimen/tile_action_button_size"
+                android:layout_height="@dimen/tile_action_button_size"
                 android:adjustViewBounds="true"
                 android:background="@drawable/round_button_enabled"
-                android:padding="8dp"
+                android:contentDescription="@string/action_lockscreen"
+                android:foreground="?android:selectableItemBackgroundBorderless"
+                android:padding="@dimen/tile_action_button_padding"
+                android:scaleType="fitCenter"
                 android:src="@drawable/ic_lock_outline_white_24dp" />
 
         </FrameLayout>
@@ -111,13 +128,16 @@
             android:layout_columnWeight="1"
             android:layout_gravity="center">
 
-            <ImageView
+            <ImageButton
                 android:id="@+id/dnd_toggle"
-                android:layout_width="36dp"
-                android:layout_height="36dp"
+                android:layout_width="@dimen/tile_action_button_size"
+                android:layout_height="@dimen/tile_action_button_size"
                 android:adjustViewBounds="true"
                 android:background="@drawable/round_button_enabled"
-                android:padding="8dp"
+                android:contentDescription="@string/action_dnd"
+                android:foreground="?android:selectableItemBackgroundBorderless"
+                android:padding="@dimen/tile_action_button_padding"
+                android:scaleType="fitCenter"
                 android:src="@drawable/ic_do_not_disturb_off_white_24dp" />
 
         </FrameLayout>
@@ -129,13 +149,16 @@
             android:layout_columnWeight="1"
             android:layout_gravity="center">
 
-            <ImageView
+            <ImageButton
                 android:id="@+id/ringer_toggle"
-                android:layout_width="36dp"
-                android:layout_height="36dp"
+                android:layout_width="@dimen/tile_action_button_size"
+                android:layout_height="@dimen/tile_action_button_size"
                 android:adjustViewBounds="true"
                 android:background="@drawable/round_button_enabled"
-                android:padding="8dp"
+                android:contentDescription="@string/action_ringer"
+                android:foreground="?android:selectableItemBackgroundBorderless"
+                android:padding="@dimen/tile_action_button_padding"
+                android:scaleType="fitCenter"
                 android:src="@drawable/ic_vibration_white_24dp" />
 
         </FrameLayout>
@@ -147,13 +170,16 @@
             android:layout_columnWeight="1"
             android:layout_gravity="center">
 
-            <ImageView
+            <ImageButton
                 android:id="@+id/torch_toggle"
-                android:layout_width="36dp"
-                android:layout_height="36dp"
+                android:layout_width="@dimen/tile_action_button_size"
+                android:layout_height="@dimen/tile_action_button_size"
                 android:adjustViewBounds="true"
                 android:background="@drawable/round_button_enabled"
-                android:padding="8dp"
+                android:contentDescription="@string/action_torch"
+                android:foreground="?android:selectableItemBackgroundBorderless"
+                android:padding="@dimen/tile_action_button_padding"
+                android:scaleType="fitCenter"
                 android:src="@drawable/ic_lightbulb_outline_white_24dp" />
 
         </FrameLayout>

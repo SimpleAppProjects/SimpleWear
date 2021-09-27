@@ -12,4 +12,9 @@
     <dimen name="dashboard_horizontal_margin">12dp</dimen>
     <dimen name="dashboard_top_margin">36dp</dimen>
     <dimen name="dashboard_bottom_margin">48dp</dimen>
+
+    <!-- Dash Tile -->
+    <dimen name="tile_horizontal_padding">24dp</dimen>
+    <dimen name="tile_bottom_padding">24dp</dimen>
+    <dimen name="tile_top_padding">8dp</dimen>
 </resources>
