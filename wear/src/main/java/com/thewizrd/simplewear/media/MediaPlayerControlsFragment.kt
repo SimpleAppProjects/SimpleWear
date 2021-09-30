@@ -184,7 +184,7 @@ class MediaPlayerControlsFragment : LifecycleAwareFragment(), MessageClient.OnMe
         binding.playpauseButton.visibility = View.VISIBLE
         binding.nextButton.visibility = View.INVISIBLE
         binding.volumeControls.visibility = View.INVISIBLE
-        binding.progressBar.visibility = View.GONE
+        binding.progressBar.hide()
 
         binding.playpauseButton.setImageResource(R.drawable.playpause_button_ambient)
 
@@ -442,7 +442,11 @@ class MediaPlayerControlsFragment : LifecycleAwareFragment(), MessageClient.OnMe
     private fun showLoading(show: Boolean) {
         showLoading = show
         if (isAmbientMode) return
-        binding.progressBar.visibility = if (show) View.VISIBLE else View.GONE
+        if (show) {
+            binding.progressBar.show()
+        } else {
+            binding.progressBar.hide()
+        }
         binding.albumArtImageview.visibility = if (show) View.INVISIBLE else View.VISIBLE
         binding.playerControls.visibility = if (show) View.INVISIBLE else View.VISIBLE
     }

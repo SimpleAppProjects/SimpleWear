@@ -225,7 +225,11 @@ class AppLauncherActivity : WearableListenerActivity(), OnDataChangedListener {
 
     private fun showProgressBar(show: Boolean) {
         lifecycleScope.launch {
-            binding.progressBar.visibility = if (show) View.VISIBLE else View.GONE
+            if (show) {
+                binding.progressBar.show()
+            } else {
+                binding.progressBar.hide()
+            }
         }
     }
 

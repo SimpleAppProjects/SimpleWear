@@ -39,7 +39,7 @@ class MediaPlayerFilterFragment : DialogFragment() {
             override fun onChanged() {
                 super.onChanged()
                 mAdapter.unregisterAdapterDataObserver(this)
-                binding.progressBar.visibility = View.GONE
+                binding.progressBar.hide()
                 binding.scrollViewContent.visibility = View.VISIBLE
             }
         })

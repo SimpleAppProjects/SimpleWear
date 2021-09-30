@@ -116,7 +116,11 @@ class MediaBrowserFragment : LifecycleAwareFragment(), DataClient.OnDataChangedL
     }
 
     private fun showLoading(show: Boolean) {
-        binding.progressBar.visibility = if (show) View.VISIBLE else View.GONE
+        if (show) {
+            binding.progressBar.show()
+        } else {
+            binding.progressBar.hide()
+        }
         binding.listView.visibility = if (show) View.INVISIBLE else View.VISIBLE
     }
 
