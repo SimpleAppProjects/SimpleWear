@@ -36,6 +36,9 @@
         <meta-data
             android:name="com.google.android.wearable.standalone"
             android:value="false" />
+        <meta-data
+            android:name="preloaded_fonts"
+            android:resource="@array/preloaded_fonts" />
 
         <activity
             android:name=".PhoneSyncActivity"
