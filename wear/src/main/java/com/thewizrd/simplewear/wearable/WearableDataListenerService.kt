@@ -38,6 +38,9 @@ class WearableDataListenerService : WearableListenerService() {
 
         private const val MEDIA_NOT_CHANNEL_ID = "SimpleWear.Wear.mediacontrollerservice"
         private const val CALLS_NOT_CHANNEL_ID = "SimpleWear.Wear.callcontrollerservice"
+
+        private const val MEDIA_LOCUS_ID = "media_ctrlr"
+        private const val CALLS_LOCUS_ID = "call_ctrlr"
     }
 
     @Volatile
@@ -128,6 +131,8 @@ class WearableDataListenerService : WearableListenerService() {
             .setSmallIcon(R.drawable.ic_icon)
             .setDefaults(NotificationCompat.DEFAULT_ALL)
             .setOngoing(true)
+            .setOnlyAlertOnce(true)
+            .setSound(null)
             .setCategory(NotificationCompat.CATEGORY_CALL)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .addAction(
@@ -135,7 +140,7 @@ class WearableDataListenerService : WearableListenerService() {
                 getString(R.string.action_launchcontroller),
                 getCallControllerIntent()
             )
-            .setLocusId(LocusIdCompat("call_ctrlr"))
+            .setLocusId(LocusIdCompat(CALLS_LOCUS_ID))
 
         val ongoingActivityStatus = Status.Builder()
             .addTemplate(getString(R.string.message_callactive))
@@ -145,7 +150,7 @@ class WearableDataListenerService : WearableListenerService() {
             .setStaticIcon(R.drawable.ic_phone_24dp)
             .setTouchIntent(getCallControllerIntent())
             .setStatus(ongoingActivityStatus)
-            .setLocusId(LocusIdCompat("call_ctrlr"))
+            .setLocusId(LocusIdCompat(CALLS_LOCUS_ID))
             .build()
 
         ongoingActivity.apply(applicationContext)
@@ -174,6 +179,8 @@ class WearableDataListenerService : WearableListenerService() {
             .setSmallIcon(R.drawable.ic_icon)
             .setDefaults(NotificationCompat.DEFAULT_ALL)
             .setOngoing(true)
+            .setOnlyAlertOnce(true)
+            .setSound(null)
             .setCategory(NotificationCompat.CATEGORY_TRANSPORT)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .addAction(
@@ -181,7 +188,7 @@ class WearableDataListenerService : WearableListenerService() {
                 getString(R.string.action_launchcontroller),
                 getMediaControllerIntent()
             )
-            .setLocusId(LocusIdCompat("media_ctrlr"))
+            .setLocusId(LocusIdCompat(MEDIA_LOCUS_ID))
 
         /*
         val ongoingActivityStatus = Status.Builder()
@@ -194,7 +201,7 @@ class WearableDataListenerService : WearableListenerService() {
             .setTouchIntent(getMediaControllerIntent())
             //.setStatus(ongoingActivityStatus) // Uses content text from notif
             .setTitle(notifTitle)
-            .setLocusId(LocusIdCompat("media_ctrlr"))
+            .setLocusId(LocusIdCompat(MEDIA_LOCUS_ID))
             .build()
 
         ongoingActivity.apply(applicationContext)
@@ -232,39 +239,39 @@ class WearableDataListenerService : WearableListenerService() {
     }
 
     private fun createMediaControllerShortcut() {
-        val shortcut = ShortcutInfoCompat.Builder(this, "media_ctrlr")
+        val shortcut = ShortcutInfoCompat.Builder(this, MEDIA_LOCUS_ID)
             .setShortLabel(getString(R.string.title_nowplaying))
             .setIcon(IconCompat.createWithResource(this, R.drawable.ic_play_circle_simpleblue))
             .setIntent(
                 Intent(this, MediaPlayerListActivity::class.java)
                     .setAction(Intent.ACTION_VIEW)
             )
-            .setLocusId(LocusIdCompat("media_ctrlr"))
+            .setLocusId(LocusIdCompat(MEDIA_LOCUS_ID))
             .build()
 
         ShortcutManagerCompat.pushDynamicShortcut(this, shortcut)
     }
 
     private fun removeMediaControllerShortcut() {
-        ShortcutManagerCompat.removeDynamicShortcuts(this, listOf("media_ctrlr"))
+        ShortcutManagerCompat.removeDynamicShortcuts(this, listOf(MEDIA_LOCUS_ID))
     }
 
     private fun createCallControllerShortcut() {
-        val shortcut = ShortcutInfoCompat.Builder(this, "call_ctrlr")
+        val shortcut = ShortcutInfoCompat.Builder(this, CALLS_LOCUS_ID)
             .setShortLabel(getString(R.string.title_callcontroller))
             .setIcon(IconCompat.createWithResource(this, R.drawable.ic_phone_simpleblue))
             .setIntent(
                 Intent(this, CallManagerActivity::class.java)
                     .setAction(Intent.ACTION_VIEW)
             )
-            .setLocusId(LocusIdCompat("call_ctrlr"))
+            .setLocusId(LocusIdCompat(CALLS_LOCUS_ID))
             .build()
 
         ShortcutManagerCompat.pushDynamicShortcut(this, shortcut)
     }
 
     private fun removeCallControllerShortcut() {
-        ShortcutManagerCompat.removeDynamicShortcuts(this, listOf("call_ctrlr"))
+        ShortcutManagerCompat.removeDynamicShortcuts(this, listOf(CALLS_LOCUS_ID))
     }
 
     override fun onCapabilityChanged(capabilityInfo: CapabilityInfo) {
