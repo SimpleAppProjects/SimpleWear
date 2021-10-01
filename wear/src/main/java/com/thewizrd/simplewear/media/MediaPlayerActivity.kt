@@ -376,9 +376,11 @@ class MediaPlayerActivity : WearableListenerActivity(), AmbientModeSupport.Ambie
     }
 
     private fun showNoPlayersView(show: Boolean) {
-        binding.noplayersView.visibility = if (show) View.VISIBLE else View.GONE
-        binding.mediaViewpager.visibility = if (show) View.INVISIBLE else View.VISIBLE
-        binding.mediaViewpagerIndicator.visibility = if (show) View.INVISIBLE else View.VISIBLE
+        if (!mAmbientController.isAmbient) {
+            binding.noplayersView.visibility = if (show) View.VISIBLE else View.GONE
+            binding.mediaViewpager.visibility = if (show) View.INVISIBLE else View.VISIBLE
+            binding.mediaViewpagerIndicator.visibility = if (show) View.INVISIBLE else View.VISIBLE
+        }
     }
 
     override fun onDataChanged(dataEventBuffer: DataEventBuffer) {
@@ -584,7 +586,7 @@ class MediaPlayerActivity : WearableListenerActivity(), AmbientModeSupport.Ambie
             mViewPagerAdapter.doBurnInProtection = doBurnInProtection
 
             if (binding.mediaViewpager.currentItem != 0) {
-                binding.mediaViewpager.currentItem = 0
+                binding.mediaViewpager.setCurrentItem(0, false)
             }
 
             LocalBroadcastManager.getInstance(this@MediaPlayerActivity)

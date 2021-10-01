@@ -74,6 +74,7 @@
             android:theme="@style/WearAppTheme" />
         <activity
             android:name=".media.MediaPlayerActivity"
+            android:launchMode="singleInstance"
             android:theme="@style/WearAppTheme" />
         <activity
             android:name=".CallManagerActivity"
