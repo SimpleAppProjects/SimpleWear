@@ -200,15 +200,14 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
                 scope.launch {
                     if ((isAutoLaunch || mSelectedPackageName == mSelectedMediaApp?.packageName) && mController != null) return@launch
 
-                    mSelectedMediaApp = if (mSelectedPackageName.isNullOrBlank()) {
-                        mAvailableMediaApps.firstOrNull()
-                    } else {
-                        mAvailableMediaApps.find {
+                    if (!mSelectedPackageName.isNullOrBlank()) {
+                        mSelectedMediaApp = mAvailableMediaApps.find {
                             it.packageName == mSelectedPackageName
                         }
+                        connectMediaSession(isSoftLaunch)
+                    } else {
+                        findActiveMediaSession()
                     }
-
-                    connectMediaSession(isSoftLaunch)
                 }
             }
             ACTION_DISCONNECTCONTROLLER -> {
@@ -307,11 +306,10 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
             val firstActiveCtrlr = activeSessions.firstOrNull()
             if (firstActiveCtrlr != null) {
                 // Check if active session has changed
-                if (firstActiveCtrlr.packageName != mSelectedPackageName) {
+                val isPlaybackActive = isPlaybackStateActive(firstActiveCtrlr.playbackState?.state)
+                if (firstActiveCtrlr.packageName != mSelectedPackageName || !isPlaybackActive) {
                     // If so reset
-                    disconnectMedia(
-                        invalidateData = !isPlaybackStateActive(firstActiveCtrlr.playbackState?.state)
-                    )
+                    disconnectMedia(invalidateData = !isPlaybackActive)
                     mSelectedPackageName = firstActiveCtrlr.packageName
                     mSelectedMediaApp = null
                 }
