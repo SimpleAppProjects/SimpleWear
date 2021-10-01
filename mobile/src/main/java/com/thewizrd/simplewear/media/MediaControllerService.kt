@@ -122,7 +122,7 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
             setSmallIcon(R.drawable.ic_baseline_music_note_24)
             setContentTitle(context.getString(R.string.not_title_mediacontroller_running))
             setOnlyAlertOnce(true)
-            setNotificationSilent()
+            setSilent(true)
             priority = NotificationCompat.PRIORITY_DEFAULT
             addAction(
                 0,

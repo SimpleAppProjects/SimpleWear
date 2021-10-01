@@ -109,7 +109,7 @@ class CallControllerService : Service(), MessageClient.OnMessageReceivedListener
             setSmallIcon(R.drawable.ic_settings_phone_24dp)
             setContentTitle(context.getString(R.string.not_title_callcontroller_running))
             setOnlyAlertOnce(true)
-            setNotificationSilent()
+            setSilent(true)
             priority = NotificationCompat.PRIORITY_DEFAULT
             addAction(
                 0,
@@ -131,7 +131,7 @@ class CallControllerService : Service(), MessageClient.OnMessageReceivedListener
             setSmallIcon(R.drawable.ic_settings_phone_24dp)
             setContentTitle(context.getString(if (callActive) R.string.message_callactive else R.string.not_title_callcontroller_running))
             setOnlyAlertOnce(true)
-            setNotificationSilent()
+            setSilent(true)
             priority =
                 if (callActive) NotificationCompat.PRIORITY_MAX else NotificationCompat.PRIORITY_DEFAULT
             if (callActive) {

@@ -133,6 +133,7 @@ class WearableDataListenerService : WearableListenerService() {
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .setSound(null)
+            .setSilent(true)
             .setCategory(NotificationCompat.CATEGORY_CALL)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .addAction(
@@ -181,6 +182,7 @@ class WearableDataListenerService : WearableListenerService() {
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .setSound(null)
+            .setSilent(true)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setCategory(NotificationCompat.CATEGORY_TRANSPORT)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
