@@ -126,13 +126,15 @@
 
         <com.google.android.material.progressindicator.CircularProgressIndicator
             android:id="@+id/playback_loadingbar"
-            android:layout_width="0dp"
-            android:layout_height="36dp"
+            android:layout_width="@dimen/diag_button_size"
+            android:layout_height="@dimen/diag_button_size"
             android:layout_weight="1"
-            android:indeterminateTint="?colorOnSurface"
-            app:layout_constraintHorizontal_weight="1"
+            android:indeterminate="true"
             android:visibility="gone"
-            tools:visibility="gone" />
+            app:indicatorColor="?colorOnSurface"
+            tools:progress="50"
+            tools:indeterminate="false"
+            tools:visibility="visible" />
 
         <com.thewizrd.simplewear.controls.CheckableImageButton
             android:id="@+id/playpause_button"
@@ -152,13 +154,12 @@
             android:layout_width="@dimen/diag_button_size"
             android:layout_height="@dimen/diag_button_size"
             android:adjustViewBounds="true"
-            android:scaleType="fitEnd"
+            android:scaleType="fitCenter"
+            android:background="?selectableItemBackgroundBorderless"
             android:contentDescription="Skip"
-            android:background="@drawable/button_background_solid"
-            android:backgroundTint="@android:color/transparent"
-            android:foreground="?selectableItemBackgroundBorderless"
             android:padding="8dp"
             android:src="@drawable/ic_baseline_skip_next_24"
+            app:layout_constraintHorizontal_weight="1"
             app:tint="@android:color/white" />
 
         <androidx.constraintlayout.widget.Guideline
@@ -230,6 +231,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center"
         android:indeterminate="true"
-        android:visibility="visible" />
+        android:visibility="visible"
+        tools:visibility="gone" />
 
 </FrameLayout>
