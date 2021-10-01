@@ -309,7 +309,9 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
                 // Check if active session has changed
                 if (firstActiveCtrlr.packageName != mSelectedPackageName) {
                     // If so reset
-                    disconnectMedia()
+                    disconnectMedia(
+                        invalidateData = !isPlaybackStateActive(firstActiveCtrlr.playbackState?.state)
+                    )
                     mSelectedPackageName = firstActiveCtrlr.packageName
                     mSelectedMediaApp = null
                 }
