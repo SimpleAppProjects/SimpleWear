@@ -28,6 +28,7 @@ import com.thewizrd.shared_resources.utils.booleanToBytes
 import com.thewizrd.shared_resources.utils.bytesToBool
 import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.helpers.PhoneStatusHelper
+import com.thewizrd.simplewear.preferences.Settings
 import com.thewizrd.simplewear.wearable.WearableManager
 import kotlinx.coroutines.*
 import kotlinx.coroutines.tasks.await
@@ -392,9 +393,11 @@ class CallControllerService : Service(), MessageClient.OnMessageReceivedListener
             mDataClient.putDataItem(mapRequest.asPutDataRequest())
                 .await()
             if (callActive) {
-                mDataClient.putDataItem(
-                    PutDataRequest.create(InCallUIHelper.CallStateBridgePath).setUrgent()
-                ).await()
+                if (Settings.isBridgeCallsEnabled()) {
+                    mDataClient.putDataItem(
+                        PutDataRequest.create(InCallUIHelper.CallStateBridgePath).setUrgent()
+                    ).await()
+                }
             } else {
                 mDataClient.deleteDataItems(WearableHelper.getWearDataUri(InCallUIHelper.CallStateBridgePath))
                     .await()

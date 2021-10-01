@@ -31,6 +31,7 @@ import com.thewizrd.shared_resources.media.PlaybackState
 import com.thewizrd.shared_resources.utils.*
 import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.helpers.PhoneStatusHelper
+import com.thewizrd.simplewear.preferences.Settings
 import com.thewizrd.simplewear.services.NotificationListener
 import com.thewizrd.simplewear.wearable.WearableManager
 import kotlinx.coroutines.*
@@ -671,15 +672,24 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
             Log.d(TAG, "Making request: ${mapRequest.uri}")
             mDataClient.deleteDataItems(mapRequest.uri).await()
             mDataClient.putDataItem(request).await()
-            Log.d(TAG, "Create media bridge request")
-            mDataClient.putDataItem(
-                PutDataMapRequest.create(MediaHelper.MediaPlayerStateBridgePath).apply {
-                    dataMap.putString(MediaHelper.KEY_MEDIA_METADATA_TITLE, songTitle)
-                    dataMap.putLong("time", SystemClock.uptimeMillis())
+            if (Settings.isBridgeMediaEnabled()) {
+                if (isPlaybackStateActive(playbackState)) {
+                    Log.d(TAG, "Create media bridge request")
+                    mDataClient.putDataItem(
+                        PutDataMapRequest.create(MediaHelper.MediaPlayerStateBridgePath).apply {
+                            dataMap.putString(MediaHelper.KEY_MEDIA_METADATA_TITLE, songTitle)
+                            dataMap.putLong("time", SystemClock.uptimeMillis())
+                        }
+                            .setUrgent()
+                            .asPutDataRequest()
+                    ).await()
+                } else {
+                    Log.d(TAG, "Removing media bridge; playbackstate inactive")
+                    mDataClient.deleteDataItems(
+                        WearableHelper.getWearDataUri(MediaHelper.MediaPlayerStateBridgePath)
+                    ).await()
                 }
-                    .setUrgent()
-                    .asPutDataRequest()
-            ).await()
+            }
         }
     }
 
