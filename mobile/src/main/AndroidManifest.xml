@@ -23,6 +23,9 @@
     <uses-feature
         android:name="android.software.companion_device_setup"
         android:required="false" />
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
 
     <queries>
         <package android:name="com.thewizrd.simplesleeptimer" />
