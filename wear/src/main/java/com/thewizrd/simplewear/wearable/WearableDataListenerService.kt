@@ -23,9 +23,9 @@ import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.shared_resources.utils.stringToBytes
 import com.thewizrd.simplewear.CallManagerActivity
-import com.thewizrd.simplewear.MediaPlayerListActivity
 import com.thewizrd.simplewear.PhoneSyncActivity
 import com.thewizrd.simplewear.R
+import com.thewizrd.simplewear.media.MediaPlayerActivity
 import com.thewizrd.simplewear.preferences.Settings
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
@@ -233,7 +233,7 @@ class WearableDataListenerService : WearableListenerService() {
     private fun getMediaControllerIntent(): PendingIntent {
         return PendingIntent.getActivity(
             this, 1001,
-            Intent(this, MediaPlayerListActivity::class.java),
+            MediaPlayerActivity.buildAutoLaunchIntent(this),
             0
         )
     }
@@ -243,8 +243,7 @@ class WearableDataListenerService : WearableListenerService() {
             .setShortLabel(getString(R.string.title_nowplaying))
             .setIcon(IconCompat.createWithResource(this, R.drawable.ic_play_circle_simpleblue))
             .setIntent(
-                Intent(this, MediaPlayerListActivity::class.java)
-                    .setAction(Intent.ACTION_VIEW)
+                MediaPlayerActivity.buildAutoLaunchIntent(this).setAction(Intent.ACTION_VIEW)
             )
             .setLocusId(LocusIdCompat(MEDIA_LOCUS_ID))
             .build()
