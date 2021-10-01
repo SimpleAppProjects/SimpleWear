@@ -4,10 +4,11 @@ import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
 import androidx.core.graphics.drawable.toDrawable
+import androidx.core.view.InputDeviceCompat
+import androidx.core.view.MotionEventCompat
+import androidx.core.view.ViewConfigurationCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.recyclerview.widget.ConcatAdapter
@@ -36,6 +37,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import java.util.*
 import kotlin.collections.ArrayList
+import kotlin.math.roundToInt
 
 class MediaCustomControlsFragment : LifecycleAwareFragment(), MessageClient.OnMessageReceivedListener,
     DataClient.OnDataChangedListener {
@@ -94,6 +96,22 @@ class MediaCustomControlsFragment : LifecycleAwareFragment(), MessageClient.OnMe
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        view.setOnGenericMotionListener { v, event ->
+            if (event.action == MotionEvent.ACTION_SCROLL && event.isFromSource(InputDeviceCompat.SOURCE_ROTARY_ENCODER)) {
+                // Don't forget the negation here
+                val delta = -event.getAxisValue(MotionEventCompat.AXIS_SCROLL) *
+                        ViewConfigurationCompat.getScaledVerticalScrollFactor(
+                            ViewConfiguration.get(v.context), v.context
+                        )
+
+                // Swap these axes if you want to do horizontal scrolling instead
+                binding.listView.scrollBy(0, delta.roundToInt())
+
+                return@setOnGenericMotionListener true
+            }
+            false
+        }
     }
 
     override fun onResume() {
@@ -239,6 +257,7 @@ class MediaCustomControlsFragment : LifecycleAwareFragment(), MessageClient.OnMe
         runWithView {
             showLoading(false)
             mCustomControlsAdapter.submitList(mediaItems)
+            binding.listView.requestFocus()
         }
     }
 
