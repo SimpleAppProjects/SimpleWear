@@ -250,14 +250,16 @@ class MediaPlayerActivity : WearableListenerActivity(), AmbientModeSupport.Ambie
         }
 
         mAmbientController = AmbientModeSupport.attach(this)
+        mAmbientMode.ambientModeEnabled.value = mAmbientController.isAmbient
+    }
+
+    override fun onStart() {
+        super.onStart()
 
         mAmbientMode.ambientModeEnabled.observe(this) { enabled ->
             if (enabled) {
                 binding.mediaViewpagerIndicator.visibility = View.INVISIBLE
-
-                if (binding.mediaViewpager.currentItem != 0) {
-                    binding.mediaViewpager.setCurrentItem(0, false)
-                }
+                binding.mediaViewpager.setCurrentItem(0, false)
             } else {
                 binding.mediaViewpagerIndicator.visibility = View.VISIBLE
             }
@@ -277,10 +279,6 @@ class MediaPlayerActivity : WearableListenerActivity(), AmbientModeSupport.Ambie
 
     private inner class MediaFragmentPagerAdapter(activity: FragmentActivity) :
         FragmentStateAdapter(activity) {
-        var isAmbientMode = false
-        var isLowBitAmbient = false
-        var doBurnInProtection = false
-
         private val supportedPageTypes = mutableListOf(MediaPageType.Player)
 
         override fun getItemCount(): Int {
@@ -290,17 +288,9 @@ class MediaPlayerActivity : WearableListenerActivity(), AmbientModeSupport.Ambie
         override fun createFragment(position: Int): Fragment {
             val type = supportedPageTypes[position]
 
-            val args = Bundle().apply {
-                putBoolean(AmbientModeSupport.FRAGMENT_TAG, isAmbientMode)
-                putBoolean(AmbientModeSupport.EXTRA_LOWBIT_AMBIENT, isLowBitAmbient)
-                putBoolean(AmbientModeSupport.EXTRA_BURN_IN_PROTECTION, doBurnInProtection)
-            }
-
             return when (type) {
                 MediaPageType.Player -> {
-                    MediaPlayerControlsFragment().apply {
-                        arguments = args
-                    }
+                    MediaPlayerControlsFragment()
                 }
                 MediaPageType.Browser -> {
                     MediaBrowserFragment()
