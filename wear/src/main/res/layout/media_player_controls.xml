@@ -19,7 +19,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
-        android:background="#80000000"
+        android:background="#9A000000"
         android:visibility="gone"
         tools:visibility="visible">
 
@@ -44,17 +44,18 @@
         <androidx.constraintlayout.helper.widget.Flow
             android:id="@+id/title_flow"
             android:layout_width="match_parent"
-            android:layout_height="48dp"
+            android:layout_height="0dp"
             android:layout_marginStart="@dimen/inner_layout_padding"
             android:layout_marginEnd="@dimen/inner_layout_padding"
             android:orientation="vertical"
             app:flow_verticalAlign="bottom"
             app:constraint_referenced_ids="title_view,subtitle_view"
             app:layout_constraintTop_toBottomOf="@id/timerTextGuide"
+            app:layout_constraintBottom_toTopOf="@id/playcontrols"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent" />
 
-        <TextView
+        <androidx.appcompat.widget.AppCompatTextView
             android:id="@+id/title_view"
             android:layout_width="0dp"
             android:layout_height="0dp"
@@ -67,18 +68,25 @@
             android:scrollHorizontally="true"
             android:singleLine="true"
             android:textAppearance="?textAppearanceButton"
+            app:autoSizeTextType="uniform"
+            app:autoSizeMaxTextSize="16sp"
+            app:autoSizeMinTextSize="12sp"
             tools:text="Title" />
 
-        <TextView
+        <androidx.appcompat.widget.AppCompatTextView
             android:id="@+id/subtitle_view"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="0dp"
             android:gravity="center"
             android:padding="2dp"
             android:maxLines="1"
             android:ellipsize="marquee"
             android:marqueeRepeatLimit="marquee_forever"
             android:textAppearance="?textAppearanceCaption1"
+            android:textStyle="bold"
+            app:autoSizeTextType="uniform"
+            app:autoSizeMaxTextSize="16sp"
+            app:autoSizeMinTextSize="12sp"
             tools:text="Artist"
             tools:visibility="visible" />
 
@@ -88,13 +96,12 @@
             android:layout_height="wrap_content"
             app:layout_constraintStart_toEndOf="@id/playcontrols_start"
             app:layout_constraintEnd_toStartOf="@id/playcontrols_end"
-            app:layout_constraintTop_toBottomOf="@id/title_flow"
-            app:layout_constraintBottom_toTopOf="@id/volume_controls"
-            app:flow_wrapMode="chain"
-            app:flow_horizontalStyle="spread"
-            app:flow_horizontalAlign="center"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:flow_wrapMode="none"
+            app:flow_horizontalStyle="spread_inside"
             app:flow_maxElementsWrap="4"
-            app:layout_constraintVertical_weight="1"
+            app:layout_constraintVertical_bias="0.5"
             app:constraint_referenced_ids="prev_button,playpause_button,playback_loadingbar,next_button" />
 
         <androidx.constraintlayout.widget.Guideline
@@ -102,16 +109,17 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            app:layout_constraintGuide_begin="8dp" />
+            app:layout_constraintGuide_percent="0.1" />
 
         <ImageButton
             android:id="@+id/prev_button"
-            android:layout_width="0dp"
-            android:layout_height="36dp"
+            android:layout_width="@dimen/diag_button_size"
+            android:layout_height="@dimen/diag_button_size"
             android:adjustViewBounds="true"
             android:scaleType="fitCenter"
             android:background="?selectableItemBackgroundBorderless"
             android:contentDescription="Previous"
+            android:padding="8dp"
             android:src="@drawable/ic_baseline_skip_previous_24"
             app:layout_constraintHorizontal_weight="1"
             app:tint="@android:color/white" />
@@ -128,27 +136,29 @@
 
         <com.thewizrd.simplewear.controls.CheckableImageButton
             android:id="@+id/playpause_button"
-            android:layout_width="0dp"
-            android:layout_height="36dp"
+            android:layout_width="@dimen/diag_button_size"
+            android:layout_height="@dimen/diag_button_size"
             android:adjustViewBounds="true"
             android:scaleType="fitCenter"
             android:background="?selectableItemBackgroundBorderless"
             android:src="@drawable/playpause_button"
             android:contentDescription="Play/Pause"
+            android:padding="8dp"
             app:tint="@android:color/white"
-            app:layout_constraintHorizontal_weight="1"
             tools:visibility="visible" />
 
         <ImageButton
             android:id="@+id/next_button"
-            android:layout_width="0dp"
-            android:layout_height="36dp"
+            android:layout_width="@dimen/diag_button_size"
+            android:layout_height="@dimen/diag_button_size"
             android:adjustViewBounds="true"
-            android:scaleType="fitCenter"
+            android:scaleType="fitEnd"
             android:contentDescription="Skip"
-            android:background="?selectableItemBackgroundBorderless"
+            android:background="@drawable/button_background_solid"
+            android:backgroundTint="@android:color/transparent"
+            android:foreground="?selectableItemBackgroundBorderless"
+            android:padding="8dp"
             android:src="@drawable/ic_baseline_skip_next_24"
-            app:layout_constraintHorizontal_weight="1"
             app:tint="@android:color/white" />
 
         <androidx.constraintlayout.widget.Guideline
@@ -156,7 +166,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            app:layout_constraintGuide_end="8dp" />
+            app:layout_constraintGuide_percent="0.9" />
 
         <androidx.constraintlayout.widget.Guideline
             android:id="@+id/volume_guide1"
