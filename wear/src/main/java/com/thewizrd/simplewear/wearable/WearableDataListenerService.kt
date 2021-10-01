@@ -181,6 +181,7 @@ class WearableDataListenerService : WearableListenerService() {
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .setSound(null)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
             .setCategory(NotificationCompat.CATEGORY_TRANSPORT)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .addAction(
