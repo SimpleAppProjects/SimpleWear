@@ -23,6 +23,7 @@ import com.thewizrd.shared_resources.utils.*
 import com.thewizrd.simplewear.PhoneSyncActivity
 import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.WearableListenerActivity
+import com.thewizrd.simplewear.controls.AmbientModeViewModel
 import com.thewizrd.simplewear.controls.AppItemViewModel
 import com.thewizrd.simplewear.controls.CustomConfirmationOverlay
 import com.thewizrd.simplewear.databinding.ActivityMusicplaybackBinding
@@ -74,6 +75,7 @@ class MediaPlayerActivity : WearableListenerActivity(), AmbientModeSupport.Ambie
     private var updateJob: Job? = null
 
     private lateinit var mAmbientController: AmbientModeSupport.AmbientController
+    private val mAmbientMode: AmbientModeViewModel by viewModels()
 
     private var isAutoLaunch = false
 
@@ -248,6 +250,18 @@ class MediaPlayerActivity : WearableListenerActivity(), AmbientModeSupport.Ambie
         }
 
         mAmbientController = AmbientModeSupport.attach(this)
+
+        mAmbientMode.ambientModeEnabled.observe(this) { enabled ->
+            if (enabled) {
+                binding.mediaViewpagerIndicator.visibility = View.INVISIBLE
+
+                if (binding.mediaViewpager.currentItem != 0) {
+                    binding.mediaViewpager.setCurrentItem(0, false)
+                }
+            } else {
+                binding.mediaViewpagerIndicator.visibility = View.VISIBLE
+            }
+        }
     }
 
     private enum class MediaPageType(val value: Int) {
@@ -561,56 +575,28 @@ class MediaPlayerActivity : WearableListenerActivity(), AmbientModeSupport.Ambie
     }
 
     private inner class MediaPlayerAmbientCallback : AmbientModeSupport.AmbientCallback() {
-        /**
-         * If the display is low-bit in ambient mode. i.e. it requires anti-aliased fonts.
-         */
-        private var isLowBitAmbient = false
-
-        /**
-         * If the display requires burn-in protection in ambient mode, rendered pixels need to be
-         * intermittently offset to avoid screen burn-in.
-         */
-        private var doBurnInProtection = false
-
         override fun onEnterAmbient(ambientDetails: Bundle) {
             super.onEnterAmbient(ambientDetails)
-            isLowBitAmbient =
+
+            val isLowBitAmbient =
                 ambientDetails.getBoolean(AmbientModeSupport.EXTRA_LOWBIT_AMBIENT, false)
-            doBurnInProtection =
+            val doBurnInProtection =
                 ambientDetails.getBoolean(AmbientModeSupport.EXTRA_BURN_IN_PROTECTION, false)
 
-            binding.mediaViewpagerIndicator.visibility = View.INVISIBLE
-
-            mViewPagerAdapter.isAmbientMode = true
-            mViewPagerAdapter.isLowBitAmbient = isLowBitAmbient
-            mViewPagerAdapter.doBurnInProtection = doBurnInProtection
-
-            if (binding.mediaViewpager.currentItem != 0) {
-                binding.mediaViewpager.setCurrentItem(0, false)
-            }
-
-            LocalBroadcastManager.getInstance(this@MediaPlayerActivity)
-                .sendBroadcast(
-                    Intent(ACTION_ENTERAMBIENTMODE)
-                        .putExtra(AmbientModeSupport.EXTRA_LOWBIT_AMBIENT, isLowBitAmbient)
-                        .putExtra(AmbientModeSupport.EXTRA_BURN_IN_PROTECTION, doBurnInProtection)
-                )
+            mAmbientMode.isLowBitAmbient.value = isLowBitAmbient
+            mAmbientMode.doBurnInProtection.value = doBurnInProtection
+            mAmbientMode.ambientModeEnabled.value = true
         }
 
         override fun onExitAmbient() {
             super.onExitAmbient()
-            binding.mediaViewpagerIndicator.visibility = View.VISIBLE
-
-            mViewPagerAdapter.isAmbientMode = false
-
-            LocalBroadcastManager.getInstance(this@MediaPlayerActivity)
-                .sendBroadcast(Intent(ACTION_EXITAMBIENTMODE))
+            mAmbientMode.ambientModeEnabled.value = false
         }
 
         override fun onUpdateAmbient() {
             super.onUpdateAmbient()
 
-            mViewPagerAdapter.isAmbientMode = true
+            mAmbientMode.ambientModeEnabled.value = true
 
             LocalBroadcastManager.getInstance(this@MediaPlayerActivity)
                 .sendBroadcast(Intent(ACTION_UPDATEAMBIENTMODE))

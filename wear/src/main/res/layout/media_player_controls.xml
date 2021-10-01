@@ -59,7 +59,7 @@
             android:id="@+id/title_view"
             android:layout_width="0dp"
             android:layout_height="0dp"
-            android:gravity="center_horizontal|bottom"
+            android:gravity="center"
             android:padding="2dp"
             android:maxLines="1"
             android:focusable="true"

@@ -10,11 +10,9 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.Observer
+import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
-import androidx.wear.ambient.AmbientModeSupport
 import com.google.android.gms.wearable.*
 import com.thewizrd.shared_resources.actions.*
 import com.thewizrd.shared_resources.helpers.MediaHelper
@@ -26,6 +24,7 @@ import com.thewizrd.shared_resources.utils.JSONParser
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.shared_resources.utils.bytesToString
 import com.thewizrd.simplewear.R
+import com.thewizrd.simplewear.controls.AmbientModeViewModel
 import com.thewizrd.simplewear.controls.CustomConfirmationOverlay
 import com.thewizrd.simplewear.databinding.MediaPlayerControlsBinding
 import kotlinx.coroutines.*
@@ -39,78 +38,22 @@ class MediaPlayerControlsFragment : LifecycleAwareFragment(), MessageClient.OnMe
     private var deleteJob: Job? = null
 
     private lateinit var mAmbientReceiver: BroadcastReceiver
-    private var isAmbientMode: Boolean = false
-    private var isLowBitAmbient = false
-    private var doBurnInProtection = false
+    private val mAmbientMode: AmbientModeViewModel by activityViewModels()
+
     private var showLoading = false
     private var showPlaybackLoading = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        isAmbientMode = requireArguments().getBoolean(AmbientModeSupport.FRAGMENT_TAG, false)
-        isLowBitAmbient =
-            requireArguments().getBoolean(AmbientModeSupport.EXTRA_LOWBIT_AMBIENT, false)
-        doBurnInProtection =
-            requireArguments().getBoolean(AmbientModeSupport.EXTRA_BURN_IN_PROTECTION, false)
-
-        if (isAmbientMode) {
-            viewLifecycleOwnerLiveData.observe(
-                this@MediaPlayerControlsFragment,
-                object : Observer<LifecycleOwner> {
-                    override fun onChanged(it: LifecycleOwner?) {
-                        if (it != null) {
-                            viewLifecycleOwnerLiveData.removeObserver(this)
-                            it.lifecycleScope.launchWhenCreated {
-                                enterAmbientMode()
-                            }
-                        }
-                    }
-                })
-        }
-
         mAmbientReceiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context, intent: Intent?) {
                 when (intent?.action) {
-                    MediaPlayerActivity.ACTION_ENTERAMBIENTMODE -> {
-                        isLowBitAmbient =
-                            intent.getBooleanExtra(AmbientModeSupport.EXTRA_LOWBIT_AMBIENT, false)
-                        doBurnInProtection = intent.getBooleanExtra(
-                            AmbientModeSupport.EXTRA_BURN_IN_PROTECTION,
-                            false
-                        )
-
-                        viewLifecycleOwnerLiveData.observe(
-                            this@MediaPlayerControlsFragment,
-                            object : Observer<LifecycleOwner> {
-                                override fun onChanged(it: LifecycleOwner?) {
-                                    if (it != null) {
-                                        viewLifecycleOwnerLiveData.removeObserver(this)
-                                        it.lifecycleScope.launchWhenCreated {
-                                            enterAmbientMode()
-                                        }
-                                    }
-                                }
-                            })
-                    }
-                    MediaPlayerActivity.ACTION_EXITAMBIENTMODE -> {
-                        viewLifecycleOwnerLiveData.observe(
-                            this@MediaPlayerControlsFragment,
-                            object : Observer<LifecycleOwner> {
-                                override fun onChanged(it: LifecycleOwner?) {
-                                    if (it != null) {
-                                        viewLifecycleOwnerLiveData.removeObserver(this)
-                                        it.lifecycleScope.launchWhenCreated {
-                                            exitAmbientMode()
-                                        }
-                                    }
-                                }
-                            })
-                    }
                     MediaPlayerActivity.ACTION_UPDATEAMBIENTMODE -> {
-                        isAmbientMode = true
-
-                        if (doBurnInProtection && view != null) {
+                        if (mAmbientMode.ambientModeEnabled.value == true &&
+                            mAmbientMode.doBurnInProtection.value == true &&
+                            view != null
+                        ) {
                             binding.root.translationX =
                                 Random.nextInt(-10, 10 + 1).toFloat()
                             binding.root.translationY =
@@ -166,17 +109,29 @@ class MediaPlayerControlsFragment : LifecycleAwareFragment(), MessageClient.OnMe
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        mAmbientMode.ambientModeEnabled.observe(viewLifecycleOwner) { enabled ->
+            if (enabled) {
+                enterAmbientMode()
+            } else {
+                exitAmbientMode()
+            }
+        }
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        LocalBroadcastManager.getInstance(requireContext())
+            .unregisterReceiver(mAmbientReceiver)
+    }
+
     private fun enterAmbientMode() {
         showPlaybackLoading(false)
         showLoading(false)
-
-        isAmbientMode = true
 
         binding.albumArtImageview.visibility = View.GONE
         binding.prevButton.visibility = View.INVISIBLE
@@ -190,7 +145,7 @@ class MediaPlayerControlsFragment : LifecycleAwareFragment(), MessageClient.OnMe
 
         binding.titleView.isSelected = false
 
-        if (isLowBitAmbient) {
+        if (mAmbientMode.isLowBitAmbient.value == true) {
             binding.timeText.enterLowBitAmbientMode()
             binding.titleView.paint.isAntiAlias = false
             binding.subtitleView.paint.isAntiAlias = false
@@ -198,8 +153,6 @@ class MediaPlayerControlsFragment : LifecycleAwareFragment(), MessageClient.OnMe
     }
 
     private fun exitAmbientMode() {
-        isAmbientMode = false
-
         binding.albumArtImageview.visibility = View.VISIBLE
         binding.prevButton.visibility = View.VISIBLE
         binding.playbackLoadingbar.visibility = View.GONE
@@ -214,13 +167,13 @@ class MediaPlayerControlsFragment : LifecycleAwareFragment(), MessageClient.OnMe
 
         binding.titleView.isSelected = true
 
-        if (isLowBitAmbient) {
+        if (mAmbientMode.isLowBitAmbient.value == true) {
             binding.timeText.exitLowBitAmbientMode()
             binding.titleView.paint.isAntiAlias = true
             binding.subtitleView.paint.isAntiAlias = true
         }
 
-        if (doBurnInProtection) {
+        if (mAmbientMode.doBurnInProtection.value == true) {
             binding.root.translationX = 0f
             binding.root.translationY = 0f
         }
@@ -235,19 +188,15 @@ class MediaPlayerControlsFragment : LifecycleAwareFragment(), MessageClient.OnMe
         requestVolumeStatus()
         updatePlayerState()
 
-        binding.titleView.isSelected = true
+        if (mAmbientMode.ambientModeEnabled.value != true) {
+            binding.titleView.isSelected = true
+        }
     }
 
     override fun onPause() {
         Wearable.getDataClient(requireContext()).removeListener(this)
         Wearable.getMessageClient(requireContext()).removeListener(this)
         super.onPause()
-    }
-
-    override fun onDestroy() {
-        LocalBroadcastManager.getInstance(requireContext())
-            .unregisterReceiver(mAmbientReceiver)
-        super.onDestroy()
     }
 
     override fun onDataChanged(dataEventBuffer: DataEventBuffer) {
@@ -441,7 +390,7 @@ class MediaPlayerControlsFragment : LifecycleAwareFragment(), MessageClient.OnMe
 
     private fun showLoading(show: Boolean) {
         showLoading = show
-        if (isAmbientMode) return
+        if (mAmbientMode.ambientModeEnabled.value == true) return
         if (show) {
             binding.progressBar.show()
         } else {
@@ -453,7 +402,7 @@ class MediaPlayerControlsFragment : LifecycleAwareFragment(), MessageClient.OnMe
 
     private fun showPlaybackLoading(show: Boolean) {
         showPlaybackLoading = show
-        if (isAmbientMode) return
+        if (mAmbientMode.ambientModeEnabled.value == true) return
         binding.playpauseButton.visibility = if (show) View.GONE else View.VISIBLE
         binding.playbackLoadingbar.visibility = if (show) View.VISIBLE else View.GONE
     }
