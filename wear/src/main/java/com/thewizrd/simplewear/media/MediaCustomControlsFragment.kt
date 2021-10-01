@@ -1,6 +1,7 @@
 package com.thewizrd.simplewear.media
 
 import android.content.Intent
+import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -154,7 +155,11 @@ class MediaCustomControlsFragment : LifecycleAwareFragment(), MessageClient.OnMe
             RecyclerView.ViewHolder(button) {
 
             fun bind(model: MediaItemModel) {
-                button.setIconDrawable(model.icon?.toDrawable(button.context.resources))
+                button.setIconDrawable(model.icon?.toDrawable(button.context.resources)?.let {
+                    it.mutate().apply {
+                        setTint(Color.WHITE)
+                    }
+                })
                 button.setPrimaryText(model.title)
                 button.setOnClickListener {
                     onClickListener?.onClick(model)
