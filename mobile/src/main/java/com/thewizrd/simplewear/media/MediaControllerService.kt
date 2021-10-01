@@ -654,6 +654,7 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
             )
 
             val art = mediaMetadata.getBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART)
+                ?: mediaMetadata.getBitmap(MediaMetadataCompat.METADATA_KEY_ART)
             if (art != null) {
                 mapRequest.dataMap.putAsset(
                     MediaHelper.KEY_MEDIA_METADATA_ART,
