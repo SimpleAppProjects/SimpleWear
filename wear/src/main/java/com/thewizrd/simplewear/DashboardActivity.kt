@@ -26,11 +26,11 @@ import com.thewizrd.shared_resources.actions.Action
 import com.thewizrd.shared_resources.actions.ActionStatus
 import com.thewizrd.shared_resources.actions.Actions
 import com.thewizrd.shared_resources.actions.BatteryStatus
-import com.thewizrd.shared_resources.helpers.ContextUtils.dpToPx
-import com.thewizrd.shared_resources.helpers.ContextUtils.getAttrColor
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
 import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.shared_resources.sleeptimer.SleepTimerHelper
+import com.thewizrd.shared_resources.utils.ContextUtils.dpToPx
+import com.thewizrd.shared_resources.utils.ContextUtils.getAttrColor
 import com.thewizrd.shared_resources.utils.JSONParser
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.simplewear.adapters.ActionItemAdapter

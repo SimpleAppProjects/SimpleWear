@@ -1,4 +1,4 @@
-package com.thewizrd.shared_resources.helpers
+package com.thewizrd.shared_resources.utils
 
 import android.content.Context
 import android.content.res.ColorStateList

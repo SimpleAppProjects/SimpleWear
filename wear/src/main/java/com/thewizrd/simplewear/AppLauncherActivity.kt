@@ -18,8 +18,8 @@ import com.google.android.gms.wearable.DataClient.OnDataChangedListener
 import com.google.gson.stream.JsonReader
 import com.thewizrd.shared_resources.actions.ActionStatus
 import com.thewizrd.shared_resources.helpers.*
-import com.thewizrd.shared_resources.helpers.ContextUtils.dpToPx
 import com.thewizrd.shared_resources.utils.*
+import com.thewizrd.shared_resources.utils.ContextUtils.dpToPx
 import com.thewizrd.shared_resources.utils.ImageUtils.toBitmap
 import com.thewizrd.simplewear.adapters.AppsListAdapter
 import com.thewizrd.simplewear.adapters.ListHeaderAdapter

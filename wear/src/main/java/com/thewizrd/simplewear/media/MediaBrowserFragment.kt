@@ -15,10 +15,10 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import androidx.wear.widget.WearableLinearLayoutManager
 import com.google.android.gms.wearable.*
-import com.thewizrd.shared_resources.helpers.ContextUtils.dpToPx
 import com.thewizrd.shared_resources.helpers.MediaHelper
 import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.shared_resources.lifecycle.LifecycleAwareFragment
+import com.thewizrd.shared_resources.utils.ContextUtils.dpToPx
 import com.thewizrd.shared_resources.utils.ImageUtils
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.simplewear.R

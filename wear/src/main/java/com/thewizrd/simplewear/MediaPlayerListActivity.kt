@@ -18,8 +18,8 @@ import com.google.android.gms.wearable.*
 import com.google.android.gms.wearable.DataClient.OnDataChangedListener
 import com.thewizrd.shared_resources.actions.ActionStatus
 import com.thewizrd.shared_resources.helpers.*
-import com.thewizrd.shared_resources.helpers.ContextUtils.dpToPx
 import com.thewizrd.shared_resources.utils.*
+import com.thewizrd.shared_resources.utils.ContextUtils.dpToPx
 import com.thewizrd.simplewear.adapters.ListHeaderAdapter
 import com.thewizrd.simplewear.adapters.MusicPlayerListAdapter
 import com.thewizrd.simplewear.adapters.SpacerAdapter
