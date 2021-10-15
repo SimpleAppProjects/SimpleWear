@@ -11,6 +11,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
+import androidx.annotation.ColorRes
 import androidx.annotation.DrawableRes
 import androidx.annotation.IntDef
 import androidx.annotation.StringRes
@@ -49,13 +50,14 @@ class WearChipButton @JvmOverloads constructor(
     )
     annotation class ControlType
 
-    private lateinit var mIconView: ImageView
-    private lateinit var mPrimaryTextView: TextView
-    private lateinit var mSecondaryTextView: TextView
-    private lateinit var mSelectionControlContainer: ViewGroup
+    private val mIconView: ImageView
+    private val mPrimaryTextView: TextView
+    private val mSecondaryTextView: TextView
+    private val mSelectionControlContainer: ViewGroup
 
     private var buttonBackgroundTint: ColorStateList? = null
     private var buttonControlTint: ColorStateList? = null
+    private var iconTint: ColorStateList? = null
 
     var isCheckable: Boolean = false
         get() = field
@@ -126,6 +128,22 @@ class WearChipButton @JvmOverloads constructor(
                         a.getColorStateList(R.styleable.WearChipButton_buttonTint)
                 }
             }
+            if (a.hasValue(R.styleable.WearChipButton_iconTint)) {
+                val colorResId = a.getResourceId(R.styleable.WearChipButton_iconTint, 0)
+                if (colorResId != 0) {
+                    val tint = ContextCompat.getColorStateList(context, colorResId)
+                    if (tint != null) {
+                        iconTint = tint
+                    }
+                }
+
+                if (iconTint == null) {
+                    iconTint =
+                        a.getColorStateList(R.styleable.WearChipButton_iconTint)
+                }
+
+                setIconTint(iconTint)
+            }
             if (a.hasValue(R.styleable.WearChipButton_android_checkable)) {
                 isCheckable = a.getBoolean(R.styleable.WearChipButton_android_checkable, false)
             }
@@ -154,6 +172,14 @@ class WearChipButton @JvmOverloads constructor(
     fun setIconDrawable(drawable: Drawable?) {
         mIconView.setImageDrawable(drawable)
         mIconView.visibility = if (drawable == null) View.GONE else View.VISIBLE
+    }
+
+    fun setIconTint(tint: ColorStateList?) {
+        mIconView.imageTintList = tint
+    }
+
+    fun setIconTintResource(@ColorRes iconTintResId: Int) {
+        setIconTint(ContextCompat.getColorStateList(context, iconTintResId))
     }
 
     fun setPrimaryText(@StringRes resId: Int) {
