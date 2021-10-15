@@ -134,38 +134,43 @@ abstract class WearableListenerActivity : AppCompatLiteActivity(), OnMessageRece
             connect()
 
             if (mPhoneNodeWithApp == null) {
-                lifecycleScope.launch {
-                    Toast.makeText(
-                        this@WearableListenerActivity,
-                        "Device is not connected or app is not installed on device...",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
+                Toast.makeText(
+                    this@WearableListenerActivity,
+                    "Device is not connected or app is not installed on device...",
+                    Toast.LENGTH_SHORT
+                ).show()
 
                 when (PhoneTypeHelper.getPhoneDeviceType(this@WearableListenerActivity)) {
                     PhoneTypeHelper.DEVICE_TYPE_ANDROID -> {
-                        LocalBroadcastManager.getInstance(this@WearableListenerActivity)
-                            .sendBroadcast(
-                                Intent(ACTION_SHOWSTORELISTING)
-                            )
+                        // Open store on remote device
+                        val intentAndroid = Intent(Intent.ACTION_VIEW)
+                            .addCategory(Intent.CATEGORY_BROWSABLE)
+                            .setData(WearableHelper.getPlayStoreURI())
+
+                        runCatching {
+                            remoteActivityHelper.startRemoteActivity(intentAndroid)
+                                .await()
+
+                            showConfirmationOverlay(true)
+                        }.onFailure {
+                            if (it !is CancellationException) {
+                                showConfirmationOverlay(false)
+                            }
+                        }
                     }
                     PhoneTypeHelper.DEVICE_TYPE_IOS -> {
-                        lifecycleScope.launch {
-                            Toast.makeText(
-                                this@WearableListenerActivity,
-                                "Connected device is not supported",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
+                        Toast.makeText(
+                            this@WearableListenerActivity,
+                            "Connected device is not supported",
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }
                     else -> {
-                        lifecycleScope.launch {
-                            Toast.makeText(
-                                this@WearableListenerActivity,
-                                "Connected device is not supported",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
+                        Toast.makeText(
+                            this@WearableListenerActivity,
+                            "Connected device is not supported",
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }
                 }
             } else {
