@@ -51,7 +51,8 @@ a consistent *tile ID*. These seem to get assigned sequentially when Tiles are a
 unchanged throughout the tile's lifetime, and don't get
 reused. [Again, if you've ever done an App Widget, this is exactly like the `appWidgetId` they use.]
 
-Note that you'll need this tile ID as the first parameter when calling `TileProviderService.sendData`, so it's a good idea to keep it around in a field.
+Note that you'll need this tile ID as the first parameter when
+calling `TileProviderService.sendData`, so it's a good idea to keep it around in a field.
 
 ### `onTileUpdate(tileId: Int)`
 
@@ -140,19 +141,19 @@ class MyTileProviderService : TileProviderService() {
         id = tileId
         
         updateJob?.cancel()
-        updateJob = CoroutineScope(Dispatchers.Default).launch {
-            while (true) {
-                sendRemoteViews()
-                delay(1000)
-            }
+      updateJob = CoroutineScope(Dispatchers.Default).launch {
+        while (true) {
+          sendRemoteViews()
+          delay(1000)
         }
+      }
     }
 
-    override fun onTileBlur(tileId: Int) {
-        Log.d(TAG, "onTileBlur() called with: tileId = [$tileId]")
+  override fun onTileBlur(tileId: Int) {
+    Log.d(TAG, "onTileBlur() called with: tileId = [$tileId]")
 
-      updateJob?.cancel()
-    }
+    updateJob?.cancel()
+  }
 
   private fun sendRemoteViews() {
     Log.d(TAG, "sendRemoteViews")

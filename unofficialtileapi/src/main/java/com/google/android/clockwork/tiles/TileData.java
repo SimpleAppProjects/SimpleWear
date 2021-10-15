@@ -19,6 +19,10 @@ public class TileData implements Parcelable {
         this.fields = var1.readBundle(this.getClass().getClassLoader());
     }
 
+    public final long getOutdatedTimeMs() {
+        return this.fields.getLong("OUTDATED_TIME_MS", -1L);
+    }
+
     public final RemoteViews getRemoteViews() {
         return (RemoteViews) this.fields.getParcelable("REMOTE_VIEWS");
     }
@@ -45,14 +49,12 @@ public class TileData implements Parcelable {
     }
 
     static final class TileDataCreator implements Creator {
-        // $FF: synthetic method
-        public final Object createFromParcel(Parcel var1) {
-            return new TileData(var1);
+        public final /* bridge */ Object createFromParcel(final Parcel parcel) {
+            return new TileData(parcel);
         }
 
-        @Override
-        public Object[] newArray(int size) {
-            return new Object[0];
+        public final /* bridge */ Object[] newArray(final int size) {
+            return new TileData[size];
         }
     }
 
@@ -90,6 +92,11 @@ public class TileData implements Parcelable {
                 this.fields.putParcelable("REMOTE_VIEWS", (Parcelable) var1);
             }
 
+            return this;
+        }
+
+        public final Builder setFullUpdate(boolean var1) {
+            this.fields.putBoolean("FULL_UPDATE", var1);
             return this;
         }
     }
