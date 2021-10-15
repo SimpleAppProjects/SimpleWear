@@ -10,7 +10,6 @@ import android.util.Log
 import android.widget.Toast
 import androidx.annotation.RestrictTo
 import androidx.annotation.VisibleForTesting
-import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.wear.phone.interactions.PhoneTypeHelper
@@ -30,10 +29,14 @@ import com.thewizrd.shared_resources.utils.JSONParser
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.shared_resources.utils.bytesToString
 import com.thewizrd.shared_resources.utils.stringToBytes
+import com.thewizrd.simplewear.activities.AppCompatLiteActivity
+import com.thewizrd.simplewear.helpers.showConfirmationOverlay
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.guava.await
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
-abstract class WearableListenerActivity : FragmentActivity(), OnMessageReceivedListener,
+abstract class WearableListenerActivity : AppCompatLiteActivity(), OnMessageReceivedListener,
     OnCapabilityChangedListener {
     companion object {
         // Actions
