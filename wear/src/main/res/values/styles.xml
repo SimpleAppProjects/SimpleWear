@@ -48,8 +48,6 @@
 
     <style name="Base.AppTheme" parent="Theme.MaterialComponents.NoActionBar.Bridge">
         <!-- Text styles -->
-        <item name="android:fontFamily">@font/roboto</item>
-        <item name="fontFamily">@font/roboto</item>
         <item name="android:textAppearance">@style/TextAppearance.Roboto</item>
         <item name="android:textAppearanceInverse">@style/TextAppearance.Roboto.Inverse</item>
         <item name="android:textAppearanceLarge">@style/TextAppearance.Roboto</item>
@@ -139,6 +137,7 @@
     <style name="TextAppearance.Roboto" parent="@android:style/TextAppearance.DeviceDefault">
         <item name="android:fontFamily">@font/roboto</item>
         <item name="fontFamily">@font/roboto</item>
+        <item name="android:textColor">?colorOnSurface</item>
     </style>
 
     <style name="TextAppearance.Roboto.Inverse" parent="@android:style/TextAppearance.DeviceDefault.Inverse">
@@ -281,7 +280,7 @@
     </style>
 
     <!-- Wear Material -->
-    <style name="TextAppearance.Roboto.Display1" parent="TextAppearance.MaterialComponents.Headline3">
+    <style name="TextAppearance.Roboto.Display1" parent="TextAppearance.Roboto">
         <item name="android:fontFamily">@font/roboto_medium</item>
         <item name="fontFamily">@font/roboto_medium</item>
         <item name="android:textSize">50sp</item>
@@ -290,7 +289,7 @@
         <item name="android:letterSpacing">0.0</item>
     </style>
 
-    <style name="TextAppearance.Roboto.Display2" parent="TextAppearance.MaterialComponents.Headline4">
+    <style name="TextAppearance.Roboto.Display2" parent="TextAppearance.Roboto">
         <item name="android:fontFamily">@font/roboto_medium</item>
         <item name="fontFamily">@font/roboto_medium</item>
         <item name="android:textSize">40sp</item>
@@ -299,7 +298,7 @@
         <item name="android:letterSpacing">0.0</item>
     </style>
 
-    <style name="TextAppearance.Roboto.Display3" parent="TextAppearance.MaterialComponents.Headline4">
+    <style name="TextAppearance.Roboto.Display3" parent="TextAppearance.Roboto">
         <item name="android:fontFamily">@font/roboto_medium</item>
         <item name="fontFamily">@font/roboto_medium</item>
         <item name="android:textSize">30sp</item>
@@ -308,7 +307,7 @@
         <item name="android:letterSpacing">0.0</item>
     </style>
 
-    <style name="TextAppearance.Roboto.Title1" parent="TextAppearance.MaterialComponents.Headline5">
+    <style name="TextAppearance.Roboto.Title1" parent="TextAppearance.Roboto">
         <item name="android:fontFamily">@font/roboto_medium</item>
         <item name="fontFamily">@font/roboto_medium</item>
         <item name="android:textSize">24sp</item>
@@ -317,7 +316,7 @@
         <item name="android:letterSpacing">-0.004</item>
     </style>
 
-    <style name="TextAppearance.Roboto.Title2" parent="TextAppearance.MaterialComponents.Headline6">
+    <style name="TextAppearance.Roboto.Title2" parent="TextAppearance.Roboto">
         <item name="android:fontFamily">@font/roboto_medium</item>
         <item name="fontFamily">@font/roboto_medium</item>
         <item name="android:textSize">20sp</item>
@@ -326,7 +325,7 @@
         <item name="android:letterSpacing">0.005</item>
     </style>
 
-    <style name="TextAppearance.Roboto.Title3" parent="TextAppearance.MaterialComponents.Headline6">
+    <style name="TextAppearance.Roboto.Title3" parent="TextAppearance.Roboto">
         <item name="android:fontFamily">@font/roboto_medium</item>
         <item name="fontFamily">@font/roboto_medium</item>
         <item name="android:textSize">16sp</item>
@@ -335,7 +334,7 @@
         <item name="android:letterSpacing">0.024</item>
     </style>
 
-    <style name="TextAppearance.Roboto.Body1" parent="TextAppearance.MaterialComponents.Body1">
+    <style name="TextAppearance.Roboto.Body1" parent="TextAppearance.Roboto">
         <item name="android:fontFamily">@font/roboto</item>
         <item name="fontFamily">@font/roboto</item>
         <item name="android:textSize">16sp</item>
@@ -344,7 +343,7 @@
         <item name="android:letterSpacing">0.019</item>
     </style>
 
-    <style name="TextAppearance.Roboto.Body2" parent="TextAppearance.MaterialComponents.Body2">
+    <style name="TextAppearance.Roboto.Body2" parent="TextAppearance.Roboto">
         <item name="android:fontFamily">@font/roboto</item>
         <item name="fontFamily">@font/roboto</item>
         <item name="android:textSize">14sp</item>
@@ -353,7 +352,7 @@
         <item name="android:letterSpacing">0.021</item>
     </style>
 
-    <style name="TextAppearance.Roboto.Button" parent="TextAppearance.MaterialComponents.Button">
+    <style name="TextAppearance.Roboto.Button" parent="TextAppearance.Roboto">
         <item name="android:fontFamily">@font/roboto</item>
         <item name="fontFamily">@font/roboto</item>
         <item name="android:textAllCaps">false</item>
@@ -362,14 +361,14 @@
         <item name="android:letterSpacing">0.013</item>
     </style>
 
-    <style name="TextAppearance.Roboto.Caption1" parent="TextAppearance.MaterialComponents.Caption">
+    <style name="TextAppearance.Roboto.Caption1" parent="TextAppearance.Roboto">
         <item name="android:fontFamily">@font/roboto_medium</item>
         <item name="fontFamily">@font/roboto_medium</item>
         <item name="android:textSize">14sp</item>
         <item name="android:letterSpacing">0.023</item>
     </style>
 
-    <style name="TextAppearance.Roboto.Caption2" parent="TextAppearance.MaterialComponents.Caption">
+    <style name="TextAppearance.Roboto.Caption2" parent="TextAppearance.Roboto">
         <item name="android:fontFamily">@font/roboto_medium</item>
         <item name="fontFamily">@font/roboto_medium</item>
         <item name="android:textSize">12sp</item>
