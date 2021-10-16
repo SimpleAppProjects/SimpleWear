@@ -805,7 +805,7 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
     }
 
     private fun controllerSupportsPlayFromSearch(): Boolean {
-        return mController != null && mController!!.playbackState.actions and PlaybackStateCompat.ACTION_PLAY_FROM_SEARCH != 0L
+        return mController?.playbackState != null && mController!!.playbackState.actions and PlaybackStateCompat.ACTION_PLAY_FROM_SEARCH != 0L
     }
 
     private fun supportsPlayFromSearch(): Boolean {
