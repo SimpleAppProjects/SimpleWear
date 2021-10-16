@@ -109,9 +109,10 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
                     if (pkgName == info.activityInfo.packageName) {
                         val event = KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_MEDIA_PLAY)
                         playKeyIntent = Intent().apply {
+                            component =
+                                ComponentName(info.activityInfo.packageName, info.activityInfo.name)
+                            action = Intent.ACTION_MEDIA_BUTTON
                             putExtra(Intent.EXTRA_KEY_EVENT, event)
-                            setAction(Intent.ACTION_MEDIA_BUTTON).component =
-                                ComponentName(pkgName, info.activityInfo.name)
                         }
                         break
                     }

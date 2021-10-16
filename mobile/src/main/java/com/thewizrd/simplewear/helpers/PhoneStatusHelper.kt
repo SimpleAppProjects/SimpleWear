@@ -345,10 +345,16 @@ object PhoneStatusHelper {
         delay(500)
 
         val audioMan = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
-        context.sendBroadcast(playIntent)
 
-        // Wait for a second to see if music plays
-        delay(1000)
+        runCatching {
+            context.applicationContext.sendBroadcast(playIntent)
+
+            // Wait for a second to see if music plays
+            delay(1000)
+        }.onFailure {
+            Logger.writeLine(Log.ERROR, it)
+        }
+
         val musicActive = audioMan.isMusicActive
         return if (musicActive) ActionStatus.SUCCESS else ActionStatus.FAILURE
     }
