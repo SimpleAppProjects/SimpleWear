@@ -169,6 +169,14 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
         }
 
         binding.bridgeCallsPref.setOnClickListener {
+            if (!binding.bridgeCallsToggle.isChecked) {
+                if (!CallControllerService.hasPermissions(it.context.applicationContext)) {
+                    Toast.makeText(it.context, R.string.error_permissiondenied, Toast.LENGTH_SHORT)
+                        .show()
+                    return@setOnClickListener
+                }
+            }
+
             binding.bridgeCallsToggle.toggle()
         }
 
@@ -187,6 +195,14 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
         }
 
         binding.bridgeMediaPref.setOnClickListener {
+            if (!binding.bridgeMediaToggle.isChecked) {
+                if (!NotificationListener.isEnabled(it.context.applicationContext)) {
+                    Toast.makeText(it.context, R.string.error_permissiondenied, Toast.LENGTH_SHORT)
+                        .show()
+                    return@setOnClickListener
+                }
+            }
+
             binding.bridgeMediaToggle.toggle()
         }
 
