@@ -1,10 +1,8 @@
 package com.thewizrd.simplewear.services
 
-import android.Manifest
 import android.app.*
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.media.AudioManager
 import android.media.session.MediaController
 import android.media.session.MediaSessionManager
@@ -72,13 +70,14 @@ class CallControllerService : Service(), MessageClient.OnMessageReceivedListener
         const val EXTRA_FORCEDISCONNECT = "SimpleWear.Droid.extra.FORCE_DISCONNECT"
 
         fun enqueueWork(context: Context, work: Intent) {
-            if (ContextCompat.checkSelfPermission(
-                    context,
-                    Manifest.permission.READ_PHONE_STATE
-                ) == PackageManager.PERMISSION_GRANTED
-            ) {
+            if (hasPermissions(context)) {
                 ContextCompat.startForegroundService(context, work)
             }
+        }
+
+        fun hasPermissions(context: Context): Boolean {
+            return PhoneStatusHelper.callStatePermissionEnabled(context) &&
+                    NotificationListener.isEnabled(context)
         }
     }
 
