@@ -41,6 +41,8 @@ class CallControllerService : Service(), MessageClient.OnMessageReceivedListener
     private lateinit var mMediaSessionManager: MediaSessionManager
     private lateinit var mTelephonyManager: TelephonyManager
 
+    private var mForegroundNotification: Notification? = null
+
     private val scope = CoroutineScope(
         SupervisorJob() + Executors.newSingleThreadExecutor().asCoroutineDispatcher()
     )
@@ -104,26 +106,30 @@ class CallControllerService : Service(), MessageClient.OnMessageReceivedListener
         mNotificationManager.createNotificationChannel(mChannel)
     }
 
-    private fun createForegroundNotification(context: Context): Notification {
-        val notif = NotificationCompat.Builder(context, NOT_CHANNEL_ID).apply {
-            setSmallIcon(R.drawable.ic_settings_phone_24dp)
-            setContentTitle(context.getString(R.string.not_title_callcontroller_running))
-            setOnlyAlertOnce(true)
-            setSilent(true)
-            priority = NotificationCompat.PRIORITY_DEFAULT
-            addAction(
-                0,
-                context.getString(R.string.action_disconnect),
-                PendingIntent.getService(
-                    context, 0,
-                    Intent(context, CallControllerService::class.java)
-                        .setAction(ACTION_DISCONNECTCONTROLLER),
-                    PendingIntent.FLAG_UPDATE_CURRENT
+    private fun getForegroundNotification(): Notification {
+        if (mForegroundNotification == null) {
+            val context = applicationContext
+
+            mForegroundNotification = NotificationCompat.Builder(context, NOT_CHANNEL_ID).apply {
+                setSmallIcon(R.drawable.ic_settings_phone_24dp)
+                setContentTitle(context.getString(R.string.not_title_callcontroller_running))
+                setOnlyAlertOnce(true)
+                setSilent(true)
+                priority = NotificationCompat.PRIORITY_DEFAULT
+                addAction(
+                    0,
+                    context.getString(R.string.action_disconnect),
+                    PendingIntent.getService(
+                        context, 0,
+                        Intent(context, CallControllerService::class.java)
+                            .setAction(ACTION_DISCONNECTCONTROLLER),
+                        PendingIntent.FLAG_UPDATE_CURRENT
+                    )
                 )
-            )
+            }.build()
         }
 
-        return notif.build()
+        return mForegroundNotification!!
     }
 
     private fun updateNotification(context: Context, callActive: Boolean) {
@@ -185,7 +191,8 @@ class CallControllerService : Service(), MessageClient.OnMessageReceivedListener
             )
         }
 
-        mNotificationManager.notify(JOB_ID, notif.build())
+        mForegroundNotification = notif.build()
+        mNotificationManager.notify(JOB_ID, mForegroundNotification!!)
     }
 
     override fun onCreate() {
@@ -206,13 +213,15 @@ class CallControllerService : Service(), MessageClient.OnMessageReceivedListener
             initChannel()
         }
 
-        startForeground(JOB_ID, createForegroundNotification(applicationContext))
+        startForeground(JOB_ID, getForegroundNotification())
 
         registerMediaControllerListener()
         registerPhoneStateListener()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        startForeground(JOB_ID, getForegroundNotification())
+
         Logger.writeLine(Log.INFO, "${TAG}: Intent action = ${intent?.action}")
 
         when (intent?.action) {

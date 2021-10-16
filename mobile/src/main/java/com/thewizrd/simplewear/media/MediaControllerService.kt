@@ -189,6 +189,8 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        startForeground(JOB_ID, createForegroundNotification(applicationContext))
+
         Logger.writeLine(Log.INFO, "$TAG: Intent action = ${intent?.action}")
 
         when (intent?.action) {
