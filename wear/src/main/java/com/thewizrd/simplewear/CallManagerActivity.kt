@@ -8,8 +8,11 @@ import android.os.Bundle
 import android.os.CountDownTimer
 import android.util.Log
 import android.view.View
+import android.widget.TextView
 import androidx.core.content.ContextCompat
+import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
+import androidx.wear.widget.SwipeDismissFrameLayout
 import com.google.android.gms.wearable.*
 import com.thewizrd.shared_resources.actions.ActionStatus
 import com.thewizrd.shared_resources.actions.Actions
@@ -154,6 +157,45 @@ class CallManagerActivity : WearableListenerActivity(), DataClient.OnDataChanged
                 }
             }
         }
+
+        binding.keypadButton.setOnClickListener {
+            binding.keypadLayout.root.isVisible = true
+        }
+
+        binding.keypadLayout.root.addCallback(object : SwipeDismissFrameLayout.Callback() {
+            override fun onDismissed(layout: SwipeDismissFrameLayout?) {
+                super.onDismissed(layout)
+                layout?.isVisible = false
+            }
+        })
+
+        binding.keypadLayout.keypadText.setText("")
+        binding.keypadLayout.keypad0.setOnClickListener(keypadBtnOnClickListener)
+        binding.keypadLayout.keypad1.setOnClickListener(keypadBtnOnClickListener)
+        binding.keypadLayout.keypad2.setOnClickListener(keypadBtnOnClickListener)
+        binding.keypadLayout.keypad3.setOnClickListener(keypadBtnOnClickListener)
+        binding.keypadLayout.keypad4.setOnClickListener(keypadBtnOnClickListener)
+        binding.keypadLayout.keypad5.setOnClickListener(keypadBtnOnClickListener)
+        binding.keypadLayout.keypad6.setOnClickListener(keypadBtnOnClickListener)
+        binding.keypadLayout.keypad7.setOnClickListener(keypadBtnOnClickListener)
+        binding.keypadLayout.keypad8.setOnClickListener(keypadBtnOnClickListener)
+        binding.keypadLayout.keypad9.setOnClickListener(keypadBtnOnClickListener)
+        binding.keypadLayout.keypadPound.setOnClickListener(keypadBtnOnClickListener)
+        binding.keypadLayout.keypadStar.setOnClickListener(keypadBtnOnClickListener)
+    }
+
+    private val keypadBtnOnClickListener = View.OnClickListener {
+        val digit = (it as TextView).text[0]
+        binding.keypadLayout.keypadText.text?.append(digit)
+        requestSendDTMFTone(digit)
+    }
+
+    private fun requestSendDTMFTone(digit: Char) {
+        lifecycleScope.launch {
+            if (connect()) {
+                sendMessage(mPhoneNodeWithApp!!.id, InCallUIHelper.DTMFPath, digit.charToBytes())
+            }
+        }
     }
 
     private fun showProgressBar(show: Boolean) {
@@ -234,6 +276,10 @@ class CallManagerActivity : WearableListenerActivity(), DataClient.OnDataChanged
                 null
             }
         }
+        val inCallFeatures = dataMap.getInt(InCallUIHelper.KEY_SUPPORTEDFEATURES)
+        val supportsSpeakerToggle =
+            inCallFeatures and InCallUIHelper.INCALL_FEATURE_SPEAKERPHONE != 0
+        val canSendDTMFKey = inCallFeatures and InCallUIHelper.INCALL_FEATURE_DTMF != 0
 
         lifecycleScope.launch {
             if (callActive) {
@@ -243,8 +289,13 @@ class CallManagerActivity : WearableListenerActivity(), DataClient.OnDataChanged
                     binding.incallCallerName.setText(R.string.message_callactive)
                 }
                 binding.callBackground.setImageBitmap(callerBmp)
+                binding.speakerphoneButton.isVisible = supportsSpeakerToggle
+                binding.keypadButton.isVisible = canSendDTMFKey
                 showInCallUI()
             } else {
+                binding.speakerphoneButton.isVisible = false
+                binding.keypadButton.isVisible = false
+                binding.keypadLayout.root.isVisible = false
                 showInCallUI(false)
             }
         }

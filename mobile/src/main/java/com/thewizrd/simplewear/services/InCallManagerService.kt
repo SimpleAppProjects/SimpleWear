@@ -1,13 +1,25 @@
-/* TODO: Android 12
 package com.thewizrd.simplewear.services
 
+import android.content.Context
+import android.os.Build
 import android.telecom.Call
 import android.telecom.CallAudioState
 import android.telecom.InCallService
-import android.telecom.VideoProfile
+import android.telecom.TelecomManager
+import android.telephony.TelephonyManager
+import androidx.annotation.RequiresApi
 import androidx.lifecycle.MutableLiveData
 
+@RequiresApi(Build.VERSION_CODES.S)
 class InCallManagerService : InCallService() {
+    companion object {
+        @RequiresApi(Build.VERSION_CODES.S)
+        fun hasPermission(context: Context): Boolean {
+            val telecomMgr = context.applicationContext.getSystemService(TelecomManager::class.java)
+            return telecomMgr.hasManageOngoingCallsPermission()
+        }
+    }
+
     override fun onCallAdded(call: Call?) {
         OngoingCall.call = call
     }
@@ -21,6 +33,7 @@ class InCallManagerService : InCallService() {
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.S)
 object OngoingCall {
     val callLiveData = MutableLiveData<Call?>()
     val callState = MutableLiveData<Int>()
@@ -37,9 +50,17 @@ object OngoingCall {
         internal set(value) {
             field?.unregisterCallback(callback)
             callLiveData.postValue(value)
-            value?.let {
-                it.registerCallback(callback)
-                callState.postValue(it.state)
+            if (value != null) {
+                value.registerCallback(callback)
+                callState.postValue(
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        value.details.state
+                    } else {
+                        value.state
+                    }
+                )
+            } else {
+                callState.postValue(TelephonyManager.CALL_STATE_IDLE)
             }
             field = value
         }
@@ -48,4 +69,3 @@ object OngoingCall {
         call?.disconnect()
     }
 }
-*/

@@ -1,5 +1,6 @@
 package com.thewizrd.simplewear.services
 
+import android.annotation.SuppressLint
 import android.app.*
 import android.content.Context
 import android.content.Intent
@@ -8,8 +9,8 @@ import android.media.session.MediaController
 import android.media.session.MediaSessionManager
 import android.os.Build
 import android.os.Handler
-import android.os.IBinder
 import android.os.Looper
+import android.telecom.TelecomManager
 import android.telephony.PhoneStateListener
 import android.telephony.TelephonyCallback
 import android.telephony.TelephonyManager
@@ -18,12 +19,14 @@ import android.view.KeyEvent
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.LifecycleService
 import com.google.android.gms.wearable.*
 import com.thewizrd.shared_resources.helpers.InCallUIHelper
 import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.shared_resources.utils.booleanToBytes
 import com.thewizrd.shared_resources.utils.bytesToBool
+import com.thewizrd.shared_resources.utils.bytesToChar
 import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.helpers.PhoneStatusHelper
 import com.thewizrd.simplewear.preferences.Settings
@@ -32,12 +35,13 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.tasks.await
 import java.util.concurrent.Executors
 
-class CallControllerService : Service(), MessageClient.OnMessageReceivedListener,
+class CallControllerService : LifecycleService(), MessageClient.OnMessageReceivedListener,
     MediaSessionManager.OnActiveSessionsChangedListener {
     private lateinit var mAudioManager: AudioManager
     private lateinit var mNotificationManager: NotificationManager
     private lateinit var mMediaSessionManager: MediaSessionManager
     private lateinit var mTelephonyManager: TelephonyManager
+    private lateinit var mTelecomManager: TelecomManager
 
     private var mForegroundNotification: Notification? = null
 
@@ -79,10 +83,6 @@ class CallControllerService : Service(), MessageClient.OnMessageReceivedListener
             return PhoneStatusHelper.callStatePermissionEnabled(context) &&
                     NotificationListener.isEnabled(context)
         }
-    }
-
-    override fun onBind(intent: Intent?): IBinder? {
-        return null
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -154,19 +154,19 @@ class CallControllerService : Service(), MessageClient.OnMessageReceivedListener
                         PendingIntent.FLAG_UPDATE_CURRENT
                     )
                 )
-                /*
-                addAction(
-                    0,
-                    context.getString(if (speakerOn) R.string.action_speakerphone_off else R.string.action_speakerphone_on),
-                    PendingIntent.getService(
-                        context, ACTION_TOGGLESPEAKER.hashCode(),
-                        Intent(context, CallControllerService::class.java)
-                            .setAction(ACTION_TOGGLESPEAKER)
-                            .putExtra(EXTRA_TOGGLESTATE, !speakerOn),
-                        PendingIntent.FLAG_UPDATE_CURRENT
+                if (supportsSpeakerToggle()) {
+                    addAction(
+                        0,
+                        context.getString(if (speakerOn) R.string.action_speakerphone_off else R.string.action_speakerphone_on),
+                        PendingIntent.getService(
+                            context, ACTION_TOGGLESPEAKER.hashCode(),
+                            Intent(context, CallControllerService::class.java)
+                                .setAction(ACTION_TOGGLESPEAKER)
+                                .putExtra(EXTRA_TOGGLESTATE, !speakerOn),
+                            PendingIntent.FLAG_UPDATE_CURRENT
+                        )
                     )
-                )
-                */
+                }
                 addAction(
                     0,
                     context.getString(R.string.action_hangup),
@@ -202,6 +202,7 @@ class CallControllerService : Service(), MessageClient.OnMessageReceivedListener
         mNotificationManager = getSystemService(NotificationManager::class.java)
         mMediaSessionManager = getSystemService(MediaSessionManager::class.java)
         mTelephonyManager = getSystemService(TelephonyManager::class.java)
+        mTelecomManager = getSystemService(TelecomManager::class.java)
 
         mWearableManager = WearableManager(this)
         mDataClient = Wearable.getDataClient(this)
@@ -216,9 +217,15 @@ class CallControllerService : Service(), MessageClient.OnMessageReceivedListener
 
         registerMediaControllerListener()
         registerPhoneStateListener()
+        OngoingCall.callState.observe(this, {
+            scope.launch {
+                onCallStateChanged(it)
+            }
+        })
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        super.onStartCommand(intent, flags, startId)
         startForeground(JOB_ID, getForegroundNotification())
 
         Logger.writeLine(Log.INFO, "${TAG}: Intent action = ${intent?.action}")
@@ -264,14 +271,12 @@ class CallControllerService : Service(), MessageClient.OnMessageReceivedListener
                     toggleMicMute(mute = toggle)
                 }
             }
-            /*
             ACTION_TOGGLESPEAKER -> {
                 if (intent.hasExtra(EXTRA_TOGGLESTATE)) {
                     val toggle = intent.getBooleanExtra(EXTRA_TOGGLESTATE, false)
                     toggleSpeakerphone(on = toggle)
                 }
             }
-            */
         }
 
         return START_STICKY
@@ -358,7 +363,7 @@ class CallControllerService : Service(), MessageClient.OnMessageReceivedListener
         mMediaSessionManager.removeOnActiveSessionsChangedListener(this)
     }
 
-    private fun onCallStateChanged(newState: Int, phoneNo: String?) {
+    private fun onCallStateChanged(newState: Int, phoneNo: String? = null) {
         when (newState) {
             TelephonyManager.CALL_STATE_IDLE -> {
                 // No call active
@@ -380,20 +385,34 @@ class CallControllerService : Service(), MessageClient.OnMessageReceivedListener
         val mapRequest = PutDataMapRequest.create(InCallUIHelper.CallStatePath)
 
         mapRequest.dataMap.putString(
-            InCallUIHelper.KEY_CALLERNAME, /*OngoingCall.call?.details?.callerDisplayName ?: */
-            phoneNo ?: ""
+            InCallUIHelper.KEY_CALLERNAME,
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                OngoingCall.call?.details?.contactDisplayName
+            } else {
+                null
+            } ?: OngoingCall.call?.details?.callerDisplayName ?: phoneNo ?: ""
         )
 
-        /*
-        val ongoingCallActive = OngoingCall.call?.let {
-            it.state != TelephonyManager.CALL_STATE_IDLE
-        } ?: false
-        */
-        val callActive = state?.let { it != TelephonyManager.CALL_STATE_IDLE } ?: false
-        mapRequest.dataMap.putBoolean(
-            InCallUIHelper.KEY_CALLACTIVE, /*ongoingCallActive || */
-            callActive
-        )
+        val callState = state ?: OngoingCall.call?.let {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                it.details.state
+            } else {
+                it.state
+            }
+        } ?: TelephonyManager.CALL_STATE_IDLE
+
+        val callActive = callState != TelephonyManager.CALL_STATE_IDLE
+        mapRequest.dataMap.putBoolean(InCallUIHelper.KEY_CALLACTIVE, callActive)
+
+        var supportedFeatures = 0
+        if (supportsSpeakerToggle()) {
+            supportedFeatures += InCallUIHelper.INCALL_FEATURE_SPEAKERPHONE
+        }
+        if (OngoingCall.call != null) {
+            supportedFeatures += InCallUIHelper.INCALL_FEATURE_DTMF
+        }
+
+        mapRequest.dataMap.putInt(InCallUIHelper.KEY_SUPPORTEDFEATURES, supportedFeatures)
 
         mapRequest.setUrgent()
         try {
@@ -433,32 +452,52 @@ class CallControllerService : Service(), MessageClient.OnMessageReceivedListener
                     )
                 }
             }
-            /*
             InCallUIHelper.SpeakerphonePath -> {
                 val toggle = messageEvent.data.bytesToBool()
                 toggleSpeakerphone(messageEvent.sourceNodeId, toggle)
             }
             InCallUIHelper.SpeakerphoneStatusPath -> {
                 scope.launch {
-                    mWearableManager.sendMessage(messageEvent.sourceNodeId, InCallUIHelper.SpeakerphoneStatusPath, mAudioManager.isSpeakerphoneOn.booleanToBytes())
+                    mWearableManager.sendMessage(
+                        messageEvent.sourceNodeId,
+                        InCallUIHelper.SpeakerphoneStatusPath,
+                        mAudioManager.isSpeakerphoneOn.booleanToBytes()
+                    )
                 }
-            }*/
+            }
+            InCallUIHelper.DTMFPath -> {
+                when (val char = messageEvent.data.bytesToChar()) {
+                    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '*', '#' -> {
+                        scope.launch {
+                            OngoingCall.call?.run {
+                                playDtmfTone(char)
+                                stopDtmfTone()
+                            }
+                        }
+                    }
+                    else -> {
+                        // no-op
+                    }
+                }
+            }
         }
     }
 
     private fun sendHangupEvent() {
-        mTelecomMediaCtrlr?.dispatchMediaButtonEvent(
-            KeyEvent(
-                KeyEvent.ACTION_DOWN,
-                KeyEvent.KEYCODE_HEADSETHOOK
+        OngoingCall.call?.disconnect() ?: run {
+            mTelecomMediaCtrlr?.dispatchMediaButtonEvent(
+                KeyEvent(
+                    KeyEvent.ACTION_DOWN,
+                    KeyEvent.KEYCODE_HEADSETHOOK
+                )
             )
-        )
-        mTelecomMediaCtrlr?.dispatchMediaButtonEvent(
-            KeyEvent(
-                KeyEvent.ACTION_UP,
-                KeyEvent.KEYCODE_HEADSETHOOK
+            mTelecomMediaCtrlr?.dispatchMediaButtonEvent(
+                KeyEvent(
+                    KeyEvent.ACTION_UP,
+                    KeyEvent.KEYCODE_HEADSETHOOK
+                )
             )
-        )
+        }
     }
 
     private fun toggleMicMute(nodeID: String? = null, mute: Boolean) {
@@ -470,22 +509,39 @@ class CallControllerService : Service(), MessageClient.OnMessageReceivedListener
                 mAudioManager.isMicrophoneMute.booleanToBytes()
             )
         }
-        updateNotification(this, mTelephonyManager.callState != TelephonyManager.CALL_STATE_IDLE)
+        updateNotification(this, isInCall())
     }
 
-    /*
     private fun toggleSpeakerphone(nodeID: String? = null, on: Boolean) {
         Log.d("AudioMode", "mode = " + mAudioManager.mode)
         PhoneStatusHelper.setSpeakerphoneOn(this, on)
         scope.launch {
-            mWearableManager.sendMessage(nodeID, InCallUIHelper.SpeakerphoneStatusPath, mAudioManager.isSpeakerphoneOn.booleanToBytes())
+            mWearableManager.sendMessage(
+                nodeID,
+                InCallUIHelper.SpeakerphoneStatusPath,
+                mAudioManager.isSpeakerphoneOn.booleanToBytes()
+            )
         }
-        updateNotification(this, mTelephonyManager.callState != TelephonyManager.CALL_STATE_IDLE)
-    }*/
+        updateNotification(this, isInCall())
+    }
 
     override fun onActiveSessionsChanged(controllers: MutableList<MediaController>?) {
         mTelecomMediaCtrlr = controllers?.firstOrNull {
             it.packageName == "com.android.server.telecom"
         }
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun isInCall(): Boolean {
+        return runCatching {
+            mTelecomManager.isInCall
+        }.getOrDefault(mTelephonyManager.callState != TelephonyManager.CALL_STATE_IDLE)
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun supportsSpeakerToggle(): Boolean {
+        return runCatching {
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && mTelecomManager.isInManagedCall
+        }.getOrDefault(false)
     }
 }

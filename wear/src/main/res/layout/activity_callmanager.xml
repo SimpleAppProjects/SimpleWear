@@ -45,6 +45,18 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent" />
 
+        <androidx.constraintlayout.helper.widget.Flow
+            android:id="@+id/incall_button_flow"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            app:flow_maxElementsWrap="2"
+            app:flow_wrapMode="chain"
+            app:layout_constraintBottom_toTopOf="@id/endcall_button"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:constraint_referenced_ids="mute_button,keypad_button,speakerphone_button,volume_button" />
+
         <com.google.android.material.button.MaterialButton
             android:id="@+id/mute_button"
             android:layout_width="wrap_content"
@@ -59,10 +71,41 @@
             app:iconTint="@android:color/white"
             app:rippleColor="?attr/colorOnSurface"
             app:strokeColor="@color/checkable_button_stroke_color"
-            app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.MaterialComponents.FloatingActionButton"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toStartOf="@id/volume_button"
-            app:layout_constraintBottom_toTopOf="@id/endcall_button" />
+            app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.MaterialComponents.FloatingActionButton" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/keypad_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            style="@style/Widget.MaterialButton.OutlinedButton.IconOnly"
+            android:layout_marginBottom="8dp"
+            android:minWidth="40dp"
+            android:minHeight="40dp"
+            android:visibility="gone"
+            tools:visibility="visible"
+            app:icon="@drawable/ic_dialpad_24dp"
+            app:iconTint="@android:color/white"
+            app:rippleColor="?attr/colorOnSurface"
+            app:strokeColor="@color/checkable_button_stroke_color"
+            app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.MaterialComponents.FloatingActionButton" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/speakerphone_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            style="@style/Widget.MaterialButton.OutlinedButton.IconOnly"
+            android:checkable="true"
+            android:checked="false"
+            android:layout_marginBottom="8dp"
+            android:minWidth="40dp"
+            android:minHeight="40dp"
+            android:visibility="gone"
+            tools:visibility="visible"
+            app:icon="@drawable/ic_baseline_speaker_phone_24"
+            app:iconTint="@android:color/white"
+            app:rippleColor="?attr/colorOnSurface"
+            app:strokeColor="@color/checkable_button_stroke_color"
+            app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.MaterialComponents.FloatingActionButton" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/volume_button"
@@ -76,30 +119,7 @@
             app:iconTint="@android:color/white"
             app:rippleColor="?attr/colorOnSurface"
             app:strokeColor="@color/checkable_button_stroke_color"
-            app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.MaterialComponents.FloatingActionButton"
-            app:layout_constraintStart_toEndOf="@id/mute_button"
-            app:layout_constraintEnd_toStartOf="@id/speakerphone_button"
-            app:layout_constraintBottom_toTopOf="@id/endcall_button" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/speakerphone_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            style="@style/Widget.MaterialButton.OutlinedButton.IconOnly"
-            android:checkable="true"
-            android:checked="false"
-            android:layout_marginBottom="8dp"
-            android:minWidth="40dp"
-            android:minHeight="40dp"
-            android:visibility="gone"
-            app:icon="@drawable/ic_baseline_speaker_phone_24"
-            app:iconTint="@android:color/white"
-            app:rippleColor="?attr/colorOnSurface"
-            app:strokeColor="@color/checkable_button_stroke_color"
-            app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.MaterialComponents.FloatingActionButton"
-            app:layout_constraintStart_toEndOf="@id/volume_button"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintBottom_toTopOf="@id/endcall_button" />
+            app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.MaterialComponents.FloatingActionButton" />
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/endcall_button"
@@ -147,5 +167,10 @@
             tools:visibility="visible" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <include
+        android:id="@+id/keypad_layout"
+        layout="@layout/layout_keypad"
+        android:visibility="gone" />
 
 </FrameLayout>

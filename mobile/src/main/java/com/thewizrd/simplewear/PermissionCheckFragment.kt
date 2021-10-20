@@ -34,6 +34,7 @@ import com.thewizrd.simplewear.helpers.PhoneStatusHelper.isDeviceAdminEnabled
 import com.thewizrd.simplewear.helpers.PhoneStatusHelper.isNotificationAccessAllowed
 import com.thewizrd.simplewear.media.MediaControllerService
 import com.thewizrd.simplewear.services.CallControllerService
+import com.thewizrd.simplewear.services.InCallManagerService
 import com.thewizrd.simplewear.services.NotificationListener
 import com.thewizrd.simplewear.wearable.WearableDataListenerService
 import com.thewizrd.simplewear.wearable.WearableWorker
@@ -89,31 +90,7 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
             }
         }
         binding.companionPairPref.setOnClickListener {
-            LocalBroadcastManager.getInstance(requireContext())
-                .registerReceiver(
-                    mReceiver,
-                    IntentFilter(WearableDataListenerService.ACTION_GETCONNECTEDNODE)
-                )
-            if (timer == null) {
-                timer = object : CountDownTimer(5000, 1000) {
-                    override fun onTick(millisUntilFinished: Long) {}
-                    override fun onFinish() {
-                        if (context != null) {
-                            Toast.makeText(
-                                context,
-                                R.string.message_watchbttimeout,
-                                Toast.LENGTH_LONG
-                            ).show()
-                            binding.companionPairProgress?.visibility = View.GONE
-                            Logger.writeLine(Log.INFO, "%s: BT Request Timeout", TAG)
-                        }
-                    }
-                }
-            }
-            timer?.start()
-            binding.companionPairProgress.visibility = View.VISIBLE
-            enqueueAction(requireContext(), WearableWorker.ACTION_REQUESTBTDISCOVERABLE)
-            Logger.writeLine(Log.INFO, "%s: ACTION_REQUESTBTDISCOVERABLE", TAG)
+            startDevicePairing()
         }
         binding.companionPairPref.visibility =
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) View.VISIBLE else View.GONE
@@ -152,6 +129,11 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
                     arrayOf(Manifest.permission.READ_PHONE_STATE),
                     MANAGECALLS_REQCODE
                 )
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !InCallManagerService.hasPermission(
+                    requireContext()
+                )
+            ) {
+                startDevicePairing()
             }
         }
 
@@ -214,6 +196,34 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
         super.onPause()
     }
 
+    private fun startDevicePairing() {
+        LocalBroadcastManager.getInstance(requireContext())
+            .registerReceiver(
+                mReceiver,
+                IntentFilter(WearableDataListenerService.ACTION_GETCONNECTEDNODE)
+            )
+        if (timer == null) {
+            timer = object : CountDownTimer(5000, 1000) {
+                override fun onTick(millisUntilFinished: Long) {}
+                override fun onFinish() {
+                    if (context != null) {
+                        Toast.makeText(
+                            context,
+                            R.string.message_watchbttimeout,
+                            Toast.LENGTH_LONG
+                        ).show()
+                        binding.companionPairProgress?.visibility = View.GONE
+                        Logger.writeLine(Log.INFO, "%s: BT Request Timeout", TAG)
+                    }
+                }
+            }
+        }
+        timer?.start()
+        binding.companionPairProgress.visibility = View.VISIBLE
+        enqueueAction(requireContext(), WearableWorker.ACTION_REQUESTBTDISCOVERABLE)
+        Logger.writeLine(Log.INFO, "%s: ACTION_REQUESTBTDISCOVERABLE", TAG)
+    }
+
     // Android Q+
     private val mReceiver: BroadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
@@ -246,22 +256,40 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
             updatePairPermText(false)
 
             val request = AssociationRequest.Builder().apply {
-                if (!deviceName.isNullOrBlank()) {
+                if (BuildConfig.DEBUG) {
                     addDeviceFilter(
                         BluetoothDeviceFilter.Builder()
-                            .setNamePattern(Pattern.compile(".*$deviceName.*", Pattern.DOTALL))
+                            .setNamePattern(Pattern.compile(".*", Pattern.DOTALL))
                             .build()
                     )
                     addDeviceFilter(
                         WifiDeviceFilter.Builder()
-                            .setNamePattern(Pattern.compile(".*$deviceName.*", Pattern.DOTALL))
+                            .setNamePattern(Pattern.compile(".*", Pattern.DOTALL))
                             .build()
                     )
                     addDeviceFilter(
                         BluetoothLeDeviceFilter.Builder()
-                            .setNamePattern(Pattern.compile(".*$deviceName.*", Pattern.DOTALL))
+                            .setNamePattern(Pattern.compile(".*", Pattern.DOTALL))
                             .build()
                     )
+                } else {
+                    if (!deviceName.isNullOrBlank()) {
+                        addDeviceFilter(
+                            BluetoothDeviceFilter.Builder()
+                                .setNamePattern(Pattern.compile(".*$deviceName.*", Pattern.DOTALL))
+                                .build()
+                        )
+                        addDeviceFilter(
+                            WifiDeviceFilter.Builder()
+                                .setNamePattern(Pattern.compile(".*$deviceName.*", Pattern.DOTALL))
+                                .build()
+                        )
+                        addDeviceFilter(
+                            BluetoothLeDeviceFilter.Builder()
+                                .setNamePattern(Pattern.compile(".*$deviceName.*", Pattern.DOTALL))
+                                .build()
+                        )
+                    }
                 }
 
                 // https://stackoverflow.com/questions/66222673/how-to-filter-nearby-bluetooth-devices-by-type
@@ -280,12 +308,8 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
                         .build()
                 )
 
-                if (BuildConfig.DEBUG) {
-                    addDeviceFilter(
-                        WifiDeviceFilter.Builder()
-                            .setNamePattern(Pattern.compile(".*", Pattern.DOTALL))
-                            .build()
-                    )
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    setDeviceProfile(AssociationRequest.DEVICE_PROFILE_WATCH)
                 }
             }
                 .setSingleDevice(false)
@@ -330,17 +354,16 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
 
     override fun onResume() {
         super.onResume()
+        updatePermissions()
+    }
+
+    private fun updatePermissions() {
         updateCamPermText(isCameraPermissionEnabled(requireContext()))
         val mDPM =
             requireContext().getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
         val mScreenLockAdmin = ComponentName(requireContext(), ScreenLockAdminReceiver::class.java)
         updateDeviceAdminText(mDPM.isAdminActive(mScreenLockAdmin))
         updateDNDAccessText(isNotificationAccessAllowed(requireContext()))
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            val deviceManager =
-                requireContext().getSystemService(Context.COMPANION_DEVICE_SERVICE) as CompanionDeviceManager
-            updatePairPermText(deviceManager.associations.isNotEmpty())
-        }
         updateUninstallText(mDPM.isAdminActive(mScreenLockAdmin))
 
         val notListenerEnabled = NotificationListener.isEnabled(requireContext())
@@ -348,9 +371,19 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
             requireContext(),
             Manifest.permission.READ_PHONE_STATE
         ) == PackageManager.PERMISSION_GRANTED
+        val hasManageCallsPerm =
+            Build.VERSION.SDK_INT < Build.VERSION_CODES.S || InCallManagerService.hasPermission(
+                requireContext()
+            )
 
         updateNotifListenerText(notListenerEnabled)
-        updateManageCallsText(notListenerEnabled && phoneStatePermGranted)
+        updateManageCallsText(notListenerEnabled && phoneStatePermGranted && hasManageCallsPerm)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val deviceManager =
+                requireContext().getSystemService(Context.COMPANION_DEVICE_SERVICE) as CompanionDeviceManager
+            updatePairPermText(deviceManager.associations.isNotEmpty())
+        }
 
         binding.bridgeMediaPref.isEnabled = notListenerEnabled
         if (!notListenerEnabled && com.thewizrd.simplewear.preferences.Settings.isBridgeMediaEnabled()) {
@@ -408,6 +441,8 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
                         parcel.createBond()
                     }
                 }
+
+                updatePermissions()
             }
         }
     }
@@ -429,11 +464,17 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
                 }
             }
             MANAGECALLS_REQCODE -> {
-                updateManageCallsText(
-                    grantResults.isNotEmpty() && !grantResults.contains(
-                        PackageManager.PERMISSION_DENIED
+                val permGranted =
+                    grantResults.isNotEmpty() && !grantResults.contains(PackageManager.PERMISSION_DENIED)
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !InCallManagerService.hasPermission(
+                        requireContext()
                     )
-                )
+                ) {
+                    startDevicePairing()
+                } else {
+                    updateManageCallsText(permGranted)
+                }
             }
         }
     }

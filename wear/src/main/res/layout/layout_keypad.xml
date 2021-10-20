@@ -17,6 +17,7 @@
             android:background="#FF444444"
             android:focusable="false"
             android:focusableInTouchMode="false"
+            android:fontFamily="sans-serif-light"
             android:inputType="phone"
             android:paddingHorizontal="@dimen/dialer_text_padding"
             android:paddingBottom="4dp"
@@ -58,6 +59,7 @@
             android:background="?selectableItemBackgroundBorderless"
             android:gravity="center"
             android:textColor="@android:color/white"
+            android:textSize="16sp"
             android:text="1" />
 
         <TextView
@@ -67,6 +69,7 @@
             android:background="?selectableItemBackgroundBorderless"
             android:gravity="center"
             android:textColor="@android:color/white"
+            android:textSize="16sp"
             android:text="2" />
 
         <TextView
@@ -76,6 +79,7 @@
             android:background="?selectableItemBackgroundBorderless"
             android:gravity="center"
             android:textColor="@android:color/white"
+            android:textSize="16sp"
             android:text="3" />
 
         <TextView
@@ -85,6 +89,7 @@
             android:background="?selectableItemBackgroundBorderless"
             android:gravity="center"
             android:textColor="@android:color/white"
+            android:textSize="16sp"
             android:text="4" />
 
         <TextView
@@ -94,6 +99,7 @@
             android:background="?selectableItemBackgroundBorderless"
             android:gravity="center"
             android:textColor="@android:color/white"
+            android:textSize="16sp"
             android:text="5" />
 
         <TextView
@@ -103,6 +109,7 @@
             android:background="?selectableItemBackgroundBorderless"
             android:gravity="center"
             android:textColor="@android:color/white"
+            android:textSize="16sp"
             android:text="6" />
 
         <TextView
@@ -112,6 +119,7 @@
             android:background="?selectableItemBackgroundBorderless"
             android:gravity="center"
             android:textColor="@android:color/white"
+            android:textSize="16sp"
             android:text="7" />
 
         <TextView
@@ -121,6 +129,7 @@
             android:background="?selectableItemBackgroundBorderless"
             android:gravity="center"
             android:textColor="@android:color/white"
+            android:textSize="16sp"
             android:text="8" />
 
         <TextView
@@ -130,6 +139,7 @@
             android:background="?selectableItemBackgroundBorderless"
             android:gravity="center"
             android:textColor="@android:color/white"
+            android:textSize="16sp"
             android:text="9" />
 
         <TextView
@@ -139,6 +149,7 @@
             android:background="?selectableItemBackgroundBorderless"
             android:gravity="center"
             android:textColor="@android:color/white"
+            android:textSize="16sp"
             android:text="0" />
 
         <TextView
@@ -148,6 +159,7 @@
             android:background="?selectableItemBackgroundBorderless"
             android:gravity="center"
             android:textColor="@android:color/white"
+            android:textSize="16sp"
             android:text="*" />
 
         <TextView
@@ -157,6 +169,7 @@
             android:background="?selectableItemBackgroundBorderless"
             android:gravity="center"
             android:textColor="@android:color/white"
+            android:textSize="16sp"
             android:text="#" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
