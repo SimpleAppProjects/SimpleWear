@@ -4,7 +4,7 @@ import android.Manifest
 import android.app.ActivityManager
 import android.app.NotificationManager
 import android.app.admin.DevicePolicyManager
-import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothManager
 import android.companion.CompanionDeviceManager
 import android.content.ComponentName
 import android.content.Context
@@ -79,13 +79,13 @@ object PhoneStatusHelper {
     }
 
     fun isBluetoothEnabled(context: Context): Boolean {
-        val mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
-        return mBluetoothAdapter?.isEnabled ?: false
+        val btService = context.applicationContext.getSystemService(BluetoothManager::class.java)
+        return btService.adapter?.isEnabled ?: false
     }
 
     fun setBluetoothEnabled(context: Context, enable: Boolean): ActionStatus {
-        val mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
-        return mBluetoothAdapter?.let {
+        val btService = context.applicationContext.getSystemService(BluetoothManager::class.java)
+        return btService.adapter?.let {
             if (if (enable) it.enable() else it.disable()) ActionStatus.SUCCESS else ActionStatus.FAILURE
         } ?: ActionStatus.FAILURE
     }
