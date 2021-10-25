@@ -212,8 +212,10 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
                             R.string.message_watchbttimeout,
                             Toast.LENGTH_LONG
                         ).show()
-                        binding.companionPairProgress?.visibility = View.GONE
+                        binding.companionPairProgress.visibility = View.GONE
                         Logger.writeLine(Log.INFO, "%s: BT Request Timeout", TAG)
+                        // Device not found showing all
+                        pairDevice()
                     }
                 }
             }
@@ -231,7 +233,7 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
                 timer?.cancel()
                 binding.companionPairProgress.visibility = View.GONE
                 Logger.writeLine(Log.INFO, "%s: node received", TAG)
-                pairDevice(intent.getStringExtra(WearableDataListenerService.EXTRA_NODEDEVICENAME))
+                pairDevice()
                 LocalBroadcastManager.getInstance(context)
                         .unregisterReceiver(this)
             }
@@ -239,7 +241,7 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
     }
 
     @TargetApi(Build.VERSION_CODES.Q)
-    private fun pairDevice(deviceName: String?) {
+    private fun pairDevice() {
         runWithView {
             val deviceManager =
                 requireContext().getSystemService(Context.COMPANION_DEVICE_SERVICE) as CompanionDeviceManager
@@ -256,6 +258,22 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
             updatePairPermText(false)
 
             val request = AssociationRequest.Builder().apply {
+                // https://stackoverflow.com/questions/66222673/how-to-filter-nearby-bluetooth-devices-by-type
+                addDeviceFilter(
+                    BluetoothLeDeviceFilter.Builder()
+                        .setScanFilter(
+                            ScanFilter.Builder()
+                                .setManufacturerData(
+                                    0xE0,
+                                    BLE_WEAR_MATCH_DATA_LEGACY,
+                                    BLE_WEAR_MATCH_MASK
+                                )
+                                .build()
+                        )
+                        .setNamePattern(Pattern.compile(".*", Pattern.DOTALL))
+                        .build()
+                )
+
                 if (BuildConfig.DEBUG) {
                     addDeviceFilter(
                         BluetoothDeviceFilter.Builder()
@@ -273,40 +291,17 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
                             .build()
                     )
                 } else {
-                    if (!deviceName.isNullOrBlank()) {
-                        addDeviceFilter(
-                            BluetoothDeviceFilter.Builder()
-                                .setNamePattern(Pattern.compile(".*$deviceName.*", Pattern.DOTALL))
-                                .build()
-                        )
-                        addDeviceFilter(
-                            WifiDeviceFilter.Builder()
-                                .setNamePattern(Pattern.compile(".*$deviceName.*", Pattern.DOTALL))
-                                .build()
-                        )
-                        addDeviceFilter(
-                            BluetoothLeDeviceFilter.Builder()
-                                .setNamePattern(Pattern.compile(".*$deviceName.*", Pattern.DOTALL))
-                                .build()
-                        )
-                    }
+                    addDeviceFilter(
+                        BluetoothDeviceFilter.Builder()
+                            .setNamePattern(Pattern.compile(".*", Pattern.DOTALL))
+                            .build()
+                    )
+                    addDeviceFilter(
+                        BluetoothLeDeviceFilter.Builder()
+                            .setNamePattern(Pattern.compile(".*", Pattern.DOTALL))
+                            .build()
+                    )
                 }
-
-                // https://stackoverflow.com/questions/66222673/how-to-filter-nearby-bluetooth-devices-by-type
-                addDeviceFilter(
-                    BluetoothLeDeviceFilter.Builder()
-                        .setScanFilter(
-                            ScanFilter.Builder()
-                                .setManufacturerData(
-                                    0xE0,
-                                    BLE_WEAR_MATCH_DATA_LEGACY,
-                                    BLE_WEAR_MATCH_MASK
-                                )
-                                .build()
-                        )
-                        .setNamePattern(Pattern.compile(".*", Pattern.DOTALL))
-                        .build()
-                )
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                     setDeviceProfile(AssociationRequest.DEVICE_PROFILE_WATCH)
