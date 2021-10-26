@@ -109,6 +109,26 @@ object PhoneStatusHelper {
         }
     }
 
+    fun setLocationEnabled(context: Context, enable: Boolean): ActionStatus {
+        return if (ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.WRITE_SECURE_SETTINGS
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+            val success = Settings.Secure.putInt(
+                context.contentResolver, Settings.Secure.LOCATION_MODE,
+                if (enable) Settings.Secure.LOCATION_MODE_HIGH_ACCURACY else Settings.Secure.LOCATION_MODE_OFF
+            )
+            if (success) {
+                ActionStatus.SUCCESS
+            } else {
+                ActionStatus.FAILURE
+            }
+        } else {
+            ActionStatus.PERMISSION_DENIED
+        }
+    }
+
     fun getLocationState(context: Context): LocationState {
         val locMan = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
         val isGPSEnabled = locMan.isProviderEnabled(LocationManager.GPS_PROVIDER)
@@ -125,8 +145,36 @@ object PhoneStatusHelper {
         }
     }
 
+    fun setLocationState(context: Context, state: LocationState): ActionStatus {
+        return if (ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.WRITE_SECURE_SETTINGS
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+            val success = Settings.Secure.putInt(
+                context.contentResolver, Settings.Secure.LOCATION_MODE,
+                when (state) {
+                    LocationState.OFF -> Settings.Secure.LOCATION_MODE_OFF
+                    LocationState.SENSORS_ONLY -> Settings.Secure.LOCATION_MODE_SENSORS_ONLY
+                    LocationState.BATTERY_SAVING -> Settings.Secure.LOCATION_MODE_BATTERY_SAVING
+                    LocationState.HIGH_ACCURACY -> Settings.Secure.LOCATION_MODE_HIGH_ACCURACY
+                }
+            )
+            if (success) {
+                ActionStatus.SUCCESS
+            } else {
+                ActionStatus.FAILURE
+            }
+        } else {
+            ActionStatus.PERMISSION_DENIED
+        }
+    }
+
     fun isCameraPermissionEnabled(context: Context): Boolean {
-        return ContextCompat.checkSelfPermission(context.applicationContext, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
+        return ContextCompat.checkSelfPermission(
+            context.applicationContext,
+            Manifest.permission.CAMERA
+        ) == PackageManager.PERMISSION_GRANTED
     }
 
     fun isTorchEnabled(context: Context): Boolean {

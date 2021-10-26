@@ -652,13 +652,34 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
             Actions.LOCATION -> {
                 if (action is MultiChoiceAction) {
                     mA = action
-                    mA.choice = PhoneStatusHelper.getLocationState(mContext).value
-                    sendMessage(nodeID, WearableHelper.ActionsPath, JSONParser.serializer(mA, Action::class.java).stringToBytes())
+                    val actionStatus = PhoneStatusHelper.setLocationState(
+                        mContext,
+                        LocationState.valueOf(mA.choice)
+                    )
+                    if (actionStatus == ActionStatus.PERMISSION_DENIED) {
+                        mA.choice = PhoneStatusHelper.getLocationState(mContext).value
+                    } else {
+                        mA.setActionSuccessful(actionStatus)
+                    }
+                    sendMessage(
+                        nodeID,
+                        WearableHelper.ActionsPath,
+                        JSONParser.serializer(mA, Action::class.java).stringToBytes()
+                    )
                 } else if (action is ToggleAction) {
                     tA = action
-                    tA.isEnabled = PhoneStatusHelper.isLocationEnabled(mContext)
-                    tA.setActionSuccessful(PhoneStatusHelper.openLocationSettings(mContext))
-                    sendMessage(nodeID, WearableHelper.ActionsPath, JSONParser.serializer(tA, Action::class.java).stringToBytes())
+                    val actionStatus = PhoneStatusHelper.setLocationEnabled(mContext, tA.isEnabled)
+                    if (actionStatus == ActionStatus.PERMISSION_DENIED) {
+                        tA.isEnabled = PhoneStatusHelper.isLocationEnabled(mContext)
+                        tA.setActionSuccessful(PhoneStatusHelper.openLocationSettings(mContext))
+                    } else {
+                        tA.setActionSuccessful(actionStatus)
+                    }
+                    sendMessage(
+                        nodeID,
+                        WearableHelper.ActionsPath,
+                        JSONParser.serializer(tA, Action::class.java).stringToBytes()
+                    )
                 }
             }
             Actions.TORCH -> {
