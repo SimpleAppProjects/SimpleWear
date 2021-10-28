@@ -14,9 +14,6 @@
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
-    <uses-permission
-        android:name="android.permission.WRITE_SECURE_SETTINGS"
-        tools:ignore="ProtectedPermissions" />
 
     <!-- InCallController permissions -->
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
@@ -27,6 +24,9 @@
     <uses-permission
         android:name="android.permission.QUERY_ALL_PACKAGES"
         tools:ignore="QueryAllPackagesPermission" />
+
+    <!-- Helper -->
+    <uses-permission android:name="com.thewizrd.wearsettings.PERFORM_ACTIONS" />
 
     <uses-feature
         android:name="android.software.companion_device_setup"

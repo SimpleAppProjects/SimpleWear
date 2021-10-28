@@ -65,7 +65,11 @@ object PhoneStatusHelper {
     }
 
     fun setWifiEnabled(context: Context, enable: Boolean): ActionStatus {
-        if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_WIFI_STATE) == PackageManager.PERMISSION_GRANTED) {
+        if (ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.CHANGE_WIFI_STATE
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
             return try {
                 val wifiMan =
                     context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
