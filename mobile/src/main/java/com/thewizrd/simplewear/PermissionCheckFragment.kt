@@ -48,6 +48,7 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
         private const val CAMERA_REQCODE = 0
         private const val DEVADMIN_REQCODE = 1
         private const val MANAGECALLS_REQCODE = 2
+        private const val BTCONNECT_REQCODE = 3
         private const val SELECT_DEVICE_REQUEST_CODE = 42
 
         // WearOS device filter
@@ -208,6 +209,20 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
     }
 
     private fun startDevicePairing() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (ContextCompat.checkSelfPermission(
+                    requireContext(),
+                    Manifest.permission.BLUETOOTH_CONNECT
+                ) == PackageManager.PERMISSION_DENIED
+            ) {
+                requestPermissions(
+                    arrayOf(Manifest.permission.BLUETOOTH_CONNECT),
+                    BTCONNECT_REQCODE
+                )
+                return
+            }
+        }
+
         LocalBroadcastManager.getInstance(requireContext())
             .registerReceiver(
                 mReceiver,
@@ -487,6 +502,17 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
                     startDevicePairing()
                 } else {
                     updateManageCallsText(permGranted)
+                }
+            }
+            BTCONNECT_REQCODE -> {
+                val permGranted =
+                    grantResults.isNotEmpty() && !grantResults.contains(PackageManager.PERMISSION_DENIED)
+
+                if (permGranted) {
+                    startDevicePairing()
+                } else {
+                    Toast.makeText(context, R.string.error_permissiondenied, Toast.LENGTH_SHORT)
+                        .show()
                 }
             }
         }
