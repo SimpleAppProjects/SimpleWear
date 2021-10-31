@@ -1,4 +1,4 @@
-package com.thewizrd.simplewear.helpers
+package com.thewizrd.shared_resources.helpers
 
 import android.content.pm.PackageManager
 import com.thewizrd.shared_resources.BuildConfig

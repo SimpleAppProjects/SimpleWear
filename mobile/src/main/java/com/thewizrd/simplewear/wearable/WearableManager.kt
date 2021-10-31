@@ -24,6 +24,7 @@ import com.thewizrd.shared_resources.actions.*
 import com.thewizrd.shared_resources.helpers.AppItemData
 import com.thewizrd.shared_resources.helpers.AppItemSerializer.serialize
 import com.thewizrd.shared_resources.helpers.MediaHelper
+import com.thewizrd.shared_resources.helpers.WearSettingsHelper
 import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.shared_resources.utils.ImageUtils
 import com.thewizrd.shared_resources.utils.ImageUtils.toAsset
@@ -33,7 +34,6 @@ import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.shared_resources.utils.stringToBytes
 import com.thewizrd.simplewear.helpers.PhoneStatusHelper
 import com.thewizrd.simplewear.helpers.ResolveInfoActivityInfoComparator
-import com.thewizrd.simplewear.helpers.WearSettingsHelper
 import com.thewizrd.simplewear.media.MediaAppControllerUtils
 import com.thewizrd.simplewear.preferences.Settings
 import com.thewizrd.simplewear.services.NotificationListener

@@ -1,0 +1,234 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    tools:context=".MainActivity"
+    android:fitsSystemWindows="true"
+    app:statusBarBackground="?attr/colorPrimarySurface"
+    tools:background="@color/design_default_color_surface"
+    tools:theme="@style/Theme.MaterialComponents.DayNight.DarkActionBar">
+
+    <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/app_bar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?attr/colorPrimarySurface"
+        android:fitsSystemWindows="true"
+        android:theme="@style/ThemeOverlay.MaterialComponents.Dark.ActionBar"
+        app:liftOnScroll="true">
+
+        <androidx.appcompat.widget.Toolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:title="@string/title_settings"
+            app:layout_collapseMode="pin"
+            app:popupTheme="@style/ThemeOverlay.MaterialComponents.Light" />
+
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <ScrollView
+        android:id="@+id/fragment_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true"
+        android:scrollbars="vertical"
+        app:layout_anchor="@id/app_bar"
+        app:layout_anchorGravity="bottom"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingStart="16dp"
+                android:paddingEnd="0dp">
+
+                <TextView
+                    android:id="@+id/perms_cat_title"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="start"
+                    android:layout_marginTop="16dp"
+                    android:paddingStart="0dp"
+                    android:paddingEnd="?android:attr/listPreferredItemPaddingRight"
+                    android:text="@string/cat_title_permissions"
+                    android:textAlignment="viewStart"
+                    android:textAppearance="?textAppearanceBody2"
+                    android:textColor="?attr/colorPrimary"
+                    tools:textColor="@color/colorPrimary" />
+
+            </LinearLayout>
+
+            <RelativeLayout
+                android:id="@+id/bgopts_pref"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="64dp"
+                android:padding="16dp"
+                android:background="?selectableItemBackground">
+
+                <TextView
+                    android:id="@+id/bgopts_pref_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentStart="true"
+                    android:layout_alignParentTop="true"
+                    android:ellipsize="marquee"
+                    android:fadingEdge="horizontal"
+                    android:singleLine="true"
+                    android:text="@string/permission_title_bgopts"
+                    android:textAppearance="?textAppearanceHeadline5"
+                    android:textSize="18sp" />
+
+                <TextView
+                    android:id="@+id/bgopts_pref_summary"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@+id/bgopts_pref_title"
+                    android:layout_alignStart="@+id/bgopts_pref_title"
+                    android:maxLines="4"
+                    android:text="@string/message_bgopts_disabled"
+                    android:textAppearance="?android:textAppearanceSmall" />
+
+            </RelativeLayout>
+
+            <RelativeLayout
+                android:id="@+id/securesettings_pref"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="64dp"
+                android:padding="16dp"
+                android:background="?selectableItemBackground">
+
+                <TextView
+                    android:id="@+id/securesettings_pref_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentStart="true"
+                    android:layout_alignParentTop="true"
+                    android:ellipsize="marquee"
+                    android:fadingEdge="horizontal"
+                    android:singleLine="true"
+                    android:text="@string/permission_title_securesettings"
+                    android:textAppearance="?textAppearanceHeadline5"
+                    android:textSize="18sp" />
+
+                <TextView
+                    android:id="@+id/securesettings_pref_summary"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@+id/securesettings_pref_title"
+                    android:layout_alignStart="@+id/securesettings_pref_title"
+                    android:maxLines="4"
+                    android:text="@string/message_securesettings_disabled"
+                    android:textAppearance="?android:textAppearanceSmall" />
+
+            </RelativeLayout>
+
+            <RelativeLayout
+                android:id="@+id/rootaccess_pref"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="64dp"
+                android:padding="16dp"
+                android:background="?selectableItemBackground">
+
+                <TextView
+                    android:id="@+id/rootaccess_pref_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentStart="true"
+                    android:layout_alignParentTop="true"
+                    android:ellipsize="marquee"
+                    android:fadingEdge="horizontal"
+                    android:singleLine="true"
+                    android:text="@string/permission_title_rootaccess"
+                    android:textAppearance="?textAppearanceHeadline5"
+                    android:layout_toStartOf="@id/rootaccess_pref_toggle"
+                    android:textSize="18sp" />
+
+                <TextView
+                    android:id="@+id/rootaccess_pref_summary"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@+id/rootaccess_pref_title"
+                    android:layout_alignStart="@+id/rootaccess_pref_title"
+                    android:layout_toStartOf="@id/rootaccess_pref_toggle"
+                    android:maxLines="4"
+                    android:text="@string/message_rootaccess_disabled"
+                    android:textAppearance="?android:textAppearanceSmall" />
+
+                <com.google.android.material.switchmaterial.SwitchMaterial
+                    android:id="@+id/rootaccess_pref_toggle"
+                    android:duplicateParentState="true"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checked="false"
+                    android:clickable="false"
+                    android:focusable="false"
+                    android:focusableInTouchMode="false"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerInParent="true" />
+
+            </RelativeLayout>
+
+            <RelativeLayout
+                android:id="@+id/hidelauncher_pref"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="64dp"
+                android:padding="16dp"
+                android:background="?selectableItemBackground">
+
+                <TextView
+                    android:id="@+id/hidelauncher_pref_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentStart="true"
+                    android:layout_alignParentTop="true"
+                    android:layout_toStartOf="@id/hidelauncher_pref_toggle"
+                    android:ellipsize="marquee"
+                    android:fadingEdge="horizontal"
+                    android:singleLine="true"
+                    android:text="@string/pref_title_showlauncher"
+                    android:textAppearance="?textAppearanceHeadline5"
+                    android:textSize="18sp" />
+
+                <TextView
+                    android:id="@+id/hidelauncher_pref_summary"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@+id/hidelauncher_pref_title"
+                    android:layout_alignStart="@+id/hidelauncher_pref_title"
+                    android:layout_toStartOf="@id/hidelauncher_pref_toggle"
+                    android:maxLines="4"
+                    android:text="@string/pref_summary_showlauncher"
+                    android:textAppearance="?android:textAppearanceSmall" />
+
+                <com.google.android.material.switchmaterial.SwitchMaterial
+                    android:id="@+id/hidelauncher_pref_toggle"
+                    android:duplicateParentState="true"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checked="false"
+                    android:clickable="false"
+                    android:focusable="false"
+                    android:focusableInTouchMode="false"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerInParent="true" />
+
+            </RelativeLayout>
+
+        </LinearLayout>
+
+    </ScrollView>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

@@ -1,0 +1,21 @@
+<resources>
+    <string name="app_name">SimpleWear Settings</string>
+
+    <string name="permission_title_bgopts">Allow Background Access</string>
+    <string name="message_bgopts_disabled">Needed to run actions properly in the background</string>
+    <string name="message_bgopts_enabled">Background access enabled</string>
+
+    <string name="permission_title_securesettings">Set Secure Settings</string>
+    <string name="message_securesettings_disabled">Needed to set mobile data and location settings</string>
+    <string name="message_securesettings_enabled">Settings access enabled</string>
+
+    <string name="permission_title_rootaccess">Enable Root Access</string>
+    <string name="message_rootaccess_disabled">Root access disabled</string>
+    <string name="message_rootaccess_enabled">Root access enabled</string>
+
+    <string name="pref_title_showlauncher">Show app icon</string>
+    <string name="pref_summary_showlauncher">Show app icon in the launcher</string>
+
+    <string name="url_root_access_help" translatable="false">https://github.com/SimpleAppProjects/SimpleWear/wiki/Root-Access</string>
+    <string name="url_secure_settings_help" translatable="false">https://github.com/SimpleAppProjects/SimpleWear/wiki/Enable-WRITE_SECURE_SETTINGS-permission</string>
+</resources>

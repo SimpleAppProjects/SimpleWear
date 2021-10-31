@@ -3,6 +3,8 @@
 
     <string name="not_channel_name_torch">Flashlight notification</string>
 
+    <string name="cat_title_permissions">Permissions</string>
+
     <string name="action_wifi">WiFi</string>
     <string name="action_bt">Bluetooth</string>
     <string name="action_mobiledata">Mobile Data</string>
