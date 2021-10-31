@@ -18,4 +18,6 @@ mobile/google-services.json
 wear/debug
 wear/release
 wear/google-services.json
+wearsettings/debug
+wearsettings/release
 releases
