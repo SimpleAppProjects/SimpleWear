@@ -24,6 +24,7 @@
     <string name="error_permissiondenied">Permission denied for action. Please check permission on phone app</string>
     <string name="error_sendmessage">No response. Please check connection</string>
     <string name="error_actionfailed">Failed to perform action</string>
+    <string name="error_remoteactionfailed">Failed to perform action. Please check permission on phone app</string>
 
     <string name="pref_layout">Actions Layout</string>
     <string name="option_grid">Grid</string>

@@ -24,6 +24,7 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import com.thewizrd.shared_resources.helpers.WearSettingsHelper
 import com.thewizrd.shared_resources.lifecycle.LifecycleAwareFragment
 import com.thewizrd.shared_resources.tasks.delayLaunch
 import com.thewizrd.shared_resources.utils.Logger
@@ -186,6 +187,16 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
             }
 
             binding.bridgeMediaToggle.toggle()
+        }
+
+        binding.wearsettingsPref.setOnClickListener {
+            if (!WearSettingsHelper.isWearSettingsInstalled()) {
+                startActivity(Intent(Intent.ACTION_VIEW).apply {
+                    data = Uri.parse(getString(R.string.url_wearsettings_helper))
+                })
+            } else {
+                WearSettingsHelper.launchWearSettings()
+            }
         }
 
         return binding.root
@@ -388,6 +399,8 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
         if ((!notListenerEnabled || !phoneStatePermGranted) && com.thewizrd.simplewear.preferences.Settings.isBridgeCallsEnabled()) {
             com.thewizrd.simplewear.preferences.Settings.setBridgeCallsEnabled(false)
         }
+
+        updateWearSettingsHelperPref(WearSettingsHelper.isWearSettingsInstalled())
     }
 
     private fun updateCamPermText(enabled: Boolean) {
@@ -423,6 +436,11 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
     private fun updateManageCallsText(enabled: Boolean) {
         binding.callcontrolSummary.setText(if (enabled) R.string.permission_callmanager_enabled else R.string.permission_callmanager_disabled)
         binding.callcontrolSummary.setTextColor(if (enabled) Color.GREEN else Color.RED)
+    }
+
+    private fun updateWearSettingsHelperPref(installed: Boolean) {
+        binding.wearsettingsPrefSummary.setText(if (installed) R.string.preference_summary_wearsettings_installed else R.string.preference_summary_wearsettings_notinstalled)
+        binding.wearsettingsPrefSummary.setTextColor(if (installed) Color.GREEN else Color.RED)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {

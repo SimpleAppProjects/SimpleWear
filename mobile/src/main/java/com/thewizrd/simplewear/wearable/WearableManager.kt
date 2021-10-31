@@ -1,5 +1,6 @@
 package com.thewizrd.simplewear.wearable
 
+import android.app.Activity
 import android.companion.CompanionDeviceManager
 import android.content.ActivityNotFoundException
 import android.content.ComponentName
@@ -10,6 +11,7 @@ import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
 import android.graphics.Bitmap
 import android.os.Build
+import android.os.Bundle
 import android.os.Handler
 import android.os.HandlerThread
 import android.util.Log
@@ -45,7 +47,8 @@ import java.util.*
 import kotlin.collections.ArrayList
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-class WearableManager(private val mContext: Context) : OnCapabilityChangedListener {
+class WearableManager(private val mContext: Context) : OnCapabilityChangedListener,
+    RemoteActionReceiver.IResultReceiver {
     init {
         init()
     }
@@ -64,12 +67,15 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
 
         mReceiverThread = HandlerThread("RemoteReceiverThread")
         mReceiverThread.start()
-        mResultReceiver = RemoteActionReceiver(Handler(mReceiverThread.looper))
+        mResultReceiver = RemoteActionReceiver(Handler(mReceiverThread.looper)).apply {
+            resultReceiver = this@WearableManager
+        }
     }
 
     fun unregister() {
         scope.cancel()
         mCapabilityClient.removeListener(this)
+        mResultReceiver.resultReceiver = null
         mReceiverThread.quitSafely()
     }
 
@@ -638,12 +644,18 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
                 tA = action as ToggleAction
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                     if (WearSettingsHelper.isWearSettingsInstalled()) {
-                        performRemoteAction(action)
+                        val status = performRemoteAction(action)
+                        if (status == ActionStatus.REMOTE_FAILURE ||
+                            status == ActionStatus.REMOTE_PERMISSION_DENIED
+                        ) {
+                            tA.setActionSuccessful(status)
+                            WearSettingsHelper.launchWearSettings()
+                        }
                     } else {
                         /* WifiManager.setWifiEnabled is unavailable as of Android 10 */
                         tA.setActionSuccessful(PhoneStatusHelper.openWifiSettings(mContext))
+                        tA.isEnabled = PhoneStatusHelper.isWifiEnabled(mContext)
                     }
-                    tA.isEnabled = PhoneStatusHelper.isWifiEnabled(mContext)
                 } else {
                     tA.setActionSuccessful(PhoneStatusHelper.setWifiEnabled(mContext, tA.isEnabled))
                 }
@@ -661,11 +673,17 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
             Actions.MOBILEDATA -> {
                 tA = action as ToggleAction
                 if (WearSettingsHelper.isWearSettingsInstalled()) {
-                    performRemoteAction(action)
+                    val status = performRemoteAction(action)
+                    if (status == ActionStatus.REMOTE_FAILURE ||
+                        status == ActionStatus.REMOTE_PERMISSION_DENIED
+                    ) {
+                        tA.setActionSuccessful(status)
+                        WearSettingsHelper.launchWearSettings()
+                    }
                 } else {
                     tA.setActionSuccessful(PhoneStatusHelper.openMobileDataSettings(mContext))
+                    tA.isEnabled = PhoneStatusHelper.isMobileDataEnabled(mContext)
                 }
-                tA.isEnabled = PhoneStatusHelper.isMobileDataEnabled(mContext)
                 sendMessage(
                     nodeID,
                     WearableHelper.ActionsPath,
@@ -676,11 +694,17 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
                 if (action is MultiChoiceAction) {
                     mA = action
                     if (WearSettingsHelper.isWearSettingsInstalled()) {
-                        performRemoteAction(action)
+                        val status = performRemoteAction(action)
+                        if (status == ActionStatus.REMOTE_FAILURE ||
+                            status == ActionStatus.REMOTE_PERMISSION_DENIED
+                        ) {
+                            mA.setActionSuccessful(status)
+                            WearSettingsHelper.launchWearSettings()
+                        }
                     } else {
                         mA.setActionSuccessful(PhoneStatusHelper.openLocationSettings(mContext))
+                        mA.choice = PhoneStatusHelper.getLocationState(mContext).value
                     }
-                    mA.choice = PhoneStatusHelper.getLocationState(mContext).value
                     sendMessage(
                         nodeID,
                         WearableHelper.ActionsPath,
@@ -689,11 +713,17 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
                 } else if (action is ToggleAction) {
                     tA = action
                     if (WearSettingsHelper.isWearSettingsInstalled()) {
-                        performRemoteAction(action)
+                        val status = performRemoteAction(action)
+                        if (status == ActionStatus.REMOTE_FAILURE ||
+                            status == ActionStatus.REMOTE_PERMISSION_DENIED
+                        ) {
+                            tA.setActionSuccessful(status)
+                            WearSettingsHelper.launchWearSettings()
+                        }
                     } else {
                         tA.setActionSuccessful(PhoneStatusHelper.openLocationSettings(mContext))
+                        tA.isEnabled = PhoneStatusHelper.isLocationEnabled(mContext)
                     }
-                    tA.isEnabled = PhoneStatusHelper.isLocationEnabled(mContext)
                     sendMessage(
                         nodeID,
                         WearableHelper.ActionsPath,
@@ -773,18 +803,52 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
         }
     }
 
-    private fun performRemoteAction(action: Action) {
-        mContext.startService(
-            Intent(ACTION_PERFORMACTION).apply {
-                component = ComponentName(
-                    WearSettingsHelper.getPackageName(),
-                    "${WearSettingsHelper.PACKAGE_NAME}.SettingsService"
-                )
-                putExtra(
-                    EXTRA_ACTION_DATA,
-                    action.toRemoteAction(mResultReceiver)
-                )
+    private fun performRemoteAction(action: Action): ActionStatus {
+        return try {
+            mContext.startService(
+                Intent(ACTION_PERFORMACTION).apply {
+                    component = WearSettingsHelper.getSettingsServiceComponent()
+                    putExtra(
+                        EXTRA_ACTION_DATA,
+                        action.toRemoteAction(mResultReceiver)
+                    )
+                }
+            )
+            ActionStatus.UNKNOWN
+        } catch (ise: IllegalStateException) {
+            // Likely background service restriction
+            Logger.writeLine(Log.ERROR, ise)
+            ActionStatus.REMOTE_PERMISSION_DENIED
+        } catch (e: Exception) {
+            Logger.writeLine(Log.ERROR, e)
+            ActionStatus.REMOTE_FAILURE
+        }
+    }
+
+    override fun onReceiveResult(resultCode: Int, resultData: Bundle) {
+        if (resultData.containsKey(EXTRA_ACTION_ERROR)) {
+            Logger.writeLine(
+                Log.ERROR,
+                "Error executing remote action; Error: %s",
+                resultData.getString(EXTRA_ACTION_ERROR)
+            )
+        }
+        if (resultCode == Activity.RESULT_CANCELED && resultData.containsKey(EXTRA_ACTION_DATA)) {
+            // Check for remote failure
+            val actionData = resultData.getString(EXTRA_ACTION_DATA)
+            val action = JSONParser.deserializer(actionData, Action::class.java)
+            if (action?.actionStatus == ActionStatus.REMOTE_FAILURE ||
+                action?.actionStatus == ActionStatus.REMOTE_PERMISSION_DENIED
+            ) {
+                scope.launch {
+                    sendMessage(
+                        null,
+                        WearableHelper.ActionsPath,
+                        actionData?.stringToBytes()
+                    )
+                    WearSettingsHelper.launchWearSettings()
+                }
             }
-        )
+        }
     }
 }

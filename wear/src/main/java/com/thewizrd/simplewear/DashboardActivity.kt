@@ -175,7 +175,7 @@ class DashboardActivity : WearableListenerActivity(), OnSharedPreferenceChangeLi
 
                             if (!action.isActionSuccessful) {
                                 when (action.actionStatus) {
-                                    ActionStatus.UNKNOWN, ActionStatus.FAILURE ->
+                                    ActionStatus.UNKNOWN, ActionStatus.FAILURE -> {
                                         CustomConfirmationOverlay()
                                             .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
                                             .setCustomDrawable(
@@ -186,6 +186,7 @@ class DashboardActivity : WearableListenerActivity(), OnSharedPreferenceChangeLi
                                             )
                                             .setMessage(this@DashboardActivity.getString(R.string.error_actionfailed))
                                             .showOn(this@DashboardActivity)
+                                    }
                                     ActionStatus.PERMISSION_DENIED -> {
                                         if (action.actionType == Actions.TORCH) {
                                             CustomConfirmationOverlay()
@@ -252,6 +253,30 @@ class DashboardActivity : WearableListenerActivity(), OnSharedPreferenceChangeLi
                                                 )
                                             )
                                             .setMessage(this@DashboardActivity.getString(R.string.error_sendmessage))
+                                            .showOn(this@DashboardActivity)
+                                    }
+                                    ActionStatus.REMOTE_FAILURE -> {
+                                        CustomConfirmationOverlay()
+                                            .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
+                                            .setCustomDrawable(
+                                                ContextCompat.getDrawable(
+                                                    this@DashboardActivity,
+                                                    R.drawable.ws_full_sad
+                                                )
+                                            )
+                                            .setMessage(this@DashboardActivity.getString(R.string.error_remoteactionfailed))
+                                            .showOn(this@DashboardActivity)
+                                    }
+                                    ActionStatus.REMOTE_PERMISSION_DENIED -> {
+                                        CustomConfirmationOverlay()
+                                            .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
+                                            .setCustomDrawable(
+                                                ContextCompat.getDrawable(
+                                                    this@DashboardActivity,
+                                                    R.drawable.ws_full_sad
+                                                )
+                                            )
+                                            .setMessage(this@DashboardActivity.getString(R.string.error_permissiondenied))
                                             .showOn(this@DashboardActivity)
                                     }
                                     ActionStatus.SUCCESS -> {

@@ -1,10 +1,8 @@
 package com.thewizrd.shared_resources.actions
 
 import android.os.*
-import android.util.Log
 import androidx.annotation.Keep
 import com.thewizrd.shared_resources.utils.JSONParser
-import com.thewizrd.shared_resources.utils.Logger
 
 const val ACTION_PERFORMACTION = "SimpleWear.wearsettings.action.PERFORM_ACTION"
 const val EXTRA_ACTION_DATA = "SimpleWear.wearsettings.extra.ACTION_DATA"
@@ -62,16 +60,16 @@ fun ResultReceiver.toParcelableReceiver(): ResultReceiver {
 
 @Keep
 class RemoteActionReceiver(handler: Handler?) : ResultReceiver(handler) {
+    var resultReceiver: IResultReceiver? = null
+
     override fun onReceiveResult(resultCode: Int, resultData: Bundle?) {
         if (resultData != null) {
-            if (resultData.containsKey(EXTRA_ACTION_ERROR)) {
-                Logger.writeLine(
-                    Log.ERROR,
-                    "Error executing remote action; Error: %s",
-                    resultData.getString(EXTRA_ACTION_ERROR)
-                )
-            }
+            resultReceiver?.onReceiveResult(resultCode, resultData)
         }
+    }
+
+    interface IResultReceiver {
+        fun onReceiveResult(resultCode: Int, resultData: Bundle)
     }
 }
 

@@ -26,6 +26,7 @@ class SettingsService : IntentService("SettingsService") {
             }
 
             val status = ActionHelper.performAction(this, action)
+            action.setActionSuccessful(status)
             val resultCode = if (status == ActionStatus.SUCCESS) RESULT_OK else RESULT_CANCELED
             resultReceiver.send(resultCode, getResultBundle(action))
         } catch (e: Exception) {

@@ -7,6 +7,7 @@ import android.provider.Settings
 import androidx.core.content.ContextCompat
 import com.thewizrd.shared_resources.actions.*
 import com.thewizrd.wearsettings.root.RootHelper
+import com.thewizrd.wearsettings.Settings as SettingsHelper
 
 object LocationAction {
     fun executeAction(context: Context, action: Action): ActionStatus {
@@ -15,18 +16,18 @@ object LocationAction {
 
             return if (checkSecureSettingsPermission(context)) {
                 setLocationState(context, state)
-            } else if (RootHelper.isRootEnabled()) {
+            } else if (SettingsHelper.isRootAccessEnabled() && RootHelper.isRootEnabled()) {
                 SecureSettingsAction.putSetting(
                     Settings.Secure.LOCATION_MODE,
                     state.toSecureSettingsInt().toString()
                 )
             } else {
-                ActionStatus.PERMISSION_DENIED
+                ActionStatus.REMOTE_PERMISSION_DENIED
             }
         } else if (action is ToggleAction) {
             return if (checkSecureSettingsPermission(context)) {
                 setLocationEnabled(context, action.isEnabled)
-            } else if (RootHelper.isRootEnabled()) {
+            } else if (SettingsHelper.isRootAccessEnabled() && RootHelper.isRootEnabled()) {
                 SecureSettingsAction.putSetting(
                     Settings.Secure.LOCATION_MODE,
                     if (action.isEnabled) {
@@ -36,7 +37,7 @@ object LocationAction {
                     }.toString()
                 )
             } else {
-                ActionStatus.PERMISSION_DENIED
+                ActionStatus.REMOTE_PERMISSION_DENIED
             }
         }
 
@@ -70,10 +71,10 @@ object LocationAction {
             if (success) {
                 ActionStatus.SUCCESS
             } else {
-                ActionStatus.FAILURE
+                ActionStatus.REMOTE_FAILURE
             }
         } else {
-            ActionStatus.PERMISSION_DENIED
+            ActionStatus.REMOTE_PERMISSION_DENIED
         }
     }
 
@@ -90,10 +91,10 @@ object LocationAction {
             if (success) {
                 ActionStatus.SUCCESS
             } else {
-                ActionStatus.FAILURE
+                ActionStatus.REMOTE_FAILURE
             }
         } else {
-            ActionStatus.PERMISSION_DENIED
+            ActionStatus.REMOTE_PERMISSION_DENIED
         }
     }
 }

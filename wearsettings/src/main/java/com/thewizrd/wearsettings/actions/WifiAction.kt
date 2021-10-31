@@ -10,6 +10,7 @@ import com.thewizrd.shared_resources.actions.Action
 import com.thewizrd.shared_resources.actions.ActionStatus
 import com.thewizrd.shared_resources.actions.ToggleAction
 import com.thewizrd.shared_resources.utils.Logger
+import com.thewizrd.wearsettings.Settings
 import com.thewizrd.wearsettings.root.RootHelper
 import com.topjohnwu.superuser.Shell
 
@@ -17,7 +18,7 @@ object WifiAction {
     fun executeAction(context: Context, action: Action): ActionStatus {
         if (action is ToggleAction) {
             val status = setWifiEnabled(context, action.isEnabled)
-            return if (status != ActionStatus.SUCCESS && RootHelper.isRootEnabled()) {
+            return if (status != ActionStatus.SUCCESS && Settings.isRootAccessEnabled() && RootHelper.isRootEnabled()) {
                 setWifiEnabledRoot(action.isEnabled)
             } else {
                 status
@@ -36,13 +37,13 @@ object WifiAction {
             return try {
                 val wifiMan =
                     context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
-                if (wifiMan.setWifiEnabled(enable)) ActionStatus.SUCCESS else ActionStatus.FAILURE
+                if (wifiMan.setWifiEnabled(enable)) ActionStatus.SUCCESS else ActionStatus.REMOTE_FAILURE
             } catch (e: Exception) {
                 Logger.writeLine(Log.ERROR, e)
-                ActionStatus.FAILURE
+                ActionStatus.REMOTE_FAILURE
             }
         }
-        return ActionStatus.PERMISSION_DENIED
+        return ActionStatus.REMOTE_PERMISSION_DENIED
     }
 
     private fun setWifiEnabledRoot(enable: Boolean): ActionStatus {
@@ -53,7 +54,7 @@ object WifiAction {
         return if (result.isSuccess) {
             ActionStatus.SUCCESS
         } else {
-            ActionStatus.FAILURE
+            ActionStatus.REMOTE_FAILURE
         }
     }
 }

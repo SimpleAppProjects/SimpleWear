@@ -45,4 +45,10 @@
     <string name="preference_title_callbridge">Bridge call notifications</string>
     <string name="preference_summary_callbridge">Show call notification on watch when there is an active call</string>
 
+    <string name="preference_title_wearsettings">Location and Mobile Data</string>
+    <string name="preference_summary_wearsettings_notinstalled">SimpleWear helper app required to toggle system settings</string>
+    <string name="preference_summary_wearsettings_installed">SimpleWear helper app installed</string>
+
+    <string name="url_wearsettings_helper" translatable="false">https://github.com/SimpleAppProjects/SimpleWear/wiki/SimpleWear-Settings-helper</string>
+
 </resources>

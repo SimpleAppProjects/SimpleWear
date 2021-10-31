@@ -68,11 +68,6 @@
 
         </RelativeLayout>
 
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="@drawable/abc_list_divider_material" />
-
         <RelativeLayout
             android:id="@+id/deviceadmin_pref"
             android:layout_width="match_parent"
@@ -105,11 +100,6 @@
 
         </RelativeLayout>
 
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="@drawable/abc_list_divider_material" />
-
         <RelativeLayout
             android:id="@+id/dnd_pref"
             android:layout_width="match_parent"
@@ -141,11 +131,6 @@
                 android:textAppearance="?android:textAppearanceSmall" />
 
         </RelativeLayout>
-
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="@drawable/abc_list_divider_material" />
 
         <RelativeLayout
             android:id="@+id/companion_pair_pref"
@@ -193,11 +178,6 @@
 
         </RelativeLayout>
 
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="@drawable/abc_list_divider_material" />
-
         <RelativeLayout
             android:id="@+id/notiflistener_pref"
             android:layout_width="match_parent"
@@ -230,11 +210,6 @@
 
         </RelativeLayout>
 
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="@drawable/abc_list_divider_material" />
-
         <LinearLayout
             android:id="@+id/callcontrol_pref"
             android:layout_width="match_parent"
@@ -265,10 +240,35 @@
 
         </LinearLayout>
 
-        <View
+        <LinearLayout
+            android:id="@+id/wearsettings_pref"
             android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="@drawable/abc_list_divider_material" />
+            android:layout_height="wrap_content"
+            android:minHeight="64dp"
+            android:padding="16dp"
+            android:gravity="center_vertical"
+            android:orientation="vertical"
+            android:background="?selectableItemBackground">
+
+            <TextView
+                android:id="@+id/wearsettings_pref_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:ellipsize="marquee"
+                android:fadingEdge="horizontal"
+                android:singleLine="true"
+                android:text="@string/preference_title_wearsettings"
+                android:textAppearance="?textAppearanceHeadline5"
+                android:textSize="18sp" />
+
+            <TextView
+                android:id="@+id/wearsettings_pref_summary"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:maxLines="4"
+                android:textAppearance="?android:textAppearanceSmall" />
+
+        </LinearLayout>
 
         <LinearLayout
             android:id="@+id/uninstall_pref"

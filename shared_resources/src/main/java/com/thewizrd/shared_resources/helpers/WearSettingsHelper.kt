@@ -1,8 +1,11 @@
 package com.thewizrd.shared_resources.helpers
 
+import android.content.ComponentName
 import android.content.pm.PackageManager
+import android.util.Log
 import com.thewizrd.shared_resources.BuildConfig
 import com.thewizrd.shared_resources.SimpleLibrary
+import com.thewizrd.shared_resources.utils.Logger
 
 object WearSettingsHelper {
     // Link to Play Store listing
@@ -22,14 +25,21 @@ object WearSettingsHelper {
     }
 
     fun launchWearSettings() {
-        try {
+        runCatching {
             val context = SimpleLibrary.instance.app.appContext
 
             val i = context.packageManager.getLaunchIntentForPackage(getPackageName())
             if (i != null) {
                 context.startActivity(i)
             }
-        } catch (e: PackageManager.NameNotFoundException) {
+        }.onFailure {
+            if (it !is PackageManager.NameNotFoundException) {
+                Logger.writeLine(Log.ERROR, it)
+            }
         }
+    }
+
+    fun getSettingsServiceComponent(): ComponentName {
+        return ComponentName(getPackageName(), "$PACKAGE_NAME.SettingsService")
     }
 }
