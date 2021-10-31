@@ -7,6 +7,7 @@ import android.os.Bundle
 import com.thewizrd.shared_resources.ApplicationLib
 import com.thewizrd.shared_resources.SimpleLibrary
 import com.thewizrd.shared_resources.helpers.AppState
+import com.thewizrd.shared_resources.utils.FileLoggingTree
 import com.thewizrd.shared_resources.utils.Logger
 
 class App : Application(), ApplicationLib, Application.ActivityLifecycleCallbacks {
@@ -37,6 +38,9 @@ class App : Application(), ApplicationLib, Application.ActivityLifecycleCallback
 
         // Start logger
         Logger.init(appContext)
+        if (!BuildConfig.DEBUG) {
+            Logger.registerLogger(FileLoggingTree(appContext))
+        }
     }
 
     override fun onTerminate() {

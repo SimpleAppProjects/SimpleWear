@@ -16,7 +16,6 @@ object Logger {
             Timber.plant(FileLoggingTree(context.applicationContext))
         } else {
             cleanupLogs(context.applicationContext)
-            Timber.plant(CrashlyticsLoggingTree())
         }
     }
 

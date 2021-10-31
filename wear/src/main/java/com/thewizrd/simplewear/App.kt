@@ -10,6 +10,7 @@ import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.thewizrd.shared_resources.ApplicationLib
 import com.thewizrd.shared_resources.SimpleLibrary
 import com.thewizrd.shared_resources.helpers.AppState
+import com.thewizrd.shared_resources.utils.CrashlyticsLoggingTree
 import com.thewizrd.shared_resources.utils.Logger
 import kotlin.system.exitProcess
 
@@ -41,6 +42,7 @@ class App : Application(), ApplicationLib, ActivityLifecycleCallbacks {
 
         // Start logger
         Logger.init(appContext)
+        Logger.registerLogger(CrashlyticsLoggingTree())
         FirebaseCrashlytics.getInstance().apply {
             setCrashlyticsCollectionEnabled(true)
             sendUnsentReports()

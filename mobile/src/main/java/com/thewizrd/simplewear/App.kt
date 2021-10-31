@@ -27,6 +27,7 @@ import com.thewizrd.shared_resources.SimpleLibrary
 import com.thewizrd.shared_resources.actions.Actions
 import com.thewizrd.shared_resources.actions.BatteryStatus
 import com.thewizrd.shared_resources.helpers.AppState
+import com.thewizrd.shared_resources.utils.CrashlyticsLoggingTree
 import com.thewizrd.shared_resources.utils.JSONParser
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.simplewear.media.MediaControllerService
@@ -65,6 +66,7 @@ class App : Application(), ApplicationLib, ActivityLifecycleCallbacks, Configura
 
         // Start logger
         Logger.init(appContext)
+        Logger.registerLogger(CrashlyticsLoggingTree())
         FirebaseCrashlytics.getInstance().apply {
             setCrashlyticsCollectionEnabled(true)
             sendUnsentReports()
