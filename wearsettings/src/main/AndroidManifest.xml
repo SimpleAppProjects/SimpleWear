@@ -3,9 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     package="com.thewizrd.wearsettings">
 
-    <permission
-        android:name="com.thewizrd.wearsettings.PERFORM_ACTIONS"
-        android:protectionLevel="signature" />
+    <permission android:name="com.thewizrd.wearsettings.PERFORM_ACTIONS" />
 
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
