@@ -21,3 +21,5 @@ wear/google-services.json
 wearsettings/debug
 wearsettings/release
 releases
+allowed_wearsettings_callers.xml
+PackageValidator.kt

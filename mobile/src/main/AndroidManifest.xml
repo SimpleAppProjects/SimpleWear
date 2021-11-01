@@ -29,9 +29,6 @@
         android:name="android.permission.QUERY_ALL_PACKAGES"
         tools:ignore="QueryAllPackagesPermission" />
 
-    <!-- Helper -->
-    <uses-permission android:name="com.thewizrd.wearsettings.PERFORM_ACTIONS" />
-
     <uses-feature
         android:name="android.software.companion_device_setup"
         android:required="false" />

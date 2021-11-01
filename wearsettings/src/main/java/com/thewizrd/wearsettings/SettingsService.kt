@@ -8,14 +8,27 @@ import android.os.Bundle
 import android.os.ResultReceiver
 import com.thewizrd.shared_resources.actions.*
 import com.thewizrd.shared_resources.utils.JSONParser
+import com.thewizrd.shared_resources.wearsettings.PackageValidator
 import com.thewizrd.wearsettings.actions.ActionHelper
 
 class SettingsService : IntentService("SettingsService") {
+    private lateinit var mPackageValidator: PackageValidator
+
+    override fun onCreate() {
+        super.onCreate()
+        mPackageValidator = PackageValidator(this)
+    }
+
     override fun onHandleIntent(intent: Intent?) {
         if (intent == null) return
 
         var resultReceiver: ResultReceiver? = null
         try {
+            val callingPkg = intent.getStringExtra(EXTRA_ACTION_CALLINGPKG) ?: return
+            if (!mPackageValidator.isKnownCaller(callingPkg)) {
+                throw IllegalStateException("Package: $callingPkg has invalid certificate")
+            }
+
             val actionData = intent.getParcelableExtra<RemoteAction>(EXTRA_ACTION_DATA) ?: return
             resultReceiver = actionData.resultReceiver ?: return
             val action = actionData.action

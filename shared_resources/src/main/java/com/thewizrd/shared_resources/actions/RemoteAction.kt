@@ -7,6 +7,7 @@ import com.thewizrd.shared_resources.utils.JSONParser
 const val ACTION_PERFORMACTION = "SimpleWear.wearsettings.action.PERFORM_ACTION"
 const val EXTRA_ACTION_DATA = "SimpleWear.wearsettings.extra.ACTION_DATA"
 const val EXTRA_ACTION_ERROR = "SimpleWear.wearsettings.extra.ACTION_ERROR"
+const val EXTRA_ACTION_CALLINGPKG = "SimpleWear.wearsettings.extra.CALLING_PACKAGE"
 
 @Keep
 class RemoteAction : Parcelable {

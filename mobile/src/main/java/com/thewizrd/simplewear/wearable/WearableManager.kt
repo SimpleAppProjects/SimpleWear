@@ -34,6 +34,7 @@ import com.thewizrd.shared_resources.utils.ImageUtils.toByteArray
 import com.thewizrd.shared_resources.utils.JSONParser
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.shared_resources.utils.stringToBytes
+import com.thewizrd.shared_resources.wearsettings.PackageValidator
 import com.thewizrd.simplewear.helpers.PhoneStatusHelper
 import com.thewizrd.simplewear.helpers.ResolveInfoActivityInfoComparator
 import com.thewizrd.simplewear.media.MediaAppControllerUtils
@@ -60,6 +61,7 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
 
     private lateinit var mResultReceiver: RemoteActionReceiver
     private var mReceiverThread = HandlerThread("RemoteActionReceiver")
+    private var mPackageValidator = PackageValidator(mContext)
 
     private fun init() {
         mCapabilityClient = Wearable.getCapabilityClient(mContext)
@@ -805,16 +807,24 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
 
     private fun performRemoteAction(action: Action): ActionStatus {
         return try {
-            mContext.startService(
-                Intent(ACTION_PERFORMACTION).apply {
-                    component = WearSettingsHelper.getSettingsServiceComponent()
-                    putExtra(
-                        EXTRA_ACTION_DATA,
-                        action.toRemoteAction(mResultReceiver)
-                    )
-                }
-            )
-            ActionStatus.UNKNOWN
+            if (mPackageValidator.isKnownCaller(WearSettingsHelper.getPackageName())) {
+                mContext.startService(
+                    Intent(ACTION_PERFORMACTION).apply {
+                        component = WearSettingsHelper.getSettingsServiceComponent()
+                        putExtra(
+                            EXTRA_ACTION_DATA,
+                            action.toRemoteAction(mResultReceiver)
+                        )
+                        putExtra(
+                            EXTRA_ACTION_CALLINGPKG,
+                            mContext.packageName
+                        )
+                    }
+                )
+                ActionStatus.UNKNOWN
+            } else {
+                throw IllegalStateException("Package: ${WearSettingsHelper.getPackageName()} has invalid certificate")
+            }
         } catch (ise: IllegalStateException) {
             // Likely background service restriction
             Logger.writeLine(Log.ERROR, ise)
