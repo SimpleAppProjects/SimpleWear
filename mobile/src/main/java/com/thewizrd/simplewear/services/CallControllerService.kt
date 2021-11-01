@@ -10,6 +10,7 @@ import android.media.session.MediaSessionManager
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.telecom.CallAudioState
 import android.telecom.TelecomManager
 import android.telephony.PhoneStateListener
 import android.telephony.TelephonyCallback
@@ -57,6 +58,7 @@ class CallControllerService : LifecycleService(), MessageClient.OnMessageReceive
     private var mPhoneStateListener: PhoneStateListener? = null
     private var mTelephonyCallback: TelephonyCallback? = null
     private var mTelecomMediaCtrlr: MediaController? = null
+    private lateinit var mInCallManagerAdapter: InCallManagerAdapter
 
     companion object {
         private const val TAG = "CallControllerService"
@@ -140,8 +142,12 @@ class CallControllerService : LifecycleService(), MessageClient.OnMessageReceive
             priority =
                 if (callActive) NotificationCompat.PRIORITY_MAX else NotificationCompat.PRIORITY_DEFAULT
             if (callActive) {
-                val micMuted = mAudioManager.isMicrophoneMute
-                val speakerOn = mAudioManager.isSpeakerphoneOn
+                val micMuted = isMicrophoneMute()
+                val speakerOn = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    isSpeakerPhoneEnabled()
+                } else {
+                    false
+                }
 
                 addAction(
                     0,
@@ -209,6 +215,8 @@ class CallControllerService : LifecycleService(), MessageClient.OnMessageReceive
         mMessageClient = Wearable.getMessageClient(this)
         mMessageClient.addListener(this)
 
+        mInCallManagerAdapter = InCallManagerAdapter.getInstance()
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             initChannel()
         }
@@ -220,6 +228,22 @@ class CallControllerService : LifecycleService(), MessageClient.OnMessageReceive
         OngoingCall.callState.observe(this, {
             scope.launch {
                 onCallStateChanged(it)
+            }
+        })
+        OngoingCall.callAudioState.observe(this, {
+            scope.launch {
+                it?.let {
+                    mWearableManager.sendMessage(
+                        null,
+                        InCallUIHelper.MuteMicStatusPath,
+                        it.isMuted.booleanToBytes()
+                    )
+                    mWearableManager.sendMessage(
+                        null,
+                        InCallUIHelper.SpeakerphoneStatusPath,
+                        (it.route == CallAudioState.ROUTE_SPEAKER).booleanToBytes()
+                    )
+                }
             }
         })
     }
@@ -243,13 +267,15 @@ class CallControllerService : LifecycleService(), MessageClient.OnMessageReceive
                     mWearableManager.sendMessage(
                         null,
                         InCallUIHelper.MuteMicStatusPath,
-                        mAudioManager.isMicrophoneMute.booleanToBytes()
+                        isMicrophoneMute().booleanToBytes()
                     )
-                    mWearableManager.sendMessage(
-                        null,
-                        InCallUIHelper.SpeakerphoneStatusPath,
-                        mAudioManager.isSpeakerphoneOn.booleanToBytes()
-                    )
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        mWearableManager.sendMessage(
+                            null,
+                            InCallUIHelper.SpeakerphoneStatusPath,
+                            isSpeakerPhoneEnabled().booleanToBytes()
+                        )
+                    }
                 }
             }
             ACTION_DISCONNECTCONTROLLER -> {
@@ -274,7 +300,9 @@ class CallControllerService : LifecycleService(), MessageClient.OnMessageReceive
             ACTION_TOGGLESPEAKER -> {
                 if (intent.hasExtra(EXTRA_TOGGLESTATE)) {
                     val toggle = intent.getBooleanExtra(EXTRA_TOGGLESTATE, false)
-                    toggleSpeakerphone(on = toggle)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        toggleSpeakerphone(on = toggle)
+                    }
                 }
             }
         }
@@ -448,21 +476,25 @@ class CallControllerService : LifecycleService(), MessageClient.OnMessageReceive
                     mWearableManager.sendMessage(
                         messageEvent.sourceNodeId,
                         InCallUIHelper.MuteMicStatusPath,
-                        mAudioManager.isMicrophoneMute.booleanToBytes()
+                        isMicrophoneMute().booleanToBytes()
                     )
                 }
             }
             InCallUIHelper.SpeakerphonePath -> {
                 val toggle = messageEvent.data.bytesToBool()
-                toggleSpeakerphone(messageEvent.sourceNodeId, toggle)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    toggleSpeakerphone(messageEvent.sourceNodeId, toggle)
+                }
             }
             InCallUIHelper.SpeakerphoneStatusPath -> {
-                scope.launch {
-                    mWearableManager.sendMessage(
-                        messageEvent.sourceNodeId,
-                        InCallUIHelper.SpeakerphoneStatusPath,
-                        mAudioManager.isSpeakerphoneOn.booleanToBytes()
-                    )
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    scope.launch {
+                        mWearableManager.sendMessage(
+                            messageEvent.sourceNodeId,
+                            InCallUIHelper.SpeakerphoneStatusPath,
+                            isSpeakerPhoneEnabled().booleanToBytes()
+                        )
+                    }
                 }
             }
             InCallUIHelper.DTMFPath -> {
@@ -501,28 +533,45 @@ class CallControllerService : LifecycleService(), MessageClient.OnMessageReceive
     }
 
     private fun toggleMicMute(nodeID: String? = null, mute: Boolean) {
-        PhoneStatusHelper.muteMicrophone(this, mute)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && mInCallManagerAdapter.isInCallServiceAvailable()) {
+            mInCallManagerAdapter.mute(mute)
+        } else {
+            PhoneStatusHelper.muteMicrophone(this, mute)
+        }
         scope.launch {
             mWearableManager.sendMessage(
                 nodeID,
                 InCallUIHelper.MuteMicStatusPath,
-                mAudioManager.isMicrophoneMute.booleanToBytes()
+                isMicrophoneMute().booleanToBytes()
             )
         }
         updateNotification(this, isInCall())
     }
 
+    private fun isMicrophoneMute(): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && mInCallManagerAdapter.isInCallServiceAvailable()) {
+            mInCallManagerAdapter.getAudioState()?.isMuted ?: false
+        } else {
+            mAudioManager.isMicrophoneMute
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.S)
     private fun toggleSpeakerphone(nodeID: String? = null, on: Boolean) {
-        Log.d("AudioMode", "mode = " + mAudioManager.mode)
-        PhoneStatusHelper.setSpeakerphoneOn(this, on)
+        mInCallManagerAdapter.setSpeakerPhoneEnabled(on)
         scope.launch {
             mWearableManager.sendMessage(
                 nodeID,
                 InCallUIHelper.SpeakerphoneStatusPath,
-                mAudioManager.isSpeakerphoneOn.booleanToBytes()
+                isSpeakerPhoneEnabled().booleanToBytes()
             )
         }
         updateNotification(this, isInCall())
+    }
+
+    @RequiresApi(Build.VERSION_CODES.S)
+    private fun isSpeakerPhoneEnabled(): Boolean {
+        return mInCallManagerAdapter.getAudioState()?.route == CallAudioState.ROUTE_SPEAKER
     }
 
     override fun onActiveSessionsChanged(controllers: MutableList<MediaController>?) {
@@ -541,7 +590,7 @@ class CallControllerService : LifecycleService(), MessageClient.OnMessageReceive
     @SuppressLint("MissingPermission")
     private fun supportsSpeakerToggle(): Boolean {
         return runCatching {
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && mTelecomManager.isInManagedCall
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && mInCallManagerAdapter.isInCallServiceAvailable()
         }.getOrDefault(false)
     }
 }
