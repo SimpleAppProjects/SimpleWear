@@ -522,8 +522,10 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
                 onUpdate()
                 onUpdateQueue()
             }
-            if (state != null && mController != null) {
-                mCustomControlsAdapter.setActions(mController!!, state.actions, state.customActions)
+            if (state != null) {
+                mController?.let {
+                    mCustomControlsAdapter.setActions(it, state.actions, state.customActions)
+                }
             }
         }
 
@@ -554,17 +556,16 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
         }
 
         private fun onUpdateQueue() {
-            if (mController == null) {
+            mController?.let {
+                mQueueItemsAdapter.setQueueItems(it, it.queue)
+            } ?: run {
                 Log.e(TAG, "Failed to update queue info, null MediaController.")
                 scope.launch {
                     mDataClient.deleteDataItems(
                         WearableHelper.getWearDataUri(MediaHelper.MediaQueueItemsPath)
                     ).await()
                 }
-                return
             }
-
-            mQueueItemsAdapter.setQueueItems(mController!!, mController!!.queue)
         }
     }
 
@@ -586,12 +587,16 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
         request.setUrgent()
 
         scope.launch {
-            Log.d(TAG, "Making request: ${mapRequest.uri}")
-            mDataClient.deleteDataItems(mapRequest.uri).await()
-            mDataClient.putDataItem(request).await()
-            Log.d(TAG, "Removing media bridge")
-            mDataClient.deleteDataItems(WearableHelper.getWearDataUri(MediaHelper.MediaPlayerStateBridgePath))
-                .await()
+            runCatching {
+                Log.d(TAG, "Making request: ${mapRequest.uri}")
+                mDataClient.deleteDataItems(mapRequest.uri).await()
+                mDataClient.putDataItem(request).await()
+                Log.d(TAG, "Removing media bridge")
+                mDataClient.deleteDataItems(WearableHelper.getWearDataUri(MediaHelper.MediaPlayerStateBridgePath))
+                    .await()
+            }.onFailure {
+                Logger.writeLine(Log.ERROR, it)
+            }
         }
     }
 
