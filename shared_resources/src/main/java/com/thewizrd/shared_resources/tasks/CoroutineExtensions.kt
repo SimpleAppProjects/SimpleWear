@@ -11,7 +11,9 @@ fun CoroutineScope.delayLaunch(
     block: suspend CoroutineScope.() -> Unit
 ): Job {
     return this.launch(context, start) {
-        delay(timeMillis)
+        runCatching {
+            delay(timeMillis)
+        }
 
         if (isActive) {
             block.invoke(this)
