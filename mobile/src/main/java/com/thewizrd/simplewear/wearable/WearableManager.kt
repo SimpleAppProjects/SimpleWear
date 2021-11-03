@@ -12,8 +12,6 @@ import android.content.pm.ResolveInfo
 import android.graphics.Bitmap
 import android.os.Build
 import android.os.Bundle
-import android.os.Handler
-import android.os.HandlerThread
 import android.util.Log
 import android.util.TypedValue
 import android.view.KeyEvent
@@ -336,18 +334,6 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
                 val label =
                     mContext.packageManager.getApplicationLabel(info.activityInfo.applicationInfo)
                         .toString()
-                var iconBmp: Bitmap? = null
-                try {
-                    val iconDrwble =
-                        info.activityInfo.applicationInfo.loadIcon(mContext.packageManager)
-                    val size = TypedValue.applyDimension(
-                        TypedValue.COMPLEX_UNIT_DIP,
-                        24f,
-                        mContext.resources.displayMetrics
-                    ).toInt()
-                    iconBmp = ImageUtils.bitmapFromDrawable(iconDrwble, size, size)
-                } catch (ignored: PackageManager.NameNotFoundException) {
-                }
                 val map = DataMap()
                 map.putString(WearableHelper.KEY_LABEL, label)
                 map.putString(WearableHelper.KEY_PKGNAME, info.activityInfo.packageName)
