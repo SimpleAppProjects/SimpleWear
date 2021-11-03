@@ -527,12 +527,15 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
                         WearableHelper.LaunchAppPath,
                         ActionStatus.SUCCESS.name.stringToBytes()
                     )
-                } catch (e: ActivityNotFoundException) {
+                } catch (e: Exception) {
                     sendMessage(
                         nodeID,
                         WearableHelper.LaunchAppPath,
                         ActionStatus.FAILURE.name.stringToBytes()
                     )
+                    if (e !is ActivityNotFoundException) {
+                        Logger.writeLine(Log.ERROR, e)
+                    }
                 }
             } else { // Android Q+ Devices
                 // Android Q puts a limitation on starting activities from the background
@@ -546,9 +549,20 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
                 } else {
                     try {
                         mContext.startActivity(appIntent)
-                        sendMessage(nodeID, WearableHelper.LaunchAppPath, ActionStatus.SUCCESS.name.stringToBytes())
-                    } catch (e: ActivityNotFoundException) {
-                        sendMessage(nodeID, WearableHelper.LaunchAppPath, ActionStatus.FAILURE.name.stringToBytes())
+                        sendMessage(
+                            nodeID,
+                            WearableHelper.LaunchAppPath,
+                            ActionStatus.SUCCESS.name.stringToBytes()
+                        )
+                    } catch (e: Exception) {
+                        sendMessage(
+                            nodeID,
+                            WearableHelper.LaunchAppPath,
+                            ActionStatus.FAILURE.name.stringToBytes()
+                        )
+                        if (e !is ActivityNotFoundException) {
+                            Logger.writeLine(Log.ERROR, e)
+                        }
                     }
                 }
             }
