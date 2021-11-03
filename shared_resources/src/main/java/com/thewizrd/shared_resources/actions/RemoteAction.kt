@@ -60,7 +60,24 @@ fun ResultReceiver.toParcelableReceiver(): ResultReceiver {
 }
 
 @Keep
-class RemoteActionReceiver(handler: Handler?) : ResultReceiver(handler) {
+class RemoteActionReceiver : ResultReceiver(Handler(getRemoteReceiverLooper())) {
+    companion object {
+        private val obj = Object()
+        private var mRemoteReceiverLooper: Looper? = null
+
+        private fun getRemoteReceiverLooper(): Looper {
+            synchronized(obj) {
+                if (mRemoteReceiverLooper == null) {
+                    mRemoteReceiverLooper = HandlerThread("RemoteActionReceiver").apply {
+                        start()
+                    }.looper
+                }
+
+                return mRemoteReceiverLooper!!
+            }
+        }
+    }
+
     var resultReceiver: IResultReceiver? = null
 
     override fun onReceiveResult(resultCode: Int, resultData: Bundle?) {

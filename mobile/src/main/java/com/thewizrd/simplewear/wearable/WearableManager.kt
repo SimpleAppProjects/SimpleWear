@@ -60,16 +60,13 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
     private var mWearNodesWithApp: Collection<Node>? = null
 
     private lateinit var mResultReceiver: RemoteActionReceiver
-    private var mReceiverThread = HandlerThread("RemoteActionReceiver")
     private var mPackageValidator = PackageValidator(mContext)
 
     private fun init() {
         mCapabilityClient = Wearable.getCapabilityClient(mContext)
         mCapabilityClient.addListener(this, WearableHelper.CAPABILITY_WEAR_APP)
 
-        mReceiverThread = HandlerThread("RemoteReceiverThread")
-        mReceiverThread.start()
-        mResultReceiver = RemoteActionReceiver(Handler(mReceiverThread.looper)).apply {
+        mResultReceiver = RemoteActionReceiver().apply {
             resultReceiver = this@WearableManager
         }
     }
@@ -78,7 +75,6 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
         scope.cancel()
         mCapabilityClient.removeListener(this)
         mResultReceiver.resultReceiver = null
-        mReceiverThread.quitSafely()
     }
 
     suspend fun isWearNodesAvailable(): Boolean {
