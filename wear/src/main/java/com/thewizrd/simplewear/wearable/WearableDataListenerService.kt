@@ -229,7 +229,7 @@ class WearableDataListenerService : WearableListenerService() {
         return PendingIntent.getActivity(
             this, 1000,
             Intent(this, CallManagerActivity::class.java),
-            0
+            PendingIntent.FLAG_IMMUTABLE
         )
     }
 
@@ -237,7 +237,7 @@ class WearableDataListenerService : WearableListenerService() {
         return PendingIntent.getActivity(
             this, 1001,
             MediaPlayerActivity.buildAutoLaunchIntent(this),
-            0
+            PendingIntent.FLAG_IMMUTABLE
         )
     }
 

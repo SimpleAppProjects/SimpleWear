@@ -24,6 +24,7 @@ import androidx.lifecycle.LifecycleService
 import com.google.android.gms.wearable.*
 import com.thewizrd.shared_resources.helpers.InCallUIHelper
 import com.thewizrd.shared_resources.helpers.WearableHelper
+import com.thewizrd.shared_resources.helpers.toImmutableCompatFlag
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.shared_resources.utils.booleanToBytes
 import com.thewizrd.shared_resources.utils.bytesToBool
@@ -125,7 +126,7 @@ class CallControllerService : LifecycleService(), MessageClient.OnMessageReceive
                         context, 0,
                         Intent(context, CallControllerService::class.java)
                             .setAction(ACTION_DISCONNECTCONTROLLER),
-                        PendingIntent.FLAG_UPDATE_CURRENT
+                        PendingIntent.FLAG_UPDATE_CURRENT.toImmutableCompatFlag()
                     )
                 )
             }.build()
@@ -158,7 +159,7 @@ class CallControllerService : LifecycleService(), MessageClient.OnMessageReceive
                         Intent(context, CallControllerService::class.java)
                             .setAction(ACTION_TOGGLEMUTE)
                             .putExtra(EXTRA_TOGGLESTATE, !micMuted),
-                        PendingIntent.FLAG_UPDATE_CURRENT
+                        PendingIntent.FLAG_UPDATE_CURRENT.toImmutableCompatFlag()
                     )
                 )
                 if (supportsSpeakerToggle()) {
@@ -170,7 +171,7 @@ class CallControllerService : LifecycleService(), MessageClient.OnMessageReceive
                             Intent(context, CallControllerService::class.java)
                                 .setAction(ACTION_TOGGLESPEAKER)
                                 .putExtra(EXTRA_TOGGLESTATE, !speakerOn),
-                            PendingIntent.FLAG_UPDATE_CURRENT
+                            PendingIntent.FLAG_UPDATE_CURRENT.toImmutableCompatFlag()
                         )
                     )
                 }
@@ -181,7 +182,7 @@ class CallControllerService : LifecycleService(), MessageClient.OnMessageReceive
                         context, ACTION_HANGUPCALL.hashCode(),
                         Intent(context, CallControllerService::class.java)
                             .setAction(ACTION_HANGUPCALL),
-                        PendingIntent.FLAG_UPDATE_CURRENT
+                        PendingIntent.FLAG_UPDATE_CURRENT.toImmutableCompatFlag()
                     )
                 )
             }
@@ -192,7 +193,7 @@ class CallControllerService : LifecycleService(), MessageClient.OnMessageReceive
                     context, ACTION_DISCONNECTCONTROLLER.hashCode(),
                     Intent(context, CallControllerService::class.java)
                         .setAction(ACTION_DISCONNECTCONTROLLER),
-                    PendingIntent.FLAG_UPDATE_CURRENT
+                    PendingIntent.FLAG_UPDATE_CURRENT.toImmutableCompatFlag()
                 )
             )
         }

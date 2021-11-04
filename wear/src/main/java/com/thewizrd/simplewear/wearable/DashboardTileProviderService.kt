@@ -16,6 +16,7 @@ import com.google.android.gms.wearable.MessageClient.OnMessageReceivedListener
 import com.thewizrd.shared_resources.actions.*
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
 import com.thewizrd.shared_resources.helpers.WearableHelper
+import com.thewizrd.shared_resources.helpers.toImmutableCompatFlag
 import com.thewizrd.shared_resources.utils.JSONParser
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.shared_resources.utils.bytesToString
@@ -206,7 +207,12 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
     private fun getActionClickIntent(context: Context?, action: Actions): PendingIntent {
         val onClickIntent = Intent(context!!.applicationContext, DashboardTileProviderService::class.java)
                 .setAction(action.name)
-        return PendingIntent.getService(context, action.value, onClickIntent, PendingIntent.FLAG_UPDATE_CURRENT)
+        return PendingIntent.getService(
+            context,
+            action.value,
+            onClickIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT.toImmutableCompatFlag()
+        )
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {

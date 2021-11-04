@@ -13,6 +13,7 @@ import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.thewizrd.shared_resources.actions.Actions
+import com.thewizrd.shared_resources.helpers.toImmutableCompatFlag
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.receivers.PhoneBroadcastReceiver
@@ -88,7 +89,7 @@ class TorchService : Service() {
                     context, JOB_ID,
                     Intent(context, PhoneBroadcastReceiver::class.java)
                         .setAction(ACTION_END_LIGHT),
-                    PendingIntent.FLAG_UPDATE_CURRENT
+                    PendingIntent.FLAG_UPDATE_CURRENT.toImmutableCompatFlag()
                 )
             )
             .setColor(ContextCompat.getColor(context, R.color.colorPrimary))

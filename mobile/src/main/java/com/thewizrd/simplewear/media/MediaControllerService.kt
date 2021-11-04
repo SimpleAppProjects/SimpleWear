@@ -27,6 +27,7 @@ import com.google.android.gms.wearable.*
 import com.thewizrd.shared_resources.actions.*
 import com.thewizrd.shared_resources.helpers.MediaHelper
 import com.thewizrd.shared_resources.helpers.WearableHelper
+import com.thewizrd.shared_resources.helpers.toImmutableCompatFlag
 import com.thewizrd.shared_resources.media.PlaybackState
 import com.thewizrd.shared_resources.utils.*
 import com.thewizrd.simplewear.R
@@ -132,7 +133,7 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
                     context, 0,
                     Intent(context, MediaControllerService::class.java)
                         .setAction(ACTION_DISCONNECTCONTROLLER),
-                    PendingIntent.FLAG_UPDATE_CURRENT
+                    PendingIntent.FLAG_UPDATE_CURRENT.toImmutableCompatFlag()
                 )
             )
         }
