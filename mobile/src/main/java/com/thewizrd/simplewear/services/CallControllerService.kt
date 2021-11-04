@@ -34,6 +34,7 @@ import com.thewizrd.simplewear.preferences.Settings
 import com.thewizrd.simplewear.wearable.WearableManager
 import kotlinx.coroutines.*
 import kotlinx.coroutines.tasks.await
+import timber.log.Timber
 import java.util.concurrent.Executors
 
 class CallControllerService : LifecycleService(), MessageClient.OnMessageReceivedListener,
@@ -325,10 +326,14 @@ class CallControllerService : LifecycleService(), MessageClient.OnMessageReceive
 
     private fun removeCallState() {
         scope.launch {
-            Log.d(TAG, "removeCallState")
-            mDataClient.deleteDataItems(
-                WearableHelper.getWearDataUri(InCallUIHelper.CallStatePath)
-            ).await()
+            Timber.tag(TAG).d("removeCallState")
+            runCatching {
+                mDataClient.deleteDataItems(
+                    WearableHelper.getWearDataUri(InCallUIHelper.CallStatePath)
+                ).await()
+            }.onFailure {
+                Logger.writeLine(Log.ERROR, it)
+            }
         }
     }
 

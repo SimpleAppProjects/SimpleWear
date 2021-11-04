@@ -36,6 +36,7 @@ import com.thewizrd.simplewear.services.NotificationListener
 import com.thewizrd.simplewear.wearable.WearableManager
 import kotlinx.coroutines.*
 import kotlinx.coroutines.tasks.await
+import timber.log.Timber
 import java.util.*
 import java.util.concurrent.Executors
 import kotlin.collections.ArrayList
@@ -244,31 +245,39 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
 
     private fun removeMediaState() {
         scope.launch {
-            Log.d(TAG, "removeMediaState")
-            mDataClient.deleteDataItems(
-                WearableHelper.getWearDataUri(MediaHelper.MediaPlayerStateBridgePath)
-            ).await()
-            mDataClient.deleteDataItems(
-                WearableHelper.getWearDataUri(MediaHelper.MediaPlayerStatePath)
-            ).await()
-            mDataClient.deleteDataItems(
-                WearableHelper.getWearDataUri(MediaHelper.MediaBrowserItemsPath)
-            ).await()
-            mDataClient.deleteDataItems(
-                WearableHelper.getWearDataUri(MediaHelper.MediaActionsPath)
-            ).await()
-            mDataClient.deleteDataItems(
-                WearableHelper.getWearDataUri(MediaHelper.MediaQueueItemsPath)
-            ).await()
+            Timber.tag(TAG).d("removeMediaState")
+            runCatching {
+                mDataClient.deleteDataItems(
+                    WearableHelper.getWearDataUri(MediaHelper.MediaPlayerStateBridgePath)
+                ).await()
+                mDataClient.deleteDataItems(
+                    WearableHelper.getWearDataUri(MediaHelper.MediaPlayerStatePath)
+                ).await()
+                mDataClient.deleteDataItems(
+                    WearableHelper.getWearDataUri(MediaHelper.MediaBrowserItemsPath)
+                ).await()
+                mDataClient.deleteDataItems(
+                    WearableHelper.getWearDataUri(MediaHelper.MediaActionsPath)
+                ).await()
+                mDataClient.deleteDataItems(
+                    WearableHelper.getWearDataUri(MediaHelper.MediaQueueItemsPath)
+                ).await()
+            }.onFailure {
+                Logger.writeLine(Log.ERROR, it)
+            }
         }
     }
 
     private fun removeBrowserItems() {
         scope.launch {
-            Log.d(TAG, "removeBrowserItems")
-            mDataClient.deleteDataItems(
-                WearableHelper.getWearDataUri(MediaHelper.MediaBrowserItemsPath)
-            ).await()
+            Timber.tag(TAG).d("removeBrowserItems")
+            runCatching {
+                mDataClient.deleteDataItems(
+                    WearableHelper.getWearDataUri(MediaHelper.MediaBrowserItemsPath)
+                ).await()
+            }.onFailure {
+                Logger.writeLine(Log.ERROR, it)
+            }
         }
     }
 
@@ -478,7 +487,7 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
             setupMediaController()
         } else {
             // failed
-            Log.d(TAG, "MediaBrowser connection failed")
+            Timber.tag(TAG).d("MediaBrowser connection failed")
         }
     }
 
@@ -498,11 +507,11 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
             mCallback.onMetadataChanged(mController!!.metadata)
             mCallback.onAudioInfoChanged(mController!!.playbackInfo)
 
-            Log.d(TAG, "MediaControllerCompat created")
+            Timber.tag(TAG).d("MediaControllerCompat created")
             return true
         } catch (e: Exception) {
             // Failed to create MediaController from session token
-            Log.d(TAG, "MediaBrowser connection failed")
+            Timber.tag(TAG).d("MediaBrowser connection failed")
             return false
         }
     }
@@ -511,7 +520,7 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
         private var updateJob: Job? = null
 
         override fun onPlaybackStateChanged(state: PlaybackStateCompat?) {
-            Log.d(TAG, "Callback: onPlaybackStateChanged")
+            Timber.tag(TAG).d("Callback: onPlaybackStateChanged")
             playFromSearchTimer.cancel()
             updateJob?.cancel()
             updateJob = scope.launch {
@@ -530,7 +539,7 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
         }
 
         override fun onMetadataChanged(metadata: MediaMetadataCompat?) {
-            Log.d(TAG, "Callback: onMetadataChanged")
+            Timber.tag(TAG).d("Callback: onMetadataChanged")
             playFromSearchTimer.cancel()
             updateJob?.cancel()
             updateJob = scope.launch {
@@ -559,11 +568,15 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
             mController?.let {
                 mQueueItemsAdapter.setQueueItems(it, it.queue)
             } ?: run {
-                Log.e(TAG, "Failed to update queue info, null MediaController.")
+                Timber.tag(TAG).e("Failed to update queue info, null MediaController.")
                 scope.launch {
-                    mDataClient.deleteDataItems(
-                        WearableHelper.getWearDataUri(MediaHelper.MediaQueueItemsPath)
-                    ).await()
+                    runCatching {
+                        mDataClient.deleteDataItems(
+                            WearableHelper.getWearDataUri(MediaHelper.MediaQueueItemsPath)
+                        ).await()
+                    }.onFailure {
+                        Logger.writeLine(Log.ERROR, it)
+                    }
                 }
             }
         }
@@ -588,10 +601,10 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
 
         scope.launch {
             runCatching {
-                Log.d(TAG, "Making request: ${mapRequest.uri}")
+                Timber.tag(TAG).d("Making request: %s", mapRequest.uri)
                 mDataClient.deleteDataItems(mapRequest.uri).await()
                 mDataClient.putDataItem(request).await()
-                Log.d(TAG, "Removing media bridge")
+                Timber.tag(TAG).d("Removing media bridge")
                 mDataClient.deleteDataItems(WearableHelper.getWearDataUri(MediaHelper.MediaPlayerStateBridgePath))
                     .await()
             }.onFailure {
@@ -604,11 +617,15 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
         val mapRequest = PutDataMapRequest.create(MediaHelper.MediaPlayerStatePath)
 
         if (mController == null) {
-            Log.e(TAG, "Failed to update media info, null MediaController.")
+            Timber.tag(TAG).e("Failed to update media info, null MediaController.")
             scope.launch {
-                mDataClient.deleteDataItems(mapRequest.uri).await()
-                mDataClient.deleteDataItems(WearableHelper.getWearDataUri(MediaHelper.MediaPlayerStateBridgePath))
-                    .await()
+                runCatching {
+                    mDataClient.deleteDataItems(mapRequest.uri).await()
+                    mDataClient.deleteDataItems(WearableHelper.getWearDataUri(MediaHelper.MediaPlayerStateBridgePath))
+                        .await()
+                }.onFailure {
+                    Logger.writeLine(Log.ERROR, it)
+                }
             }
             return
         }
@@ -677,26 +694,34 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
         request.setUrgent()
 
         scope.launch {
-            Log.d(TAG, "Making request: ${mapRequest.uri}")
-            mDataClient.deleteDataItems(mapRequest.uri).await()
-            mDataClient.putDataItem(request).await()
-            if (Settings.isBridgeMediaEnabled()) {
-                if (isPlaybackStateActive(playbackState)) {
-                    Log.d(TAG, "Create media bridge request")
-                    mDataClient.putDataItem(
-                        PutDataMapRequest.create(MediaHelper.MediaPlayerStateBridgePath).apply {
-                            dataMap.putString(MediaHelper.KEY_MEDIA_METADATA_TITLE, songTitle)
-                            dataMap.putLong("time", SystemClock.uptimeMillis())
-                        }
-                            .setUrgent()
-                            .asPutDataRequest()
-                    ).await()
-                } else {
-                    Log.d(TAG, "Removing media bridge; playbackstate inactive")
-                    mDataClient.deleteDataItems(
-                        WearableHelper.getWearDataUri(MediaHelper.MediaPlayerStateBridgePath)
-                    ).await()
+            runCatching {
+                Timber.tag(TAG).d("Making request: %s", mapRequest.uri)
+
+                mDataClient.deleteDataItems(mapRequest.uri).await()
+                mDataClient.putDataItem(request).await()
+
+                if (Settings.isBridgeMediaEnabled()) {
+                    if (isPlaybackStateActive(playbackState)) {
+                        Timber.tag(TAG).d("Create media bridge request")
+
+                        mDataClient.putDataItem(
+                            PutDataMapRequest.create(MediaHelper.MediaPlayerStateBridgePath).apply {
+                                dataMap.putString(MediaHelper.KEY_MEDIA_METADATA_TITLE, songTitle)
+                                dataMap.putLong("time", SystemClock.uptimeMillis())
+                            }
+                                .setUrgent()
+                                .asPutDataRequest()
+                        ).await()
+                    } else {
+                        Timber.tag(TAG).d("Removing media bridge; playbackstate inactive")
+
+                        mDataClient.deleteDataItems(
+                            WearableHelper.getWearDataUri(MediaHelper.MediaPlayerStateBridgePath)
+                        ).await()
+                    }
                 }
+            }.onFailure {
+                Logger.writeLine(Log.ERROR, it)
             }
         }
     }
@@ -899,7 +924,11 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
                 if (mActions.isEmpty() && !supportsPlayFromSearch) {
                     // Remove all items (datamap)
                     scope.launch {
-                        mDataClient.deleteDataItems(mapRequest.uri).await()
+                        runCatching {
+                            mDataClient.deleteDataItems(mapRequest.uri).await()
+                        }.onFailure {
+                            Logger.writeLine(Log.ERROR, it)
+                        }
                     }
                     return@launch
                 }
@@ -979,9 +1008,13 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
                 val request = mapRequest.asPutDataRequest()
                 request.setUrgent()
 
-                Log.d(TAG, "Making request: ${mapRequest.uri}")
-                mDataClient.deleteDataItems(mapRequest.uri).await()
-                mDataClient.putDataItem(request).await()
+                Timber.tag(TAG).d("Making request: %s", mapRequest.uri)
+                runCatching {
+                    mDataClient.deleteDataItems(mapRequest.uri).await()
+                    mDataClient.putDataItem(request).await()
+                }.onFailure {
+                    Logger.writeLine(Log.ERROR, it)
+                }
             }
         }
 
@@ -1006,7 +1039,7 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
                     .getResourcesForApplication(controller.packageName)
             } catch (e: PackageManager.NameNotFoundException) {
                 // Shouldn't happen, because the controller must come from an installed app.
-                Log.e(TAG, "Failed to fetch resources from media app", e)
+                Timber.tag(TAG).e(e, "Failed to fetch resources from media app")
             }
 
             supportsPlayFromSearch = (actions and PlaybackStateCompat.ACTION_PLAY_FROM_SEARCH) != 0L
@@ -1055,24 +1088,14 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
 
                 val mapRequest = PutDataMapRequest.create(itemNodePath)
 
-                if (mNodes.size == 0) {
+                if (mNodes.size == 0 || mItems.isNullOrEmpty()) {
                     // Remove all items (datamap)
                     scope.launch {
-                        mDataClient.deleteDataItems(mapRequest.uri).await()
-                    }
-                    return@launch
-                }
-                if (mItems == null) {
-                    // Remove all items (datamap)
-                    scope.launch {
-                        mDataClient.deleteDataItems(mapRequest.uri).await()
-                    }
-                    return@launch
-                }
-                if (mItems!!.isEmpty()) {
-                    // Remove all items (datamap)
-                    scope.launch {
-                        mDataClient.deleteDataItems(mapRequest.uri).await()
+                        runCatching {
+                            mDataClient.deleteDataItems(mapRequest.uri).await()
+                        }.onFailure {
+                            Logger.writeLine(Log.ERROR, it)
+                        }
                     }
                     return@launch
                 }
@@ -1103,9 +1126,13 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
                 val request = mapRequest.asPutDataRequest()
                 request.setUrgent()
 
-                Log.d(TAG, "Making request: ${mapRequest.uri}")
-                mDataClient.deleteDataItems(mapRequest.uri).await()
-                mDataClient.putDataItem(request).await()
+                Timber.tag(TAG).d("Making request: %s", mapRequest.uri)
+                runCatching {
+                    mDataClient.deleteDataItems(mapRequest.uri).await()
+                    mDataClient.putDataItem(request).await()
+                }.onFailure {
+                    Logger.writeLine(Log.ERROR, it)
+                }
             }
         }
 
@@ -1201,7 +1228,11 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
                 if (mQueueItems.isEmpty()) {
                     // Remove all items (datamap)
                     scope.launch {
-                        mDataClient.deleteDataItems(mapRequest.uri).await()
+                        runCatching {
+                            mDataClient.deleteDataItems(mapRequest.uri).await()
+                        }.onFailure {
+                            Logger.writeLine(Log.ERROR, it)
+                        }
                     }
                     return@launch
                 }
@@ -1236,9 +1267,13 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
                 val request = mapRequest.asPutDataRequest()
                 request.setUrgent()
 
-                Log.d(TAG, "Making request: ${mapRequest.uri}")
-                mDataClient.deleteDataItems(mapRequest.uri).await()
-                mDataClient.putDataItem(request).await()
+                Timber.tag(TAG).d("Making request: %s", mapRequest.uri)
+                runCatching {
+                    mDataClient.deleteDataItems(mapRequest.uri).await()
+                    mDataClient.putDataItem(request).await()
+                }.onFailure {
+                    Logger.writeLine(Log.ERROR, it)
+                }
             }
         }
 
