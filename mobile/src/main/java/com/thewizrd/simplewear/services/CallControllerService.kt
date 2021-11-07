@@ -51,6 +51,7 @@ class CallControllerService : LifecycleService(), MessageClient.OnMessageReceive
     private val scope = CoroutineScope(
         SupervisorJob() + Executors.newSingleThreadExecutor().asCoroutineDispatcher()
     )
+    private var disconnectJob: Job? = null
     private lateinit var mMainHandler: Handler
 
     private lateinit var mWearableManager: WearableManager
@@ -252,6 +253,7 @@ class CallControllerService : LifecycleService(), MessageClient.OnMessageReceive
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         super.onStartCommand(intent, flags, startId)
+        disconnectJob?.cancel()
         startForeground(JOB_ID, getForegroundNotification())
 
         Logger.writeLine(Log.INFO, "${TAG}: Intent action = ${intent?.action}")
@@ -283,9 +285,9 @@ class CallControllerService : LifecycleService(), MessageClient.OnMessageReceive
             ACTION_DISCONNECTCONTROLLER -> {
                 val disconnect = intent.getBooleanExtra(EXTRA_FORCEDISCONNECT, true)
                 if (disconnect) {
-                    scope.launch {
+                    disconnectJob = scope.launch {
                         // Delay in case service was just started as foreground
-                        delay(1000)
+                        delay(1500)
                         stopSelf()
                     }
                 }
