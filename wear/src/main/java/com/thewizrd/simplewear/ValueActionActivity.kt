@@ -121,10 +121,12 @@ class ValueActionActivity : WearableListenerActivity() {
 
                             val jsonData = intent.getStringExtra(EXTRA_ACTIONDATA)
                             val action = JSONParser.deserializer(jsonData, Action::class.java)
+                            val actionSuccessful = action?.isActionSuccessful ?: false
+                            val actionStatus = action?.actionStatus ?: ActionStatus.UNKNOWN
 
-                            if (!action!!.isActionSuccessful) {
+                            if (!actionSuccessful) {
                                 lifecycleScope.launch {
-                                    when (action.actionStatus) {
+                                    when (actionStatus) {
                                         ActionStatus.UNKNOWN, ActionStatus.FAILURE -> {
                                             CustomConfirmationOverlay()
                                                 .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)

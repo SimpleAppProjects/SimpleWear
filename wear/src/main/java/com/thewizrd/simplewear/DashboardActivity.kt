@@ -172,9 +172,10 @@ class DashboardActivity : WearableListenerActivity(), OnSharedPreferenceChangeLi
                             cancelTimer(action.actionType)
 
                             mAdapter.updateButton(ActionButtonViewModel(action))
+                            val actionStatus = action.actionStatus ?: ActionStatus.UNKNOWN
 
                             if (!action.isActionSuccessful) {
-                                when (action.actionStatus) {
+                                when (actionStatus) {
                                     ActionStatus.UNKNOWN, ActionStatus.FAILURE -> {
                                         CustomConfirmationOverlay()
                                             .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
