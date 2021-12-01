@@ -192,9 +192,15 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
 
         binding.wearsettingsPref.setOnClickListener {
             if (!WearSettingsHelper.isWearSettingsInstalled()) {
-                startActivity(Intent(Intent.ACTION_VIEW).apply {
+                val i = Intent(Intent.ACTION_VIEW).apply {
                     data = Uri.parse(getString(R.string.url_wearsettings_helper))
-                })
+                }
+                if (i.resolveActivity(requireContext().packageManager) != null) {
+                    startActivity(i)
+                } else {
+                    Toast.makeText(requireContext(), "Browser not available", Toast.LENGTH_SHORT)
+                        .show()
+                }
             } else {
                 WearSettingsHelper.launchWearSettings()
             }
