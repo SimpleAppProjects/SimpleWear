@@ -208,13 +208,20 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
         super.onPause()
     }
 
+    private fun isBluetoothConnectPermGranted(): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            ContextCompat.checkSelfPermission(
+                requireContext(),
+                Manifest.permission.BLUETOOTH_CONNECT
+            ) == PackageManager.PERMISSION_GRANTED
+        } else {
+            true
+        }
+    }
+
     private fun startDevicePairing() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            if (ContextCompat.checkSelfPermission(
-                    requireContext(),
-                    Manifest.permission.BLUETOOTH_CONNECT
-                ) == PackageManager.PERMISSION_DENIED
-            ) {
+            if (!isBluetoothConnectPermGranted()) {
                 requestPermissions(
                     arrayOf(Manifest.permission.BLUETOOTH_CONNECT),
                     BTCONNECT_REQCODE
@@ -336,7 +343,17 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
                 .setSingleDevice(false)
                 .build()
 
-            Toast.makeText(requireContext(), R.string.message_watchbtdiscover, Toast.LENGTH_LONG).show()
+            // Verify bluetooth permissions
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !isBluetoothConnectPermGranted()) {
+                requestPermissions(
+                    arrayOf(Manifest.permission.BLUETOOTH_CONNECT),
+                    BTCONNECT_REQCODE
+                )
+                return@runWithView
+            }
+
+            Toast.makeText(requireContext(), R.string.message_watchbtdiscover, Toast.LENGTH_LONG)
+                .show()
 
             delayLaunch(timeMillis = 5000) {
                 Logger.writeLine(Log.INFO, "%s: sending pair request", TAG)
@@ -476,10 +493,13 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
+        val permGranted =
+            grantResults.isNotEmpty() && !grantResults.contains(PackageManager.PERMISSION_DENIED)
+
         when (requestCode) {
             CAMERA_REQCODE -> {
                 // If request is cancelled, the result arrays are empty.
-                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                if (permGranted) {
                     // permission was granted, yay!
                     // Do the task you need to do.
                     updateCamPermText(true)
@@ -492,9 +512,6 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
                 }
             }
             MANAGECALLS_REQCODE -> {
-                val permGranted =
-                    grantResults.isNotEmpty() && !grantResults.contains(PackageManager.PERMISSION_DENIED)
-
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !InCallManagerService.hasPermission(
                         requireContext()
                     )
@@ -505,9 +522,6 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
                 }
             }
             BTCONNECT_REQCODE -> {
-                val permGranted =
-                    grantResults.isNotEmpty() && !grantResults.contains(PackageManager.PERMISSION_DENIED)
-
                 if (permGranted) {
                     startDevicePairing()
                 } else {

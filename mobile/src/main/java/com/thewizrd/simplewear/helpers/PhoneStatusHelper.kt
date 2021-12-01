@@ -90,7 +90,17 @@ object PhoneStatusHelper {
     fun setBluetoothEnabled(context: Context, enable: Boolean): ActionStatus {
         val btService = context.applicationContext.getSystemService(BluetoothManager::class.java)
         return btService.adapter?.let {
-            if (if (enable) it.enable() else it.disable()) ActionStatus.SUCCESS else ActionStatus.FAILURE
+            try {
+                val success = if (enable) it.enable() else it.disable()
+                if (success) {
+                    ActionStatus.SUCCESS
+                } else {
+                    ActionStatus.FAILURE
+                }
+            } catch (e: SecurityException) {
+                Logger.writeLine(Log.ERROR, e)
+                ActionStatus.PERMISSION_DENIED
+            }
         } ?: ActionStatus.FAILURE
     }
 
