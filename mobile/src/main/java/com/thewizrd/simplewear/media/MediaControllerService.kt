@@ -633,7 +633,11 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
             return
         }
 
-        val playbackState = mController?.playbackState?.state ?: PlaybackStateCompat.STATE_NONE
+        val playbackState = runCatching {
+            mController?.playbackState?.state
+        }.onFailure {
+            Logger.writeLine(Log.ERROR, it)
+        }.getOrDefault(PlaybackStateCompat.STATE_NONE)
 
         val stateName = when (playbackState) {
             PlaybackStateCompat.STATE_NONE -> {
@@ -765,17 +769,15 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
             }
             MediaHelper.MediaPlayPath -> {
                 if (!isNotificationListenerEnabled(messageEvent)) return
-                if (mController != null && !mController!!.metadata.isNullOrEmpty()) {
-                    mController!!.transportControls.play()
-                    playFromSearchTimer.start()
-                } else {
-                    // Play random
-                    if (mController != null) {
-                        playFromSearchController(null)
+                mController?.let {
+                    if (!it.metadata.isNullOrEmpty()) {
+                        it.transportControls.play()
+                        playFromSearchTimer.start()
                     } else {
-                        playFromSearchIntent(null)
+                        // Play random
+                        playFromSearchController(null)
                     }
-                }
+                } ?: playFromSearchIntent(null)
             }
             MediaHelper.MediaPausePath -> {
                 if (!isNotificationListenerEnabled(messageEvent)) return
@@ -854,8 +856,8 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
     }
 
     private fun playFromSearchController(query: String?) {
-        if (mController != null) {
-            mController!!.transportControls.playFromSearch(query, null)
+        mController?.let {
+            it.transportControls.playFromSearch(query, null)
             playFromSearchTimer.start()
         }
     }
