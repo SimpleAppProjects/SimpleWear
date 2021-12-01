@@ -5,7 +5,6 @@ import android.annotation.TargetApi
 import android.app.Activity
 import android.app.admin.DevicePolicyManager
 import android.bluetooth.BluetoothDevice
-import android.bluetooth.le.ScanFilter
 import android.companion.*
 import android.content.*
 import android.content.IntentSender.SendIntentException
@@ -50,11 +49,6 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
         private const val MANAGECALLS_REQCODE = 2
         private const val BTCONNECT_REQCODE = 3
         private const val SELECT_DEVICE_REQUEST_CODE = 42
-
-        // WearOS device filter
-        private val BLE_WEAR_MATCH_DATA = byteArrayOf(0, 20)
-        private val BLE_WEAR_MATCH_DATA_LEGACY = byteArrayOf(0, 19)
-        private val BLE_WEAR_MATCH_MASK = byteArrayOf(0, -1)
     }
 
     private lateinit var binding: FragmentPermcheckBinding
@@ -297,22 +291,6 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
             updatePairPermText(false)
 
             val request = AssociationRequest.Builder().apply {
-                // https://stackoverflow.com/questions/66222673/how-to-filter-nearby-bluetooth-devices-by-type
-                addDeviceFilter(
-                    BluetoothLeDeviceFilter.Builder()
-                        .setScanFilter(
-                            ScanFilter.Builder()
-                                .setManufacturerData(
-                                    0xE0,
-                                    BLE_WEAR_MATCH_DATA_LEGACY,
-                                    BLE_WEAR_MATCH_MASK
-                                )
-                                .build()
-                        )
-                        .setNamePattern(Pattern.compile(".*", Pattern.DOTALL))
-                        .build()
-                )
-
                 if (BuildConfig.DEBUG) {
                     addDeviceFilter(
                         BluetoothDeviceFilter.Builder()
