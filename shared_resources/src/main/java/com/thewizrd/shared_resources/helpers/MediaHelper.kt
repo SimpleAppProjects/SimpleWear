@@ -25,6 +25,7 @@ object MediaHelper {
     const val MediaVolumeUpPath = "/media/volume/up"
     const val MediaVolumeDownPath = "/media/volume/down"
     const val MediaVolumeStatusPath = "/media/volume/status"
+    const val MediaSetVolumePath = "/media/volume/set"
 
     const val MediaBrowserItemsClickPath = "/media/browseritems/click"
     const val MediaBrowserItemsExtraSuggestedClickPath = "/media/browseritems_extrasuggested/click"

@@ -7,9 +7,10 @@ import android.content.IntentFilter
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
+import androidx.core.view.InputDeviceCompat
+import androidx.core.view.MotionEventCompat
+import androidx.core.view.ViewConfigurationCompat
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
@@ -29,6 +30,10 @@ import com.thewizrd.simplewear.controls.CustomConfirmationOverlay
 import com.thewizrd.simplewear.databinding.MediaPlayerControlsBinding
 import kotlinx.coroutines.*
 import kotlinx.coroutines.tasks.await
+import kotlin.math.max
+import kotlin.math.min
+import kotlin.math.roundToInt
+import kotlin.math.sign
 import kotlin.random.Random
 
 class MediaPlayerControlsFragment : LifecycleAwareFragment(), MessageClient.OnMessageReceivedListener,
@@ -42,6 +47,8 @@ class MediaPlayerControlsFragment : LifecycleAwareFragment(), MessageClient.OnMe
 
     private var showLoading = false
     private var showPlaybackLoading = false
+
+    private var mAudioStreamState: AudioStreamState? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -104,6 +111,39 @@ class MediaPlayerControlsFragment : LifecycleAwareFragment(), MessageClient.OnMe
             requestSkipToNextAction()
         }
 
+        binding.volumeProgressBar.setOnGenericMotionListener(object : View.OnGenericMotionListener {
+            override fun onGenericMotion(v: View, event: MotionEvent): Boolean {
+                if (event.action == MotionEvent.ACTION_SCROLL &&
+                    event.isFromSource(InputDeviceCompat.SOURCE_ROTARY_ENCODER) &&
+                    mAmbientMode.ambientModeEnabled.value != true &&
+                    mAudioStreamState != null
+                ) {
+                    // Don't forget the negation here
+                    val delta = -event.getAxisValue(MotionEventCompat.AXIS_SCROLL) *
+                            ViewConfigurationCompat.getScaledVerticalScrollFactor(
+                                ViewConfiguration.get(v.context), v.context
+                            )
+                    val deltaRounded = delta.roundToInt()
+
+                    val maxVolume = mAudioStreamState!!.maxVolume
+                    val currVolume = mAudioStreamState!!.currentVolume
+                    val minVolume = mAudioStreamState!!.minVolume
+
+                    if (deltaRounded.sign > 0) {
+                        val value = min(maxVolume, currVolume + 1)
+                        requestSetVolume(value)
+                    } else if (deltaRounded.sign < 0) {
+                        val value = max(mAudioStreamState!!.minVolume, currVolume - 1)
+                        requestSetVolume(value)
+                    }
+
+                    return true
+                } else {
+                    return false
+                }
+            }
+        })
+
         return binding.root
     }
 
@@ -150,6 +190,8 @@ class MediaPlayerControlsFragment : LifecycleAwareFragment(), MessageClient.OnMe
             binding.titleView.paint.isAntiAlias = false
             binding.subtitleView.paint.isAntiAlias = false
         }
+
+        binding.volumeProgressBar.clearFocus()
     }
 
     private fun exitAmbientMode() {
@@ -177,6 +219,8 @@ class MediaPlayerControlsFragment : LifecycleAwareFragment(), MessageClient.OnMe
             binding.root.translationX = 0f
             binding.root.translationY = 0f
         }
+
+        binding.volumeProgressBar.requestFocus()
     }
 
     override fun onResume() {
@@ -191,6 +235,8 @@ class MediaPlayerControlsFragment : LifecycleAwareFragment(), MessageClient.OnMe
         if (mAmbientMode.ambientModeEnabled.value != true) {
             binding.titleView.isSelected = true
         }
+
+        binding.volumeProgressBar.requestFocus()
     }
 
     override fun onPause() {
@@ -234,6 +280,7 @@ class MediaPlayerControlsFragment : LifecycleAwareFragment(), MessageClient.OnMe
                     val status = messageEvent.data?.let {
                         JSONParser.deserializer(it.bytesToString(), AudioStreamState::class.java)
                     }
+                    mAudioStreamState = status
 
                     lifecycleScope.launch {
                         if (status == null) {
@@ -388,6 +435,13 @@ class MediaPlayerControlsFragment : LifecycleAwareFragment(), MessageClient.OnMe
         }
     }
 
+    private fun requestSetVolume(value: Int) {
+        LocalBroadcastManager.getInstance(requireContext())
+            .sendBroadcast(Intent(MediaHelper.MediaSetVolumePath).apply {
+                putExtra("volume", value)
+            })
+    }
+
     private fun showLoading(show: Boolean) {
         showLoading = show
         if (mAmbientMode.ambientModeEnabled.value == true) return
@@ -398,6 +452,9 @@ class MediaPlayerControlsFragment : LifecycleAwareFragment(), MessageClient.OnMe
         }
         binding.albumArtImageview.visibility = if (show) View.INVISIBLE else View.VISIBLE
         binding.playerControls.visibility = if (show) View.INVISIBLE else View.VISIBLE
+        if (!show) {
+            binding.volumeProgressBar.requestFocus()
+        }
     }
 
     private fun showPlaybackLoading(show: Boolean) {

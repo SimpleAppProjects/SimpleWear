@@ -817,6 +817,16 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
                 if (!isNotificationListenerEnabled(messageEvent)) return
                 sendVolumeStatus(messageEvent.sourceNodeId)
             }
+            MediaHelper.MediaSetVolumePath -> {
+                if (!isNotificationListenerEnabled(messageEvent)) return
+                val value = messageEvent.data.bytesToInt()
+                if (mController != null) {
+                    mController!!.setVolumeTo(value, 0)
+                } else {
+                    mAudioManager.setStreamVolume(AudioManager.STREAM_MUSIC, value, 0)
+                }
+                sendVolumeStatus(messageEvent.sourceNodeId)
+            }
         }
     }
 

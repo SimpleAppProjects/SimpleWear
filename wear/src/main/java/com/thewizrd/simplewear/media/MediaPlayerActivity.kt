@@ -158,6 +158,24 @@ class MediaPlayerActivity : WearableListenerActivity(), AmbientModeSupport.Ambie
                                     }
                                 }
                             }
+                            MediaHelper.MediaSetVolumePath -> {
+                                lifecycleScope.launch {
+                                    if (connect()) {
+                                        mPhoneNodeWithApp?.id?.let { nodeID ->
+                                            sendMessage(
+                                                nodeID,
+                                                MediaHelper.MediaPlayerConnectPath,
+                                                if (isAutoLaunch) isAutoLaunch.booleanToBytes() else mMediaPlayerDetails.packageName?.stringToBytes()
+                                            )
+                                            sendMessage(
+                                                nodeID,
+                                                intent.action!!,
+                                                intent.getIntExtra("volume", 0).intToBytes()
+                                            )
+                                        }
+                                    }
+                                }
+                            }
                             MediaHelper.MediaBrowserItemsClickPath,
                             MediaHelper.MediaBrowserItemsExtraSuggestedClickPath,
                             MediaHelper.MediaQueueItemsClickPath -> {
@@ -247,6 +265,7 @@ class MediaPlayerActivity : WearableListenerActivity(), AmbientModeSupport.Ambie
             addAction(MediaHelper.MediaVolumeUpPath)
             addAction(MediaHelper.MediaVolumeDownPath)
             addAction(MediaHelper.MediaVolumeStatusPath)
+            addAction(MediaHelper.MediaSetVolumePath)
         }
 
         mAmbientController = AmbientModeSupport.attach(this)
