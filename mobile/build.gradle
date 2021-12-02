@@ -20,7 +20,7 @@ android {
         testInstrumentationRunnerArguments clearPackageData: 'true'
 
         minSdkVersion 23
-        targetSdkVersion 30
+        targetSdkVersion 31
         // NOTE: Version Code Format (TargetSDK, Version Name, Build Number, Variant Code (Android: 00, WearOS: 01)
         versionCode 301900500
         versionName "1.9.0"

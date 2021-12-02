@@ -43,7 +43,8 @@
         <activity
             android:name=".PhoneSyncActivity"
             android:launchMode="singleInstance"
-            android:theme="@style/WearAppTheme.Launcher">
+            android:theme="@style/WearAppTheme.Launcher"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -63,7 +64,8 @@
             android:label="@string/title_media_controller"
             android:launchMode="singleInstance"
             android:theme="@style/WearAppTheme"
-            android:parentActivityName=".DashboardActivity">
+            android:parentActivityName=".DashboardActivity"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -91,7 +93,8 @@
 
         <service
             android:name=".wearable.WearableDataListenerService"
-            android:enabled="true">
+            android:enabled="true"
+            android:exported="true">
             <intent-filter>
                 <action android:name="com.google.android.gms.wearable.MESSAGE_RECEIVED" />
                 <action android:name="com.google.android.gms.wearable.DATA_CHANGED" />
