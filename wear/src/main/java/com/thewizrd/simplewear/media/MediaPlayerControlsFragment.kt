@@ -30,10 +30,10 @@ import com.thewizrd.simplewear.controls.CustomConfirmationOverlay
 import com.thewizrd.simplewear.databinding.MediaPlayerControlsBinding
 import kotlinx.coroutines.*
 import kotlinx.coroutines.tasks.await
+import java.util.concurrent.Executors
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
-import kotlin.math.sign
 import kotlin.random.Random
 
 class MediaPlayerControlsFragment : LifecycleAwareFragment(), MessageClient.OnMessageReceivedListener,
@@ -49,6 +49,10 @@ class MediaPlayerControlsFragment : LifecycleAwareFragment(), MessageClient.OnMe
     private var showPlaybackLoading = false
 
     private var mAudioStreamState: AudioStreamState? = null
+
+    private val volumeScope = CoroutineScope(
+        SupervisorJob() + Executors.newSingleThreadExecutor().asCoroutineDispatcher()
+    )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -112,30 +116,37 @@ class MediaPlayerControlsFragment : LifecycleAwareFragment(), MessageClient.OnMe
         }
 
         binding.volumeProgressBar.setOnGenericMotionListener(object : View.OnGenericMotionListener {
+            private var mRemoteVolume: Float? = null
+
             override fun onGenericMotion(v: View, event: MotionEvent): Boolean {
                 if (event.action == MotionEvent.ACTION_SCROLL &&
                     event.isFromSource(InputDeviceCompat.SOURCE_ROTARY_ENCODER) &&
                     mAmbientMode.ambientModeEnabled.value != true &&
                     mAudioStreamState != null
                 ) {
+                    val scaleFactor = ViewConfigurationCompat.getScaledVerticalScrollFactor(
+                        ViewConfiguration.get(v.context), v.context
+                    )
                     // Don't forget the negation here
-                    val delta = -event.getAxisValue(MotionEventCompat.AXIS_SCROLL) *
-                            ViewConfigurationCompat.getScaledVerticalScrollFactor(
-                                ViewConfiguration.get(v.context), v.context
-                            )
-                    val deltaRounded = delta.roundToInt()
+                    val delta = -event.getAxisValue(MotionEventCompat.AXIS_SCROLL) * scaleFactor
 
-                    val maxVolume = mAudioStreamState!!.maxVolume
-                    val currVolume = mAudioStreamState!!.currentVolume
-                    val minVolume = mAudioStreamState!!.minVolume
+                    val maxVolume = mAudioStreamState!!.maxVolume * scaleFactor
+                    val currVolume =
+                        mRemoteVolume ?: (mAudioStreamState!!.currentVolume * scaleFactor)
+                    val minVolume = mAudioStreamState!!.minVolume * scaleFactor
 
-                    if (deltaRounded.sign > 0) {
-                        val value = min(maxVolume, currVolume + 1)
-                        requestSetVolume(value)
-                    } else if (deltaRounded.sign < 0) {
-                        val value = max(mAudioStreamState!!.minVolume, currVolume - 1)
-                        requestSetVolume(value)
-                    }
+                    mRemoteVolume = min(maxVolume, max(minVolume, currVolume + delta))
+                    val volume = (mRemoteVolume!! / scaleFactor).roundToInt()
+
+                    Log.d(
+                        "MediaVolScroller",
+                        "currVol = ${(currVolume / scaleFactor).roundToInt()}, " +
+                                "maxVol = ${(maxVolume / scaleFactor).roundToInt()}, " +
+                                "minVol = ${(minVolume / scaleFactor).roundToInt()}, " +
+                                "delta = $delta, " +
+                                "setVolume = $volume"
+                    )
+                    requestSetVolume(volume)
 
                     return true
                 } else {
@@ -167,6 +178,7 @@ class MediaPlayerControlsFragment : LifecycleAwareFragment(), MessageClient.OnMe
         super.onDestroy()
         LocalBroadcastManager.getInstance(requireContext())
             .unregisterReceiver(mAmbientReceiver)
+        volumeScope.cancel()
     }
 
     private fun enterAmbientMode() {
@@ -436,10 +448,12 @@ class MediaPlayerControlsFragment : LifecycleAwareFragment(), MessageClient.OnMe
     }
 
     private fun requestSetVolume(value: Int) {
-        LocalBroadcastManager.getInstance(requireContext())
-            .sendBroadcast(Intent(MediaHelper.MediaSetVolumePath).apply {
-                putExtra("volume", value)
-            })
+        volumeScope.launch {
+            LocalBroadcastManager.getInstance(requireContext())
+                .sendBroadcastSync(Intent(MediaHelper.MediaSetVolumePath).apply {
+                    putExtra(MediaHelper.KEY_VOLUME, value)
+                })
+        }
     }
 
     private fun showLoading(show: Boolean) {

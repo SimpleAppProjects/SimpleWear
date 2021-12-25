@@ -58,4 +58,6 @@ object MediaHelper {
 
     // For Music Player DataMap
     const val KEY_SUPPORTEDPLAYERS = "key_supported_players"
+
+    const val KEY_VOLUME = "key_volume"
 }

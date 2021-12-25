@@ -170,7 +170,8 @@ class MediaPlayerActivity : WearableListenerActivity(), AmbientModeSupport.Ambie
                                             sendMessage(
                                                 nodeID,
                                                 intent.action!!,
-                                                intent.getIntExtra("volume", 0).intToBytes()
+                                                intent.getIntExtra(MediaHelper.KEY_VOLUME, 0)
+                                                    .intToBytes()
                                             )
                                         }
                                     }
