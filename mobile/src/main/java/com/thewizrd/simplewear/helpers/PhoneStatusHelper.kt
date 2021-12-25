@@ -294,7 +294,11 @@ object PhoneStatusHelper {
             } else {
                 when (direction) {
                     ValueDirection.UP -> audioMan.adjustSuggestedStreamVolume(AudioManager.ADJUST_RAISE, AudioManager.USE_DEFAULT_STREAM_TYPE, flags)
-                    ValueDirection.DOWN -> audioMan.adjustSuggestedStreamVolume(AudioManager.ADJUST_LOWER, AudioManager.USE_DEFAULT_STREAM_TYPE, flags)
+                    ValueDirection.DOWN -> audioMan.adjustSuggestedStreamVolume(
+                        AudioManager.ADJUST_LOWER,
+                        AudioManager.USE_DEFAULT_STREAM_TYPE,
+                        flags
+                    )
                 }
             }
 
@@ -305,13 +309,39 @@ object PhoneStatusHelper {
         }
     }
 
+    fun setStreamVolume(context: Context, volume: Int, streamType: AudioStreamType): ActionStatus {
+        return try {
+            val audioMan = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+            val powerMan = context.getSystemService(Context.POWER_SERVICE) as PowerManager
+            val isInteractive = powerMan.isInteractive
+            var flags = AudioManager.FLAG_PLAY_SOUND
+            if (isInteractive) flags = flags or AudioManager.FLAG_SHOW_UI
+
+            val audioStream = when (streamType) {
+                AudioStreamType.MUSIC -> AudioManager.STREAM_MUSIC
+                AudioStreamType.RINGTONE -> AudioManager.STREAM_RING
+                AudioStreamType.VOICE_CALL -> AudioManager.STREAM_VOICE_CALL
+                AudioStreamType.ALARM -> AudioManager.STREAM_ALARM
+            }
+
+            audioMan.setStreamVolume(audioStream, volume, flags)
+
+            ActionStatus.SUCCESS
+        } catch (e: Exception) {
+            Logger.writeLine(Log.ERROR, e)
+            ActionStatus.FAILURE
+        }
+    }
+
     fun isNotificationAccessAllowed(context: Context): Boolean {
-        val notMan = context.applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val notMan =
+            context.applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         return notMan.isNotificationPolicyAccessGranted
     }
 
     fun getDNDState(context: Context): DNDChoice {
-        val notMan = context.applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val notMan =
+            context.applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         return when (notMan.currentInterruptionFilter) {
             NotificationManager.INTERRUPTION_FILTER_ALARMS -> DNDChoice.ALARMS
             NotificationManager.INTERRUPTION_FILTER_ALL -> DNDChoice.OFF

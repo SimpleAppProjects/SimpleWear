@@ -7,6 +7,7 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.google.android.gms.wearable.*
 import com.thewizrd.shared_resources.actions.Action
 import com.thewizrd.shared_resources.actions.ActionStatus
+import com.thewizrd.shared_resources.actions.AudioStreamState
 import com.thewizrd.shared_resources.actions.AudioStreamType
 import com.thewizrd.shared_resources.helpers.AppState
 import com.thewizrd.shared_resources.helpers.InCallUIHelper
@@ -97,7 +98,16 @@ class WearableDataListenerService : WearableListenerService() {
                             .putExtra(EXTRA_NODEDEVICENAME, deviceName)
                     )
             } else if (messageEvent.data != null && messageEvent.path == WearableHelper.AudioStatusPath) {
-                mWearMgr.sendAudioModeStatus(messageEvent.sourceNodeId, AudioStreamType.valueOf(messageEvent.data.bytesToString()))
+                mWearMgr.sendAudioModeStatus(
+                    messageEvent.sourceNodeId,
+                    AudioStreamType.valueOf(messageEvent.data.bytesToString())
+                )
+            } else if (messageEvent.path == WearableHelper.AudioVolumePath) {
+                val jsonData = messageEvent.data.bytesToString()
+                val streamData = JSONParser.deserializer(jsonData, AudioStreamState::class.java)
+                streamData?.let {
+                    mWearMgr.setStreamVolume(messageEvent.sourceNodeId, it)
+                }
             } else if (messageEvent.path.startsWith(WearableHelper.StatusPath)) {
                 mWearMgr.sendStatusUpdate(messageEvent.sourceNodeId, messageEvent.path)
             } else if (messageEvent.path == WearableHelper.AppsPath) {

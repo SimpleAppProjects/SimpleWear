@@ -8,23 +8,28 @@ import android.os.Build
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.util.Log
+import android.view.MotionEvent
+import android.view.ViewConfiguration
 import androidx.core.content.ContextCompat
+import androidx.core.view.InputDeviceCompat
+import androidx.core.view.MotionEventCompat
+import androidx.core.view.ViewConfigurationCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.google.android.gms.wearable.MessageEvent
 import com.thewizrd.shared_resources.actions.*
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
 import com.thewizrd.shared_resources.helpers.WearableHelper
-import com.thewizrd.shared_resources.utils.JSONParser
-import com.thewizrd.shared_resources.utils.Logger
-import com.thewizrd.shared_resources.utils.bytesToString
-import com.thewizrd.shared_resources.utils.stringToBytes
+import com.thewizrd.shared_resources.utils.*
 import com.thewizrd.simplewear.controls.CustomConfirmationOverlay
 import com.thewizrd.simplewear.databinding.ActivityValueactionBinding
 import com.thewizrd.simplewear.helpers.showConfirmationOverlay
-import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.*
 import kotlinx.coroutines.guava.await
-import kotlinx.coroutines.launch
+import java.util.concurrent.Executors
+import kotlin.math.max
+import kotlin.math.min
+import kotlin.math.roundToInt
 
 // TODO: Move volume actions into separate VolumeActionActivity
 class ValueActionActivity : WearableListenerActivity() {
@@ -40,9 +45,16 @@ class ValueActionActivity : WearableListenerActivity() {
     private lateinit var binding: ActivityValueactionBinding
 
     private var mAction: Actions? = null
+    private var mRemoteValue: Float? = null
+
+    private var mAudioStreamState: AudioStreamState? = null
     private var mStreamType: AudioStreamType? = AudioStreamType.MUSIC
 
     private var timer: CountDownTimer? = null
+
+    private val rsbScope = CoroutineScope(
+        SupervisorJob() + Executors.newSingleThreadExecutor().asCoroutineDispatcher()
+    )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -246,14 +258,21 @@ class ValueActionActivity : WearableListenerActivity() {
                 if (newValue < 0) newValue += maxStates
                 mStreamType = AudioStreamType.valueOf(newValue)
 
-                requestAudioStreamState()
+                lifecycleScope.launch {
+                    requestAudioStreamState()
+                }
             }
         }
 
-        if (mAction == Actions.VOLUME) {
-            binding.actionIcon.setImageResource(R.drawable.ic_volume_up_white_24dp)
-            binding.actionTitle.setText(R.string.action_volume)
-            requestAudioStreamState()
+        when (mAction) {
+            Actions.VOLUME -> {
+                binding.actionIcon.setImageResource(R.drawable.ic_volume_up_white_24dp)
+                binding.actionTitle.setText(R.string.action_volume)
+
+                lifecycleScope.launch {
+                    requestAudioStreamState()
+                }
+            }
         }
 
         intentFilter = IntentFilter()
@@ -270,6 +289,7 @@ class ValueActionActivity : WearableListenerActivity() {
                 val status = messageEvent.data?.let {
                     JSONParser.deserializer(it.bytesToString(), AudioStreamState::class.java)
                 }
+                mAudioStreamState = status
 
                 lifecycleScope.launch {
                     if (status == null) {
@@ -296,23 +316,73 @@ class ValueActionActivity : WearableListenerActivity() {
         }
     }
 
-    private fun requestAudioStreamState() {
-        lifecycleScope.launch {
-            if (connect()) {
-                sendMessage(mPhoneNodeWithApp!!.id, WearableHelper.AudioStatusPath, mStreamType?.name?.stringToBytes())
-            }
-        }
-    }
-
     override fun onResume() {
         super.onResume()
 
         // Update statuses
         lifecycleScope.launch {
             updateConnectionStatus()
-            if (mAction == Actions.VOLUME) {
-                requestAudioStreamState()
+            when (mAction) {
+                Actions.VOLUME -> {
+                    requestAudioStreamState()
+                }
             }
         }
+    }
+
+    override fun onDestroy() {
+        rsbScope.cancel()
+        super.onDestroy()
+    }
+
+    private suspend fun requestAudioStreamState() {
+        if (connect()) {
+            sendMessage(
+                mPhoneNodeWithApp!!.id,
+                WearableHelper.AudioStatusPath,
+                mStreamType?.name?.stringToBytes()
+            )
+        }
+    }
+
+    private fun requestSetVolume(value: Int) {
+        rsbScope.launch {
+            if (connect()) {
+                sendMessage(mPhoneNodeWithApp!!.id, WearableHelper.AudioVolumePath,
+                    mAudioStreamState?.let {
+                        JSONParser.serializer(
+                            AudioStreamState(value, it.minVolume, it.maxVolume, it.streamType),
+                            AudioStreamState::class.java
+                        ).stringToBytes()
+                    }
+                )
+            }
+        }
+    }
+
+    override fun onGenericMotionEvent(event: MotionEvent): Boolean {
+        if (event.action == MotionEvent.ACTION_SCROLL &&
+            event.isFromSource(InputDeviceCompat.SOURCE_ROTARY_ENCODER)
+        ) {
+            val scaleFactor = ViewConfigurationCompat.getScaledVerticalScrollFactor(
+                ViewConfiguration.get(this), this
+            )
+            // Don't forget the negation here
+            val delta = -event.getAxisValue(MotionEventCompat.AXIS_SCROLL) * scaleFactor
+
+            if (mAudioStreamState != null) {
+                val maxVolume = mAudioStreamState!!.maxVolume * scaleFactor
+                val currVolume = mRemoteValue ?: (mAudioStreamState!!.currentVolume * scaleFactor)
+                val minVolume = mAudioStreamState!!.minVolume * scaleFactor
+
+                mRemoteValue = min(maxVolume, max(minVolume, currVolume + delta))
+                val volume = (mRemoteValue!! / scaleFactor).roundToInt()
+
+                requestSetVolume(volume)
+                return true
+            }
+        }
+
+        return super.onGenericMotionEvent(event)
     }
 }

@@ -561,6 +561,15 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
         )
     }
 
+    suspend fun setStreamVolume(nodeID: String?, streamState: AudioStreamState) {
+        PhoneStatusHelper.setStreamVolume(
+            mContext,
+            streamState.currentVolume,
+            streamState.streamType
+        )
+        sendAudioModeStatus(nodeID, streamState.streamType)
+    }
+
     suspend fun requestWearAppState() {
         if (mWearNodesWithApp == null) return
         for (node in mWearNodesWithApp!!) {
