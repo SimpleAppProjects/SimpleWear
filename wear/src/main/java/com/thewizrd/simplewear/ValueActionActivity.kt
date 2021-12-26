@@ -62,30 +62,7 @@ class ValueActionActivity : WearableListenerActivity() {
         binding = ActivityValueactionBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        if (intent.hasExtra(EXTRA_ACTION)) {
-            mAction = intent.getSerializableExtra(EXTRA_ACTION) as Actions
-            when (mAction) {
-                Actions.VOLUME -> {
-                    if (intent.hasExtra(EXTRA_STREAMTYPE)) {
-                        mStreamType =
-                            intent.getSerializableExtra(EXTRA_STREAMTYPE) as? AudioStreamType
-                                ?: AudioStreamType.MUSIC
-                    }
-                }
-                Actions.BRIGHTNESS -> {
-                    // Valid action
-                }
-                else -> {
-                    // Not a ValueAction
-                    setResult(RESULT_CANCELED)
-                    finish()
-                }
-            }
-        } else {
-            // No action given
-            setResult(RESULT_CANCELED)
-            finish()
-        }
+        handleIntent(intent)
 
         broadcastReceiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context, intent: Intent) {
@@ -275,29 +252,57 @@ class ValueActionActivity : WearableListenerActivity() {
             }
         }
 
-        when (mAction) {
-            Actions.VOLUME -> {
-                binding.actionIcon.setImageResource(R.drawable.ic_volume_up_white_24dp)
-                binding.actionTitle.setText(R.string.action_volume)
-
-                lifecycleScope.launch {
-                    requestAudioStreamState()
-                }
-            }
-            Actions.BRIGHTNESS -> {
-                binding.actionIcon.setImageResource(R.drawable.ic_brightness_medium)
-                binding.actionTitle.setText(R.string.action_brightness)
-
-                lifecycleScope.launch {
-                    requestValueState()
-                }
-            }
-        }
-
         intentFilter = IntentFilter()
         intentFilter.addAction(ACTION_UPDATECONNECTIONSTATUS)
         intentFilter.addAction(ACTION_CHANGED)
         intentFilter.addAction(WearableHelper.ActionsPath)
+    }
+
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleIntent(intent)
+    }
+
+    private fun handleIntent(intent: Intent?) {
+        if (intent == null) return
+
+        if (intent.hasExtra(EXTRA_ACTION)) {
+            mAction = intent.getSerializableExtra(EXTRA_ACTION) as Actions
+            when (mAction) {
+                Actions.VOLUME -> {
+                    if (intent.hasExtra(EXTRA_STREAMTYPE)) {
+                        mStreamType =
+                            intent.getSerializableExtra(EXTRA_STREAMTYPE) as? AudioStreamType
+                                ?: AudioStreamType.MUSIC
+                    }
+                }
+                Actions.BRIGHTNESS -> {
+                    // Valid action
+                }
+                else -> {
+                    // Not a ValueAction
+                    setResult(RESULT_CANCELED)
+                    finish()
+                    return
+                }
+            }
+
+            updateActionView()
+        }
+    }
+
+    private fun updateActionView() {
+        when (mAction) {
+            Actions.VOLUME -> {
+                binding.actionIcon.setImageResource(R.drawable.ic_volume_up_white_24dp)
+                binding.actionTitle.setText(R.string.action_volume)
+            }
+            Actions.BRIGHTNESS -> {
+                binding.actionIcon.setImageResource(R.drawable.ic_brightness_medium)
+                binding.actionTitle.setText(R.string.action_brightness)
+            }
+        }
     }
 
     override fun onMessageReceived(messageEvent: MessageEvent) {
@@ -395,6 +400,9 @@ class ValueActionActivity : WearableListenerActivity() {
             when (mAction) {
                 Actions.VOLUME -> {
                     requestAudioStreamState()
+                }
+                else -> {
+                    requestValueState()
                 }
             }
         }

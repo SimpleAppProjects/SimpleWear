@@ -57,6 +57,7 @@
             android:theme="@style/WearAppTheme" />
         <activity
             android:name=".ValueActionActivity"
+            android:launchMode="singleInstance"
             android:theme="@style/WearAppTheme" />
         <activity
             android:name=".MediaPlayerListActivity"
