@@ -591,15 +591,15 @@ object PhoneStatusHelper {
                 val currentBrightness =
                     Settings.System.getInt(contentResolver, Settings.System.SCREEN_BRIGHTNESS)
 
-                // Increase/decrease by 10%
+                // Increase/decrease by 5%
                 val value = when (direction) {
                     ValueDirection.UP -> min(
                         255,
-                        max(0, (currentBrightness + (255 * 0.1f).roundToInt()))
+                        max(0, (currentBrightness + (255 * 0.05f).roundToInt()))
                     )
                     ValueDirection.DOWN -> min(
                         255,
-                        max(0, (currentBrightness - (255 * 0.1f).roundToInt()))
+                        max(0, (currentBrightness - (255 * 0.05f).roundToInt()))
                     )
                 }
 

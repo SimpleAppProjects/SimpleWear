@@ -55,6 +55,7 @@ class ValueActionActivity : WearableListenerActivity() {
     private val rsbScope = CoroutineScope(
         SupervisorJob() + Executors.newSingleThreadExecutor().asCoroutineDispatcher()
     )
+    private var rsbJob: Job? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -395,7 +396,8 @@ class ValueActionActivity : WearableListenerActivity() {
     }
 
     private fun requestSetVolume(value: Int) {
-        rsbScope.launch {
+        rsbJob?.cancel()
+        rsbJob = rsbScope.launch {
             if (connect()) {
                 sendMessage(mPhoneNodeWithApp!!.id, WearableHelper.AudioVolumePath,
                     (mValueActionState as? AudioStreamState)?.let {
@@ -410,7 +412,8 @@ class ValueActionActivity : WearableListenerActivity() {
     }
 
     private fun requestSetValue(value: Int) {
-        rsbScope.launch {
+        rsbJob?.cancel()
+        rsbJob = rsbScope.launch {
             if (connect()) {
                 sendMessage(mPhoneNodeWithApp!!.id, WearableHelper.ValueStatusSetPath,
                     mValueActionState?.let {
@@ -443,16 +446,47 @@ class ValueActionActivity : WearableListenerActivity() {
             )
             // Don't forget the negation here
             val delta = -event.getAxisValue(MotionEventCompat.AXIS_SCROLL) * scaleFactor
+            val scaleMax = 25 * scaleFactor
 
+            // Scaling to (25 * scaleFactor) seems to be good
+            // Emulator -> ~2400
             val valueState = mValueActionState
 
             if (valueState != null) {
-                val maxValue = valueState.maxValue * scaleFactor
-                val currValue = mRemoteValue ?: (valueState.currentValue * scaleFactor)
-                val minVolume = valueState.minValue * scaleFactor
+                val maxValue =
+                    scaleValueFromState(valueState.maxValue.toFloat(), valueState, 0f, scaleMax)
+                val currValue = mRemoteValue ?: scaleValueFromState(
+                    valueState.currentValue.toFloat(),
+                    valueState,
+                    0f,
+                    scaleMax
+                )
+                val minValue =
+                    scaleValueFromState(valueState.minValue.toFloat(), valueState, 0f, scaleMax)
 
-                mRemoteValue = min(maxValue, max(minVolume, currValue + delta))
-                val value = (mRemoteValue!! / scaleFactor).roundToInt()
+                val scaledValue = currValue + delta
+                mRemoteValue = normalize(scaledValue, 0f, scaleMax)
+                val value = normalizeToState(
+                    scaleValueToState(
+                        scaledValue,
+                        0f,
+                        scaleMax,
+                        valueState
+                    ).roundToInt(), valueState
+                )
+
+                if (BuildConfig.DEBUG) {
+                    Log.d(
+                        "ValueActionScroller",
+                        "currVal = ${(currValue).roundToInt()}, " +
+                                "maxVal = ${(maxValue).roundToInt()}, " +
+                                "minVal = ${(minValue).roundToInt()}, " +
+                                "delta = $delta, " +
+                                "scaleFactor = $scaleFactor, " +
+                                "scaledValue = $scaledValue, " +
+                                "setValue = $value"
+                    )
+                }
 
                 if (valueState is AudioStreamState) {
                     requestSetVolume(value)
@@ -463,5 +497,45 @@ class ValueActionActivity : WearableListenerActivity() {
         }
 
         return super.onGenericMotionEvent(event)
+    }
+
+    private fun scaleValue(
+        value: Float,
+        minValue: Float,
+        maxValue: Float,
+        scaleMin: Float,
+        scaleMax: Float
+    ): Float {
+        return ((value - minValue) / (maxValue - minValue)) * (scaleMax - scaleMin) + scaleMin
+    }
+
+    private fun scaleValueFromState(
+        value: Float,
+        state: ValueActionState,
+        scaleMin: Float,
+        scaleMax: Float
+    ): Float {
+        return ((value - state.minValue) / (state.maxValue - state.minValue)) * (scaleMax - scaleMin) + scaleMin
+    }
+
+    private fun scaleValueToState(
+        value: Float,
+        minValue: Float,
+        maxValue: Float,
+        state: ValueActionState
+    ): Float {
+        return ((value - minValue) / (maxValue - minValue)) * (state.maxValue - state.minValue) + state.minValue
+    }
+
+    private fun normalize(value: Int, minValue: Int, maxValue: Int): Int {
+        return min(maxValue, max(value, minValue))
+    }
+
+    private fun normalize(value: Float, minValue: Float, maxValue: Float): Float {
+        return min(maxValue, max(value, minValue))
+    }
+
+    private fun normalizeToState(value: Int, state: ValueActionState): Int {
+        return normalize(value, state.minValue, state.maxValue)
     }
 }
