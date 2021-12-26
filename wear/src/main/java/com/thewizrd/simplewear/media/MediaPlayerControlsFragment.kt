@@ -24,6 +24,7 @@ import com.thewizrd.shared_resources.utils.ImageUtils
 import com.thewizrd.shared_resources.utils.JSONParser
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.shared_resources.utils.bytesToString
+import com.thewizrd.simplewear.BuildConfig
 import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.controls.AmbientModeViewModel
 import com.thewizrd.simplewear.controls.CustomConfirmationOverlay
@@ -130,22 +131,54 @@ class MediaPlayerControlsFragment : LifecycleAwareFragment(), MessageClient.OnMe
                     // Don't forget the negation here
                     val delta = -event.getAxisValue(MotionEventCompat.AXIS_SCROLL) * scaleFactor
 
-                    val maxVolume = mAudioStreamState!!.maxVolume * scaleFactor
-                    val currVolume =
-                        mRemoteVolume ?: (mAudioStreamState!!.currentVolume * scaleFactor)
-                    val minVolume = mAudioStreamState!!.minVolume * scaleFactor
+                    // Scaling to (25 * scaleFactor) seems to be good
+                    // On emulator = ~2400
+                    val scaleMax = 25 * scaleFactor
+                    val audioState = mAudioStreamState!!
 
-                    mRemoteVolume = min(maxVolume, max(minVolume, currVolume + delta))
-                    val volume = (mRemoteVolume!! / scaleFactor).roundToInt()
-
-                    Log.d(
-                        "MediaVolScroller",
-                        "currVol = ${(currVolume / scaleFactor).roundToInt()}, " +
-                                "maxVol = ${(maxVolume / scaleFactor).roundToInt()}, " +
-                                "minVol = ${(minVolume / scaleFactor).roundToInt()}, " +
-                                "delta = $delta, " +
-                                "setVolume = $volume"
+                    val maxVolume = scaleValueFromState(
+                        audioState.maxVolume.toFloat(),
+                        audioState,
+                        0f,
+                        scaleMax
                     )
+                    val currVolume = mRemoteVolume ?: scaleValueFromState(
+                        audioState.currentVolume.toFloat(),
+                        audioState,
+                        0f,
+                        scaleMax
+                    )
+                    val minVolume = scaleValueFromState(
+                        audioState.minVolume.toFloat(),
+                        audioState,
+                        0f,
+                        scaleMax
+                    )
+
+                    val scaledVolume = currVolume + delta
+                    mRemoteVolume = normalize(scaledVolume, 0f, scaleMax)
+                    val volume = normalizeToState(
+                        scaleValueToState(
+                            scaledVolume,
+                            0f,
+                            scaleMax,
+                            audioState
+                        ).roundToInt(), audioState
+                    )
+
+                    if (BuildConfig.DEBUG) {
+                        Log.d(
+                            "MediaVolScroller",
+                            "currVol = ${(currVolume).roundToInt()}, " +
+                                    "maxVol = ${(maxVolume).roundToInt()}, " +
+                                    "minVol = ${(minVolume).roundToInt()}, " +
+                                    "delta = $delta, " +
+                                    "scaleFactor = $scaleFactor, " +
+                                    "scaledVol = $scaledVolume, " +
+                                    "setVol = $volume"
+                        )
+                    }
+
                     requestSetVolume(volume)
 
                     return true
@@ -476,5 +509,46 @@ class MediaPlayerControlsFragment : LifecycleAwareFragment(), MessageClient.OnMe
         if (mAmbientMode.ambientModeEnabled.value == true) return
         binding.playpauseButton.visibility = if (show) View.GONE else View.VISIBLE
         binding.playbackLoadingbar.visibility = if (show) View.VISIBLE else View.GONE
+    }
+
+    /* Value scaling */
+    private fun scaleValue(
+        value: Float,
+        minValue: Float,
+        maxValue: Float,
+        scaleMin: Float,
+        scaleMax: Float
+    ): Float {
+        return ((value - minValue) / (maxValue - minValue)) * (scaleMax - scaleMin) + scaleMin
+    }
+
+    private fun scaleValueFromState(
+        value: Float,
+        state: ValueActionState,
+        scaleMin: Float,
+        scaleMax: Float
+    ): Float {
+        return ((value - state.minValue) / (state.maxValue - state.minValue)) * (scaleMax - scaleMin) + scaleMin
+    }
+
+    private fun scaleValueToState(
+        value: Float,
+        minValue: Float,
+        maxValue: Float,
+        state: ValueActionState
+    ): Float {
+        return ((value - minValue) / (maxValue - minValue)) * (state.maxValue - state.minValue) + state.minValue
+    }
+
+    private fun normalize(value: Int, minValue: Int, maxValue: Int): Int {
+        return min(maxValue, max(value, minValue))
+    }
+
+    private fun normalize(value: Float, minValue: Float, maxValue: Float): Float {
+        return min(maxValue, max(value, minValue))
+    }
+
+    private fun normalizeToState(value: Int, state: ValueActionState): Int {
+        return normalize(value, state.minValue, state.maxValue)
     }
 }

@@ -446,10 +446,10 @@ class ValueActionActivity : WearableListenerActivity() {
             )
             // Don't forget the negation here
             val delta = -event.getAxisValue(MotionEventCompat.AXIS_SCROLL) * scaleFactor
-            val scaleMax = 25 * scaleFactor
 
             // Scaling to (25 * scaleFactor) seems to be good
-            // Emulator -> ~2400
+            // On emulator = ~2400
+            val scaleMax = 25 * scaleFactor
             val valueState = mValueActionState
 
             if (valueState != null) {
