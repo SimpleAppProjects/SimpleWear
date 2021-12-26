@@ -38,6 +38,9 @@ object WearableHelper {
     const val AppsPath = "/apps"
     const val AppsIconSettingsPath = "/apps/settings/icon"
     const val LaunchAppPath = "/apps/start-activity"
+    const val ValueStatusPath = "/status/valueaction"
+    const val ValueStatusSetPath = "/status/valueaction/setvalue"
+    const val BrightnessModePath = "/status/brightness/mode"
 
     // For Apps DataMap
     const val KEY_APPS = "key_apps"

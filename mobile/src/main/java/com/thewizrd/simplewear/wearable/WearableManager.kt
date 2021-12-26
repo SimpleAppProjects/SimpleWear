@@ -26,12 +26,9 @@ import com.thewizrd.shared_resources.helpers.AppItemSerializer.serialize
 import com.thewizrd.shared_resources.helpers.MediaHelper
 import com.thewizrd.shared_resources.helpers.WearSettingsHelper
 import com.thewizrd.shared_resources.helpers.WearableHelper
-import com.thewizrd.shared_resources.utils.ImageUtils
+import com.thewizrd.shared_resources.utils.*
 import com.thewizrd.shared_resources.utils.ImageUtils.toAsset
 import com.thewizrd.shared_resources.utils.ImageUtils.toByteArray
-import com.thewizrd.shared_resources.utils.JSONParser
-import com.thewizrd.shared_resources.utils.Logger
-import com.thewizrd.shared_resources.utils.stringToBytes
 import com.thewizrd.shared_resources.wearsettings.PackageValidator
 import com.thewizrd.simplewear.helpers.PhoneStatusHelper
 import com.thewizrd.simplewear.helpers.ResolveInfoActivityInfoComparator
@@ -570,6 +567,54 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
         sendAudioModeStatus(nodeID, streamState.streamType)
     }
 
+    suspend fun setActionValue(nodeID: String?, valueData: ValueActionState) {
+        when (valueData.actionType) {
+            Actions.VOLUME -> {
+                if (valueData is AudioStreamState) {
+                    PhoneStatusHelper.setStreamVolume(
+                        mContext,
+                        valueData.currentVolume,
+                        valueData.streamType
+                    )
+                    sendAudioModeStatus(nodeID, valueData.streamType)
+                }
+            }
+            Actions.BRIGHTNESS -> {
+                PhoneStatusHelper.setBrightnessLevel(
+                    mContext,
+                    valueData.currentValue
+                )
+                sendValueStatus(nodeID, valueData.actionType)
+            }
+        }
+    }
+
+    suspend fun sendValueStatus(nodeID: String?, actionType: Actions) {
+        when (actionType) {
+            Actions.BRIGHTNESS -> {
+                sendMessage(
+                    nodeID, WearableHelper.ValueStatusPath,
+                    JSONParser.serializer(
+                        PhoneStatusHelper.getBrightnessLevel(mContext),
+                        ValueActionState::class.java
+                    ).stringToBytes()
+                )
+                sendMessage(
+                    nodeID, WearableHelper.BrightnessModePath,
+                    PhoneStatusHelper.isAutoBrightnessEnabled(mContext).booleanToBytes()
+                )
+            }
+        }
+    }
+
+    suspend fun toggleBrightnessMode(nodeID: String?) {
+        val autoEnabled = PhoneStatusHelper.isAutoBrightnessEnabled(mContext)
+        val actionStatus = PhoneStatusHelper.setAutoBrightnessEnabled(mContext, !autoEnabled)
+        if (actionStatus == ActionStatus.SUCCESS) {
+            sendMessage(nodeID, WearableHelper.BrightnessModePath, (!autoEnabled).booleanToBytes())
+        }
+    }
+
     suspend fun requestWearAppState() {
         if (mWearNodesWithApp == null) return
         for (node in mWearNodesWithApp!!) {
@@ -622,9 +667,13 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
             }
             Actions.TORCH -> {
                 action = ToggleAction(act, PhoneStatusHelper.isTorchEnabled(mContext))
-                sendMessage(nodeID, WearableHelper.ActionsPath, JSONParser.serializer(action, Action::class.java).stringToBytes())
+                sendMessage(
+                    nodeID,
+                    WearableHelper.ActionsPath,
+                    JSONParser.serializer(action, Action::class.java).stringToBytes()
+                )
             }
-            Actions.LOCKSCREEN, Actions.VOLUME -> {
+            Actions.LOCKSCREEN, Actions.VOLUME, Actions.BRIGHTNESS -> {
             }
             Actions.DONOTDISTURB -> {
                 action = if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
@@ -632,7 +681,11 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
                 } else {
                     ToggleAction(act, PhoneStatusHelper.getDNDState(mContext) != DNDChoice.OFF)
                 }
-                sendMessage(nodeID, WearableHelper.ActionsPath, JSONParser.serializer(action, Action::class.java).stringToBytes())
+                sendMessage(
+                    nodeID,
+                    WearableHelper.ActionsPath,
+                    JSONParser.serializer(action, Action::class.java).stringToBytes()
+                )
             }
             Actions.RINGER -> {
                 action = MultiChoiceAction(act, PhoneStatusHelper.getRingerState(mContext).value)
@@ -770,13 +823,38 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
                 } else if (action is ToggleAction) {
                     tA = action
                     tA.setActionSuccessful(PhoneStatusHelper.setDNDState(mContext, tA.isEnabled))
-                    sendMessage(nodeID, WearableHelper.ActionsPath, JSONParser.serializer(tA, Action::class.java).stringToBytes())
+                    sendMessage(
+                        nodeID,
+                        WearableHelper.ActionsPath,
+                        JSONParser.serializer(tA, Action::class.java).stringToBytes()
+                    )
                 }
             }
             Actions.RINGER -> {
                 mA = action as MultiChoiceAction
-                mA.setActionSuccessful(PhoneStatusHelper.setRingerState(mContext, RingerChoice.valueOf(mA.choice)))
-                sendMessage(nodeID, WearableHelper.ActionsPath, JSONParser.serializer(mA, Action::class.java).stringToBytes())
+                mA.setActionSuccessful(
+                    PhoneStatusHelper.setRingerState(
+                        mContext,
+                        RingerChoice.valueOf(mA.choice)
+                    )
+                )
+                sendMessage(
+                    nodeID,
+                    WearableHelper.ActionsPath,
+                    JSONParser.serializer(mA, Action::class.java).stringToBytes()
+                )
+            }
+            Actions.BRIGHTNESS -> {
+                vA = action as ValueAction
+                vA.setActionSuccessful(PhoneStatusHelper.setBrightnessLevel(mContext, vA.direction))
+                sendMessage(
+                    nodeID,
+                    WearableHelper.ActionsPath,
+                    JSONParser.serializer(vA, Action::class.java).stringToBytes()
+                )
+                scope.launch {
+                    sendValueStatus(nodeID, vA.actionType)
+                }
             }
         }
     }

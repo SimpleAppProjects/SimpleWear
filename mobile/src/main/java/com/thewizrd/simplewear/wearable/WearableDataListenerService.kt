@@ -5,10 +5,7 @@ import android.os.Build
 import androidx.core.util.Pair
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.google.android.gms.wearable.*
-import com.thewizrd.shared_resources.actions.Action
-import com.thewizrd.shared_resources.actions.ActionStatus
-import com.thewizrd.shared_resources.actions.AudioStreamState
-import com.thewizrd.shared_resources.actions.AudioStreamType
+import com.thewizrd.shared_resources.actions.*
 import com.thewizrd.shared_resources.helpers.AppState
 import com.thewizrd.shared_resources.helpers.InCallUIHelper
 import com.thewizrd.shared_resources.helpers.MediaHelper
@@ -108,6 +105,17 @@ class WearableDataListenerService : WearableListenerService() {
                 streamData?.let {
                     mWearMgr.setStreamVolume(messageEvent.sourceNodeId, it)
                 }
+            } else if (messageEvent.path == WearableHelper.ValueStatusPath) {
+                val actionType = Actions.valueOf(messageEvent.data.bytesToInt())
+                mWearMgr.sendValueStatus(messageEvent.sourceNodeId, actionType)
+            } else if (messageEvent.path == WearableHelper.ValueStatusSetPath) {
+                val jsonData = messageEvent.data.bytesToString()
+                val valueData = JSONParser.deserializer(jsonData, ValueActionState::class.java)
+                valueData?.let {
+                    mWearMgr.setActionValue(messageEvent.sourceNodeId, it)
+                }
+            } else if (messageEvent.path == WearableHelper.BrightnessModePath) {
+                mWearMgr.toggleBrightnessMode(messageEvent.sourceNodeId)
             } else if (messageEvent.path.startsWith(WearableHelper.StatusPath)) {
                 mWearMgr.sendStatusUpdate(messageEvent.sourceNodeId, messageEvent.path)
             } else if (messageEvent.path == WearableHelper.AppsPath) {

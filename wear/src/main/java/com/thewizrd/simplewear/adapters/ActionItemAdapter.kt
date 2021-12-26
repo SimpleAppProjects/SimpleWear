@@ -55,15 +55,17 @@ class ActionItemAdapter(activity: Activity) : RecyclerView.Adapter<ActionItemAda
                 Actions.APPS,
                 Actions.PHONE ->
                     mDataset.add(ActionButtonViewModel(NormalAction(action)))
-                Actions.VOLUME ->
+                Actions.VOLUME, Actions.BRIGHTNESS ->
                     mDataset.add(ActionButtonViewModel(ValueAction(action, ValueDirection.UP)))
                 Actions.DONOTDISTURB ->
-                    mDataset.add(ActionButtonViewModel(
+                    mDataset.add(
+                        ActionButtonViewModel(
                             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P)
                                 MultiChoiceAction(action)
                             else
                                 ToggleAction(action, true)
-                    ))
+                        )
+                    )
                 Actions.RINGER ->
                     mDataset.add(ActionButtonViewModel(MultiChoiceAction(action)))
             }
@@ -156,7 +158,7 @@ class ActionItemAdapter(activity: Activity) : RecyclerView.Adapter<ActionItemAda
             Actions.LOCKSCREEN, Actions.MUSICPLAYBACK, Actions.SLEEPTIMER, Actions.APPS, Actions.PHONE -> {
                 ActionItemType.ACTION
             }
-            Actions.VOLUME -> ActionItemType.VALUE_ACTION
+            Actions.VOLUME, Actions.BRIGHTNESS -> ActionItemType.VALUE_ACTION
             Actions.DONOTDISTURB -> {
                 if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
                     ActionItemType.MULTICHOICE_ACTION

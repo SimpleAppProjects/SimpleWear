@@ -31,6 +31,9 @@ import com.thewizrd.simplewear.ScreenLockAdminReceiver
 import com.thewizrd.simplewear.services.TorchService
 import com.thewizrd.simplewear.services.TorchService.Companion.enqueueWork
 import kotlinx.coroutines.delay
+import kotlin.math.max
+import kotlin.math.min
+import kotlin.math.roundToInt
 
 object PhoneStatusHelper {
     fun getBatteryLevel(context: Context): BatteryStatus {
@@ -549,5 +552,94 @@ object PhoneStatusHelper {
             Logger.writeLine(Log.ERROR, e)
             ActionStatus.FAILURE
         }
+    }
+
+    fun isWriteSystemSettingsPermissionEnabled(context: Context): Boolean {
+        return Settings.System.canWrite(context)
+    }
+
+    fun getBrightnessLevel(context: Context): ValueActionState {
+        val contentResolver = context.applicationContext.contentResolver
+        return ValueActionState(
+            Settings.System.getInt(contentResolver, Settings.System.SCREEN_BRIGHTNESS, 0),
+            0, 255, Actions.BRIGHTNESS
+        )
+    }
+
+    fun setBrightnessLevel(context: Context, value: Int): ActionStatus {
+        if (isWriteSystemSettingsPermissionEnabled(context)) {
+            return try {
+                val contentResolver = context.applicationContext.contentResolver
+                val retVal = Settings.System.putInt(
+                    contentResolver,
+                    Settings.System.SCREEN_BRIGHTNESS,
+                    value
+                )
+                if (retVal) ActionStatus.SUCCESS else ActionStatus.FAILURE
+            } catch (e: Exception) {
+                Logger.writeLine(Log.ERROR, e)
+                ActionStatus.FAILURE
+            }
+        }
+        return ActionStatus.PERMISSION_DENIED
+    }
+
+    fun setBrightnessLevel(context: Context, direction: ValueDirection): ActionStatus {
+        if (isWriteSystemSettingsPermissionEnabled(context)) {
+            return try {
+                val contentResolver = context.applicationContext.contentResolver
+                val currentBrightness =
+                    Settings.System.getInt(contentResolver, Settings.System.SCREEN_BRIGHTNESS)
+
+                // Increase/decrease by 10%
+                val value = when (direction) {
+                    ValueDirection.UP -> min(
+                        255,
+                        max(0, (currentBrightness + (255 * 0.1f).roundToInt()))
+                    )
+                    ValueDirection.DOWN -> min(
+                        255,
+                        max(0, (currentBrightness - (255 * 0.1f).roundToInt()))
+                    )
+                }
+
+                return setBrightnessLevel(context, value)
+            } catch (e: Exception) {
+                Logger.writeLine(Log.ERROR, e)
+                ActionStatus.FAILURE
+            }
+        }
+        return ActionStatus.PERMISSION_DENIED
+    }
+
+    fun isAutoBrightnessEnabled(context: Context): Boolean {
+        val contentResolver = context.applicationContext.contentResolver
+        val value = Settings.System.getInt(
+            contentResolver,
+            Settings.System.SCREEN_BRIGHTNESS_MODE,
+            Settings.System.SCREEN_BRIGHTNESS_MODE_AUTOMATIC
+        )
+        return value == 1
+    }
+
+    fun setAutoBrightnessEnabled(context: Context, enable: Boolean): ActionStatus {
+        if (isWriteSystemSettingsPermissionEnabled(context)) {
+            return try {
+                val contentResolver = context.applicationContext.contentResolver
+                val retVal = Settings.System.putInt(
+                    contentResolver, Settings.System.SCREEN_BRIGHTNESS_MODE,
+                    if (enable) {
+                        Settings.System.SCREEN_BRIGHTNESS_MODE_AUTOMATIC
+                    } else {
+                        Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL
+                    }
+                )
+                if (retVal) ActionStatus.SUCCESS else ActionStatus.FAILURE
+            } catch (e: Exception) {
+                Logger.writeLine(Log.ERROR, e)
+                ActionStatus.FAILURE
+            }
+        }
+        return ActionStatus.PERMISSION_DENIED
     }
 }

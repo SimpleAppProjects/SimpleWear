@@ -47,4 +47,6 @@
     <string name="message_callactive">Call in progress…</string>
     <string name="action_hangup">Hangup</string>
 
+    <string name="action_brightness">Brightness</string>
+
 </resources>

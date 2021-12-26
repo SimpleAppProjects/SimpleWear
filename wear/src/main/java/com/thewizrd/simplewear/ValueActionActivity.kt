@@ -47,7 +47,7 @@ class ValueActionActivity : WearableListenerActivity() {
     private var mAction: Actions? = null
     private var mRemoteValue: Float? = null
 
-    private var mAudioStreamState: AudioStreamState? = null
+    private var mValueActionState: ValueActionState? = null
     private var mStreamType: AudioStreamType? = AudioStreamType.MUSIC
 
     private var timer: CountDownTimer? = null
@@ -62,17 +62,24 @@ class ValueActionActivity : WearableListenerActivity() {
         binding = ActivityValueactionBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        val intent = intent
         if (intent.hasExtra(EXTRA_ACTION)) {
             mAction = intent.getSerializableExtra(EXTRA_ACTION) as Actions
-            if (mAction != Actions.VOLUME) {
-                // Not a ValueAction
-                setResult(RESULT_CANCELED)
-                finish()
-            }
-            if (intent.hasExtra(EXTRA_STREAMTYPE)) {
-                mStreamType = intent.getSerializableExtra(EXTRA_STREAMTYPE) as? AudioStreamType
-                    ?: AudioStreamType.MUSIC
+            when (mAction) {
+                Actions.VOLUME -> {
+                    if (intent.hasExtra(EXTRA_STREAMTYPE)) {
+                        mStreamType =
+                            intent.getSerializableExtra(EXTRA_STREAMTYPE) as? AudioStreamType
+                                ?: AudioStreamType.MUSIC
+                    }
+                }
+                Actions.BRIGHTNESS -> {
+                    // Valid action
+                }
+                else -> {
+                    // Not a ValueAction
+                    setResult(RESULT_CANCELED)
+                    finish()
+                }
             }
         } else {
             // No action given
@@ -261,6 +268,10 @@ class ValueActionActivity : WearableListenerActivity() {
                 lifecycleScope.launch {
                     requestAudioStreamState()
                 }
+            } else if (mAction == Actions.BRIGHTNESS) {
+                lifecycleScope.launch {
+                    requestToggleAutoBrightness()
+                }
             }
         }
 
@@ -271,6 +282,14 @@ class ValueActionActivity : WearableListenerActivity() {
 
                 lifecycleScope.launch {
                     requestAudioStreamState()
+                }
+            }
+            Actions.BRIGHTNESS -> {
+                binding.actionIcon.setImageResource(R.drawable.ic_brightness_medium)
+                binding.actionTitle.setText(R.string.action_brightness)
+
+                lifecycleScope.launch {
+                    requestValueState()
                 }
             }
         }
@@ -289,28 +308,48 @@ class ValueActionActivity : WearableListenerActivity() {
                 val status = messageEvent.data?.let {
                     JSONParser.deserializer(it.bytesToString(), AudioStreamState::class.java)
                 }
-                mAudioStreamState = status
+                mValueActionState = status
 
-                lifecycleScope.launch {
-                    if (status == null) {
-                        mStreamType = null
-                        binding.actionIcon.setImageResource(R.drawable.ic_volume_up_white_24dp)
-                        binding.actionValueProgress.progress = 0
-                    } else {
-                        mStreamType = status.streamType
-                        when (status.streamType) {
-                            AudioStreamType.MUSIC -> binding.actionIcon.setImageResource(R.drawable.ic_music_note_white_24dp)
-                            AudioStreamType.RINGTONE -> binding.actionIcon.setImageResource(R.drawable.ic_baseline_ring_volume_24dp)
-                            AudioStreamType.VOICE_CALL -> binding.actionIcon.setImageResource(R.drawable.ic_baseline_call_24dp)
-                            AudioStreamType.ALARM -> binding.actionIcon.setImageResource(R.drawable.ic_alarm_white_24dp)
-                        }
-
-                        binding.actionValueProgress.max = status.maxVolume
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                            binding.actionValueProgress.min = status.minVolume
-                        }
-                        binding.actionValueProgress.progress = status.currentVolume
+                if (status == null) {
+                    mStreamType = null
+                    binding.actionIcon.setImageResource(R.drawable.ic_volume_up_white_24dp)
+                    binding.actionValueProgress.progress = 0
+                } else {
+                    mStreamType = status.streamType
+                    when (status.streamType) {
+                        AudioStreamType.MUSIC -> binding.actionIcon.setImageResource(R.drawable.ic_music_note_white_24dp)
+                        AudioStreamType.RINGTONE -> binding.actionIcon.setImageResource(R.drawable.ic_baseline_ring_volume_24dp)
+                        AudioStreamType.VOICE_CALL -> binding.actionIcon.setImageResource(R.drawable.ic_baseline_call_24dp)
+                        AudioStreamType.ALARM -> binding.actionIcon.setImageResource(R.drawable.ic_alarm_white_24dp)
                     }
+
+                    binding.actionValueProgress.max = status.maxVolume
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        binding.actionValueProgress.min = status.minVolume
+                    }
+                    binding.actionValueProgress.progress = status.currentVolume
+                }
+            } else if (messageEvent.path == WearableHelper.ValueStatusPath) {
+                val status = messageEvent.data?.let {
+                    JSONParser.deserializer(it.bytesToString(), ValueActionState::class.java)
+                }
+                mValueActionState = status
+
+                if (status == null) {
+                    binding.actionValueProgress.progress = 0
+                } else {
+                    binding.actionValueProgress.max = status.maxValue
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        binding.actionValueProgress.min = status.minValue
+                    }
+                    binding.actionValueProgress.progress = status.currentValue
+                }
+            } else if (messageEvent.path == WearableHelper.BrightnessModePath && mAction == Actions.BRIGHTNESS) {
+                val enabled = messageEvent.data.bytesToBool()
+                if (enabled) {
+                    binding.actionIcon.setImageResource(R.drawable.ic_brightness_auto)
+                } else {
+                    binding.actionIcon.setImageResource(R.drawable.ic_brightness_medium)
                 }
             }
         }
@@ -345,11 +384,21 @@ class ValueActionActivity : WearableListenerActivity() {
         }
     }
 
+    private suspend fun requestValueState() {
+        if (connect()) {
+            sendMessage(
+                mPhoneNodeWithApp!!.id,
+                WearableHelper.ValueStatusPath,
+                mAction?.value?.intToBytes()
+            )
+        }
+    }
+
     private fun requestSetVolume(value: Int) {
         rsbScope.launch {
             if (connect()) {
                 sendMessage(mPhoneNodeWithApp!!.id, WearableHelper.AudioVolumePath,
-                    mAudioStreamState?.let {
+                    (mValueActionState as? AudioStreamState)?.let {
                         JSONParser.serializer(
                             AudioStreamState(value, it.minVolume, it.maxVolume, it.streamType),
                             AudioStreamState::class.java
@@ -357,6 +406,31 @@ class ValueActionActivity : WearableListenerActivity() {
                     }
                 )
             }
+        }
+    }
+
+    private fun requestSetValue(value: Int) {
+        rsbScope.launch {
+            if (connect()) {
+                sendMessage(mPhoneNodeWithApp!!.id, WearableHelper.ValueStatusSetPath,
+                    mValueActionState?.let {
+                        JSONParser.serializer(
+                            ValueActionState(value, it.minValue, it.maxValue, it.actionType),
+                            ValueActionState::class.java
+                        ).stringToBytes()
+                    }
+                )
+            }
+        }
+    }
+
+    private suspend fun requestToggleAutoBrightness() {
+        if (connect()) {
+            sendMessage(
+                mPhoneNodeWithApp!!.id,
+                WearableHelper.BrightnessModePath,
+                null
+            )
         }
     }
 
@@ -370,16 +444,21 @@ class ValueActionActivity : WearableListenerActivity() {
             // Don't forget the negation here
             val delta = -event.getAxisValue(MotionEventCompat.AXIS_SCROLL) * scaleFactor
 
-            if (mAudioStreamState != null) {
-                val maxVolume = mAudioStreamState!!.maxVolume * scaleFactor
-                val currVolume = mRemoteValue ?: (mAudioStreamState!!.currentVolume * scaleFactor)
-                val minVolume = mAudioStreamState!!.minVolume * scaleFactor
+            val valueState = mValueActionState
 
-                mRemoteValue = min(maxVolume, max(minVolume, currVolume + delta))
-                val volume = (mRemoteValue!! / scaleFactor).roundToInt()
+            if (valueState != null) {
+                val maxValue = valueState.maxValue * scaleFactor
+                val currValue = mRemoteValue ?: (valueState.currentValue * scaleFactor)
+                val minVolume = valueState.minValue * scaleFactor
 
-                requestSetVolume(volume)
-                return true
+                mRemoteValue = min(maxValue, max(minVolume, currValue + delta))
+                val value = (mRemoteValue!! / scaleFactor).roundToInt()
+
+                if (valueState is AudioStreamState) {
+                    requestSetVolume(value)
+                } else {
+                    requestSetValue(value)
+                }
             }
         }
 

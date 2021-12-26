@@ -264,6 +264,11 @@ class ActionButtonViewModel(val action: Action) {
                 actionLabel = context.getString(R.string.action_phone)
                 stateLabel = null
             }
+            Actions.BRIGHTNESS -> {
+                drawableID = R.drawable.ic_brightness_medium
+                actionLabel = context.getString(R.string.action_brightness)
+                stateLabel = null
+            }
         }
     }
 }

@@ -200,6 +200,18 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
             }
         }
 
+        binding.systemsettingsPref.setOnClickListener {
+            val ctx = it.context.applicationContext
+            if (!PhoneStatusHelper.isWriteSystemSettingsPermissionEnabled(ctx)) {
+                runCatching {
+                    startActivity(Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS).apply {
+                        data = Uri.parse("package:${ctx.packageName}")
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                    })
+                }
+            }
+        }
+
         return binding.root
     }
 
@@ -417,6 +429,11 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
         }
 
         updateWearSettingsHelperPref(WearSettingsHelper.isWearSettingsInstalled())
+        updateSystemSettingsPref(
+            PhoneStatusHelper.isWriteSystemSettingsPermissionEnabled(
+                requireContext()
+            )
+        )
     }
 
     private fun updateCamPermText(enabled: Boolean) {
@@ -457,6 +474,11 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
     private fun updateWearSettingsHelperPref(installed: Boolean) {
         binding.wearsettingsPrefSummary.setText(if (installed) R.string.preference_summary_wearsettings_installed else R.string.preference_summary_wearsettings_notinstalled)
         binding.wearsettingsPrefSummary.setTextColor(if (installed) Color.GREEN else Color.RED)
+    }
+
+    private fun updateSystemSettingsPref(enabled: Boolean) {
+        binding.systemsettingsPrefSummary.setText(if (enabled) R.string.permission_systemsettings_enabled else R.string.permission_systemsettings_disabled)
+        binding.systemsettingsPrefSummary.setTextColor(if (enabled) Color.GREEN else Color.RED)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
