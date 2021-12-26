@@ -558,33 +558,66 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
         )
     }
 
+    private var mValueJob: Job? = null
     suspend fun setStreamVolume(nodeID: String?, streamState: AudioStreamState) {
-        PhoneStatusHelper.setStreamVolume(
-            mContext,
-            streamState.currentVolume,
-            streamState.streamType
-        )
-        sendAudioModeStatus(nodeID, streamState.streamType)
+        mValueJob?.cancel()
+        mValueJob = scope.launch {
+            if (!isActive) return@launch
+
+            val status = PhoneStatusHelper.setStreamVolume(
+                mContext,
+                streamState.currentVolume,
+                streamState.streamType
+            )
+            if (status != ActionStatus.SUCCESS) {
+                sendMessage(nodeID, WearableHelper.AudioVolumePath, status.name.stringToBytes())
+            } else {
+                sendAudioModeStatus(nodeID, streamState.streamType)
+            }
+        }
     }
 
     suspend fun setActionValue(nodeID: String?, valueData: ValueActionState) {
-        when (valueData.actionType) {
-            Actions.VOLUME -> {
-                if (valueData is AudioStreamState) {
-                    PhoneStatusHelper.setStreamVolume(
-                        mContext,
-                        valueData.currentVolume,
-                        valueData.streamType
-                    )
-                    sendAudioModeStatus(nodeID, valueData.streamType)
+        mValueJob?.cancel()
+        mValueJob = scope.launch {
+            when (valueData.actionType) {
+                Actions.VOLUME -> {
+                    if (valueData is AudioStreamState) {
+                        if (!isActive) return@launch
+
+                        val status = PhoneStatusHelper.setStreamVolume(
+                            mContext,
+                            valueData.currentVolume,
+                            valueData.streamType
+                        )
+                        if (status != ActionStatus.SUCCESS) {
+                            sendMessage(
+                                nodeID,
+                                WearableHelper.ValueStatusSetPath,
+                                status.name.stringToBytes()
+                            )
+                        } else {
+                            sendAudioModeStatus(nodeID, valueData.streamType)
+                        }
+                    }
                 }
-            }
-            Actions.BRIGHTNESS -> {
-                PhoneStatusHelper.setBrightnessLevel(
-                    mContext,
-                    valueData.currentValue
-                )
-                sendValueStatus(nodeID, valueData.actionType)
+                Actions.BRIGHTNESS -> {
+                    if (!isActive) return@launch
+
+                    val status = PhoneStatusHelper.setBrightnessLevel(
+                        mContext,
+                        valueData.currentValue
+                    )
+                    if (status != ActionStatus.SUCCESS) {
+                        sendMessage(
+                            nodeID,
+                            WearableHelper.ValueStatusSetPath,
+                            status.name.stringToBytes()
+                        )
+                    } else {
+                        sendValueStatus(nodeID, valueData.actionType)
+                    }
+                }
             }
         }
     }

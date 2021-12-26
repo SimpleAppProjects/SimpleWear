@@ -55,7 +55,6 @@ class ValueActionActivity : WearableListenerActivity() {
     private val rsbScope = CoroutineScope(
         SupervisorJob() + Executors.newSingleThreadExecutor().asCoroutineDispatcher()
     )
-    private var rsbJob: Job? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -396,8 +395,7 @@ class ValueActionActivity : WearableListenerActivity() {
     }
 
     private fun requestSetVolume(value: Int) {
-        rsbJob?.cancel()
-        rsbJob = rsbScope.launch {
+        rsbScope.launch {
             if (connect()) {
                 sendMessage(mPhoneNodeWithApp!!.id, WearableHelper.AudioVolumePath,
                     (mValueActionState as? AudioStreamState)?.let {
@@ -412,8 +410,7 @@ class ValueActionActivity : WearableListenerActivity() {
     }
 
     private fun requestSetValue(value: Int) {
-        rsbJob?.cancel()
-        rsbJob = rsbScope.launch {
+        rsbScope.launch {
             if (connect()) {
                 sendMessage(mPhoneNodeWithApp!!.id, WearableHelper.ValueStatusSetPath,
                     mValueActionState?.let {

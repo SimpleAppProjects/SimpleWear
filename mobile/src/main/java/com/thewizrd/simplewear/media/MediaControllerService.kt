@@ -55,6 +55,7 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
         SupervisorJob() + Executors.newSingleThreadExecutor().asCoroutineDispatcher()
     )
     private var disconnectJob: Job? = null
+    private var volumeJob: Job? = null
     private lateinit var mMainHandler: Handler
 
     private lateinit var mAvailableMediaApps: MutableSet<MediaAppDetails>
@@ -819,13 +820,19 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
             }
             MediaHelper.MediaSetVolumePath -> {
                 if (!isNotificationListenerEnabled(messageEvent)) return
-                val value = messageEvent.data.bytesToInt()
-                if (mController != null) {
-                    mController!!.setVolumeTo(value, 0)
-                } else {
-                    mAudioManager.setStreamVolume(AudioManager.STREAM_MUSIC, value, 0)
+                volumeJob?.cancel()
+                volumeJob = scope.launch {
+                    val value = messageEvent.data.bytesToInt()
+
+                    if (!isActive) return@launch
+
+                    if (mController != null) {
+                        mController!!.setVolumeTo(value, 0)
+                    } else {
+                        mAudioManager.setStreamVolume(AudioManager.STREAM_MUSIC, value, 0)
+                    }
+                    sendVolumeStatus(messageEvent.sourceNodeId)
                 }
-                sendVolumeStatus(messageEvent.sourceNodeId)
             }
         }
     }
