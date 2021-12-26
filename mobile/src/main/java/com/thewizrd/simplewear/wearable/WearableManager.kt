@@ -689,7 +689,19 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
             }
             Actions.RINGER -> {
                 action = MultiChoiceAction(act, PhoneStatusHelper.getRingerState(mContext).value)
-                sendMessage(nodeID, WearableHelper.ActionsPath, JSONParser.serializer(action, Action::class.java).stringToBytes())
+                sendMessage(
+                    nodeID,
+                    WearableHelper.ActionsPath,
+                    JSONParser.serializer(action, Action::class.java).stringToBytes()
+                )
+            }
+            Actions.HOTSPOT -> {
+                action = ToggleAction(act, PhoneStatusHelper.isWifiApEnabled(mContext))
+                sendMessage(
+                    nodeID,
+                    WearableHelper.ActionsPath,
+                    JSONParser.serializer(action, Action::class.java).stringToBytes()
+                )
             }
         }
     }
@@ -855,6 +867,15 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
                 scope.launch {
                     sendValueStatus(nodeID, vA.actionType)
                 }
+            }
+            Actions.HOTSPOT -> {
+                tA = action as ToggleAction
+                tA.setActionSuccessful(PhoneStatusHelper.setWifiApEnabled(mContext, tA.isEnabled))
+                sendMessage(
+                    nodeID,
+                    WearableHelper.ActionsPath,
+                    JSONParser.serializer(tA, Action::class.java).stringToBytes()
+                )
             }
         }
     }

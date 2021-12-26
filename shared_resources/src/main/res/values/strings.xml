@@ -48,5 +48,6 @@
     <string name="action_hangup">Hangup</string>
 
     <string name="action_brightness">Brightness</string>
+    <string name="action_hotspot">WiFi Hotspot</string>
 
 </resources>

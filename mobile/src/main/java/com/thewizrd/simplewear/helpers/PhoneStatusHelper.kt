@@ -15,9 +15,11 @@ import android.location.LocationManager
 import android.media.AudioManager
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
+import android.net.wifi.WifiConfiguration
 import android.net.wifi.WifiManager
 import android.os.BatteryManager
 import android.os.Build
+import android.os.Handler
 import android.os.PowerManager
 import android.provider.Settings
 import android.util.Log
@@ -25,12 +27,14 @@ import android.view.KeyEvent
 import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
 import androidx.core.location.LocationManagerCompat
+import com.android.dx.stock.ProxyBuilder
 import com.thewizrd.shared_resources.actions.*
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.simplewear.ScreenLockAdminReceiver
 import com.thewizrd.simplewear.services.TorchService
 import com.thewizrd.simplewear.services.TorchService.Companion.enqueueWork
 import kotlinx.coroutines.delay
+import java.lang.reflect.Method
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
@@ -642,4 +646,209 @@ object PhoneStatusHelper {
         }
         return ActionStatus.PERMISSION_DENIED
     }
+
+    /*
+     * Wifi Tethering Methods
+     *
+     * Credit to the following:
+     * https://github.com/aegis1980/WifiHotSpot
+     * https://stackoverflow.com/a/52219887
+     * https://github.com/C-D-Lewis/dashboard
+     */
+    private const val WIFI_AP_STATE_DISABLING = 10
+    private const val WIFI_AP_STATE_DISABLED = 11
+    private const val WIFI_AP_STATE_ENABLING = 12
+    private const val WIFI_AP_STATE_ENABLED = 13
+    private const val WIFI_AP_STATE_FAILED = 14
+
+    fun getWifiApState(context: Context): Int {
+        return runCatching {
+            if (ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.ACCESS_WIFI_STATE
+                ) == PackageManager.PERMISSION_GRANTED
+            ) {
+                val wifiMan =
+                    context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+                val getWifiApStateMethod = wifiMan.javaClass.getMethod("getWifiApState")
+
+                val state = getWifiApStateMethod.invoke(wifiMan) as Int
+
+                return state
+            }
+
+            return WIFI_AP_STATE_FAILED
+        }.onFailure {
+            Logger.writeLine(Log.ERROR, it, "Error getting wifi AP state")
+        }.getOrDefault(WIFI_AP_STATE_ENABLED)
+    }
+
+    fun isWifiApEnabled(context: Context): Boolean {
+        val state = getWifiApState(context)
+
+        return when (state) {
+            WIFI_AP_STATE_ENABLED, WIFI_AP_STATE_ENABLING -> true
+            WIFI_AP_STATE_DISABLED, WIFI_AP_STATE_DISABLING -> false
+            else -> {
+                Logger.writeLine(Log.ERROR, "Invalid Wifi AP state: $state")
+                return false
+            }
+        }
+    }
+
+    private fun getWifiApConfiguration(context: Context): WifiConfiguration? {
+        return runCatching {
+            val wifiMan =
+                context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+            val getWifiApConfigurationMethod = wifiMan.javaClass.getMethod("getWifiApConfiguration")
+
+            val config = getWifiApConfigurationMethod.invoke(wifiMan) as? WifiConfiguration?
+
+            return config
+        }.onFailure {
+            Logger.writeLine(Log.ERROR, it, "Error getting wifi AP config")
+        }.getOrNull()
+    }
+
+    fun setWifiApEnabled(context: Context, enable: Boolean): ActionStatus {
+        return runCatching {
+            if (ContextCompat.checkSelfPermission(context, Manifest.permission.CHANGE_WIFI_STATE) ==
+                PackageManager.PERMISSION_GRANTED
+            ) {
+                val wifiMan =
+                    context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    val retVal = if (enable) {
+                        startTethering(context)
+                    } else {
+                        stopTethering(context)
+                    }
+
+                    return if (retVal) ActionStatus.SUCCESS else ActionStatus.FAILURE
+                } else {
+                    if (enable) {
+                        // WiFi tethering requires WiFi to be off
+                        wifiMan.isWifiEnabled = false
+                    }
+
+                    val setWifiApEnabledMethod = wifiMan.javaClass.getMethod(
+                        "setWifiApEnabled",
+                        WifiConfiguration::class.java,
+                        Boolean::class.java
+                    )
+                    val retVal = setWifiApEnabledMethod.invoke(
+                        wifiMan,
+                        getWifiApConfiguration(context),
+                        enable
+                    ) as Boolean
+                    return if (retVal) ActionStatus.SUCCESS else ActionStatus.FAILURE
+                }
+            }
+            return ActionStatus.PERMISSION_DENIED
+        }.onFailure {
+            Logger.writeLine(Log.ERROR, it, "Error getting wifi AP state")
+        }.getOrDefault(ActionStatus.FAILURE)
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun isTetheringActive(context: Context): Boolean {
+        return runCatching {
+            val cm =
+                context.applicationContext.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+
+            val getTetheredIfacesMethod = cm.javaClass.getDeclaredMethod("getTetheredIfaces")
+            if (getTetheredIfacesMethod != null) {
+                val resArr = getTetheredIfacesMethod.invoke(cm, null) as? Array<*>
+                if (!resArr.isNullOrEmpty()) {
+                    return true
+                }
+            }
+
+            return false
+        }.onFailure {
+            Logger.writeLine(Log.ERROR, it, "Error getting tethering state")
+        }.getOrDefault(false)
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun startTethering(context: Context): Boolean {
+        return runCatching {
+            if (isTetheringActive(context)) {
+                return false
+            }
+
+            val codeCacheDir = context.applicationContext.codeCacheDir
+            val proxy = try {
+                ProxyBuilder.forClass(getOnStartTetheringCallbackClass())
+                    .dexCache(codeCacheDir).handler { proxy, method, args ->
+                        when (method?.name) {
+                            "onTetheringStarted" -> {}
+                            "onTetheringFailed" -> {}
+                            else -> {
+                                ProxyBuilder.callSuper(proxy, method, args)
+                            }
+                        }
+
+                        null
+                    }.build()
+            } catch (e: Exception) {
+                Logger.writeLine(Log.ERROR, e, "startTethering: Error ProxyBuilder")
+                return@runCatching false
+            }
+
+            val cm =
+                context.applicationContext.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+
+            try {
+                val method = cm.javaClass.getDeclaredMethod(
+                    "startTethering",
+                    Int::class.java,
+                    Boolean::class.java,
+                    getOnStartTetheringCallbackClass(),
+                    Handler::class.java
+                ) as? Method?
+                if (method != null) {
+                    method.invoke(cm, ConnectivityManager.TYPE_MOBILE, false, proxy, null)
+                    return true
+                } else {
+                    Logger.writeLine(Log.ERROR, "startTethering method is unavailable")
+                }
+            } catch (e: Exception) {
+                Logger.writeLine(Log.ERROR, e, "Error starting tethering")
+            }
+
+            false
+        }.getOrDefault(false)
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun stopTethering(context: Context): Boolean {
+        return runCatching {
+            val cm =
+                context.applicationContext.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+            val method =
+                cm.javaClass.getDeclaredMethod("stopTethering", Int::class.java) as? Method?
+            if (method != null) {
+                method.invoke(cm, ConnectivityManager.TYPE_MOBILE)
+                return true
+            } else {
+                Logger.writeLine(Log.ERROR, "stopTethering method is unavailable")
+            }
+
+            false
+        }.onFailure {
+            Logger.writeLine(Log.ERROR, it, "Error stopping tethering")
+        }.getOrDefault(false)
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun getOnStartTetheringCallbackClass(): Class<*>? {
+        return runCatching {
+            Class.forName("android.net.ConnectivityManager\$OnStartTetheringCallback")
+        }.onFailure {
+            Logger.writeLine(Log.ERROR, it, "Error getting OnStartTetheringCallback class")
+        }.getOrNull()
+    }
+    /* End of Wifi Tethering methods */
 }

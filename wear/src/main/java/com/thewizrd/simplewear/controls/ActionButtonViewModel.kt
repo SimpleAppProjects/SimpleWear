@@ -269,6 +269,13 @@ class ActionButtonViewModel(val action: Action) {
                 actionLabel = context.getString(R.string.action_brightness)
                 stateLabel = null
             }
+            Actions.HOTSPOT -> {
+                tA = action as ToggleAction
+                drawableID = R.drawable.ic_wifi_tethering
+                actionLabel = context.getString(R.string.action_hotspot)
+                stateLabel =
+                    if (tA.isEnabled) context.getString(R.string.state_on) else context.getString(R.string.state_off)
+            }
         }
     }
 }

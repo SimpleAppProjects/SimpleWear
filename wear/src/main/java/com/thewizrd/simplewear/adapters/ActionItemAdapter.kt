@@ -38,7 +38,8 @@ class ActionItemAdapter(activity: Activity) : RecyclerView.Adapter<ActionItemAda
                 Actions.WIFI,
                 Actions.BLUETOOTH,
                 Actions.MOBILEDATA,
-                Actions.TORCH ->
+                Actions.TORCH,
+                Actions.HOTSPOT ->
                     mDataset.add(ActionButtonViewModel(ToggleAction(action, true)))
                 Actions.LOCATION ->
                     mDataset.add(
@@ -151,7 +152,7 @@ class ActionItemAdapter(activity: Activity) : RecyclerView.Adapter<ActionItemAda
 
     override fun getItemViewType(position: Int): Int {
         return when (mDataset[position].actionType) {
-            Actions.WIFI, Actions.BLUETOOTH, Actions.MOBILEDATA, Actions.TORCH -> {
+            Actions.WIFI, Actions.BLUETOOTH, Actions.MOBILEDATA, Actions.TORCH, Actions.HOTSPOT -> {
                 ActionItemType.TOGGLE_ACTION
             }
             Actions.LOCATION -> ActionItemType.TOGGLE_ACTION
