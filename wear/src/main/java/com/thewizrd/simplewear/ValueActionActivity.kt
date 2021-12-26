@@ -351,6 +351,37 @@ class ValueActionActivity : WearableListenerActivity() {
                 } else {
                     binding.actionIcon.setImageResource(R.drawable.ic_brightness_medium)
                 }
+            } else if (messageEvent.path == WearableHelper.AudioVolumePath || messageEvent.path == WearableHelper.ValueStatusSetPath) {
+                val status = ActionStatus.valueOf(messageEvent.data.bytesToString())
+
+                when (status) {
+                    ActionStatus.UNKNOWN, ActionStatus.FAILURE -> {
+                        CustomConfirmationOverlay()
+                            .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
+                            .setCustomDrawable(
+                                ContextCompat.getDrawable(
+                                    this@ValueActionActivity,
+                                    R.drawable.ws_full_sad
+                                )
+                            )
+                            .setMessage(getString(R.string.error_actionfailed))
+                            .showOn(this@ValueActionActivity)
+                    }
+                    ActionStatus.PERMISSION_DENIED -> {
+                        CustomConfirmationOverlay()
+                            .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
+                            .setCustomDrawable(
+                                ContextCompat.getDrawable(
+                                    this@ValueActionActivity,
+                                    R.drawable.ws_full_sad
+                                )
+                            )
+                            .setMessage(getString(R.string.error_permissiondenied))
+                            .showOn(this@ValueActionActivity)
+
+                        openAppOnPhone(false)
+                    }
+                }
             }
         }
     }
