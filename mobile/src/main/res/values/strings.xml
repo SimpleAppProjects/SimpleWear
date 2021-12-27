@@ -51,7 +51,8 @@
 
     <string name="url_wearsettings_helper" translatable="false">https://github.com/SimpleAppProjects/SimpleWear/wiki/SimpleWear-Settings-helper</string>
 
+    <string name="permission_title_systemsettings">System Settings</string>
     <string name="permission_systemsettings_enabled">Modify System Settings permission granted.</string>
-    <string name="permission_systemsettings_disabled">Modify System Settings permission disabled. Please click to enable controlling brightness from WearOS device</string>
+    <string name="permission_systemsettings_disabled">Modify System Settings permission disabled. Please click to enable controlling brightness and WiFi hotspot from WearOS device</string>
 
 </resources>

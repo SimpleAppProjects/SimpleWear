@@ -35,6 +35,7 @@ import com.thewizrd.simplewear.services.TorchService
 import com.thewizrd.simplewear.services.TorchService.Companion.enqueueWork
 import kotlinx.coroutines.delay
 import java.lang.reflect.Method
+import java.util.*
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
@@ -719,13 +720,20 @@ object PhoneStatusHelper {
                     context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    val retVal = if (enable) {
-                        startTethering(context)
-                    } else {
-                        stopTethering(context)
-                    }
+                    return if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R || isWriteSystemSettingsPermissionEnabled(
+                            context
+                        )
+                    ) {
+                        val retVal = if (enable) {
+                            startTethering(context)
+                        } else {
+                            stopTethering(context)
+                        }
 
-                    return if (retVal) ActionStatus.SUCCESS else ActionStatus.FAILURE
+                        if (retVal) ActionStatus.SUCCESS else ActionStatus.FAILURE
+                    } else {
+                        ActionStatus.PERMISSION_DENIED
+                    }
                 } else {
                     if (enable) {
                         // WiFi tethering requires WiFi to be off
@@ -759,7 +767,7 @@ object PhoneStatusHelper {
 
             val getTetheredIfacesMethod = cm.javaClass.getDeclaredMethod("getTetheredIfaces")
             if (getTetheredIfacesMethod != null) {
-                val resArr = getTetheredIfacesMethod.invoke(cm, null) as? Array<*>
+                val resArr = getTetheredIfacesMethod.invoke(cm) as? Array<*>
                 if (!resArr.isNullOrEmpty()) {
                     return true
                 }
@@ -770,6 +778,15 @@ object PhoneStatusHelper {
             Logger.writeLine(Log.ERROR, it, "Error getting tethering state")
         }.getOrDefault(false)
     }
+
+    /*
+     * android.net
+     * ConnectivityManager / TetheringManager constants
+     */
+    private const val TETHERING_INVALID = -1
+    private const val TETHERING_WIFI = 0
+    private const val TETHERING_USB = 1
+    private const val TETHERING_BLUETOOTH = 2
 
     @RequiresApi(Build.VERSION_CODES.O)
     private fun startTethering(context: Context): Boolean {
@@ -783,8 +800,15 @@ object PhoneStatusHelper {
                 ProxyBuilder.forClass(getOnStartTetheringCallbackClass())
                     .dexCache(codeCacheDir).handler { proxy, method, args ->
                         when (method?.name) {
-                            "onTetheringStarted" -> {}
-                            "onTetheringFailed" -> {}
+                            "onTetheringStarted" -> {
+                                Logger.writeLine(Log.INFO, "Proxy: onTetheringStarted")
+                            }
+                            "onTetheringFailed" -> {
+                                Logger.writeLine(
+                                    Log.INFO,
+                                    "Proxy: onTetheringFailed: args = " + Arrays.toString(args)
+                                )
+                            }
                             else -> {
                                 ProxyBuilder.callSuper(proxy, method, args)
                             }
@@ -809,7 +833,7 @@ object PhoneStatusHelper {
                     Handler::class.java
                 ) as? Method?
                 if (method != null) {
-                    method.invoke(cm, ConnectivityManager.TYPE_MOBILE, false, proxy, null)
+                    method.invoke(cm, TETHERING_WIFI, false, proxy, null)
                     return true
                 } else {
                     Logger.writeLine(Log.ERROR, "startTethering method is unavailable")
@@ -830,7 +854,7 @@ object PhoneStatusHelper {
             val method =
                 cm.javaClass.getDeclaredMethod("stopTethering", Int::class.java) as? Method?
             if (method != null) {
-                method.invoke(cm, ConnectivityManager.TYPE_MOBILE)
+                method.invoke(cm, TETHERING_WIFI)
                 return true
             } else {
                 Logger.writeLine(Log.ERROR, "stopTethering method is unavailable")
