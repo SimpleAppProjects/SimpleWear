@@ -535,9 +535,11 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
                 onUpdate()
                 onUpdateQueue()
             }
-            if (state != null) {
-                mController?.let {
-                    mCustomControlsAdapter.setActions(it, state.actions, state.customActions)
+            scope.launch {
+                if (state != null) {
+                    mController?.let {
+                        mCustomControlsAdapter.setActions(it, state.actions, state.customActions)
+                    }
                 }
             }
         }
