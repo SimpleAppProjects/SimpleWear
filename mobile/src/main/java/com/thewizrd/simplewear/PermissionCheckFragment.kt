@@ -71,17 +71,18 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
                 val mScreenLockAdmin =
                     ComponentName(requireContext(), ScreenLockAdminReceiver::class.java)
 
-                // Launch the activity to have the user enable our admin.
-                val intent = Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN)
-                intent.putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, mScreenLockAdmin)
-                startActivityForResult(intent, DEVADMIN_REQCODE)
+                runCatching {
+                    // Launch the activity to have the user enable our admin.
+                    val intent = Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN)
+                    intent.putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, mScreenLockAdmin)
+                    startActivityForResult(intent, DEVADMIN_REQCODE)
+                }
             }
         }
         binding.dndPref.setOnClickListener {
             if (!isNotificationAccessAllowed(requireContext())) {
-                try {
+                runCatching {
                     startActivity(Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS))
-                } catch (e: ActivityNotFoundException) {
                 }
             }
         }
@@ -93,9 +94,8 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
 
         binding.notiflistenerPref.setOnClickListener {
             if (!NotificationListener.isEnabled(requireContext())) {
-                try {
+                runCatching {
                     startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
-                } catch (e: ActivityNotFoundException) {
                 }
             }
         }
