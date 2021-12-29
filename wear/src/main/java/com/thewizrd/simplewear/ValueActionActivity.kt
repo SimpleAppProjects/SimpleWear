@@ -55,6 +55,7 @@ class ValueActionActivity : WearableListenerActivity() {
     private val rsbScope = CoroutineScope(
         SupervisorJob() + Executors.newSingleThreadExecutor().asCoroutineDispatcher()
     )
+    private var progressBarJob: Job? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -310,44 +311,45 @@ class ValueActionActivity : WearableListenerActivity() {
 
         lifecycleScope.launch {
             if (messageEvent.path == WearableHelper.AudioStatusPath && mAction == Actions.VOLUME) {
-                val status = messageEvent.data?.let {
-                    JSONParser.deserializer(it.bytesToString(), AudioStreamState::class.java)
-                }
-                mValueActionState = status
+                progressBarJob?.cancel()
+                progressBarJob = async {
+                    if (!isActive) return@async
 
-                if (status == null) {
-                    mStreamType = null
-                    binding.actionIcon.setImageResource(R.drawable.ic_volume_up_white_24dp)
-                    binding.actionValueProgress.progress = 0
-                } else {
-                    mStreamType = status.streamType
-                    when (status.streamType) {
-                        AudioStreamType.MUSIC -> binding.actionIcon.setImageResource(R.drawable.ic_music_note_white_24dp)
-                        AudioStreamType.RINGTONE -> binding.actionIcon.setImageResource(R.drawable.ic_baseline_ring_volume_24dp)
-                        AudioStreamType.VOICE_CALL -> binding.actionIcon.setImageResource(R.drawable.ic_baseline_call_24dp)
-                        AudioStreamType.ALARM -> binding.actionIcon.setImageResource(R.drawable.ic_alarm_white_24dp)
+                    val status = messageEvent.data?.let {
+                        JSONParser.deserializer(it.bytesToString(), AudioStreamState::class.java)
+                    }
+                    mValueActionState = status
+
+                    if (!isActive) return@async
+
+                    if (status == null) {
+                        mStreamType = null
+                        binding.actionIcon.setImageResource(R.drawable.ic_volume_up_white_24dp)
+                    } else {
+                        mStreamType = status.streamType
+                        when (status.streamType) {
+                            AudioStreamType.MUSIC -> binding.actionIcon.setImageResource(R.drawable.ic_music_note_white_24dp)
+                            AudioStreamType.RINGTONE -> binding.actionIcon.setImageResource(R.drawable.ic_baseline_ring_volume_24dp)
+                            AudioStreamType.VOICE_CALL -> binding.actionIcon.setImageResource(R.drawable.ic_baseline_call_24dp)
+                            AudioStreamType.ALARM -> binding.actionIcon.setImageResource(R.drawable.ic_alarm_white_24dp)
+                        }
                     }
 
-                    binding.actionValueProgress.max = status.maxVolume
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        binding.actionValueProgress.min = status.minVolume
-                    }
-                    binding.actionValueProgress.progress = status.currentVolume
+                    updateProgressBar(status)
                 }
             } else if (messageEvent.path == WearableHelper.ValueStatusPath) {
-                val status = messageEvent.data?.let {
-                    JSONParser.deserializer(it.bytesToString(), ValueActionState::class.java)
-                }
-                mValueActionState = status
+                progressBarJob?.cancel()
+                progressBarJob = async {
+                    if (!isActive) return@async
 
-                if (status == null) {
-                    binding.actionValueProgress.progress = 0
-                } else {
-                    binding.actionValueProgress.max = status.maxValue
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        binding.actionValueProgress.min = status.minValue
+                    val status = messageEvent.data?.let {
+                        JSONParser.deserializer(it.bytesToString(), ValueActionState::class.java)
                     }
-                    binding.actionValueProgress.progress = status.currentValue
+                    mValueActionState = status
+
+                    if (!isActive) return@async
+
+                    updateProgressBar(status)
                 }
             } else if (messageEvent.path == WearableHelper.BrightnessModePath && mAction == Actions.BRIGHTNESS) {
                 val enabled = messageEvent.data.bytesToBool()
@@ -533,6 +535,18 @@ class ValueActionActivity : WearableListenerActivity() {
         }
 
         return super.onGenericMotionEvent(event)
+    }
+
+    private fun updateProgressBar(state: ValueActionState?) {
+        if (state == null) {
+            binding.actionValueProgress.progress = 0
+        } else {
+            binding.actionValueProgress.max = state.maxValue
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                binding.actionValueProgress.min = state.minValue
+            }
+            binding.actionValueProgress.progress = state.currentValue
+        }
     }
 
     private fun scaleValue(

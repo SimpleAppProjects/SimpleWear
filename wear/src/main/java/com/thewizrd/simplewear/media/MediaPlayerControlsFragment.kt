@@ -54,6 +54,7 @@ class MediaPlayerControlsFragment : LifecycleAwareFragment(), MessageClient.OnMe
     private val volumeScope = CoroutineScope(
         SupervisorJob() + Executors.newSingleThreadExecutor().asCoroutineDispatcher()
     )
+    private var progressBarJob: Job? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -322,21 +323,21 @@ class MediaPlayerControlsFragment : LifecycleAwareFragment(), MessageClient.OnMe
             when (messageEvent.path) {
                 WearableHelper.AudioStatusPath,
                 MediaHelper.MediaVolumeStatusPath -> {
-                    val status = messageEvent.data?.let {
-                        JSONParser.deserializer(it.bytesToString(), AudioStreamState::class.java)
-                    }
-                    mAudioStreamState = status
+                    progressBarJob?.cancel()
+                    progressBarJob = async {
+                        if (!isActive) return@async
 
-                    lifecycleScope.launch {
-                        if (status == null) {
-                            binding.volumeProgressBar.progress = 0
-                        } else {
-                            binding.volumeProgressBar.max = status.maxVolume
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                                binding.volumeProgressBar.min = status.minVolume
-                            }
-                            binding.volumeProgressBar.progress = status.currentVolume
+                        val status = messageEvent.data?.let {
+                            JSONParser.deserializer(
+                                it.bytesToString(),
+                                AudioStreamState::class.java
+                            )
                         }
+                        mAudioStreamState = status
+
+                        if (!isActive) return@async
+
+                        updateProgressBar(status)
                     }
                 }
                 MediaHelper.MediaPlayPath -> {
@@ -351,6 +352,18 @@ class MediaPlayerControlsFragment : LifecycleAwareFragment(), MessageClient.OnMe
                     }
                 }
             }
+        }
+    }
+
+    private fun updateProgressBar(state: ValueActionState?) {
+        if (state == null) {
+            binding.volumeProgressBar.progress = 0
+        } else {
+            binding.volumeProgressBar.max = state.maxValue
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                binding.volumeProgressBar.min = state.minValue
+            }
+            binding.volumeProgressBar.progress = state.currentValue
         }
     }
 
