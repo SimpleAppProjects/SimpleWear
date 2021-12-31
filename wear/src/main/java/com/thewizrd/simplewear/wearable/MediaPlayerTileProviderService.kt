@@ -18,8 +18,8 @@ import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.shared_resources.helpers.toImmutableCompatFlag
 import com.thewizrd.shared_resources.media.PlaybackState
 import com.thewizrd.shared_resources.utils.*
+import com.thewizrd.simplewear.MediaPlayerListActivity
 import com.thewizrd.simplewear.R
-import com.thewizrd.simplewear.media.MediaPlayerActivity
 import kotlinx.coroutines.*
 import kotlinx.coroutines.tasks.await
 import timber.log.Timber
@@ -216,7 +216,7 @@ class MediaPlayerTileProviderService : TileProviderService(),
     }
 
     private fun getTapIntent(context: Context): PendingIntent {
-        val onClickIntent = Intent(context.applicationContext, MediaPlayerActivity::class.java)
+        val onClickIntent = Intent(context.applicationContext, MediaPlayerListActivity::class.java)
         return PendingIntent.getActivity(context, 0, onClickIntent, PendingIntent.FLAG_IMMUTABLE)
     }
 
