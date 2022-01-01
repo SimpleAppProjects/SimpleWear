@@ -342,7 +342,8 @@ class DashboardActivity : WearableListenerActivity(), OnSharedPreferenceChangeLi
             override fun onDrawerStateChanged(layout: WearableDrawerLayout, newState: Int) {
                 super.onDrawerStateChanged(layout, newState)
                 if (newState == WearableDrawerView.STATE_IDLE &&
-                        binding.bottomActionDrawer.isPeeking && binding.bottomActionDrawer.hasFocus()) {
+                    binding.bottomActionDrawer.isPeeking && binding.bottomActionDrawer.hasFocus()
+                ) {
                     binding.bottomActionDrawer.clearFocus()
                 }
             }
@@ -351,7 +352,8 @@ class DashboardActivity : WearableListenerActivity(), OnSharedPreferenceChangeLi
         binding.bottomActionDrawer.setIsAutoPeekEnabled(true)
         binding.bottomActionDrawer.isPeekOnScrollDownEnabled = true
 
-        binding.swipeLayout.setColorSchemeColors(getAttrColor(R.attr.colorPrimary))
+        binding.swipeLayout.setProgressBackgroundColorSchemeColor(getAttrColor(R.attr.colorSurface))
+        binding.swipeLayout.setColorSchemeColors(getAttrColor(R.attr.colorAccent))
         binding.swipeLayout.setOnRefreshListener {
             lifecycleScope.launch {
                 requestUpdate()
