@@ -504,14 +504,11 @@ class ValueActionActivity : WearableListenerActivity() {
 
                 val scaledValue = currValue + delta
                 mRemoteValue = normalize(scaledValue, 0f, scaleMax)
-                val value = normalizeToState(
-                    scaleValueToState(
-                        scaledValue,
-                        0f,
-                        scaleMax,
-                        valueState
-                    ).roundToInt(), valueState
-                )
+
+                val scaledDownValue = scaleValueToState(scaledValue, 0f, scaleMax, valueState).run {
+                    if (!this.isNaN()) this else 0f
+                }
+                val value = normalizeToState(scaledDownValue.roundToInt(), valueState)
 
                 if (BuildConfig.DEBUG) {
                     Log.d(

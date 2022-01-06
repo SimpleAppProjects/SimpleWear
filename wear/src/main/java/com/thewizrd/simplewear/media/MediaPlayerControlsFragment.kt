@@ -158,14 +158,12 @@ class MediaPlayerControlsFragment : LifecycleAwareFragment(), MessageClient.OnMe
 
                     val scaledVolume = currVolume + delta
                     mRemoteVolume = normalize(scaledVolume, 0f, scaleMax)
-                    val volume = normalizeToState(
-                        scaleValueToState(
-                            scaledVolume,
-                            0f,
-                            scaleMax,
-                            audioState
-                        ).roundToInt(), audioState
-                    )
+
+                    val scaledDownValue =
+                        scaleValueToState(scaledVolume, 0f, scaleMax, audioState).run {
+                            if (!this.isNaN()) this else 0f
+                        }
+                    val volume = normalizeToState(scaledDownValue.roundToInt(), audioState)
 
                     if (BuildConfig.DEBUG) {
                         Log.d(
