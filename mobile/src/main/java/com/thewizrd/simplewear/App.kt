@@ -74,24 +74,36 @@ class App : Application(), ApplicationLib, ActivityLifecycleCallbacks, Configura
 
         // Init common action broadcast receiver
         mActionsReceiver = object : BroadcastReceiver() {
+            private var mBatteryPct: Int? = null
+            private var mIsBatteryCharging: Boolean? = null
+
             override fun onReceive(context: Context, intent: Intent) {
                 when (intent.action) {
                     Intent.ACTION_BATTERY_CHANGED -> {
                         val level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
                         val scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, -1)
-                        val battPct = (level / scale.toFloat() * 100).toInt()
                         val batStatus = intent.getIntExtra(BatteryManager.EXTRA_STATUS, -1)
+
+                        val battPct = (level / scale.toFloat() * 100f).toInt()
                         val isCharging =
                             batStatus == BatteryManager.BATTERY_STATUS_CHARGING || batStatus == BatteryManager.BATTERY_STATUS_FULL
-                        val jsonData = JSONParser.serializer(
-                            BatteryStatus(battPct, isCharging),
-                            BatteryStatus::class.java
-                        )
-                        WearableWorker.sendStatusUpdate(
-                            context,
-                            WearableWorker.ACTION_SENDBATTERYUPDATE,
-                            jsonData
-                        )
+
+                        val sendUpdate = mBatteryPct != battPct || mIsBatteryCharging != isCharging
+
+                        mBatteryPct = battPct
+                        mIsBatteryCharging = isCharging
+
+                        if (sendUpdate) {
+                            val jsonData = JSONParser.serializer(
+                                BatteryStatus(battPct, isCharging),
+                                BatteryStatus::class.java
+                            )
+                            WearableWorker.sendStatusUpdate(
+                                context,
+                                WearableWorker.ACTION_SENDBATTERYUPDATE,
+                                jsonData
+                            )
+                        }
                     }
                     LocationManager.PROVIDERS_CHANGED_ACTION,
                     LocationManager.MODE_CHANGED_ACTION -> {
