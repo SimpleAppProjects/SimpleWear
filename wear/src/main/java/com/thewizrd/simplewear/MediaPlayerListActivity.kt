@@ -388,7 +388,9 @@ class MediaPlayerListActivity : WearableListenerActivity(), MessageClient.OnMess
                 if (filteredApps.isNullOrEmpty()) {
                     mMediaAppsList.toList()
                 } else {
-                    mMediaAppsList.filter { filteredApps.contains(it.packageName) }
+                    mMediaAppsList.toMutableList().apply {
+                        removeIf { !filteredApps.contains(it.packageName) }
+                    }
                 }
             )
             showProgressBar(false)
