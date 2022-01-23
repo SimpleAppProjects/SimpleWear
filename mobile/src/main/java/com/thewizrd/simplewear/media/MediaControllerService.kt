@@ -287,12 +287,20 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
 
     private fun disconnectMedia(invalidateData: Boolean = false) {
         if (mController != null) {
-            mController?.unregisterCallback(mCallback)
+            runCatching {
+                mController?.unregisterCallback(mCallback)
+            }.onFailure {
+                Logger.writeLine(Log.ERROR, it)
+            }
             mController = null
         }
 
         if (mBrowser?.isConnected == true) {
-            mBrowser?.disconnect()
+            runCatching {
+                mBrowser?.disconnect()
+            }.onFailure {
+                Logger.writeLine(Log.ERROR, it)
+            }
         }
         mBrowser = null
 
@@ -859,7 +867,11 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
     }
 
     private fun controllerSupportsPlayFromSearch(): Boolean {
-        return mController?.playbackState != null && mController!!.playbackState.actions and PlaybackStateCompat.ACTION_PLAY_FROM_SEARCH != 0L
+        return runCatching {
+            mController?.playbackState != null && mController!!.playbackState.actions and PlaybackStateCompat.ACTION_PLAY_FROM_SEARCH != 0L
+        }.onFailure {
+            Logger.writeLine(Log.ERROR, it)
+        }.getOrDefault(false)
     }
 
     private fun supportsPlayFromSearch(): Boolean {
@@ -891,7 +903,11 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
                 putExtra(SearchManager.QUERY, query)
             }
 
-            startActivity(intent)
+            runCatching {
+                startActivity(intent)
+            }.onFailure {
+                Logger.writeLine(Log.ERROR, it)
+            }
 
             // Notify wear device if successful
             scope.launch {
@@ -1311,8 +1327,11 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
         ) {
             mControls = controller.transportControls
             mQueueItems = queueItems ?: emptyList()
-            mActiveQueueItemId = controller.playbackState?.activeQueueItemId
-                ?: MediaSessionCompat.QueueItem.UNKNOWN_ID.toLong()
+            mActiveQueueItemId = runCatching {
+                controller.playbackState?.activeQueueItemId
+            }.onFailure {
+                Logger.writeLine(Log.ERROR, it)
+            }.getOrNull() ?: MediaSessionCompat.QueueItem.UNKNOWN_ID.toLong()
             onDatasetChanged()
         }
     }

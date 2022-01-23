@@ -113,11 +113,16 @@ object PhoneStatusHelper {
     }
 
     fun isMobileDataEnabled(context: Context): Boolean {
-        val mobileDataSettingEnabled =
-            Settings.Global.getInt(context.contentResolver, "mobile_data", 0) == 1
-        val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-        val cap = cm.getNetworkCapabilities(cm.activeNetwork)
-        return cap != null && cap.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) || mobileDataSettingEnabled
+        return try {
+            val mobileDataSettingEnabled =
+                Settings.Global.getInt(context.contentResolver, "mobile_data", 0) == 1
+            val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+            val cap = cm.getNetworkCapabilities(cm.activeNetwork)
+            cap != null && cap.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) || mobileDataSettingEnabled
+        } catch (e: Exception) {
+            Logger.writeLine(Log.ERROR, e)
+            false
+        }
     }
 
     fun isLocationEnabled(context: Context): Boolean {
