@@ -34,42 +34,7 @@ class ActionItemAdapter(activity: Activity) : RecyclerView.Adapter<ActionItemAda
         mActivityContext = activity
 
         for (action in Actions.values()) {
-            when (action) {
-                Actions.WIFI,
-                Actions.BLUETOOTH,
-                Actions.MOBILEDATA,
-                Actions.TORCH,
-                Actions.HOTSPOT ->
-                    mDataset.add(ActionButtonViewModel(ToggleAction(action, true)))
-                Actions.LOCATION ->
-                    mDataset.add(
-                        ActionButtonViewModel(
-                            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P)
-                                MultiChoiceAction(action)
-                            else
-                                ToggleAction(action, true)
-                        )
-                    )
-                Actions.LOCKSCREEN,
-                Actions.MUSICPLAYBACK,
-                Actions.SLEEPTIMER,
-                Actions.APPS,
-                Actions.PHONE ->
-                    mDataset.add(ActionButtonViewModel(NormalAction(action)))
-                Actions.VOLUME, Actions.BRIGHTNESS ->
-                    mDataset.add(ActionButtonViewModel(ValueAction(action, ValueDirection.UP)))
-                Actions.DONOTDISTURB ->
-                    mDataset.add(
-                        ActionButtonViewModel(
-                            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P)
-                                MultiChoiceAction(action)
-                            else
-                                ToggleAction(action, true)
-                        )
-                    )
-                Actions.RINGER ->
-                    mDataset.add(ActionButtonViewModel(MultiChoiceAction(action)))
-            }
+            mDataset.add(ActionButtonViewModel.getViewModelFromAction(action))
         }
     }
 

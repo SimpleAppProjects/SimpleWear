@@ -39,6 +39,7 @@ import com.thewizrd.simplewear.controls.CustomConfirmationOverlay
 import com.thewizrd.simplewear.controls.WearChipButton
 import com.thewizrd.simplewear.databinding.ActivityDashboardBinding
 import com.thewizrd.simplewear.helpers.showConfirmationOverlay
+import com.thewizrd.simplewear.preferences.DashboardTileConfigActivity
 import com.thewizrd.simplewear.preferences.Settings
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.guava.await
@@ -387,6 +388,10 @@ class DashboardActivity : WearableListenerActivity(), OnSharedPreferenceChangeLi
             Settings.setGridLayout(!Settings.useGridLayout())
         }
         updateLayoutPref()
+
+        findViewById<View>(R.id.tiledashconfig_pref).setOnClickListener {
+            startActivity(Intent(this, DashboardTileConfigActivity::class.java))
+        }
 
         intentFilter = IntentFilter().apply {
             addAction(ACTION_UPDATECONNECTIONSTATUS)

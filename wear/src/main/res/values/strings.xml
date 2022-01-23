@@ -50,5 +50,8 @@
     <string name="pref_loadicons_title">Load app icons</string>
     <string name="action_launchcontroller">Launch Controller</string>
     <string name="title_nowplaying">Now Playing</string>
+    <string name="title_dashtile_config">Configure Tile</string>
+    <string name="message_reset_to_default">Reset to default?</string>
+    <string name="pref_title_dasheditor">Dashboard Tile Editor</string>
 
 </resources>

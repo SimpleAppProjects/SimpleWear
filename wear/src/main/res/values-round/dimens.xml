@@ -18,4 +18,8 @@
     <dimen name="tile_horizontal_padding">24dp</dimen>
     <dimen name="tile_bottom_padding">24dp</dimen>
     <dimen name="tile_top_padding">8dp</dimen>
+
+    <!-- Tile Config -->
+    <dimen name="tile_config_min_height">120dp</dimen>
+
 </resources>

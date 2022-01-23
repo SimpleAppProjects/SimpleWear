@@ -50,4 +50,8 @@
     <dimen name="tile_action_button_size">40dp</dimen>
     <dimen name="tile_action_button_padding">8dp</dimen>
 
+    <!-- Tile Config -->
+    <dimen name="tile_config_min_height">90dp</dimen>
+    <dimen name="tile_confirm_spacer">16dp</dimen>
+
 </resources>

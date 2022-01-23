@@ -5,12 +5,14 @@ import android.content.Intent
 import android.os.Build
 import androidx.annotation.DrawableRes
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import androidx.recyclerview.widget.DiffUtil
 import com.thewizrd.shared_resources.actions.*
 import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.shared_resources.sleeptimer.SleepTimerHelper
 import com.thewizrd.shared_resources.utils.JSONParser.serializer
 import com.thewizrd.simplewear.*
 import com.thewizrd.simplewear.WearableListenerActivity.Companion.EXTRA_ACTION
+import java.util.*
 
 class ActionButtonViewModel(val action: Action) {
     @get:DrawableRes
@@ -28,6 +30,59 @@ class ActionButtonViewModel(val action: Action) {
 
     var buttonState: Boolean? = null
         private set
+
+    companion object {
+        val DIFF_CALLBACK = object : DiffUtil.ItemCallback<ActionButtonViewModel>() {
+            override fun areItemsTheSame(
+                oldItem: ActionButtonViewModel,
+                newItem: ActionButtonViewModel
+            ): Boolean {
+                return oldItem.actionType == newItem.actionType
+            }
+
+            override fun areContentsTheSame(
+                oldItem: ActionButtonViewModel,
+                newItem: ActionButtonViewModel
+            ): Boolean {
+                return Objects.equals(oldItem.action, newItem.action)
+            }
+        }
+
+        fun getViewModelFromAction(action: Actions): ActionButtonViewModel {
+            return when (action) {
+                Actions.WIFI,
+                Actions.BLUETOOTH,
+                Actions.MOBILEDATA,
+                Actions.TORCH,
+                Actions.HOTSPOT ->
+                    ActionButtonViewModel(ToggleAction(action, true))
+                Actions.LOCATION ->
+                    ActionButtonViewModel(
+                        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P)
+                            MultiChoiceAction(action)
+                        else
+                            ToggleAction(action, true)
+                    )
+                Actions.LOCKSCREEN,
+                Actions.MUSICPLAYBACK,
+                Actions.SLEEPTIMER,
+                Actions.APPS,
+                Actions.PHONE ->
+                    ActionButtonViewModel(NormalAction(action))
+                Actions.VOLUME, Actions.BRIGHTNESS ->
+                    ActionButtonViewModel(ValueAction(action, ValueDirection.UP))
+                Actions.DONOTDISTURB ->
+                    ActionButtonViewModel(
+                        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P)
+                            MultiChoiceAction(action)
+                        else
+                            ToggleAction(action, true)
+                    )
+                Actions.RINGER ->
+                    ActionButtonViewModel(MultiChoiceAction(action))
+            }
+        }
+    }
 
     init {
         drawableID = R.drawable.ic_close_white_24dp
@@ -277,5 +332,29 @@ class ActionButtonViewModel(val action: Action) {
                     if (tA.isEnabled) context.getString(R.string.state_on) else context.getString(R.string.state_off)
             }
         }
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as ActionButtonViewModel
+
+        if (action != other.action) return false
+        if (actionType != other.actionType) return false
+        if (actionLabel != other.actionLabel) return false
+        if (stateLabel != other.stateLabel) return false
+        if (buttonState != other.buttonState) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = action.hashCode()
+        result = 31 * result + actionType.hashCode()
+        result = 31 * result + (actionLabel?.hashCode() ?: 0)
+        result = 31 * result + (stateLabel?.hashCode() ?: 0)
+        result = 31 * result + (buttonState?.hashCode() ?: 0)
+        return result
     }
 }

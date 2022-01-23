@@ -2,6 +2,9 @@ package com.thewizrd.simplewear.preferences
 
 import androidx.core.content.edit
 import androidx.preference.PreferenceManager
+import com.google.gson.reflect.TypeToken
+import com.thewizrd.shared_resources.actions.Actions
+import com.thewizrd.shared_resources.utils.JSONParser
 import com.thewizrd.simplewear.App
 
 object Settings {
@@ -10,6 +13,7 @@ object Settings {
     private const val KEY_AUTOLAUNCH = "key_autolaunchmediactrls"
     private const val KEY_MUSICFILTER = "key_musicplayerfilter"
     private const val KEY_LOADAPPICONS = "key_loadappicons"
+    private const val KEY_DASHTILECONFIG = "key_dashtileconfig"
 
     fun useGridLayout(): Boolean {
         val preferences = PreferenceManager.getDefaultSharedPreferences(App.instance.appContext)
@@ -57,6 +61,25 @@ object Settings {
         val preferences = PreferenceManager.getDefaultSharedPreferences(App.instance.appContext)
         preferences.edit {
             putBoolean(KEY_LOADAPPICONS, value)
+        }
+    }
+
+    fun getDashboardTileConfig(): List<Actions>? {
+        val preferences = PreferenceManager.getDefaultSharedPreferences(App.instance.appContext)
+        val configJSON = preferences.getString(KEY_DASHTILECONFIG, null)
+        return configJSON?.let {
+            val arrListType = object : TypeToken<List<Actions>>() {}.type
+            JSONParser.deserializer<List<Actions>>(it, arrListType)
+        }
+    }
+
+    fun setDashboardTileConfig(actions: List<Actions>?) {
+        val preferences = PreferenceManager.getDefaultSharedPreferences(App.instance.appContext)
+        preferences.edit {
+            putString(KEY_DASHTILECONFIG, actions?.let {
+                val arrListType = object : TypeToken<List<Actions>>() {}.type
+                JSONParser.serializer(it, arrListType)
+            })
         }
     }
 }
