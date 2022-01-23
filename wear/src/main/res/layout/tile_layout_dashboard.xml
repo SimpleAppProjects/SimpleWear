@@ -60,128 +60,134 @@
         android:rowCount="2">
 
         <FrameLayout
+            android:id="@+id/button_1_layout"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_rowWeight="1"
             android:layout_columnWeight="1"
-            android:layout_gravity="center">
+            android:layout_gravity="center"
+            tools:ignore="ContentDescription">
 
             <ImageButton
-                android:id="@+id/wifi_toggle"
+                android:id="@+id/button_1"
                 android:layout_width="@dimen/tile_action_button_size"
                 android:layout_height="@dimen/tile_action_button_size"
                 android:adjustViewBounds="true"
                 android:background="@drawable/round_button_enabled"
-                android:contentDescription="@string/action_wifi"
                 android:foreground="?android:selectableItemBackgroundBorderless"
                 android:padding="@dimen/tile_action_button_padding"
                 android:scaleType="fitCenter"
-                android:src="@drawable/ic_network_wifi_white_24dp" />
+                tools:src="@drawable/ic_network_wifi_white_24dp" />
 
         </FrameLayout>
 
         <FrameLayout
+            android:id="@+id/button_2_layout"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_rowWeight="1"
             android:layout_columnWeight="1"
-            android:layout_gravity="center">
+            android:layout_gravity="center"
+            tools:ignore="ContentDescription">
 
             <ImageButton
-                android:id="@+id/bt_toggle"
+                android:id="@+id/button_2"
                 android:layout_width="@dimen/tile_action_button_size"
                 android:layout_height="@dimen/tile_action_button_size"
                 android:adjustViewBounds="true"
                 android:background="@drawable/round_button_enabled"
-                android:contentDescription="@string/action_bt"
                 android:foreground="?android:selectableItemBackgroundBorderless"
                 android:padding="@dimen/tile_action_button_padding"
                 android:scaleType="fitCenter"
-                android:src="@drawable/ic_bluetooth_disabled_white_24dp" />
+                tools:src="@drawable/ic_bluetooth_disabled_white_24dp" />
 
         </FrameLayout>
 
         <FrameLayout
+            android:id="@+id/button_3_layout"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_rowWeight="1"
             android:layout_columnWeight="1"
-            android:layout_gravity="center">
+            android:layout_gravity="center"
+            tools:ignore="ContentDescription">
 
             <ImageButton
-                android:id="@+id/lock_toggle"
+                android:id="@+id/button_3"
                 android:layout_width="@dimen/tile_action_button_size"
                 android:layout_height="@dimen/tile_action_button_size"
                 android:adjustViewBounds="true"
                 android:background="@drawable/round_button_enabled"
-                android:contentDescription="@string/action_lockscreen"
                 android:foreground="?android:selectableItemBackgroundBorderless"
                 android:padding="@dimen/tile_action_button_padding"
                 android:scaleType="fitCenter"
-                android:src="@drawable/ic_lock_outline_white_24dp" />
+                tools:src="@drawable/ic_lock_outline_white_24dp" />
 
         </FrameLayout>
 
         <FrameLayout
+            android:id="@+id/button_4_layout"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_rowWeight="1"
             android:layout_columnWeight="1"
-            android:layout_gravity="center">
+            android:layout_gravity="center"
+            tools:ignore="ContentDescription">
 
             <ImageButton
-                android:id="@+id/dnd_toggle"
+                android:id="@+id/button_4"
                 android:layout_width="@dimen/tile_action_button_size"
                 android:layout_height="@dimen/tile_action_button_size"
                 android:adjustViewBounds="true"
                 android:background="@drawable/round_button_enabled"
-                android:contentDescription="@string/action_dnd"
                 android:foreground="?android:selectableItemBackgroundBorderless"
                 android:padding="@dimen/tile_action_button_padding"
                 android:scaleType="fitCenter"
-                android:src="@drawable/ic_do_not_disturb_off_white_24dp" />
+                tools:src="@drawable/ic_do_not_disturb_off_white_24dp" />
 
         </FrameLayout>
 
         <FrameLayout
+            android:id="@+id/button_5_layout"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_rowWeight="1"
             android:layout_columnWeight="1"
-            android:layout_gravity="center">
+            android:layout_gravity="center"
+            tools:ignore="ContentDescription">
 
             <ImageButton
-                android:id="@+id/ringer_toggle"
+                android:id="@+id/button_5"
                 android:layout_width="@dimen/tile_action_button_size"
                 android:layout_height="@dimen/tile_action_button_size"
                 android:adjustViewBounds="true"
                 android:background="@drawable/round_button_enabled"
-                android:contentDescription="@string/action_ringer"
                 android:foreground="?android:selectableItemBackgroundBorderless"
                 android:padding="@dimen/tile_action_button_padding"
                 android:scaleType="fitCenter"
-                android:src="@drawable/ic_vibration_white_24dp" />
+                tools:src="@drawable/ic_vibration_white_24dp" />
 
         </FrameLayout>
 
         <FrameLayout
+            android:id="@+id/button_6_layout"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_rowWeight="1"
             android:layout_columnWeight="1"
-            android:layout_gravity="center">
+            android:layout_gravity="center"
+            tools:ignore="ContentDescription">
 
             <ImageButton
-                android:id="@+id/torch_toggle"
+                android:id="@+id/button_6"
                 android:layout_width="@dimen/tile_action_button_size"
                 android:layout_height="@dimen/tile_action_button_size"
                 android:adjustViewBounds="true"
                 android:background="@drawable/round_button_enabled"
-                android:contentDescription="@string/action_torch"
                 android:foreground="?android:selectableItemBackgroundBorderless"
                 android:padding="@dimen/tile_action_button_padding"
                 android:scaleType="fitCenter"
-                android:src="@drawable/ic_lightbulb_outline_white_24dp" />
+                tools:src="@drawable/ic_lightbulb_outline_white_24dp" />
 
         </FrameLayout>
 

@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.wifi.WifiManager
 import android.util.Log
+import android.view.View
 import android.widget.RemoteViews
 import com.google.android.clockwork.tiles.TileData
 import com.google.android.clockwork.tiles.TileProviderService
@@ -23,6 +24,8 @@ import com.thewizrd.shared_resources.utils.bytesToString
 import com.thewizrd.shared_resources.utils.stringToBytes
 import com.thewizrd.simplewear.PhoneSyncActivity
 import com.thewizrd.simplewear.R
+import com.thewizrd.simplewear.controls.ActionButtonViewModel
+import com.thewizrd.simplewear.preferences.Settings
 import kotlinx.coroutines.*
 import kotlinx.coroutines.tasks.await
 import timber.log.Timber
@@ -31,6 +34,7 @@ import java.util.*
 class DashboardTileProviderService : TileProviderService(), OnMessageReceivedListener, OnCapabilityChangedListener {
     companion object {
         private const val TAG = "DashTileProviderService"
+        private const val MAX_BUTTONS = 6
     }
 
     private var mInFocus = false
@@ -60,9 +64,15 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
         if (!isIdForDummyData(tileId)) {
             id = tileId
             mInFocus = true
+
+            // Update tile actions
+            tileActions.clear()
+            Settings.getDashboardTileConfig()?.let { tileActions.addAll(it) }
+
             sendRemoteViews()
 
-            Wearable.getCapabilityClient(applicationContext).addListener(this, WearableHelper.CAPABILITY_PHONE_APP)
+            Wearable.getCapabilityClient(applicationContext)
+                .addListener(this, WearableHelper.CAPABILITY_PHONE_APP)
             Wearable.getMessageClient(applicationContext).addListener(this)
 
             scope.launch {
@@ -97,6 +107,17 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
         }
     }
 
+    @Volatile
+    private var mPhoneNodeWithApp: Node? = null
+    private var mConnectionStatus = WearConnectionStatus.DISCONNECTED
+
+    private var battStatus: BatteryStatus? = null
+    private val tileActions = mutableListOf<Actions>()
+    private val actionMap = mutableMapOf<Actions, Action>().apply {
+        // Add NormalActions
+        putIfAbsent(Actions.LOCKSCREEN, NormalAction(Actions.LOCKSCREEN))
+    }
+
     private fun buildUpdate(): RemoteViews {
         val views: RemoteViews
 
@@ -126,86 +147,73 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
         views.setOnClickPendingIntent(R.id.tile, getTapIntent(applicationContext))
 
         if (battStatus != null) {
-            val battValue = String.format(Locale.ROOT, "%d%%, %s", battStatus!!.batteryLevel,
-                    if (battStatus!!.isCharging) applicationContext.getString(R.string.batt_state_charging) else applicationContext.getString(R.string.batt_state_discharging))
+            val battValue = String.format(
+                Locale.ROOT, "%d%%, %s", battStatus!!.batteryLevel,
+                if (battStatus!!.isCharging) applicationContext.getString(R.string.batt_state_charging) else applicationContext.getString(
+                    R.string.batt_state_discharging
+                )
+            )
             views.setTextViewText(R.id.batt_stat_text, battValue)
         }
 
-        if (wifiAction != null) {
-            views.setImageViewResource(R.id.wifi_toggle, if (wifiAction!!.isEnabled) R.drawable.ic_network_wifi_white_24dp else R.drawable.ic_signal_wifi_off_white_24dp)
-            views.setInt(R.id.wifi_toggle, "setBackgroundResource", if (wifiAction!!.isEnabled) R.drawable.round_button_enabled else R.drawable.round_button_disabled)
-            views.setOnClickPendingIntent(R.id.wifi_toggle, getActionClickIntent(applicationContext, Actions.WIFI))
-        }
-
-        if (btAction != null) {
-            views.setImageViewResource(R.id.bt_toggle, if (btAction!!.isEnabled) R.drawable.ic_bluetooth_white_24dp else R.drawable.ic_bluetooth_disabled_white_24dp)
-            views.setInt(R.id.bt_toggle, "setBackgroundResource", if (btAction!!.isEnabled) R.drawable.round_button_enabled else R.drawable.round_button_disabled)
-            views.setOnClickPendingIntent(R.id.bt_toggle, getActionClickIntent(applicationContext, Actions.BLUETOOTH))
-        }
-
-        views.setOnClickPendingIntent(R.id.lock_toggle, getActionClickIntent(applicationContext, Actions.LOCKSCREEN))
-
-        if (dndAction != null) {
-            val dndChoice = if (dndAction is ToggleAction) {
-                if ((dndAction as ToggleAction).isEnabled) DNDChoice.PRIORITY else DNDChoice.OFF
-            } else {
-                DNDChoice.valueOf((dndAction as MultiChoiceAction).choice)
-            }
-
-            val mDrawableID = when (dndChoice) {
-                DNDChoice.OFF -> R.drawable.ic_do_not_disturb_off_white_24dp
-                DNDChoice.PRIORITY -> R.drawable.ic_error_white_24dp
-                DNDChoice.ALARMS -> R.drawable.ic_alarm_white_24dp
-                DNDChoice.SILENCE -> R.drawable.ic_notifications_off_white_24dp
-            }
-
-            views.setImageViewResource(R.id.dnd_toggle, mDrawableID)
-            views.setInt(
-                R.id.dnd_toggle,
-                "setBackgroundResource",
-                if (dndChoice != DNDChoice.OFF) R.drawable.round_button_enabled else R.drawable.round_button_disabled
-            )
-            views.setOnClickPendingIntent(
-                R.id.dnd_toggle,
-                getActionClickIntent(applicationContext, Actions.DONOTDISTURB)
-            )
-        }
-
-        if (ringerAction != null) {
-            val ringerChoice = RingerChoice.valueOf(ringerAction!!.choice)
-            val mDrawableID = when (ringerChoice) {
-                RingerChoice.VIBRATION -> R.drawable.ic_vibration_white_24dp
-                RingerChoice.SOUND -> R.drawable.ic_notifications_active_white_24dp
-                RingerChoice.SILENT -> R.drawable.ic_volume_off_white_24dp
-            }
-
-            views.setImageViewResource(R.id.ringer_toggle, mDrawableID)
-            views.setInt(
-                R.id.ringer_toggle,
-                "setBackgroundResource",
-                if (ringerChoice != RingerChoice.SILENT) R.drawable.round_button_enabled else R.drawable.round_button_disabled
-            )
-            views.setOnClickPendingIntent(
-                R.id.ringer_toggle,
-                getActionClickIntent(applicationContext, Actions.RINGER)
-            )
-        }
-
-        if (torchAction != null) {
-            views.setInt(R.id.torch_toggle, "setBackgroundResource", if (torchAction!!.isEnabled) R.drawable.round_button_enabled else R.drawable.round_button_disabled)
-            views.setOnClickPendingIntent(R.id.torch_toggle, getActionClickIntent(applicationContext, Actions.TORCH))
+        for (i in 0 until MAX_BUTTONS) {
+            val action = tileActions.getOrNull(i)
+            updateButton(views, i + 1, action)
         }
 
         return views
     }
 
-    private fun getTapIntent(context: Context?): PendingIntent {
-        val onClickIntent = Intent(context!!.applicationContext, PhoneSyncActivity::class.java)
-        return PendingIntent.getActivity(context, 0, onClickIntent, 0)
+    private fun updateButton(views: RemoteViews, buttonIndex: Int, action: Actions?) {
+        val layoutId = when (buttonIndex) {
+            1 -> R.id.button_1_layout
+            2 -> R.id.button_2_layout
+            3 -> R.id.button_3_layout
+            4 -> R.id.button_4_layout
+            5 -> R.id.button_5_layout
+            6 -> R.id.button_6_layout
+            else -> return
+        }
+
+        val buttonId = when (buttonIndex) {
+            1 -> R.id.button_1
+            2 -> R.id.button_2
+            3 -> R.id.button_3
+            4 -> R.id.button_4
+            5 -> R.id.button_5
+            6 -> R.id.button_6
+            else -> return
+        }
+
+        if (action != null) {
+            actionMap[action]?.let {
+                val model = ActionButtonViewModel(it)
+                views.setImageViewResource(buttonId, model.drawableID)
+                views.setInt(
+                    buttonId,
+                    "setBackgroundResource",
+                    if (model.buttonState != false) R.drawable.round_button_enabled else R.drawable.round_button_disabled
+                )
+                views.setOnClickPendingIntent(
+                    buttonId,
+                    getActionClickIntent(applicationContext, it.actionType)
+                )
+                views.setContentDescription(buttonId, model.actionLabel)
+            }
+            views.setViewVisibility(layoutId, View.VISIBLE)
+        } else {
+            views.setViewVisibility(layoutId, View.GONE)
+        }
     }
 
-    private fun getActionClickIntent(context: Context?, action: Actions): PendingIntent {
-        val onClickIntent = Intent(context!!.applicationContext, DashboardTileProviderService::class.java)
+    private fun getTapIntent(context: Context): PendingIntent {
+        val onClickIntent = Intent(context.applicationContext, PhoneSyncActivity::class.java)
+        return PendingIntent.getActivity(context, 0, onClickIntent, PendingIntent.FLAG_IMMUTABLE)
+    }
+
+    private fun getActionClickIntent(context: Context, action: Actions): PendingIntent {
+        val onClickIntent =
+            Intent(context.applicationContext, DashboardTileProviderService::class.java)
                 .setAction(action.name)
         return PendingIntent.getService(
             context,
@@ -219,67 +227,110 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
         if (intent?.action != null) {
             when (Actions.valueOf(intent.action!!)) {
                 Actions.WIFI -> run {
+                    val wifiAction = actionMap[Actions.WIFI] as? ToggleAction
+
                     if (wifiAction == null) {
                         requestUpdate()
                         return@run
                     }
 
-                    requestAction(ToggleAction(Actions.WIFI, !wifiAction!!.isEnabled))
+                    requestAction(ToggleAction(Actions.WIFI, !wifiAction.isEnabled))
                 }
                 Actions.BLUETOOTH -> run {
+                    val btAction = actionMap[Actions.BLUETOOTH] as? ToggleAction
+
                     if (btAction == null) {
                         requestUpdate()
                         return@run
                     }
 
-                    requestAction(ToggleAction(Actions.BLUETOOTH, !btAction!!.isEnabled))
+                    requestAction(ToggleAction(Actions.BLUETOOTH, !btAction.isEnabled))
                 }
-                Actions.LOCKSCREEN -> requestAction(NormalAction(Actions.LOCKSCREEN))
+                Actions.LOCKSCREEN -> requestAction(
+                    actionMap[Actions.LOCKSCREEN] ?: NormalAction(Actions.LOCKSCREEN)
+                )
                 Actions.DONOTDISTURB -> run {
+                    val dndAction = actionMap[Actions.DONOTDISTURB]
+
                     if (dndAction == null) {
                         requestUpdate()
                         return@run
                     }
 
                     requestAction(
-                            if (dndAction is ToggleAction) {
-                                ToggleAction(Actions.DONOTDISTURB, !(dndAction as ToggleAction).isEnabled)
-                            } else {
-                                MultiChoiceAction(Actions.DONOTDISTURB, (dndAction as MultiChoiceAction).choice + 1)
-                            }
+                        if (dndAction is ToggleAction) {
+                            ToggleAction(Actions.DONOTDISTURB, !dndAction.isEnabled)
+                        } else {
+                            MultiChoiceAction(Actions.DONOTDISTURB, (dndAction as MultiChoiceAction).choice + 1)
+                        }
                     )
                 }
                 Actions.RINGER -> run {
+                    val ringerAction = actionMap[Actions.RINGER] as? MultiChoiceAction
+
                     if (ringerAction == null) {
                         requestUpdate()
                         return@run
                     }
 
-                    requestAction(MultiChoiceAction(Actions.RINGER, ringerAction!!.choice + 1))
+                    requestAction(MultiChoiceAction(Actions.RINGER, ringerAction.choice + 1))
                 }
                 Actions.TORCH -> run {
+                    val torchAction = actionMap[Actions.TORCH] as? ToggleAction
+
                     if (torchAction == null) {
                         requestUpdate()
                         return@run
                     }
 
-                    requestAction(ToggleAction(Actions.TORCH, !torchAction!!.isEnabled))
+                    requestAction(ToggleAction(Actions.TORCH, !torchAction.isEnabled))
+                }
+                Actions.MOBILEDATA -> run {
+                    val mobileDataAction = actionMap[Actions.MOBILEDATA] as? ToggleAction
+
+                    if (mobileDataAction == null) {
+                        requestUpdate()
+                        return@run
+                    }
+
+                    requestAction(ToggleAction(Actions.MOBILEDATA, !mobileDataAction.isEnabled))
+                }
+                Actions.LOCATION -> run {
+                    val locationAction = actionMap[Actions.LOCATION]
+
+                    if (locationAction == null) {
+                        requestUpdate()
+                        return@run
+                    }
+
+                    requestAction(
+                        if (locationAction is ToggleAction) {
+                            ToggleAction(Actions.LOCATION, !locationAction.isEnabled)
+                        } else {
+                            MultiChoiceAction(
+                                Actions.LOCATION,
+                                (locationAction as MultiChoiceAction).choice + 1
+                            )
+                        }
+                    )
+                }
+                Actions.HOTSPOT -> run {
+                    val hotspotAction = actionMap[Actions.HOTSPOT] as? ToggleAction
+
+                    if (hotspotAction == null) {
+                        requestUpdate()
+                        return@run
+                    }
+
+                    requestAction(ToggleAction(Actions.HOTSPOT, !hotspotAction.isEnabled))
+                }
+                else -> {
+                    // ignore unsupported actions
                 }
             }
         }
         return super.onStartCommand(intent, flags, startId)
     }
-
-    @Volatile
-    protected var mPhoneNodeWithApp: Node? = null
-    protected var mConnectionStatus = WearConnectionStatus.DISCONNECTED
-
-    private var battStatus: BatteryStatus? = null
-    private var wifiAction: ToggleAction? = null
-    private var btAction: ToggleAction? = null
-    private var dndAction: Action? = null
-    private var ringerAction: MultiChoiceAction? = null
-    private var torchAction: ToggleAction? = null
 
     override fun onMessageReceived(messageEvent: MessageEvent) {
         val data = messageEvent.data ?: return
@@ -298,20 +349,20 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
                         WifiManager.WIFI_STATE_ENABLED -> enabled = true
                     }
 
-                    wifiAction = ToggleAction(Actions.WIFI, enabled)
+                    actionMap[Actions.WIFI] = ToggleAction(Actions.WIFI, enabled)
                 }
                 messageEvent.path.contains(WearableHelper.BluetoothPath) -> {
-                    val bt_status = data[0].toInt()
+                    val btStatus = data[0].toInt()
                     var enabled = false
 
-                    when (bt_status) {
+                    when (btStatus) {
                         BluetoothAdapter.STATE_OFF,
                         BluetoothAdapter.STATE_TURNING_OFF -> enabled = false
                         BluetoothAdapter.STATE_ON,
                         BluetoothAdapter.STATE_TURNING_ON -> enabled = true
                     }
 
-                    btAction = ToggleAction(Actions.BLUETOOTH, enabled)
+                    actionMap[Actions.BLUETOOTH] = ToggleAction(Actions.BLUETOOTH, enabled)
                 }
                 messageEvent.path == WearableHelper.BatteryPath -> {
                     val jsonData: String = data.bytesToString()
@@ -322,12 +373,21 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
                     val action = JSONParser.deserializer(jsonData, Action::class.java)
 
                     when (action?.actionType) {
-                        Actions.WIFI -> wifiAction = action as ToggleAction
-                        Actions.BLUETOOTH -> btAction = action as ToggleAction
-                        Actions.TORCH -> torchAction = action as ToggleAction
-                        Actions.DONOTDISTURB -> dndAction =
-                            if (action is ToggleAction) action else action as MultiChoiceAction
-                        Actions.RINGER -> ringerAction = action as MultiChoiceAction
+                        Actions.WIFI,
+                        Actions.BLUETOOTH,
+                        Actions.TORCH,
+                        Actions.DONOTDISTURB,
+                        Actions.RINGER,
+                        Actions.MOBILEDATA,
+                        Actions.LOCATION,
+                        Actions.LOCKSCREEN,
+                        Actions.PHONE,
+                        Actions.HOTSPOT -> {
+                            actionMap[action.actionType] = action
+                        }
+                        else -> {
+                            // ignore unsupported action
+                        }
                     }
                 }
             }
@@ -381,7 +441,7 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
         }
     }
 
-    protected suspend fun checkConnectionStatus() {
+    private suspend fun checkConnectionStatus() {
         val connectedNodes = getConnectedNodes()
         mPhoneNodeWithApp = checkIfPhoneHasApp()
 
@@ -421,7 +481,7 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
         }
     }
 
-    protected suspend fun checkIfPhoneHasApp(): Node? {
+    private suspend fun checkIfPhoneHasApp(): Node? {
         var node: Node? = null
 
         try {
@@ -439,14 +499,14 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
         return node
     }
 
-    protected suspend fun connect(): Boolean {
+    private suspend fun connect(): Boolean {
         if (mPhoneNodeWithApp == null)
             mPhoneNodeWithApp = checkIfPhoneHasApp()
 
         return mPhoneNodeWithApp != null
     }
 
-    protected fun requestUpdate() {
+    private fun requestUpdate() {
         scope.launch {
             if (connect()) {
                 sendMessage(mPhoneNodeWithApp!!.id, WearableHelper.UpdatePath, null)
@@ -454,11 +514,11 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
         }
     }
 
-    protected fun requestAction(action: Action) {
+    private fun requestAction(action: Action) {
         requestAction(JSONParser.serializer(action, Action::class.java))
     }
 
-    protected fun requestAction(actionJSONString: String) {
+    private fun requestAction(actionJSONString: String) {
         scope.launch {
             if (connect()) {
                 sendMessage(
@@ -474,7 +534,7 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
      * There should only ever be one phone in a node set (much less w/ the correct capability), so
      * I am just grabbing the first one (which should be the only one).
     */
-    protected fun pickBestNodeId(nodes: Collection<Node>): Node? {
+    private fun pickBestNodeId(nodes: Collection<Node>): Node? {
         var bestNode: Node? = null
 
         // Find a nearby node/phone or pick one arbitrarily. Realistically, there is only one phone.
@@ -499,7 +559,7 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
         return emptyList()
     }
 
-    protected suspend fun sendMessage(nodeID: String, path: String, data: ByteArray?) {
+    private suspend fun sendMessage(nodeID: String, path: String, data: ByteArray?) {
         try {
             Wearable.getMessageClient(this@DashboardTileProviderService)
                 .sendMessage(nodeID, path, data)
