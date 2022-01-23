@@ -34,6 +34,8 @@
     <integer name="button_gradient_angle_rtl">45</integer>
 
     <dimen name="splashscreen_icon_size" tools:override="true">48dp</dimen>
+    <dimen name="splashscreen_icon_size_no_background" tools:override="true">48dp</dimen>
+    <dimen name="splashscreen_icon_size_with_background" tools:override="true">48dp</dimen>
 
     <dimen name="dashboard_item_horizontal_margin">0dp</dimen>
     <dimen name="dashboard_top_margin">8dp</dimen>
