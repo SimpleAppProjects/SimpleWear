@@ -17,11 +17,15 @@ import com.thewizrd.simplewear.helpers.AcceptDenyDialog
 import com.thewizrd.simplewear.helpers.TileActionsItemTouchCallback
 
 class DashboardTileConfigActivity : AppCompatLiteActivity() {
-    private val DEFAULT_TILES = listOf(
-        Actions.WIFI, Actions.BLUETOOTH, Actions.LOCKSCREEN,
-        Actions.DONOTDISTURB, Actions.RINGER, Actions.TORCH
-    )
-    private val MAX_BUTTONS = 6
+    companion object {
+        internal const val MAX_BUTTONS = 6
+        internal val DEFAULT_TILES by lazy {
+            listOf(
+                Actions.WIFI, Actions.BLUETOOTH, Actions.LOCKSCREEN,
+                Actions.DONOTDISTURB, Actions.RINGER, Actions.TORCH
+            )
+        }
+    }
 
     private lateinit var binding: LayoutTileDashboardConfigBinding
     private lateinit var concatAdapter: ConcatAdapter

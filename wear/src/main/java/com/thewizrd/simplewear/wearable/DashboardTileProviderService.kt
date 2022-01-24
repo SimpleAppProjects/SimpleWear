@@ -25,6 +25,7 @@ import com.thewizrd.shared_resources.utils.stringToBytes
 import com.thewizrd.simplewear.PhoneSyncActivity
 import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.controls.ActionButtonViewModel
+import com.thewizrd.simplewear.preferences.DashboardTileConfigActivity
 import com.thewizrd.simplewear.preferences.Settings
 import kotlinx.coroutines.*
 import kotlinx.coroutines.tasks.await
@@ -34,7 +35,10 @@ import java.util.*
 class DashboardTileProviderService : TileProviderService(), OnMessageReceivedListener, OnCapabilityChangedListener {
     companion object {
         private const val TAG = "DashTileProviderService"
-        private const val MAX_BUTTONS = 6
+        private const val MAX_BUTTONS = DashboardTileConfigActivity.MAX_BUTTONS
+        private fun getDefaultActions(): List<Actions> {
+            return DashboardTileConfigActivity.DEFAULT_TILES
+        }
     }
 
     private var mInFocus = false
@@ -67,7 +71,7 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
 
             // Update tile actions
             tileActions.clear()
-            Settings.getDashboardTileConfig()?.let { tileActions.addAll(it) }
+            tileActions.addAll(Settings.getDashboardTileConfig() ?: getDefaultActions())
 
             sendRemoteViews()
 
