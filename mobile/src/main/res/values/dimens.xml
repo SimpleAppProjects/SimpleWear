@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <dimen name="splashscreen_icon_size" tools:override="true">144dp</dimen>
+    <dimen name="splashscreen_icon_size_no_background" tools:override="true">144dp</dimen>
+    <dimen name="splashscreen_icon_size_with_background" tools:override="true">144dp</dimen>
+</resources>
