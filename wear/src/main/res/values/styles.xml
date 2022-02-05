@@ -10,21 +10,15 @@
         <item name="colorSecondary">@color/colorSecondary</item>
         <item name="colorSecondaryVariant">@color/colorPrimaryLight</item>
 
+        <!-- WearOS specific colors -->
         <item name="android:colorBackground">#000000</item>
-        <item name="colorSurface">#202124</item>
-        <item name="colorError">#ee675c</item>
-
-        <item name="colorOnPrimary">#000000</item>
-        <item name="colorOnSecondary">#000000</item>
         <item name="colorOnBackground">#ffffff</item>
+        <item name="colorSurface">#202124</item>
         <item name="colorOnSurface">#ffffff</item>
-        <item name="colorOnError">#202124</item>
-
         <item name="colorOnSurfaceVariant">#FFDADCE0</item>
-        <item name="colorOnSurfaceVariant2">#FFBDC1C6</item>
-
+        <item name="colorError">#ee675c</item>
+        <item name="colorOnError">#202124</item>
         <item name="android:windowBackground">@android:color/black</item>
-
         <item name="colorBackgroundFloating">?colorSurface</item>
 
         <item name="selectableItemBackground">?android:selectableItemBackground</item>

@@ -33,7 +33,7 @@
             android:maxLines="2"
             android:minHeight="48dp"
             android:text="@string/title_settings"
-            android:textColor="?colorOnSurfaceVariant2"
+            android:textColor="?colorOnSurfaceVariant"
             android:textAppearance="?textAppearanceButton" />
 
         <com.thewizrd.simplewear.controls.WearChipButton

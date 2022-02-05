@@ -37,7 +37,6 @@ import com.thewizrd.simplewear.helpers.SpacerItemDecoration
 import kotlinx.coroutines.*
 import kotlinx.coroutines.tasks.await
 import java.util.*
-import kotlin.collections.ArrayList
 import kotlin.math.roundToInt
 
 class MediaQueueFragment : LifecycleAwareFragment(), DataClient.OnDataChangedListener {
@@ -175,7 +174,7 @@ class MediaQueueFragment : LifecycleAwareFragment(), DataClient.OnDataChangedLis
         inner class ViewHolder(val button: WearChipButton) :
             RecyclerView.ViewHolder(button) {
             private val inActiveSpan =
-                ForegroundColorSpan(button.context.getAttrColor(R.attr.colorOnSurfaceVariant2))
+                ForegroundColorSpan(button.context.getAttrColor(R.attr.colorOnSurfaceVariant))
 
             fun bind(model: MediaItemModel, isActive: Boolean) {
                 button.setIconDrawable(model.icon?.toDrawable(button.context.resources))

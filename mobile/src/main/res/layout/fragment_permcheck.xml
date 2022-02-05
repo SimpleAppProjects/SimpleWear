@@ -7,7 +7,8 @@
     android:fillViewport="true"
     android:scrollbars="vertical"
     tools:context=".PermissionCheckFragment"
-    tools:background="@color/design_default_color_surface">
+    tools:background="@color/design_default_color_surface"
+    tools:theme="@style/Theme.Material3.DayNight.NoActionBar">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -30,9 +31,8 @@
                 android:paddingEnd="?android:attr/listPreferredItemPaddingRight"
                 android:text="@string/cat_title_permissions"
                 android:textAlignment="viewStart"
-                android:textAppearance="?textAppearanceBody2"
-                android:textColor="?attr/colorPrimary"
-                tools:textColor="@color/colorPrimary" />
+                android:textAppearance="?textAppearanceBodyMedium"
+                android:textColor="?attr/colorPrimary" />
 
         </LinearLayout>
 
@@ -54,7 +54,7 @@
                 android:fadingEdge="horizontal"
                 android:singleLine="true"
                 android:text="@string/action_torch"
-                android:textAppearance="?textAppearanceHeadline5"
+                android:textAppearance="?textAppearanceTitleMedium"
                 android:textSize="18sp" />
 
             <TextView
@@ -86,7 +86,7 @@
                 android:fadingEdge="horizontal"
                 android:singleLine="true"
                 android:text="@string/action_lockscreen"
-                android:textAppearance="?textAppearanceHeadline5"
+                android:textAppearance="?textAppearanceTitleMedium"
                 android:textSize="18sp" />
 
             <TextView
@@ -118,7 +118,7 @@
                 android:fadingEdge="horizontal"
                 android:singleLine="true"
                 android:text="@string/action_dnd"
-                android:textAppearance="?textAppearanceHeadline5"
+                android:textAppearance="?textAppearanceTitleMedium"
                 android:textSize="18sp" />
 
             <TextView
@@ -152,7 +152,7 @@
                 android:fadingEdge="horizontal"
                 android:singleLine="true"
                 android:text="@string/permission_title_pairdevice"
-                android:textAppearance="?textAppearanceHeadline5"
+                android:textAppearance="?textAppearanceTitleMedium"
                 android:textSize="18sp" />
 
             <TextView
@@ -196,7 +196,7 @@
                 android:fadingEdge="horizontal"
                 android:singleLine="true"
                 android:text="@string/permission_title_notifservice"
-                android:textAppearance="?textAppearanceHeadline5"
+                android:textAppearance="?textAppearanceTitleMedium"
                 android:textSize="18sp" />
 
             <TextView
@@ -228,7 +228,7 @@
                 android:fadingEdge="horizontal"
                 android:singleLine="true"
                 android:text="@string/not_channel_name_callcontroller"
-                android:textAppearance="?textAppearanceHeadline5"
+                android:textAppearance="?textAppearanceTitleMedium"
                 android:textSize="18sp" />
 
             <TextView
@@ -258,7 +258,7 @@
                 android:fadingEdge="horizontal"
                 android:singleLine="true"
                 android:text="@string/preference_title_wearsettings"
-                android:textAppearance="?textAppearanceHeadline5"
+                android:textAppearance="?textAppearanceTitleMedium"
                 android:textSize="18sp" />
 
             <TextView
@@ -288,7 +288,7 @@
                 android:fadingEdge="horizontal"
                 android:singleLine="true"
                 android:text="@string/permission_title_systemsettings"
-                android:textAppearance="?textAppearanceHeadline5"
+                android:textAppearance="?textAppearanceTitleMedium"
                 android:textSize="18sp" />
 
             <TextView
@@ -318,7 +318,7 @@
                 android:fadingEdge="horizontal"
                 android:singleLine="true"
                 android:text="@string/permission_title_uninstall"
-                android:textAppearance="?textAppearanceHeadline5"
+                android:textAppearance="?textAppearanceTitleMedium"
                 android:textSize="18sp" />
 
             <TextView
@@ -348,9 +348,8 @@
                 android:paddingEnd="?android:attr/listPreferredItemPaddingRight"
                 android:text="@string/title_settings"
                 android:textAlignment="viewStart"
-                android:textAppearance="?textAppearanceBody2"
-                android:textColor="?attr/colorPrimary"
-                tools:textColor="@color/colorPrimary" />
+                android:textAppearance="?textAppearanceBodyMedium"
+                android:textColor="?attr/colorPrimary" />
 
         </LinearLayout>
 
@@ -373,7 +372,7 @@
                 android:fadingEdge="horizontal"
                 android:singleLine="true"
                 android:text="@string/preference_title_mediabridge"
-                android:textAppearance="?textAppearanceHeadline5"
+                android:textAppearance="?textAppearanceTitleMedium"
                 android:textSize="18sp" />
 
             <TextView
@@ -417,7 +416,7 @@
                 android:fadingEdge="horizontal"
                 android:singleLine="true"
                 android:text="@string/preference_title_callbridge"
-                android:textAppearance="?textAppearanceHeadline5"
+                android:textAppearance="?textAppearanceTitleMedium"
                 android:textSize="18sp" />
 
             <TextView

@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <attr format="color" name="colorOnSurfaceVariant" />
-    <attr format="color" name="colorOnSurfaceVariant2" />
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <attr format="color" name="colorOnSurfaceVariant" tools:override="true" />
 
     <attr format="reference" name="textAppearanceDisplay1" />
     <attr format="reference" name="textAppearanceDisplay2" />

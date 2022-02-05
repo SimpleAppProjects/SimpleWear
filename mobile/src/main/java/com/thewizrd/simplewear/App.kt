@@ -21,6 +21,7 @@ import android.os.Looper
 import android.provider.Settings
 import android.util.Log
 import androidx.work.Configuration
+import com.google.android.material.color.DynamicColors
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.thewizrd.shared_resources.ApplicationLib
 import com.thewizrd.shared_resources.SimpleLibrary
@@ -211,6 +212,8 @@ class App : Application(), ApplicationLib, ActivityLifecycleCallbacks, Configura
                     .setAction(CallControllerService.ACTION_CONNECTCONTROLLER)
             )
         }
+
+        DynamicColors.applyToActivitiesIfAvailable(this)
     }
 
     override fun onTerminate() {

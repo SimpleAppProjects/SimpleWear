@@ -21,7 +21,7 @@
             android:maxLines="2"
             android:minHeight="48dp"
             android:text="@string/title_actions"
-            android:textColor="?colorOnSurfaceVariant2"
+            android:textColor="?colorOnSurfaceVariant"
             android:textAppearance="?textAppearanceButton" />
 
         <androidx.recyclerview.widget.RecyclerView

@@ -8,7 +8,7 @@
     android:fitsSystemWindows="true"
     app:statusBarBackground="?attr/colorPrimarySurface"
     tools:background="@color/design_default_color_surface"
-    tools:theme="@style/Theme.MaterialComponents.DayNight.DarkActionBar">
+    tools:theme="@style/Theme.Material3.DayNight">
 
     <com.google.android.material.appbar.AppBarLayout
         android:id="@+id/app_bar"
@@ -16,7 +16,7 @@
         android:layout_height="wrap_content"
         android:background="?attr/colorPrimarySurface"
         android:fitsSystemWindows="true"
-        android:theme="@style/ThemeOverlay.MaterialComponents.Dark.ActionBar"
+        android:theme="@style/ThemeOverlay.Material3.Dark.ActionBar"
         app:liftOnScroll="true">
 
         <androidx.appcompat.widget.Toolbar
@@ -25,7 +25,7 @@
             android:layout_height="wrap_content"
             app:title="@string/title_settings"
             app:layout_collapseMode="pin"
-            app:popupTheme="@style/ThemeOverlay.MaterialComponents.Light" />
+            app:popupTheme="@style/ThemeOverlay.Material3.Light" />
 
     </com.google.android.material.appbar.AppBarLayout>
 
@@ -61,9 +61,8 @@
                     android:paddingEnd="?android:attr/listPreferredItemPaddingRight"
                     android:text="@string/cat_title_permissions"
                     android:textAlignment="viewStart"
-                    android:textAppearance="?textAppearanceBody2"
-                    android:textColor="?attr/colorPrimary"
-                    tools:textColor="@color/colorPrimary" />
+                    android:textAppearance="?textAppearanceBodyMedium"
+                    android:textColor="?attr/colorPrimary" />
 
             </LinearLayout>
 
@@ -85,7 +84,7 @@
                     android:fadingEdge="horizontal"
                     android:singleLine="true"
                     android:text="@string/permission_title_bgopts"
-                    android:textAppearance="?textAppearanceHeadline5"
+                    android:textAppearance="?textAppearanceTitleMedium"
                     android:textSize="18sp" />
 
                 <TextView
@@ -118,7 +117,7 @@
                     android:fadingEdge="horizontal"
                     android:singleLine="true"
                     android:text="@string/permission_title_securesettings"
-                    android:textAppearance="?textAppearanceHeadline5"
+                    android:textAppearance="?textAppearanceTitleMedium"
                     android:textSize="18sp" />
 
                 <TextView
@@ -151,7 +150,7 @@
                     android:fadingEdge="horizontal"
                     android:singleLine="true"
                     android:text="@string/permission_title_rootaccess"
-                    android:textAppearance="?textAppearanceHeadline5"
+                    android:textAppearance="?textAppearanceTitleMedium"
                     android:layout_toStartOf="@id/rootaccess_pref_toggle"
                     android:textSize="18sp" />
 
@@ -199,7 +198,7 @@
                     android:fadingEdge="horizontal"
                     android:singleLine="true"
                     android:text="@string/pref_title_showlauncher"
-                    android:textAppearance="?textAppearanceHeadline5"
+                    android:textAppearance="?textAppearanceTitleMedium"
                     android:textSize="18sp" />
 
                 <TextView

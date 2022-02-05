@@ -14,7 +14,7 @@
         android:layout_height="wrap_content"
         android:background="?attr/colorPrimarySurface"
         android:fitsSystemWindows="true"
-        android:theme="@style/ThemeOverlay.MaterialComponents.Dark.ActionBar"
+        android:theme="@style/ThemeOverlay.Material3.Dark.ActionBar"
         app:liftOnScroll="true">
 
         <androidx.appcompat.widget.Toolbar
@@ -23,7 +23,7 @@
             android:layout_height="wrap_content"
             app:title="@string/app_name"
             app:layout_collapseMode="pin"
-            app:popupTheme="@style/ThemeOverlay.MaterialComponents.Light" />
+            app:popupTheme="@style/ThemeOverlay.Material3.Light" />
 
     </com.google.android.material.appbar.AppBarLayout>
 

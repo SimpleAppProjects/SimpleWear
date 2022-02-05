@@ -4,6 +4,7 @@ import android.app.Activity
 import android.app.Application
 import android.content.Context
 import android.os.Bundle
+import com.google.android.material.color.DynamicColors
 import com.thewizrd.shared_resources.ApplicationLib
 import com.thewizrd.shared_resources.SimpleLibrary
 import com.thewizrd.shared_resources.helpers.AppState
@@ -41,6 +42,8 @@ class App : Application(), ApplicationLib, Application.ActivityLifecycleCallback
         if (!BuildConfig.DEBUG) {
             Logger.registerLogger(FileLoggingTree(appContext))
         }
+
+        DynamicColors.applyToActivitiesIfAvailable(this)
     }
 
     override fun onTerminate() {

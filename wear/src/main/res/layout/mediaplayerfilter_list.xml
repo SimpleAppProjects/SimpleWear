@@ -40,7 +40,7 @@
                 android:maxLines="2"
                 android:minHeight="48dp"
                 android:text="@string/title_filter_apps"
-                android:textColor="?colorOnSurfaceVariant2"
+                android:textColor="?colorOnSurfaceVariant"
                 android:textAppearance="?textAppearanceButton" />
 
             <androidx.recyclerview.widget.RecyclerView

@@ -26,7 +26,7 @@
             android:maxLines="2"
             android:minHeight="48dp"
             android:text="@string/title_dashtile_config"
-            android:textColor="?colorOnSurfaceVariant2"
+            android:textColor="?colorOnSurfaceVariant"
             android:textAppearance="?textAppearanceButton" />
 
         <androidx.recyclerview.widget.RecyclerView

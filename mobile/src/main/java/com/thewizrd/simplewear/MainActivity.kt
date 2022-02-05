@@ -5,6 +5,7 @@ import android.view.View
 import android.view.ViewTreeObserver
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import com.google.android.material.color.DynamicColors
 
 class MainActivity : AppCompatActivity() {
     private var isReadyToView = false
@@ -13,6 +14,9 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
 
         val splashScreen = installSplashScreen()
+
+        // Note: needed due to splash screen theme
+        DynamicColors.applyIfAvailable(this)
 
         // Stop activity from rendering until next activity or if immediate update available
         val content = findViewById<View>(android.R.id.content)
