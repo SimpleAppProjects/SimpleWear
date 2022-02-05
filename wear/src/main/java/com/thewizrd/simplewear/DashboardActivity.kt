@@ -2,6 +2,7 @@ package com.thewizrd.simplewear
 
 import android.content.*
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.util.ArrayMap
@@ -416,6 +417,23 @@ class DashboardActivity : WearableListenerActivity(), OnSharedPreferenceChangeLi
 
         findViewById<View>(R.id.tiledashconfig_pref).setOnClickListener {
             startActivity(Intent(this, DashboardTileConfigActivity::class.java))
+        }
+
+        findViewById<WearChipButton>(R.id.media_ctrlr_pref).also { mediaCtrlrPref ->
+            val mediaCtrlrComponent =
+                ComponentName(applicationContext, "com.thewizrd.simplewear.MediaControllerActivity")
+
+            mediaCtrlrPref.setOnClickListener {
+                mediaCtrlrPref.toggle()
+
+                packageManager.setComponentEnabledSetting(
+                    mediaCtrlrComponent,
+                    if (mediaCtrlrPref.isChecked) PackageManager.COMPONENT_ENABLED_STATE_ENABLED else PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+                    PackageManager.DONT_KILL_APP
+                )
+            }
+            mediaCtrlrPref.isChecked =
+                packageManager.getComponentEnabledSetting(mediaCtrlrComponent) <= PackageManager.COMPONENT_ENABLED_STATE_ENABLED
         }
 
         intentFilter = IntentFilter().apply {

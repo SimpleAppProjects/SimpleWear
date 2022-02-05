@@ -60,21 +60,29 @@
             android:name=".ValueActionActivity"
             android:launchMode="singleInstance"
             android:theme="@style/WearAppTheme" />
-        <activity
-            android:name=".MediaPlayerListActivity"
+
+        <activity-alias
+            android:name=".MediaControllerActivity"
+            android:targetActivity=".MediaPlayerListActivity"
             android:icon="@drawable/ic_play_circle_simpleblue"
             android:label="@string/title_media_controller"
+            android:exported="true"
             android:launchMode="singleInstance"
-            android:theme="@style/WearAppTheme"
             android:parentActivityName=".DashboardActivity"
-            android:exported="true">
+            android:theme="@style/WearAppTheme">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>
+        </activity-alias>
+
+        <activity
+            android:name=".MediaPlayerListActivity"
+            android:launchMode="singleInstance"
+            android:theme="@style/WearAppTheme" />
         <activity
             android:name=".AppLauncherActivity"
+            android:launchMode="singleInstance"
             android:theme="@style/WearAppTheme" />
         <activity
             android:name=".media.MediaPlayerActivity"
