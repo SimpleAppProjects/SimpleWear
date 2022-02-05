@@ -25,7 +25,7 @@
             android:paddingHorizontal="@dimen/tile_horizontal_padding"
             android:maxLines="2"
             android:minHeight="48dp"
-            android:text="@string/title_dashtile_config"
+            android:text="@string/title_dash_config"
             android:textColor="?colorOnSurfaceVariant"
             android:textAppearance="?textAppearanceButton" />
 
@@ -38,7 +38,7 @@
             android:nestedScrollingEnabled="false"
             tools:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
             tools:spanCount="3"
-            tools:itemCount="6"
+            tools:itemCount="9"
             tools:listitem="@layout/layout_dash_button" />
 
         <LinearLayout

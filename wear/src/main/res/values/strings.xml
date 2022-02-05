@@ -52,6 +52,9 @@
     <string name="title_nowplaying">Now Playing</string>
     <string name="title_dashtile_config">Configure Tile</string>
     <string name="message_reset_to_default">Reset to default?</string>
-    <string name="pref_title_dasheditor">Dashboard Tile Editor</string>
+    <string name="pref_title_tiledasheditor">Tile Editor</string>
+
+    <string name="title_dash_config">Configure Dashboard</string>
+    <string name="pref_title_dasheditor">Dashboard Editor</string>
 
 </resources>

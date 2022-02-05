@@ -92,8 +92,14 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>-->
         </activity>
+
         <activity
             android:name=".preferences.DashboardTileConfigActivity"
+            android:launchMode="singleInstance"
+            android:theme="@style/WearAppTheme" />
+
+        <activity
+            android:name=".preferences.DashboardConfigActivity"
             android:launchMode="singleInstance"
             android:theme="@style/WearAppTheme" />
 

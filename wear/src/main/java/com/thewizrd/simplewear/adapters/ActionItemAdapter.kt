@@ -1,5 +1,6 @@
 package com.thewizrd.simplewear.adapters
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.os.Build
 import android.view.View
@@ -8,12 +9,12 @@ import android.widget.Toast
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.thewizrd.shared_resources.actions.*
+import com.thewizrd.shared_resources.actions.Actions
 import com.thewizrd.shared_resources.utils.ContextUtils.dpToPx
 import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.controls.ActionButton
 import com.thewizrd.simplewear.controls.ActionButtonViewModel
-import java.util.*
+import com.thewizrd.simplewear.preferences.Settings
 
 class ActionItemAdapter(activity: Activity) : RecyclerView.Adapter<ActionItemAdapter.ViewHolder>() {
     private object ActionItemType {
@@ -33,15 +34,22 @@ class ActionItemAdapter(activity: Activity) : RecyclerView.Adapter<ActionItemAda
         mDataset = ArrayList()
         mActivityContext = activity
 
-        for (action in Actions.values()) {
-            mDataset.add(ActionButtonViewModel.getViewModelFromAction(action))
-        }
+        val actions = Settings.getDashboardConfig() ?: Actions.values().toMutableList()
+        resetActions(actions)
     }
 
     // Provide a reference to the views for each data item
     // Complex data items may need more than one view per item, and
     // you provide access to all the views for a data item in a view holder
     inner class ViewHolder(var mButton: ActionButton) : RecyclerView.ViewHolder(mButton)
+
+    private fun resetActions(actions: List<Actions>) {
+        mDataset.clear()
+
+        actions.forEach {
+            mDataset.add(ActionButtonViewModel.getViewModelFromAction(it))
+        }
+    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         // create a new view
@@ -143,8 +151,20 @@ class ActionItemAdapter(activity: Activity) : RecyclerView.Adapter<ActionItemAda
     }
 
     fun updateButton(action: ActionButtonViewModel) {
-        val idx = action.actionType.value
-        mDataset[idx] = action
-        notifyItemChanged(idx)
+        for (idx in 0 until mDataset.size) {
+            val item = mDataset[idx]
+
+            if (item.actionType == action.actionType) {
+                mDataset[idx] = action
+                notifyItemChanged(idx)
+                break
+            }
+        }
+    }
+
+    @SuppressLint("NotifyDataSetChanged")
+    fun updateActions(actions: List<Actions>?) {
+        resetActions(actions ?: Actions.values().toList())
+        notifyDataSetChanged()
     }
 }

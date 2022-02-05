@@ -14,6 +14,7 @@ object Settings {
     private const val KEY_MUSICFILTER = "key_musicplayerfilter"
     private const val KEY_LOADAPPICONS = "key_loadappicons"
     private const val KEY_DASHTILECONFIG = "key_dashtileconfig"
+    const val KEY_DASHCONFIG = "key_dashconfig"
 
     fun useGridLayout(): Boolean {
         val preferences = PreferenceManager.getDefaultSharedPreferences(App.instance.appContext)
@@ -77,6 +78,25 @@ object Settings {
         val preferences = PreferenceManager.getDefaultSharedPreferences(App.instance.appContext)
         preferences.edit {
             putString(KEY_DASHTILECONFIG, actions?.let {
+                val arrListType = object : TypeToken<List<Actions>>() {}.type
+                JSONParser.serializer(it, arrListType)
+            })
+        }
+    }
+
+    fun getDashboardConfig(): List<Actions>? {
+        val preferences = PreferenceManager.getDefaultSharedPreferences(App.instance.appContext)
+        val configJSON = preferences.getString(KEY_DASHCONFIG, null)
+        return configJSON?.let {
+            val arrListType = object : TypeToken<List<Actions>>() {}.type
+            JSONParser.deserializer<List<Actions>>(it, arrListType)
+        }
+    }
+
+    fun setDashboardConfig(actions: List<Actions>?) {
+        val preferences = PreferenceManager.getDefaultSharedPreferences(App.instance.appContext)
+        preferences.edit {
+            putString(KEY_DASHCONFIG, actions?.let {
                 val arrListType = object : TypeToken<List<Actions>>() {}.type
                 JSONParser.serializer(it, arrListType)
             })

@@ -14,6 +14,7 @@ import androidx.core.view.InputDeviceCompat
 import androidx.core.view.MotionEventCompat
 import androidx.core.view.ViewConfigurationCompat
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.withStarted
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.GridLayoutManager
@@ -39,12 +40,12 @@ import com.thewizrd.simplewear.controls.CustomConfirmationOverlay
 import com.thewizrd.simplewear.controls.WearChipButton
 import com.thewizrd.simplewear.databinding.ActivityDashboardBinding
 import com.thewizrd.simplewear.helpers.showConfirmationOverlay
+import com.thewizrd.simplewear.preferences.DashboardConfigActivity
 import com.thewizrd.simplewear.preferences.DashboardTileConfigActivity
 import com.thewizrd.simplewear.preferences.Settings
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.guava.await
 import kotlinx.coroutines.launch
-import java.util.*
 import kotlin.math.roundToInt
 
 class DashboardActivity : WearableListenerActivity(), OnSharedPreferenceChangeListener {
@@ -352,6 +353,26 @@ class DashboardActivity : WearableListenerActivity(), OnSharedPreferenceChangeLi
 
         binding.bottomActionDrawer.setIsAutoPeekEnabled(true)
         binding.bottomActionDrawer.isPeekOnScrollDownEnabled = true
+        val drawerScrollView = binding.bottomActionDrawer.findViewById<View>(R.id.drawer_content)
+        binding.bottomActionDrawer.setOnGenericMotionListener { _, event ->
+            if (drawerScrollView != null && event.action == MotionEvent.ACTION_SCROLL && event.isFromSource(
+                    InputDeviceCompat.SOURCE_ROTARY_ENCODER
+                )
+            ) {
+                // Don't forget the negation here
+                val delta = -event.getAxisValue(MotionEventCompat.AXIS_SCROLL) *
+                        ViewConfigurationCompat.getScaledVerticalScrollFactor(
+                            ViewConfiguration.get(this@DashboardActivity), this@DashboardActivity
+                        )
+
+                // Swap these axes if you want to do horizontal scrolling instead
+                drawerScrollView.scrollBy(0, delta.roundToInt())
+
+                return@setOnGenericMotionListener true
+            }
+
+            false
+        }
 
         binding.swipeLayout.setProgressBackgroundColorSchemeColor(getAttrColor(R.attr.colorSurface))
         binding.swipeLayout.setColorSchemeColors(getAttrColor(R.attr.colorAccent))
@@ -388,6 +409,10 @@ class DashboardActivity : WearableListenerActivity(), OnSharedPreferenceChangeLi
             Settings.setGridLayout(!Settings.useGridLayout())
         }
         updateLayoutPref()
+
+        findViewById<View>(R.id.dashconfig_pref).setOnClickListener {
+            startActivity(Intent(this, DashboardConfigActivity::class.java))
+        }
 
         findViewById<View>(R.id.tiledashconfig_pref).setOnClickListener {
             startActivity(Intent(this, DashboardTileConfigActivity::class.java))
@@ -456,6 +481,11 @@ class DashboardActivity : WearableListenerActivity(), OnSharedPreferenceChangeLi
         binding.actionsList.adapter = mAdapter
     }
 
+    private fun updateDashboard() {
+        val actions = Settings.getDashboardConfig()
+        mAdapter.updateActions(actions)
+    }
+
     override fun onGenericMotionEvent(event: MotionEvent): Boolean {
         if (event.action == MotionEvent.ACTION_SCROLL && event.isFromSource(InputDeviceCompat.SOURCE_ROTARY_ENCODER)) {
             // Don't forget the negation here
@@ -493,11 +523,14 @@ class DashboardActivity : WearableListenerActivity(), OnSharedPreferenceChangeLi
         timer?.start()
     }
 
+    override fun onStart() {
+        super.onStart()
+        PreferenceManager.getDefaultSharedPreferences(this)
+            .registerOnSharedPreferenceChangeListener(this)
+    }
+
     override fun onResume() {
         super.onResume()
-
-        PreferenceManager.getDefaultSharedPreferences(this)
-                .registerOnSharedPreferenceChangeListener(this)
 
         binding.scrollView.requestFocus()
 
@@ -511,17 +544,32 @@ class DashboardActivity : WearableListenerActivity(), OnSharedPreferenceChangeLi
         }
     }
 
-    override fun onPause() {
+    override fun onStop() {
         PreferenceManager.getDefaultSharedPreferences(this)
-                .unregisterOnSharedPreferenceChangeListener(this)
-        super.onPause()
+            .unregisterOnSharedPreferenceChangeListener(this)
+        super.onStop()
     }
 
     override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences, key: String) {
         when (key) {
             Settings.KEY_LAYOUTMODE -> {
-                updateLayoutPref()
-                setLayoutManager()
+                lifecycleScope.launch {
+                    runCatching {
+                        withStarted {
+                            updateLayoutPref()
+                            setLayoutManager()
+                        }
+                    }
+                }
+            }
+            Settings.KEY_DASHCONFIG -> {
+                lifecycleScope.launch {
+                    runCatching {
+                        withStarted {
+                            updateDashboard()
+                        }
+                    }
+                }
             }
         }
     }
