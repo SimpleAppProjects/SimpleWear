@@ -1,7 +1,11 @@
 package com.thewizrd.simplewear
 
 import android.bluetooth.BluetoothAdapter
-import android.content.*
+import android.bluetooth.BluetoothManager
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.net.wifi.WifiManager
 import android.os.Bundle
@@ -215,7 +219,7 @@ class PhoneSyncActivity : WearableListenerActivity() {
     }
 
     private fun checkNetworkStatus() {
-        val btAdapter = BluetoothAdapter.getDefaultAdapter()
+        val btAdapter = getSystemService(BluetoothManager::class.java)?.adapter
         if (btAdapter != null) {
             if (btAdapter.isEnabled || btAdapter.state == BluetoothAdapter.STATE_TURNING_ON) {
                 binding.bluetoothButton.visibility = View.GONE
