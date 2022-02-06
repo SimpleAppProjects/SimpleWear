@@ -5,25 +5,21 @@
     android:layout_height="match_parent"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     tools:context=".MainActivity"
-    android:fitsSystemWindows="true"
-    app:statusBarBackground="?attr/colorPrimarySurface">
+    android:fitsSystemWindows="true">
 
     <com.google.android.material.appbar.AppBarLayout
         android:id="@+id/app_bar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="?attr/colorPrimarySurface"
         android:fitsSystemWindows="true"
-        android:theme="@style/ThemeOverlay.Material3.Dark.ActionBar"
         app:liftOnScroll="true">
 
-        <androidx.appcompat.widget.Toolbar
+        <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="?attr/actionBarSize"
             app:title="@string/app_name"
-            app:layout_collapseMode="pin"
-            app:popupTheme="@style/ThemeOverlay.Material3.Light" />
+            app:layout_collapseMode="pin" />
 
     </com.google.android.material.appbar.AppBarLayout>
 

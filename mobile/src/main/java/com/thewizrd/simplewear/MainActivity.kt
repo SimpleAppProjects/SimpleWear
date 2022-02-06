@@ -5,6 +5,7 @@ import android.view.View
 import android.view.ViewTreeObserver
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.color.DynamicColors
 
 class MainActivity : AppCompatActivity() {
@@ -42,5 +43,9 @@ class MainActivity : AppCompatActivity() {
                 }
                 .commit()
         }
+
+        val appBarLayout = findViewById<AppBarLayout>(R.id.app_bar)
+        appBarLayout.liftOnScrollTargetViewId = R.id.scrollView
+        appBarLayout.isLiftOnScroll = true
     }
 }
