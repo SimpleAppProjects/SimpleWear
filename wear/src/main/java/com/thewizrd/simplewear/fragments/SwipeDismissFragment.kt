@@ -22,7 +22,7 @@ open class SwipeDismissFragment : Fragment() {
         binding.swipeLayout.isSwipeable = true
         swipeCallback = object : SwipeDismissFrameLayout.Callback() {
             override fun onDismissed(layout: SwipeDismissFrameLayout) {
-                requireActivity().onBackPressed()
+                activity?.onBackPressedDispatcher?.onBackPressed()
             }
         }
         binding.swipeLayout.addCallback(swipeCallback)
