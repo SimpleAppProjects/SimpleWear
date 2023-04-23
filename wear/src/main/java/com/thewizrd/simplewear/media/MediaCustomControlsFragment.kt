@@ -4,7 +4,11 @@ import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
-import android.view.*
+import android.view.LayoutInflater
+import android.view.MotionEvent
+import android.view.View
+import android.view.ViewConfiguration
+import android.view.ViewGroup
 import androidx.core.graphics.drawable.toDrawable
 import androidx.core.view.InputDeviceCompat
 import androidx.core.view.MotionEventCompat
@@ -16,7 +20,14 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import androidx.wear.widget.WearableLinearLayoutManager
-import com.google.android.gms.wearable.*
+import com.google.android.gms.wearable.DataClient
+import com.google.android.gms.wearable.DataEvent
+import com.google.android.gms.wearable.DataEventBuffer
+import com.google.android.gms.wearable.DataMap
+import com.google.android.gms.wearable.DataMapItem
+import com.google.android.gms.wearable.MessageClient
+import com.google.android.gms.wearable.MessageEvent
+import com.google.android.gms.wearable.Wearable
 import com.thewizrd.shared_resources.actions.ActionStatus
 import com.thewizrd.shared_resources.helpers.MediaHelper
 import com.thewizrd.shared_resources.helpers.WearableHelper
@@ -35,8 +46,7 @@ import com.thewizrd.simplewear.helpers.SpacerItemDecoration
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
-import java.util.*
-import kotlin.collections.ArrayList
+import java.util.Objects
 import kotlin.math.roundToInt
 
 class MediaCustomControlsFragment : LifecycleAwareFragment(), MessageClient.OnMessageReceivedListener,
@@ -235,7 +245,7 @@ class MediaCustomControlsFragment : LifecycleAwareFragment(), MessageClient.OnMe
         val mediaItems = ArrayList<MediaItemModel>(items.size)
 
         for (item in items) {
-            val id = item.getString(MediaHelper.KEY_MEDIA_ACTIONITEM_ACTION)
+            val id = item.getString(MediaHelper.KEY_MEDIA_ACTIONITEM_ACTION) ?: continue
             val icon = item.getAsset(MediaHelper.KEY_MEDIA_ACTIONITEM_ICON)?.let {
                 try {
                     ImageUtils.bitmapFromAssetStream(

@@ -302,7 +302,13 @@ object PhoneStatusHelper {
             if (audioStream != AudioManager.USE_DEFAULT_STREAM_TYPE) {
                 when (direction) {
                     ValueDirection.UP -> audioMan.adjustStreamVolume(audioStream, AudioManager.ADJUST_RAISE, flags)
-                    ValueDirection.DOWN -> audioMan.adjustStreamVolume(audioStream, AudioManager.ADJUST_LOWER, flags)
+                    ValueDirection.DOWN -> audioMan.adjustStreamVolume(
+                        audioStream,
+                        AudioManager.ADJUST_LOWER,
+                        flags
+                    )
+
+                    else -> {}
                 }
             } else {
                 when (direction) {
@@ -312,6 +318,8 @@ object PhoneStatusHelper {
                         AudioManager.USE_DEFAULT_STREAM_TYPE,
                         flags
                     )
+
+                    else -> {}
                 }
             }
 

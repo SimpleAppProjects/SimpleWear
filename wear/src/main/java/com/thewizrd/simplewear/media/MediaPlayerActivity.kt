@@ -135,6 +135,8 @@ class MediaPlayerActivity : WearableListenerActivity(), AmbientModeSupport.Ambie
                                         )
                                         finishAffinity()
                                     }
+
+                                    else -> {}
                                 }
                             }
                             MediaHelper.MediaPlayPath,

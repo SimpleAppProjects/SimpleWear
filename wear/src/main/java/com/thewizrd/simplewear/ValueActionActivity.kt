@@ -17,15 +17,36 @@ import androidx.core.view.ViewConfigurationCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.google.android.gms.wearable.MessageEvent
-import com.thewizrd.shared_resources.actions.*
+import com.thewizrd.shared_resources.actions.Action
+import com.thewizrd.shared_resources.actions.ActionStatus
+import com.thewizrd.shared_resources.actions.Actions
+import com.thewizrd.shared_resources.actions.AudioStreamState
+import com.thewizrd.shared_resources.actions.AudioStreamType
+import com.thewizrd.shared_resources.actions.ValueAction
+import com.thewizrd.shared_resources.actions.ValueActionState
+import com.thewizrd.shared_resources.actions.ValueDirection
+import com.thewizrd.shared_resources.actions.VolumeAction
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
 import com.thewizrd.shared_resources.helpers.WearableHelper
-import com.thewizrd.shared_resources.utils.*
+import com.thewizrd.shared_resources.utils.JSONParser
+import com.thewizrd.shared_resources.utils.Logger
+import com.thewizrd.shared_resources.utils.bytesToBool
+import com.thewizrd.shared_resources.utils.bytesToString
+import com.thewizrd.shared_resources.utils.intToBytes
+import com.thewizrd.shared_resources.utils.stringToBytes
 import com.thewizrd.simplewear.controls.CustomConfirmationOverlay
 import com.thewizrd.simplewear.databinding.ActivityValueactionBinding
 import com.thewizrd.simplewear.helpers.showConfirmationOverlay
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.async
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.guava.await
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import java.util.concurrent.Executors
 import kotlin.math.max
 import kotlin.math.min
@@ -112,6 +133,8 @@ class ValueActionActivity : WearableListenerActivity() {
                                     )
                                     finishAffinity()
                                 }
+
+                                else -> {}
                             }
                         } else if (WearableHelper.ActionsPath == intent.action) {
                             timer?.cancel()
@@ -162,8 +185,9 @@ class ValueActionActivity : WearableListenerActivity() {
                                                 .setMessage(getString(R.string.error_sendmessage))
                                                 .showOn(this@ValueActionActivity)
                                         }
-                                        ActionStatus.SUCCESS -> {
-                                        }
+
+                                        ActionStatus.SUCCESS -> {}
+                                        else -> {}
                                     }
                                 }
                             }
@@ -299,10 +323,13 @@ class ValueActionActivity : WearableListenerActivity() {
                 binding.actionIcon.setImageResource(R.drawable.ic_volume_up_white_24dp)
                 binding.actionTitle.setText(R.string.action_volume)
             }
+
             Actions.BRIGHTNESS -> {
                 binding.actionIcon.setImageResource(R.drawable.ic_brightness_medium)
                 binding.actionTitle.setText(R.string.action_brightness)
             }
+
+            else -> {}
         }
     }
 
@@ -388,6 +415,8 @@ class ValueActionActivity : WearableListenerActivity() {
 
                         openAppOnPhone(false)
                     }
+
+                    else -> {}
                 }
             }
         }

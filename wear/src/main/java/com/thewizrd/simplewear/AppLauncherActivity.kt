@@ -13,14 +13,28 @@ import androidx.core.util.Pair
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.ConcatAdapter
 import androidx.wear.widget.WearableLinearLayoutManager
-import com.google.android.gms.wearable.*
+import com.google.android.gms.wearable.ChannelClient
 import com.google.android.gms.wearable.DataClient.OnDataChangedListener
+import com.google.android.gms.wearable.DataEvent
+import com.google.android.gms.wearable.DataEventBuffer
+import com.google.android.gms.wearable.DataMap
+import com.google.android.gms.wearable.DataMapItem
+import com.google.android.gms.wearable.MessageEvent
+import com.google.android.gms.wearable.PutDataMapRequest
+import com.google.android.gms.wearable.Wearable
 import com.google.gson.stream.JsonReader
 import com.thewizrd.shared_resources.actions.ActionStatus
-import com.thewizrd.shared_resources.helpers.*
-import com.thewizrd.shared_resources.utils.*
+import com.thewizrd.shared_resources.helpers.AppItemData
+import com.thewizrd.shared_resources.helpers.AppItemSerializer
+import com.thewizrd.shared_resources.helpers.ListAdapterOnClickInterface
+import com.thewizrd.shared_resources.helpers.WearConnectionStatus
+import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.shared_resources.utils.ContextUtils.dpToPx
 import com.thewizrd.shared_resources.utils.ImageUtils.toBitmap
+import com.thewizrd.shared_resources.utils.JSONParser
+import com.thewizrd.shared_resources.utils.Logger
+import com.thewizrd.shared_resources.utils.bytesToString
+import com.thewizrd.shared_resources.utils.stringToBytes
 import com.thewizrd.simplewear.adapters.AppsListAdapter
 import com.thewizrd.simplewear.adapters.ListHeaderAdapter
 import com.thewizrd.simplewear.adapters.SpacerAdapter
@@ -38,7 +52,6 @@ import kotlinx.coroutines.guava.await
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import java.io.InputStreamReader
-import java.util.*
 
 class AppLauncherActivity : WearableListenerActivity(), OnDataChangedListener {
     override lateinit var broadcastReceiver: BroadcastReceiver
@@ -273,6 +286,8 @@ class AppLauncherActivity : WearableListenerActivity(), OnDataChangedListener {
                                 .setMessage(this@AppLauncherActivity.getString(R.string.error_actionfailed))
                                 .showOn(this@AppLauncherActivity)
                         }
+
+                        else -> {}
                     }
                 }
             }

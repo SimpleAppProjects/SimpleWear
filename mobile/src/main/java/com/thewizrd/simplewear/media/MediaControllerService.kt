@@ -40,7 +40,6 @@ import kotlinx.coroutines.tasks.await
 import timber.log.Timber
 import java.util.*
 import java.util.concurrent.Executors
-import kotlin.collections.ArrayList
 
 class MediaControllerService : Service(), MessageClient.OnMessageReceivedListener,
     MediaSessionManager.OnActiveSessionsChangedListener {
@@ -724,7 +723,10 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
 
                         mDataClient.putDataItem(
                             PutDataMapRequest.create(MediaHelper.MediaPlayerStateBridgePath).apply {
-                                dataMap.putString(MediaHelper.KEY_MEDIA_METADATA_TITLE, songTitle)
+                                dataMap.putString(
+                                    MediaHelper.KEY_MEDIA_METADATA_TITLE,
+                                    songTitle ?: ""
+                                )
                                 dataMap.putLong("time", SystemClock.uptimeMillis())
                             }
                                 .setUrgent()
@@ -1144,7 +1146,7 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
                 val dataMapList = ArrayList<DataMap>(mItems!!.size)
                 mItems!!.forEach {
                     val d = DataMap().apply {
-                        putString(MediaHelper.KEY_MEDIAITEM_ID, it.mediaId)
+                        putString(MediaHelper.KEY_MEDIAITEM_ID, it.mediaId ?: "")
                         putString(
                             MediaHelper.KEY_MEDIAITEM_TITLE,
                             it.description.title.toString()

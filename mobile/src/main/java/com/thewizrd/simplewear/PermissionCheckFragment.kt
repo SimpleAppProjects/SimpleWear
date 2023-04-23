@@ -372,7 +372,7 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
                         }
                     }
 
-                    override fun onFailure(error: CharSequence) {
+                    override fun onFailure(error: CharSequence?) {
                         Logger.writeLine(Log.ERROR, "%s: failed to find any devices; $error", TAG)
                         if (context == null) return
                         Toast.makeText(

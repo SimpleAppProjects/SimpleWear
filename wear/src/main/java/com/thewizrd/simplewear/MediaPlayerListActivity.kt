@@ -39,11 +39,15 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.guava.await
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.tasks.await
 import java.util.*
 
 class MediaPlayerListActivity : WearableListenerActivity(), MessageClient.OnMessageReceivedListener,
     OnDataChangedListener {
+    private val mutex = Mutex()
+
     override lateinit var broadcastReceiver: BroadcastReceiver
         private set
     override lateinit var intentFilter: IntentFilter
@@ -110,6 +114,8 @@ class MediaPlayerListActivity : WearableListenerActivity(), MessageClient.OnMess
                                     )
                                     finishAffinity()
                                 }
+
+                                else -> {}
                             }
                         } else {
                             Logger.writeLine(
@@ -348,8 +354,7 @@ class MediaPlayerListActivity : WearableListenerActivity(), MessageClient.OnMess
         }
     }
 
-    @Synchronized
-    private suspend fun updateMusicPlayers(dataMap: DataMap) {
+    private suspend fun updateMusicPlayers(dataMap: DataMap) = mutex.withLock {
         val supported_players =
             dataMap.getStringArrayList(MediaHelper.KEY_SUPPORTEDPLAYERS) ?: return
 

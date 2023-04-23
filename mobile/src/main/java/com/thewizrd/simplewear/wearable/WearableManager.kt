@@ -40,7 +40,6 @@ import kotlinx.coroutines.tasks.await
 import java.io.BufferedWriter
 import java.io.OutputStreamWriter
 import java.util.*
-import kotlin.collections.ArrayList
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 class WearableManager(private val mContext: Context) : OnCapabilityChangedListener,
@@ -442,7 +441,7 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
 
                 appItems.add(
                     AppItemData(
-                        label?.toString(),
+                        label.toString(),
                         info.activityInfo.packageName,
                         info.activityInfo.name,
                         iconBmp?.toByteArray()
@@ -450,7 +449,7 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
                 )
 
                 val map = DataMap()
-                map.putString(WearableHelper.KEY_LABEL, label?.toString())
+                map.putString(WearableHelper.KEY_LABEL, label.toString())
                 map.putString(WearableHelper.KEY_PKGNAME, info.activityInfo.packageName)
                 map.putString(WearableHelper.KEY_ACTIVITYNAME, info.activityInfo.name)
                 mapRequest.dataMap.putDataMap(key, map)
@@ -618,6 +617,8 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
                         sendValueStatus(nodeID, valueData.actionType)
                     }
                 }
+
+                else -> {}
             }
         }
     }
@@ -637,6 +638,8 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
                     PhoneStatusHelper.isAutoBrightnessEnabled(mContext).booleanToBytes()
                 )
             }
+
+            else -> {}
         }
     }
 
@@ -728,6 +731,7 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
                     JSONParser.serializer(action, Action::class.java).stringToBytes()
                 )
             }
+
             Actions.HOTSPOT -> {
                 action = ToggleAction(act, PhoneStatusHelper.isWifiApEnabled(mContext))
                 sendMessage(
@@ -736,6 +740,8 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
                     JSONParser.serializer(action, Action::class.java).stringToBytes()
                 )
             }
+
+            else -> {}
         }
     }
 
@@ -901,6 +907,7 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
                     sendValueStatus(nodeID, vA.actionType)
                 }
             }
+
             Actions.HOTSPOT -> {
                 tA = action as ToggleAction
                 tA.setActionSuccessful(PhoneStatusHelper.setWifiApEnabled(mContext, tA.isEnabled))
@@ -910,6 +917,8 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
                     JSONParser.serializer(tA, Action::class.java).stringToBytes()
                 )
             }
+
+            else -> {}
         }
     }
 

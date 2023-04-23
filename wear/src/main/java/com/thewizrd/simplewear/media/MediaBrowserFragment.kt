@@ -14,7 +14,12 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import androidx.wear.widget.WearableLinearLayoutManager
-import com.google.android.gms.wearable.*
+import com.google.android.gms.wearable.DataClient
+import com.google.android.gms.wearable.DataEvent
+import com.google.android.gms.wearable.DataEventBuffer
+import com.google.android.gms.wearable.DataMap
+import com.google.android.gms.wearable.DataMapItem
+import com.google.android.gms.wearable.Wearable
 import com.thewizrd.shared_resources.helpers.MediaHelper
 import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.shared_resources.lifecycle.LifecycleAwareFragment
@@ -30,8 +35,7 @@ import com.thewizrd.simplewear.helpers.SpacerItemDecoration
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
-import java.util.*
-import kotlin.collections.ArrayList
+import java.util.Objects
 
 class MediaBrowserFragment : LifecycleAwareFragment(), DataClient.OnDataChangedListener {
     private lateinit var binding: FragmentBrowserListBinding
@@ -221,7 +225,7 @@ class MediaBrowserFragment : LifecycleAwareFragment(), DataClient.OnDataChangedL
         }
 
         for (item in items) {
-            val id = item.getString(MediaHelper.KEY_MEDIAITEM_ID)
+            val id = item.getString(MediaHelper.KEY_MEDIAITEM_ID) ?: continue
             val icon = item.getAsset(MediaHelper.KEY_MEDIAITEM_ICON)?.let {
                 try {
                     ImageUtils.bitmapFromAssetStream(
