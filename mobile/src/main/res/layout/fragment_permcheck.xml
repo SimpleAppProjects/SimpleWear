@@ -387,7 +387,7 @@
                 android:textAppearance="?android:textAppearanceSmall"
                 android:text="@string/preference_summary_mediabridge" />
 
-            <com.google.android.material.switchmaterial.SwitchMaterial
+            <com.google.android.material.materialswitch.MaterialSwitch
                 android:id="@+id/bridge_media_toggle"
                 android:duplicateParentState="true"
                 android:layout_width="wrap_content"
@@ -431,7 +431,7 @@
                 android:textAppearance="?android:textAppearanceSmall"
                 android:text="@string/preference_summary_callbridge" />
 
-            <com.google.android.material.switchmaterial.SwitchMaterial
+            <com.google.android.material.materialswitch.MaterialSwitch
                 android:id="@+id/bridge_calls_toggle"
                 android:duplicateParentState="true"
                 android:layout_width="wrap_content"

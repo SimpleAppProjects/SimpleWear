@@ -159,7 +159,7 @@
                     android:text="@string/message_rootaccess_disabled"
                     android:textAppearance="?android:textAppearanceSmall" />
 
-                <com.google.android.material.switchmaterial.SwitchMaterial
+                <com.google.android.material.materialswitch.MaterialSwitch
                     android:id="@+id/rootaccess_pref_toggle"
                     android:duplicateParentState="true"
                     android:layout_width="wrap_content"
@@ -206,7 +206,7 @@
                     android:text="@string/pref_summary_showlauncher"
                     android:textAppearance="?android:textAppearanceSmall" />
 
-                <com.google.android.material.switchmaterial.SwitchMaterial
+                <com.google.android.material.materialswitch.MaterialSwitch
                     android:id="@+id/hidelauncher_pref_toggle"
                     android:duplicateParentState="true"
                     android:layout_width="wrap_content"
