@@ -55,4 +55,8 @@
     <string name="permission_systemsettings_enabled">Modify System Settings permission granted.</string>
     <string name="permission_systemsettings_disabled">Modify System Settings permission disabled. Please click to enable controlling brightness and WiFi hotspot from WearOS device</string>
 
+    <string name="permission_title_notifications">Notifications</string>
+    <string name="permission_notifications_enabled">Notification permission enabled</string>
+    <string name="permission_notifications_disabled">Notification permission disabled</string>
+
 </resources>

@@ -48,6 +48,7 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
         private const val DEVADMIN_REQCODE = 1
         private const val MANAGECALLS_REQCODE = 2
         private const val BTCONNECT_REQCODE = 3
+        private const val NOTIF_REQCODE = 4
         private const val SELECT_DEVICE_REQUEST_CODE = 42
     }
 
@@ -211,6 +212,22 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
                 }
             }
         }
+
+        binding.notifPref.setOnClickListener {
+            val ctx = it.context.applicationContext
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && ContextCompat.checkSelfPermission(
+                    ctx,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) == PackageManager.PERMISSION_DENIED
+            ) {
+                requestPermissions(
+                    arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                    NOTIF_REQCODE
+                )
+            }
+        }
+        binding.notifPref.visibility =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) View.VISIBLE else View.GONE
 
         return binding.root
     }
@@ -434,6 +451,14 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
                 requireContext()
             )
         )
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val notifPermGranted = ContextCompat.checkSelfPermission(
+                requireContext(),
+                Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED
+            updateNotificationPref(notifPermGranted)
+        }
     }
 
     private fun updateCamPermText(enabled: Boolean) {
@@ -479,6 +504,11 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
     private fun updateSystemSettingsPref(enabled: Boolean) {
         binding.systemsettingsPrefSummary.setText(if (enabled) R.string.permission_systemsettings_enabled else R.string.permission_systemsettings_disabled)
         binding.systemsettingsPrefSummary.setTextColor(if (enabled) Color.GREEN else Color.RED)
+    }
+
+    private fun updateNotificationPref(enabled: Boolean) {
+        binding.notifPrefSummary.setText(if (enabled) R.string.permission_notifications_enabled else R.string.permission_notifications_disabled)
+        binding.notifPrefSummary.setTextColor(if (enabled) Color.GREEN else Color.RED)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -527,10 +557,21 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
                     updateManageCallsText(permGranted)
                 }
             }
+
             BTCONNECT_REQCODE -> {
                 if (permGranted) {
                     startDevicePairing()
                 } else {
+                    Toast.makeText(context, R.string.error_permissiondenied, Toast.LENGTH_SHORT)
+                        .show()
+                }
+            }
+
+            NOTIF_REQCODE -> {
+                if (permGranted) {
+                    updateNotificationPref(true)
+                } else {
+                    updateNotificationPref(false)
                     Toast.makeText(context, R.string.error_permissiondenied, Toast.LENGTH_SHORT)
                         .show()
                 }
