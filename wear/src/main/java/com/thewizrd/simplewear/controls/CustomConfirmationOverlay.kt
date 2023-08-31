@@ -31,6 +31,8 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.ViewGroup.MarginLayoutParams
+import android.view.accessibility.AccessibilityEvent
+import android.view.accessibility.AccessibilityManager
 import android.view.animation.Animation
 import android.view.animation.AnimationUtils
 import android.widget.ImageView
@@ -41,6 +43,7 @@ import androidx.core.content.ContextCompat
 import androidx.wear.R
 import com.thewizrd.simplewear.utils.ResourcesUtils
 import java.util.*
+import kotlin.math.max
 
 /**
  * Displays a full-screen confirmation animation with optional text and then hides it.
@@ -85,6 +88,9 @@ class CustomConfirmationOverlay {
          * Default animation duration in ms.
          */
         const val DEFAULT_ANIMATION_DURATION_MS = 1000
+
+        /** Default animation duration in ms.  */
+        private const val A11Y_ANIMATION_DURATION_MS = 5000
 
         /**
          * [OverlayType] indicating the success animation overlay should be displayed.
@@ -131,12 +137,14 @@ class CustomConfirmationOverlay {
     private var mDurationMillis = DEFAULT_ANIMATION_DURATION_MS
     private var mListener: OnAnimationFinishedListener? = null
     private var mMessage: CharSequence? = null
+
     @StringRes
     private var mMessageStringResId: Int? = null
     private var mOverlayView: View? = null
     private var mOverlayDrawable: Drawable? = null
     private var mIsShowing = false
     private var mCustomDrawable: Drawable? = null
+
     @DrawableRes
     private var mCustomDrawableResId: Int? = null
     private val mMainThreadHandler = Handler(Looper.getMainLooper())
@@ -180,7 +188,8 @@ class CustomConfirmationOverlay {
      * @return `this` object for method chaining.
      */
     fun setFinishedAnimationListener(
-            listener: OnAnimationFinishedListener?): CustomConfirmationOverlay {
+        listener: OnAnimationFinishedListener?
+    ): CustomConfirmationOverlay {
         mListener = listener
         return this
     }
@@ -198,6 +207,7 @@ class CustomConfirmationOverlay {
 
         updateOverlayView(view.context)
         (view.rootView as ViewGroup).addView(mOverlayView)
+        setUpForAccessibility()
         animateAndHideAfterDelay()
     }
 
@@ -214,7 +224,26 @@ class CustomConfirmationOverlay {
 
         updateOverlayView(activity)
         activity.window.addContentView(mOverlayView, mOverlayView!!.layoutParams)
+        setUpForAccessibility()
         animateAndHideAfterDelay()
+    }
+
+    private fun setUpForAccessibility() {
+        mOverlayView!!.contentDescription = getAccessibilityText()
+        mOverlayView!!.requestFocus()
+        mOverlayView!!.sendAccessibilityEvent(AccessibilityEvent.TYPE_VIEW_FOCUSED)
+    }
+
+    /**
+     * Returns [.A11Y_ANIMATION_DURATION_MS] or [.mDurationMillis], which ever is higher
+     * if accessibility is turned on or [.mDurationMillis] otherwise.
+     */
+    private fun getDurationMillis(): Int {
+        if (mOverlayView!!.context.getSystemService(AccessibilityManager::class.java).isEnabled) {
+            return max(A11Y_ANIMATION_DURATION_MS, mDurationMillis)
+        } else {
+            return mDurationMillis
+        }
     }
 
     @MainThread
@@ -223,7 +252,7 @@ class CustomConfirmationOverlay {
             val animatable = mOverlayDrawable as Animatable
             animatable.start()
         }
-        mMainThreadHandler.postDelayed(mHideRunnable, mDurationMillis.toLong())
+        mMainThreadHandler.postDelayed(mHideRunnable, getDurationMillis().toLong())
     }
 
     /**
@@ -237,21 +266,21 @@ class CustomConfirmationOverlay {
     fun hide() {
         val fadeOut = AnimationUtils.loadAnimation(mOverlayView!!.context, android.R.anim.fade_out)
         fadeOut.setAnimationListener(
-                object : Animation.AnimationListener {
-                    override fun onAnimationStart(animation: Animation) {
-                        mOverlayView!!.clearAnimation()
-                    }
+            object : Animation.AnimationListener {
+                override fun onAnimationStart(animation: Animation) {
+                    mOverlayView!!.clearAnimation()
+                }
 
-                    override fun onAnimationEnd(animation: Animation) {
-                        (mOverlayView!!.parent as ViewGroup).removeView(mOverlayView)
-                        mIsShowing = false
-                        if (mListener != null) {
-                            mListener!!.onAnimationFinished()
-                        }
+                override fun onAnimationEnd(animation: Animation) {
+                    (mOverlayView!!.parent as ViewGroup).removeView(mOverlayView)
+                    mIsShowing = false
+                    if (mListener != null) {
+                        mListener!!.onAnimationFinished()
                     }
+                }
 
-                    override fun onAnimationRepeat(animation: Animation) {}
-                })
+                override fun onAnimationRepeat(animation: Animation) {}
+            })
         mOverlayView!!.startAnimation(fadeOut)
     }
 
@@ -268,8 +297,11 @@ class CustomConfirmationOverlay {
                 null
             )
         }
-        mOverlayView!!.setOnTouchListener { v, event -> true }
-        mOverlayView!!.layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+        mOverlayView!!.setOnTouchListener { _, _ -> true }
+        mOverlayView!!.layoutParams = ViewGroup.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.MATCH_PARENT
+        )
         updateImageView(context, mOverlayView)
         updateMessageView(context, mOverlayView)
     }
@@ -279,37 +311,38 @@ class CustomConfirmationOverlay {
         val messageView =
             overlayView!!.findViewById<TextView>(R.id.wearable_support_confirmation_overlay_message)
 
-        if (mMessage != null || (mMessageStringResId != null && mMessageStringResId != 0)) {
-            val screenWidthPx = ResourcesUtils.getScreenWidthPx(context)
-            val topMarginPx = ResourcesUtils.getFractionOfScreenPx(
-                context, screenWidthPx, R.fraction.confirmation_overlay_margin_above_text
-            )
-            val sideMarginPx = ResourcesUtils.getFractionOfScreenPx(
-                context, screenWidthPx, R.fraction.confirmation_overlay_margin_side
-            )
-            val layoutParams = messageView.layoutParams as MarginLayoutParams
-            layoutParams.topMargin = topMarginPx
-            layoutParams.leftMargin = sideMarginPx
-            layoutParams.rightMargin = sideMarginPx
-            messageView.layoutParams = layoutParams
-            if (mMessageStringResId != null) {
-                messageView.setText(mMessageStringResId!!)
-            } else {
-                messageView.text = mMessage
-            }
-            messageView.visibility = View.VISIBLE
+        val screenWidthPx = ResourcesUtils.getScreenWidthPx(context)
+        val insetMarginPx = ResourcesUtils.getFractionOfScreenPx(
+            context, screenWidthPx, R.fraction.confirmation_overlay_text_inset_margin
+        )
+
+        val layoutParams = messageView.layoutParams as MarginLayoutParams
+        layoutParams.leftMargin = insetMarginPx
+        layoutParams.rightMargin = insetMarginPx
+
+        messageView.layoutParams = layoutParams
+        if (mMessageStringResId != null) {
+            messageView.setText(mMessageStringResId!!)
         } else {
-            messageView.visibility = View.GONE
+            messageView.text = mMessage
         }
+        messageView.visibility = View.VISIBLE
     }
 
     @MainThread
     private fun updateImageView(context: Context, overlayView: View?) {
         mOverlayDrawable = when (mType) {
-            SUCCESS_ANIMATION -> ContextCompat.getDrawable(context,
-                    R.drawable.generic_confirmation_animation)
-            FAILURE_ANIMATION -> ContextCompat.getDrawable(context, R.drawable.ws_full_sad)
-            OPEN_ON_PHONE_ANIMATION -> ContextCompat.getDrawable(context, R.drawable.ws_open_on_phone_animation)
+            SUCCESS_ANIMATION -> ContextCompat.getDrawable(
+                context,
+                R.drawable.confirmation_animation
+            )
+
+            FAILURE_ANIMATION -> ContextCompat.getDrawable(context, R.drawable.failure_animation)
+            OPEN_ON_PHONE_ANIMATION -> ContextCompat.getDrawable(
+                context,
+                R.drawable.open_on_phone_animation
+            )
+
             CUSTOM_ANIMATION -> {
                 if (mCustomDrawableResId != null) {
                     ContextCompat.getDrawable(context, mCustomDrawableResId!!)
@@ -318,8 +351,10 @@ class CustomConfirmationOverlay {
                     mCustomDrawable
                 }
             }
+
             else -> {
-                val errorMessage = String.format(Locale.US, "Invalid ConfirmationOverlay type [%d]", mType)
+                val errorMessage =
+                    String.format(Locale.US, "Invalid ConfirmationOverlay type [%d]", mType)
                 throw IllegalStateException(errorMessage)
             }
         }
@@ -332,6 +367,31 @@ class CustomConfirmationOverlay {
             if (mMessage.isNullOrBlank()) lp.verticalBias = 0.5f
             imageView.layoutParams = lp
         }
+    }
+
+    /**
+     * Returns text to be read out if accessibility is turned on.
+     * @return Text from the [.mMessage] if not empty or predefined string for given
+     * animation type.
+     */
+    private fun getAccessibilityText(): CharSequence? {
+        if (mMessage.toString().isNotEmpty()) {
+            return mMessage
+        }
+        val context = mOverlayView!!.context
+        var imageDescription: CharSequence = ""
+        imageDescription =
+            when (mType) {
+                SUCCESS_ANIMATION -> context.getString(R.string.confirmation_overlay_a11y_description_success)
+                FAILURE_ANIMATION -> context.getString(R.string.confirmation_overlay_a11y_description_fail)
+                OPEN_ON_PHONE_ANIMATION -> context.getString(R.string.confirmation_overlay_a11y_description_phone)
+                else -> {
+                    val errorMessage =
+                        String.format(Locale.US, "Invalid ConfirmationOverlay type [%d]", mType)
+                    throw java.lang.IllegalStateException(errorMessage)
+                }
+            }
+        return imageDescription
     }
 
     /**

@@ -125,7 +125,7 @@ class PhoneSyncActivity : WearableListenerActivity() {
                             binding.button.setImageDrawable(
                                 ContextCompat.getDrawable(
                                     context,
-                                    R.drawable.open_on_phone
+                                    R.drawable.common_full_open_on_phone
                                 )
                             )
                             binding.wifiButton.visibility = View.GONE

@@ -1,13 +1,22 @@
 package com.thewizrd.simplewear
 
-import android.content.*
+import android.content.BroadcastReceiver
+import android.content.ComponentName
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.content.SharedPreferences
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.util.ArrayMap
 import android.util.Log
-import android.view.*
+import android.view.Gravity
+import android.view.MotionEvent
+import android.view.View
+import android.view.ViewConfiguration
+import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.Toast
 import androidx.core.content.ContextCompat
@@ -568,7 +577,7 @@ class DashboardActivity : WearableListenerActivity(), OnSharedPreferenceChangeLi
         super.onStop()
     }
 
-    override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences, key: String) {
+    override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences?, key: String?) {
         when (key) {
             Settings.KEY_LAYOUTMODE -> {
                 lifecycleScope.launch {
