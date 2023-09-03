@@ -1,4 +1,4 @@
-package com.thewizrd.simplewear.wearable
+package com.thewizrd.simplewear.wearable.tiles.unofficial
 
 import android.app.PendingIntent
 import android.content.Context
@@ -70,7 +70,7 @@ class MediaPlayerTileProviderService : TileProviderService(),
     override fun onTileFocus(tileId: Int) {
         super.onTileFocus(tileId)
 
-        Timber.tag(TAG).d("${TAG}: onTileFocus called with: tileId = $tileId")
+        Timber.tag(TAG).d("$TAG: onTileFocus called with: tileId = $tileId")
         if (!isIdForDummyData(tileId)) {
             id = tileId
             mInFocus = true
@@ -93,7 +93,7 @@ class MediaPlayerTileProviderService : TileProviderService(),
     override fun onTileBlur(tileId: Int) {
         super.onTileBlur(tileId)
 
-        Timber.tag(TAG).d("${TAG}: onTileBlur called with: tileId = $tileId")
+        Timber.tag(TAG).d("$TAG: onTileBlur called with: tileId = $tileId")
         if (!isIdForDummyData(tileId)) {
             mInFocus = false
 
@@ -107,7 +107,7 @@ class MediaPlayerTileProviderService : TileProviderService(),
     }
 
     private fun sendRemoteViews() {
-        Timber.tag(TAG).d("${TAG}: sendRemoteViews")
+        Timber.tag(TAG).d("$TAG: sendRemoteViews")
         scope.launch {
             val updateViews = buildUpdate()
 

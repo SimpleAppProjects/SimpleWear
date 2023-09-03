@@ -32,6 +32,12 @@ buildscript {
 
         material_version = '1.9.0'
 
+        compose_compiler_version = '1.5.2'
+        compose_version = '1.5.0'
+        wear_compose_version = '1.2.0'
+        horologist_version = '0.4.12'
+        accompanist_version = '0.30.1'
+
         gson_version = '2.10.1'
         timber_version = '5.0.1'
     }

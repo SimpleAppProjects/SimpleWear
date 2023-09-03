@@ -59,4 +59,7 @@
 
     <string name="pref_title_mediacontroller_launcher">Add Media Controller to launcher</string>
 
+    <string name="state_loading">Loading…</string>
+    <string name="action_refresh">Refresh</string>
+
 </resources>

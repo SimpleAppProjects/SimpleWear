@@ -1,4 +1,4 @@
-package com.thewizrd.simplewear.wearable
+package com.thewizrd.simplewear.wearable.tiles.unofficial
 
 import android.app.PendingIntent
 import android.bluetooth.BluetoothAdapter
@@ -11,10 +11,19 @@ import android.widget.RemoteViews
 import com.google.android.clockwork.tiles.TileData
 import com.google.android.clockwork.tiles.TileProviderService
 import com.google.android.gms.common.api.ApiException
-import com.google.android.gms.wearable.*
-import com.google.android.gms.wearable.CapabilityClient.OnCapabilityChangedListener
-import com.google.android.gms.wearable.MessageClient.OnMessageReceivedListener
-import com.thewizrd.shared_resources.actions.*
+import com.google.android.gms.wearable.CapabilityClient
+import com.google.android.gms.wearable.CapabilityInfo
+import com.google.android.gms.wearable.MessageClient
+import com.google.android.gms.wearable.MessageEvent
+import com.google.android.gms.wearable.Node
+import com.google.android.gms.wearable.Wearable
+import com.google.android.gms.wearable.WearableStatusCodes
+import com.thewizrd.shared_resources.actions.Action
+import com.thewizrd.shared_resources.actions.Actions
+import com.thewizrd.shared_resources.actions.BatteryStatus
+import com.thewizrd.shared_resources.actions.MultiChoiceAction
+import com.thewizrd.shared_resources.actions.NormalAction
+import com.thewizrd.shared_resources.actions.ToggleAction
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
 import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.shared_resources.helpers.toImmutableCompatFlag
@@ -25,20 +34,22 @@ import com.thewizrd.shared_resources.utils.stringToBytes
 import com.thewizrd.simplewear.PhoneSyncActivity
 import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.controls.ActionButtonViewModel
-import com.thewizrd.simplewear.preferences.DashboardTileConfigActivity
+import com.thewizrd.simplewear.preferences.DashboardTileUtils.DEFAULT_TILES
+import com.thewizrd.simplewear.preferences.DashboardTileUtils.MAX_BUTTONS
 import com.thewizrd.simplewear.preferences.Settings
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import timber.log.Timber
-import java.util.*
+import java.util.Locale
 
-class DashboardTileProviderService : TileProviderService(), OnMessageReceivedListener, OnCapabilityChangedListener {
+class DashboardTileProviderService : TileProviderService(), MessageClient.OnMessageReceivedListener,
+    CapabilityClient.OnCapabilityChangedListener {
     companion object {
         private const val TAG = "DashTileProviderService"
-        private const val MAX_BUTTONS = DashboardTileConfigActivity.MAX_BUTTONS
-        private fun getDefaultActions(): List<Actions> {
-            return DashboardTileConfigActivity.DEFAULT_TILES
-        }
     }
 
     private var mInFocus = false
@@ -71,7 +82,7 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
 
             // Update tile actions
             tileActions.clear()
-            tileActions.addAll(Settings.getDashboardTileConfig() ?: getDefaultActions())
+            tileActions.addAll(Settings.getDashboardTileConfig() ?: DEFAULT_TILES)
 
             sendRemoteViews()
 
@@ -93,7 +104,8 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
         if (!isIdForDummyData(tileId)) {
             mInFocus = false
 
-            Wearable.getCapabilityClient(applicationContext).removeListener(this, WearableHelper.CAPABILITY_PHONE_APP)
+            Wearable.getCapabilityClient(applicationContext)
+                .removeListener(this, WearableHelper.CAPABILITY_PHONE_APP)
             Wearable.getMessageClient(applicationContext).removeListener(this)
         }
     }
@@ -135,6 +147,7 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
                         R.drawable.common_full_open_on_phone
                     )
                 }
+
                 else -> {
                     views.setTextViewText(R.id.message, getString(R.string.status_disconnected))
                     views.setImageViewResource(
@@ -240,6 +253,7 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
 
                     requestAction(ToggleAction(Actions.WIFI, !wifiAction.isEnabled))
                 }
+
                 Actions.BLUETOOTH -> run {
                     val btAction = actionMap[Actions.BLUETOOTH] as? ToggleAction
 
@@ -250,9 +264,11 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
 
                     requestAction(ToggleAction(Actions.BLUETOOTH, !btAction.isEnabled))
                 }
+
                 Actions.LOCKSCREEN -> requestAction(
                     actionMap[Actions.LOCKSCREEN] ?: NormalAction(Actions.LOCKSCREEN)
                 )
+
                 Actions.DONOTDISTURB -> run {
                     val dndAction = actionMap[Actions.DONOTDISTURB]
 
@@ -265,10 +281,14 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
                         if (dndAction is ToggleAction) {
                             ToggleAction(Actions.DONOTDISTURB, !dndAction.isEnabled)
                         } else {
-                            MultiChoiceAction(Actions.DONOTDISTURB, (dndAction as MultiChoiceAction).choice + 1)
+                            MultiChoiceAction(
+                                Actions.DONOTDISTURB,
+                                (dndAction as MultiChoiceAction).choice + 1
+                            )
                         }
                     )
                 }
+
                 Actions.RINGER -> run {
                     val ringerAction = actionMap[Actions.RINGER] as? MultiChoiceAction
 
@@ -279,6 +299,7 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
 
                     requestAction(MultiChoiceAction(Actions.RINGER, ringerAction.choice + 1))
                 }
+
                 Actions.TORCH -> run {
                     val torchAction = actionMap[Actions.TORCH] as? ToggleAction
 
@@ -289,6 +310,7 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
 
                     requestAction(ToggleAction(Actions.TORCH, !torchAction.isEnabled))
                 }
+
                 Actions.MOBILEDATA -> run {
                     val mobileDataAction = actionMap[Actions.MOBILEDATA] as? ToggleAction
 
@@ -299,6 +321,7 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
 
                     requestAction(ToggleAction(Actions.MOBILEDATA, !mobileDataAction.isEnabled))
                 }
+
                 Actions.LOCATION -> run {
                     val locationAction = actionMap[Actions.LOCATION]
 
@@ -318,6 +341,7 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
                         }
                     )
                 }
+
                 Actions.HOTSPOT -> run {
                     val hotspotAction = actionMap[Actions.HOTSPOT] as? ToggleAction
 
@@ -328,6 +352,7 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
 
                     requestAction(ToggleAction(Actions.HOTSPOT, !hotspotAction.isEnabled))
                 }
+
                 else -> {
                     // ignore unsupported actions
                 }
@@ -349,12 +374,14 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
                         WifiManager.WIFI_STATE_DISABLING,
                         WifiManager.WIFI_STATE_DISABLED,
                         WifiManager.WIFI_STATE_UNKNOWN -> enabled = false
+
                         WifiManager.WIFI_STATE_ENABLING,
                         WifiManager.WIFI_STATE_ENABLED -> enabled = true
                     }
 
                     actionMap[Actions.WIFI] = ToggleAction(Actions.WIFI, enabled)
                 }
+
                 messageEvent.path.contains(WearableHelper.BluetoothPath) -> {
                     val btStatus = data[0].toInt()
                     var enabled = false
@@ -362,16 +389,19 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
                     when (btStatus) {
                         BluetoothAdapter.STATE_OFF,
                         BluetoothAdapter.STATE_TURNING_OFF -> enabled = false
+
                         BluetoothAdapter.STATE_ON,
                         BluetoothAdapter.STATE_TURNING_ON -> enabled = true
                     }
 
                     actionMap[Actions.BLUETOOTH] = ToggleAction(Actions.BLUETOOTH, enabled)
                 }
+
                 messageEvent.path == WearableHelper.BatteryPath -> {
                     val jsonData: String = data.bytesToString()
                     battStatus = JSONParser.deserializer(jsonData, BatteryStatus::class.java)
                 }
+
                 messageEvent.path == WearableHelper.ActionsPath -> {
                     val jsonData: String = data.bytesToString()
                     val action = JSONParser.deserializer(jsonData, Action::class.java)
@@ -389,6 +419,7 @@ class DashboardTileProviderService : TileProviderService(), OnMessageReceivedLis
                         Actions.HOTSPOT -> {
                             actionMap[action.actionType] = action
                         }
+
                         else -> {
                             // ignore unsupported action
                         }

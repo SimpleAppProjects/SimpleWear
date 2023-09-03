@@ -34,6 +34,7 @@ android {
     }
 
     buildFeatures {
+        compose true
         dataBinding true
         viewBinding true
     }
@@ -44,6 +45,10 @@ android {
         // Sets Java compatibility to Java 8
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
+    }
+
+    composeOptions {
+        kotlinCompilerExtensionVersion compose_compiler_version
     }
 
     kotlin {
@@ -78,6 +83,7 @@ dependencies {
 
     implementation "com.google.android.material:material:$material_version"
 
+    // WearOS
     implementation 'com.google.android.gms:play-services-wearable:18.0.0'
     compileOnly 'com.google.android.wearable:wearable:2.9.0' // Needed for Ambient Mode
 
@@ -85,6 +91,22 @@ dependencies {
     implementation 'androidx.wear:wear-ongoing:1.0.0'
     implementation 'androidx.wear:wear-phone-interactions:1.0.1'
     implementation 'androidx.wear:wear-remote-interactions:1.0.0'
+
+    // WearOS Tiles
+    implementation('androidx.wear.tiles:tiles:1.2.0')
+    debugImplementation('androidx.wear.tiles:tiles-renderer:1.2.0')
+    testImplementation('androidx.wear.tiles:tiles-testing:1.2.0')
+    implementation "androidx.wear.protolayout:protolayout-material:1.0.0"
+    implementation "com.google.android.horologist:horologist-tiles:$horologist_version"
+    implementation "com.google.android.horologist:horologist-compose-tools:$horologist_version"
+
+    // WearOS Compose
+    implementation "androidx.compose.compiler:compiler:$compose_compiler_version"
+    implementation "androidx.compose.ui:ui:$compose_version"
+    implementation "androidx.compose.ui:ui-tooling-preview:$compose_version"
+
+    androidTestImplementation "androidx.compose.ui:ui-test-junit4:$compose_version"
+    debugImplementation "androidx.compose.ui:ui-tooling:$compose_version"
 
     implementation "com.jakewharton.timber:timber:$timber_version"
     implementation "com.google.code.gson:gson:$gson_version"

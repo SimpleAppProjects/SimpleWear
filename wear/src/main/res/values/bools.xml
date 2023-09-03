@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <bool name="enable_unofficial_tiles">true</bool>
+    <bool name="enable_official_tiles">false</bool>
+</resources>

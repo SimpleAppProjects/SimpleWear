@@ -6,6 +6,7 @@ import android.util.Log
 import androidx.core.net.toUri
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.GoogleApiAvailability
+import com.google.android.gms.wearable.Node
 import com.google.android.gms.wearable.PutDataRequest
 import com.thewizrd.shared_resources.SimpleLibrary
 import com.thewizrd.shared_resources.utils.Logger
@@ -87,5 +88,22 @@ object WearableHelper {
             data = "android-app://${packageName}".toUri()
             addCategory(Intent.CATEGORY_BROWSABLE)
         }
+    }
+
+    /*
+     * There should only ever be one phone in a node set (much less w/ the correct capability), so
+     * I am just grabbing the first one (which should be the only one).
+    */
+    fun pickBestNodeId(nodes: Collection<Node>): Node? {
+        var bestNode: Node? = null
+
+        // Find a nearby node/phone or pick one arbitrarily. Realistically, there is only one phone.
+        for (node in nodes) {
+            if (node.isNearby) {
+                return node
+            }
+            bestNode = node
+        }
+        return bestNode
     }
 }

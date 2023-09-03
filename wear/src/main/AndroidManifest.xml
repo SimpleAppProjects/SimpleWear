@@ -113,7 +113,8 @@
         <service
             android:name=".wearable.WearableDataListenerService"
             android:enabled="true"
-            android:exported="true">
+            android:exported="true"
+            tools:ignore="IntentFilterUniqueDataAttributes">
             <intent-filter>
                 <action android:name="com.google.android.gms.wearable.MESSAGE_RECEIVED" />
                 <action android:name="com.google.android.gms.wearable.DATA_CHANGED" />
@@ -146,8 +147,9 @@
             android:icon="@mipmap/ic_launcher"
             android:label="@string/title_activity_dashboard"
             android:permission="com.google.android.wearable.permission.BIND_TILE_PROVIDER"
-            android:exported="true"
-            android:name=".wearable.DashboardTileProviderService">
+            android:enabled="@bool/enable_unofficial_tiles"
+            android:exported="@bool/enable_unofficial_tiles"
+            android:name=".wearable.tiles.unofficial.DashboardTileProviderService">
             <intent-filter>
                 <action android:name="com.google.android.clockwork.ACTION_TILE_UPDATE_REQUEST" />
             </intent-filter>
@@ -158,11 +160,28 @@
         </service>
 
         <service
+            android:icon="@mipmap/ic_launcher"
+            android:label="@string/title_activity_dashboard"
+            android:permission="com.google.android.wearable.permission.BIND_TILE_PROVIDER"
+            android:enabled="@bool/enable_official_tiles"
+            android:exported="@bool/enable_official_tiles"
+            android:name=".wearable.tiles.DashboardTileProviderService">
+            <intent-filter>
+                <action android:name="androidx.wear.tiles.action.BIND_TILE_PROVIDER" />
+            </intent-filter>
+
+            <meta-data
+                android:name="androidx.wear.tiles.PREVIEW"
+                android:resource="@drawable/tile_preview" />
+        </service>
+
+        <service
             android:icon="@drawable/ic_play_circle_simpleblue"
             android:label="@string/title_media_controller"
             android:permission="com.google.android.wearable.permission.BIND_TILE_PROVIDER"
-            android:exported="true"
-            android:name=".wearable.MediaPlayerTileProviderService">
+            android:enabled="@bool/enable_unofficial_tiles"
+            android:exported="@bool/enable_unofficial_tiles"
+            android:name=".wearable.tiles.unofficial.MediaPlayerTileProviderService">
             <intent-filter>
                 <action android:name="com.google.android.clockwork.ACTION_TILE_UPDATE_REQUEST" />
             </intent-filter>

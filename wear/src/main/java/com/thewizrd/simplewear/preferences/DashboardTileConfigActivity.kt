@@ -15,18 +15,11 @@ import com.thewizrd.simplewear.adapters.TileActionAdapter
 import com.thewizrd.simplewear.databinding.LayoutTileDashboardConfigBinding
 import com.thewizrd.simplewear.helpers.AcceptDenyDialog
 import com.thewizrd.simplewear.helpers.TileActionsItemTouchCallback
+import com.thewizrd.simplewear.preferences.DashboardTileUtils.DEFAULT_TILES
+import com.thewizrd.simplewear.preferences.DashboardTileUtils.MAX_BUTTONS
+import com.thewizrd.simplewear.preferences.DashboardTileUtils.isActionAllowed
 
 class DashboardTileConfigActivity : AppCompatLiteActivity() {
-    companion object {
-        internal const val MAX_BUTTONS = 6
-        internal val DEFAULT_TILES by lazy {
-            listOf(
-                Actions.WIFI, Actions.BLUETOOTH, Actions.LOCKSCREEN,
-                Actions.DONOTDISTURB, Actions.RINGER, Actions.TORCH
-            )
-        }
-    }
-
     private lateinit var binding: LayoutTileDashboardConfigBinding
     private lateinit var concatAdapter: ConcatAdapter
     private lateinit var actionAdapter: TileActionAdapter
@@ -81,17 +74,7 @@ class DashboardTileConfigActivity : AppCompatLiteActivity() {
             // Remove current actions
             allowedActions.removeAll(actionAdapter.getActions())
             // Remove other actions which need an activity
-            allowedActions.removeIf {
-                return@removeIf when (it) {
-                    Actions.VOLUME,
-                    Actions.MUSICPLAYBACK,
-                    Actions.SLEEPTIMER,
-                    Actions.APPS,
-                    Actions.PHONE,
-                    Actions.BRIGHTNESS -> true
-                    else -> false
-                }
-            }
+            allowedActions.removeIf { !isActionAllowed(it) }
 
             AddActionDialogBuilder(this, allowedActions)
                 .setOnActionSelectedListener(object :
