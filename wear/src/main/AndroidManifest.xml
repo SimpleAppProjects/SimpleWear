@@ -179,15 +179,15 @@
             android:icon="@drawable/ic_play_circle_simpleblue"
             android:label="@string/title_media_controller"
             android:permission="com.google.android.wearable.permission.BIND_TILE_PROVIDER"
-            android:enabled="@bool/enable_unofficial_tiles"
-            android:exported="@bool/enable_unofficial_tiles"
-            android:name=".wearable.tiles.unofficial.MediaPlayerTileProviderService">
+            android:enabled="@bool/enable_official_tiles"
+            android:exported="@bool/enable_official_tiles"
+            android:name=".wearable.tiles.MediaPlayerTileProviderService">
             <intent-filter>
-                <action android:name="com.google.android.clockwork.ACTION_TILE_UPDATE_REQUEST" />
+                <action android:name="androidx.wear.tiles.action.BIND_TILE_PROVIDER" />
             </intent-filter>
 
             <meta-data
-                android:name="com.google.android.clockwork.tiles.PREVIEW"
+                android:name="androidx.wear.tiles.PREVIEW"
                 android:resource="@drawable/mediatile_preview" />
         </service>
 

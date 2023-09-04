@@ -61,5 +61,6 @@
 
     <string name="state_loading">Loading…</string>
     <string name="action_refresh">Refresh</string>
+    <string name="action_play">Play</string>
 
 </resources>
