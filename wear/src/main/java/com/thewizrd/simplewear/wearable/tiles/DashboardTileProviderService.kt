@@ -1,6 +1,7 @@
 package com.thewizrd.simplewear.wearable.tiles
 
 import android.content.Context
+import android.content.Intent
 import androidx.lifecycle.lifecycleScope
 import androidx.wear.protolayout.ResourceBuilders
 import androidx.wear.tiles.EventBuilders
@@ -9,9 +10,12 @@ import androidx.wear.tiles.TileBuilders
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
 import com.google.android.horologist.tiles.SuspendingTileService
 import com.thewizrd.shared_resources.actions.Actions
+import com.thewizrd.simplewear.PhoneSyncActivity
 import com.thewizrd.simplewear.preferences.DashboardTileUtils.DEFAULT_TILES
 import com.thewizrd.simplewear.preferences.Settings
 import com.thewizrd.simplewear.wearable.tiles.DashboardTileMessenger.Companion.tileModel
+import com.thewizrd.simplewear.wearable.tiles.DashboardTileRenderer.Companion.ID_OPENONPHONE
+import com.thewizrd.simplewear.wearable.tiles.DashboardTileRenderer.Companion.ID_PHONEDISCONNECTED
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.filterNotNull
@@ -80,12 +84,19 @@ class DashboardTileProviderService : SuspendingTileService() {
         Timber.tag(TAG).d("tileRequest")
 
         if (requestParams.currentState.lastClickableId.isNotEmpty()) {
-            // Process action
-            runCatching {
-                Timber.tag(TAG).d("lastClickableId = ${requestParams.currentState.lastClickableId}")
-                val action = Actions.valueOf(requestParams.currentState.lastClickableId)
-                withTimeoutOrNull(5000) {
-                    tileMessenger.processActionAsync(action)
+            if (ID_OPENONPHONE == requestParams.currentState.lastClickableId || ID_PHONEDISCONNECTED == requestParams.currentState.lastClickableId) {
+                runCatching {
+                    startActivity(Intent(applicationContext, PhoneSyncActivity::class.java))
+                }
+            } else {
+                // Process action
+                runCatching {
+                    Timber.tag(TAG)
+                        .d("lastClickableId = ${requestParams.currentState.lastClickableId}")
+                    val action = Actions.valueOf(requestParams.currentState.lastClickableId)
+                    withTimeoutOrNull(5000) {
+                        tileMessenger.processActionAsync(action)
+                    }
                 }
             }
         }
