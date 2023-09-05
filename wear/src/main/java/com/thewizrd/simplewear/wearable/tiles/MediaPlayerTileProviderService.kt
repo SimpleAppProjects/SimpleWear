@@ -1,6 +1,7 @@
 package com.thewizrd.simplewear.wearable.tiles
 
 import android.content.Context
+import android.content.Intent
 import androidx.lifecycle.lifecycleScope
 import androidx.wear.protolayout.ResourceBuilders
 import androidx.wear.tiles.EventBuilders
@@ -8,8 +9,11 @@ import androidx.wear.tiles.RequestBuilders
 import androidx.wear.tiles.TileBuilders
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
 import com.google.android.horologist.tiles.SuspendingTileService
+import com.thewizrd.simplewear.PhoneSyncActivity
 import com.thewizrd.simplewear.wearable.tiles.MediaPlayerTileMessenger.*
 import com.thewizrd.simplewear.wearable.tiles.MediaPlayerTileMessenger.Companion.tileModel
+import com.thewizrd.simplewear.wearable.tiles.MediaPlayerTileRenderer.Companion.ID_OPENONPHONE
+import com.thewizrd.simplewear.wearable.tiles.MediaPlayerTileRenderer.Companion.ID_PHONEDISCONNECTED
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.filterNotNull
@@ -82,12 +86,19 @@ class MediaPlayerTileProviderService : SuspendingTileService() {
         tileMessenger.checkConnectionStatus()
 
         if (requestParams.currentState.lastClickableId.isNotEmpty()) {
-            // Process action
-            runCatching {
-                Timber.tag(TAG).d("lastClickableId = ${requestParams.currentState.lastClickableId}")
-                val action = PlayerAction.valueOf(requestParams.currentState.lastClickableId)
-                val ret = tileMessenger.requestPlayerActionAsync(action)
-                Timber.tag(TAG).d("requestPlayerActionAsync = $ret")
+            if (ID_OPENONPHONE == requestParams.currentState.lastClickableId || ID_PHONEDISCONNECTED == requestParams.currentState.lastClickableId) {
+                runCatching {
+                    startActivity(Intent(applicationContext, PhoneSyncActivity::class.java))
+                }
+            } else {
+                // Process action
+                runCatching {
+                    Timber.tag(TAG)
+                        .d("lastClickableId = ${requestParams.currentState.lastClickableId}")
+                    val action = PlayerAction.valueOf(requestParams.currentState.lastClickableId)
+                    val ret = tileMessenger.requestPlayerActionAsync(action)
+                    Timber.tag(TAG).d("requestPlayerActionAsync = $ret")
+                }
             }
         } else {
             tileMessenger.updatePlayerStateAsync()
