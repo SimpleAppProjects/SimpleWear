@@ -35,6 +35,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.tasks.await
 import timber.log.Timber
@@ -128,7 +129,7 @@ class MediaPlayerTileMessenger(private val context: Context) :
 
             deleteJob?.cancel()
             val dataMap = DataMapItem.fromDataItem(item).dataMap
-            scope.launch {
+            runBlocking {
                 updatePlayerState(dataMap)
             }
         } else if (event.type == DataEvent.TYPE_DELETED) {
@@ -291,44 +292,42 @@ class MediaPlayerTileMessenger(private val context: Context) :
     }
 
     @Suppress("IMPLICIT_CAST_TO_ANY")
-    suspend fun requestPlayerActionAsync(action: PlayerAction) {
+    suspend fun requestPlayerActionAsync(action: PlayerAction): Boolean =
         suspendCancellableCoroutine { continuation ->
             val listener = when (action) {
                 PlayerAction.VOL_UP, PlayerAction.VOL_DOWN -> {
-                    MessageClient.OnMessageReceivedListener { event ->
-                        if (event.path == WearableHelper.AudioStatusPath || event.path == MediaHelper.MediaVolumeStatusPath) {
-                            onMessageReceived(event)
-                            if (continuation.isActive) {
-                                continuation.resume(true)
-                                return@OnMessageReceivedListener
+                    object : MessageClient.OnMessageReceivedListener {
+                        override fun onMessageReceived(event: MessageEvent) {
+                            if (event.path == WearableHelper.AudioStatusPath || event.path == MediaHelper.MediaVolumeStatusPath) {
+                                this@MediaPlayerTileMessenger.onMessageReceived(event)
+                                if (continuation.isActive) {
+                                    continuation.resume(true)
+                                    Wearable.getMessageClient(context)
+                                        .removeListener(this)
+                                }
                             }
-                        }
-
-                        if (continuation.isActive) {
-                            continuation.resume(false)
                         }
                     }
                 }
 
                 else -> {
-                    DataClient.OnDataChangedListener { buffer ->
-                        val event =
-                            buffer.findLast { it.dataItem.uri.path == MediaHelper.MediaPlayerStatePath }
+                    object : DataClient.OnDataChangedListener {
+                        override fun onDataChanged(buffer: DataEventBuffer) {
+                            val event =
+                                buffer.findLast { it.dataItem.uri.path == MediaHelper.MediaPlayerStatePath }
 
-                        if (event != null) {
-                            processDataEvent(event)
-                            if (continuation.isActive) {
-                                continuation.resume(true)
-                            }
-                        } else {
-                            if (continuation.isActive) {
-                                continuation.resume(false)
+                            if (event != null) {
+                                processDataEvent(event)
+                                if (continuation.isActive) {
+                                    continuation.resume(true)
+                                    Wearable.getDataClient(context)
+                                        .removeListener(this)
+                                }
                             }
                         }
                     }
                 }
             }
-
 
             continuation.invokeOnCancellation {
                 if (listener is MessageClient.OnMessageReceivedListener) {
@@ -354,7 +353,6 @@ class MediaPlayerTileMessenger(private val context: Context) :
                 requestPlayerAction(action)
             }
         }
-    }
 
     suspend fun checkConnectionStatus(refreshTile: Boolean = false) {
         val connectedNodes = getConnectedNodes()

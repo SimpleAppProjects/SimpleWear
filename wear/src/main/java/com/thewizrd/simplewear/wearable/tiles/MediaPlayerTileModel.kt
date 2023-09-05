@@ -43,6 +43,12 @@ class MediaPlayerTileModel {
         }
     }
 
+    fun updateArtwork(artwork: Bitmap? = null) {
+        _tileState.update {
+            it.copy(artwork = artwork)
+        }
+    }
+
     fun setAudioStreamState(audioStreamState: AudioStreamState? = null) {
         _tileState.update {
             it.copy(audioStreamState = audioStreamState)

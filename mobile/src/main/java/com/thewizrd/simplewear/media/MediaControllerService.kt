@@ -714,7 +714,7 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
             runCatching {
                 Timber.tag(TAG).d("Making request: %s", mapRequest.uri)
 
-                mDataClient.deleteDataItems(mapRequest.uri).await()
+                //mDataClient.deleteDataItems(mapRequest.uri).await()
                 mDataClient.putDataItem(request).await()
 
                 if (Settings.isBridgeMediaEnabled()) {

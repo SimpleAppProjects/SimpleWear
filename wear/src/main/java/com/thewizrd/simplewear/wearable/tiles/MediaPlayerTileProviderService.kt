@@ -16,7 +16,6 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withTimeoutOrNull
 import timber.log.Timber
 
 @OptIn(ExperimentalHorologistApi::class)
@@ -87,15 +86,15 @@ class MediaPlayerTileProviderService : SuspendingTileService() {
             runCatching {
                 Timber.tag(TAG).d("lastClickableId = ${requestParams.currentState.lastClickableId}")
                 val action = PlayerAction.valueOf(requestParams.currentState.lastClickableId)
-                withTimeoutOrNull(5000) {
-                    tileMessenger.requestPlayerActionAsync(action)
-                }
+                val ret = tileMessenger.requestPlayerActionAsync(action)
+                Timber.tag(TAG).d("requestPlayerActionAsync = $ret")
             }
+        } else {
+            tileMessenger.updatePlayerStateAsync()
         }
 
-        tileMessenger.updatePlayerStateAsync()
-
         val tileState = latestTileState()
+        Timber.tag(TAG).d("State: ${tileState.title} - ${tileState.artist}")
         return tileRenderer.renderTimeline(tileState, requestParams)
     }
 
