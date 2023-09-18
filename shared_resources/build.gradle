@@ -65,7 +65,7 @@ dependencies {
 
     implementation "androidx.appcompat:appcompat:$appcompat_version"
 
-    implementation 'com.google.android.gms:play-services-wearable:18.0.0'
+    implementation 'com.google.android.gms:play-services-wearable:18.1.0'
 
     implementation platform("com.google.firebase:firebase-bom:$firebase_version")
     implementation 'com.google.firebase:firebase-analytics'
