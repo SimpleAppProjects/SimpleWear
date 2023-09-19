@@ -3,9 +3,10 @@
     <string name="permission_camera_enabled">Camera permission granted.</string>
     <string name="permission_camera_disabled">Camera permission disabled. Please click to enable controlling flashlight from WearOS device</string>
 
-    <string name="device_admin_description">Allows you to turn of your screen and lock your device from your WearOS device</string>
-    <string name="permission_admin_enabled">Device admin enabled</string>
+    <string name="device_admin_description">Allows you to turn off your screen and lock your device from your WearOS device</string>
+    <string name="permission_admin_enabled">Device admin enabled.\n<b>Note: To uninstall app please use \"Deactivate and uninstall\" option</b></string>
     <string name="permission_admin_disabled">Not enabled as device admin. Please click to enable locking screen from your WearOS device</string>
+    <string name="prompt_alert_message_device_admin">Please note that if you enable device admin access, you will need to deactivate the access prior to uninstalling. You can use the \"Deactivate and uninstall\" option in the app to do so.</string>
 
     <string name="permission_dnd_enabled">Do not Disturb access enabled</string>
     <string name="permission_dnd_disabled">Do not Disturb access disabled. Please click to enable changing Do not Disturb setting from your WearOS device</string>

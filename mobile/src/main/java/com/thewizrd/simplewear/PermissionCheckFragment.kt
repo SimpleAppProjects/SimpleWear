@@ -23,6 +23,7 @@ import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.thewizrd.shared_resources.helpers.WearSettingsHelper
 import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.shared_resources.lifecycle.LifecycleAwareFragment
@@ -30,6 +31,7 @@ import com.thewizrd.shared_resources.tasks.delayLaunch
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.simplewear.databinding.FragmentPermcheckBinding
 import com.thewizrd.simplewear.helpers.PhoneStatusHelper
+import com.thewizrd.simplewear.helpers.PhoneStatusHelper.deActivateDeviceAdmin
 import com.thewizrd.simplewear.helpers.PhoneStatusHelper.isCameraPermissionEnabled
 import com.thewizrd.simplewear.helpers.PhoneStatusHelper.isDeviceAdminEnabled
 import com.thewizrd.simplewear.helpers.PhoneStatusHelper.isNotificationAccessAllowed
@@ -144,14 +146,34 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
         }
         binding.deviceadminPref.setOnClickListener {
             if (!isDeviceAdminEnabled(requireContext())) {
-                val mScreenLockAdmin =
-                    ComponentName(requireContext(), ScreenLockAdminReceiver::class.java)
+                MaterialAlertDialogBuilder(it.context)
+                    .setTitle(android.R.string.dialog_alert_title)
+                    .setMessage(R.string.prompt_alert_message_device_admin)
+                    .setPositiveButton(android.R.string.ok) { d, which ->
+                        if (which == DialogInterface.BUTTON_POSITIVE) {
+                            val mScreenLockAdmin =
+                                ComponentName(it.context, ScreenLockAdminReceiver::class.java)
 
-                runCatching {
-                    // Launch the activity to have the user enable our admin.
-                    val intent = Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN)
-                    intent.putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, mScreenLockAdmin)
-                    devAdminResultLauncher.launch(intent)
+                            runCatching {
+                                // Launch the activity to have the user enable our admin.
+                                val intent = Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN)
+                                intent.putExtra(
+                                    DevicePolicyManager.EXTRA_DEVICE_ADMIN,
+                                    mScreenLockAdmin
+                                )
+                                devAdminResultLauncher.launch(intent)
+                            }
+                        }
+
+                        d.dismiss()
+                    }
+                    .setCancelable(true)
+                    .setNegativeButton(android.R.string.cancel, null)
+                    .show()
+            } else {
+                deActivateDeviceAdmin(requireContext())
+                lifecycleScope.delayLaunch(timeMillis = 1000) {
+                    updatePermissions()
                 }
             }
         }

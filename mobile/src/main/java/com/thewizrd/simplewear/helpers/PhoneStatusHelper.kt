@@ -232,15 +232,26 @@ object PhoneStatusHelper {
     }
 
     fun isDeviceAdminEnabled(context: Context): Boolean {
-        val mDPM = context.applicationContext.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
-        val mScreenLockAdmin = ComponentName(context.applicationContext, ScreenLockAdminReceiver::class.java)
+        val mDPM =
+            context.applicationContext.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
+        val mScreenLockAdmin =
+            ComponentName(context.applicationContext, ScreenLockAdminReceiver::class.java)
         return mDPM.isAdminActive(mScreenLockAdmin)
+    }
+
+    fun deActivateDeviceAdmin(context: Context) {
+        val mDPM =
+            context.applicationContext.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
+        val mScreenLockAdmin =
+            ComponentName(context.applicationContext, ScreenLockAdminReceiver::class.java)
+        mDPM.removeActiveAdmin(mScreenLockAdmin)
     }
 
     fun lockScreen(context: Context): ActionStatus {
         if (!isDeviceAdminEnabled(context)) return ActionStatus.PERMISSION_DENIED
         return try {
-            val mDPM = context.applicationContext.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
+            val mDPM =
+                context.applicationContext.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
             mDPM.lockNow()
             ActionStatus.SUCCESS
         } catch (e: Exception) {

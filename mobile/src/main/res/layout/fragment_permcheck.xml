@@ -134,7 +134,7 @@
                 android:layout_alignStart="@+id/deviceadmin_title"
                 android:maxLines="4"
                 android:textAppearance="?android:textAppearanceSmall"
-                tools:text="@string/permission_admin_disabled" />
+                tools:text="@string/permission_admin_enabled" />
 
         </RelativeLayout>
 
