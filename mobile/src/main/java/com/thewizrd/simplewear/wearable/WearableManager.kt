@@ -1,7 +1,6 @@
 package com.thewizrd.simplewear.wearable
 
 import android.app.Activity
-import android.companion.CompanionDeviceManager
 import android.content.ActivityNotFoundException
 import android.content.ComponentName
 import android.content.Context
@@ -168,9 +167,7 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
                 // Android Q puts a limitation on starting activities from the background
                 // We are allowed to bypass this if we have a device registered as companion,
                 // which will be our WearOS device; Check if device is associated before we start
-                val deviceManager = mContext.getSystemService(Context.COMPANION_DEVICE_SERVICE) as CompanionDeviceManager
-                val associated_devices = deviceManager.associations
-                if (associated_devices.isEmpty()) {
+                if (!PhoneStatusHelper.companionDeviceAssociated(mContext)) {
                     // No devices associated; send message to user
                     sendMessage(
                         nodeID,
@@ -519,11 +516,13 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
                 // Android Q puts a limitation on starting activities from the background
                 // We are allowed to bypass this if we have a device registered as companion,
                 // which will be our WearOS device; Check if device is associated before we start
-                val deviceManager = mContext.getSystemService(Context.COMPANION_DEVICE_SERVICE) as CompanionDeviceManager
-                val associated_devices = deviceManager.associations
-                if (associated_devices.isEmpty()) {
+                if (!PhoneStatusHelper.companionDeviceAssociated(mContext)) {
                     // No devices associated; send message to user
-                    sendMessage(nodeID, WearableHelper.LaunchAppPath, ActionStatus.PERMISSION_DENIED.name.stringToBytes())
+                    sendMessage(
+                        nodeID,
+                        WearableHelper.LaunchAppPath,
+                        ActionStatus.PERMISSION_DENIED.name.stringToBytes()
+                    )
                 } else {
                     try {
                         mContext.startActivity(appIntent)

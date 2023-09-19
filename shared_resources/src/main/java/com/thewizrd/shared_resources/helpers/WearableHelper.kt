@@ -2,6 +2,7 @@ package com.thewizrd.shared_resources.helpers
 
 import android.content.Intent
 import android.net.Uri
+import android.os.ParcelUuid
 import android.util.Log
 import androidx.core.net.toUri
 import com.google.android.gms.common.ConnectionResult
@@ -106,4 +107,7 @@ object WearableHelper {
         }
         return bestNode
     }
+
+    fun getBLEServiceUUID(): ParcelUuid =
+        ParcelUuid.fromString("0000DA28-0000-1000-8000-00805F9B34FB")
 }

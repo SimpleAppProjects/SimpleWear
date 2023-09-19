@@ -567,6 +567,16 @@ class DashboardActivity : WearableListenerActivity(), OnSharedPreferenceChangeLi
                 requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 0)
             }
         }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (PermissionChecker.checkSelfPermission(
+                    this,
+                    Manifest.permission.BLUETOOTH_ADVERTISE
+                ) != PermissionChecker.PERMISSION_GRANTED
+            ) {
+                requestPermissions(arrayOf(Manifest.permission.BLUETOOTH_ADVERTISE), 0)
+            }
+        }
     }
 
     override fun onResume() {

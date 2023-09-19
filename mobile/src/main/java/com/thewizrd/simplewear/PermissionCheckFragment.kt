@@ -4,26 +4,27 @@ import android.Manifest
 import android.annotation.TargetApi
 import android.app.Activity
 import android.app.admin.DevicePolicyManager
-import android.bluetooth.BluetoothDevice
+import android.bluetooth.le.ScanFilter
 import android.companion.*
 import android.content.*
-import android.content.IntentSender.SendIntentException
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.os.CountDownTimer
-import android.os.Parcelable
 import android.provider.Settings
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.IntentSenderRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import androidx.lifecycle.lifecycleScope
 import com.thewizrd.shared_resources.helpers.WearSettingsHelper
+import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.shared_resources.lifecycle.LifecycleAwareFragment
 import com.thewizrd.shared_resources.tasks.delayLaunch
 import com.thewizrd.shared_resources.utils.Logger
@@ -36,24 +37,98 @@ import com.thewizrd.simplewear.media.MediaControllerService
 import com.thewizrd.simplewear.services.CallControllerService
 import com.thewizrd.simplewear.services.InCallManagerService
 import com.thewizrd.simplewear.services.NotificationListener
-import com.thewizrd.simplewear.wearable.WearableDataListenerService
+import com.thewizrd.simplewear.utils.associate
+import com.thewizrd.simplewear.utils.disassociateAll
+import com.thewizrd.simplewear.utils.hasAssociations
 import com.thewizrd.simplewear.wearable.WearableWorker
 import com.thewizrd.simplewear.wearable.WearableWorker.Companion.enqueueAction
+import kotlinx.coroutines.launch
 import java.util.regex.Pattern
 
 class PermissionCheckFragment : LifecycleAwareFragment() {
     companion object {
         private const val TAG = "PermissionCheckFragment"
-        private const val CAMERA_REQCODE = 0
-        private const val DEVADMIN_REQCODE = 1
-        private const val MANAGECALLS_REQCODE = 2
-        private const val BTCONNECT_REQCODE = 3
-        private const val NOTIF_REQCODE = 4
-        private const val SELECT_DEVICE_REQUEST_CODE = 42
     }
 
     private lateinit var binding: FragmentPermcheckBinding
-    private var timer: CountDownTimer? = null
+
+    private lateinit var permissionRequestLauncher: ActivityResultLauncher<Array<String>>
+    private lateinit var devAdminResultLauncher: ActivityResultLauncher<Intent>
+    private lateinit var companionDeviceResultLauncher: ActivityResultLauncher<IntentSenderRequest>
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        permissionRequestLauncher =
+            registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
+                permissions.entries.forEach { (permission, granted) ->
+                    when (permission) {
+                        Manifest.permission.CAMERA -> {
+                            if (granted) {
+                                updateCamPermText(true)
+                            } else {
+                                updateCamPermText(false)
+                                Toast.makeText(
+                                    context,
+                                    R.string.error_permissiondenied,
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        }
+
+                        Manifest.permission.READ_PHONE_STATE -> {
+                            if (granted) {
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !InCallManagerService.hasPermission(
+                                        requireContext()
+                                    )
+                                ) {
+                                    startDevicePairing()
+                                }
+                            }
+
+                            updateManageCallsText(granted)
+                        }
+
+                        Manifest.permission.BLUETOOTH_CONNECT -> {
+                            if (granted) {
+                                startDevicePairing()
+                            } else {
+                                Toast.makeText(
+                                    context,
+                                    R.string.error_permissiondenied,
+                                    Toast.LENGTH_SHORT
+                                )
+                                    .show()
+                            }
+                        }
+
+                        Manifest.permission.POST_NOTIFICATIONS -> {
+                            if (granted) {
+                                updateNotificationPref(true)
+                            } else {
+                                updateNotificationPref(false)
+                                Toast.makeText(
+                                    context,
+                                    R.string.error_permissiondenied,
+                                    Toast.LENGTH_SHORT
+                                )
+                                    .show()
+                            }
+                        }
+                    }
+                }
+            }
+
+        devAdminResultLauncher =
+            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+                updateDeviceAdminText(it.resultCode == Activity.RESULT_OK)
+            }
+
+        companionDeviceResultLauncher =
+            registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) {
+                updatePermissions()
+            }
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -64,7 +139,7 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
         binding = FragmentPermcheckBinding.inflate(inflater, container, false)
         binding.torchPref.setOnClickListener {
             if (!isCameraPermissionEnabled(requireContext())) {
-                requestPermissions(arrayOf(Manifest.permission.CAMERA), CAMERA_REQCODE)
+                permissionRequestLauncher.launch(arrayOf(Manifest.permission.CAMERA))
             }
         }
         binding.deviceadminPref.setOnClickListener {
@@ -76,7 +151,7 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
                     // Launch the activity to have the user enable our admin.
                     val intent = Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN)
                     intent.putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, mScreenLockAdmin)
-                    startActivityForResult(intent, DEVADMIN_REQCODE)
+                    devAdminResultLauncher.launch(intent)
                 }
             }
         }
@@ -122,10 +197,7 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
                     Manifest.permission.READ_PHONE_STATE
                 ) == PackageManager.PERMISSION_DENIED
             ) {
-                requestPermissions(
-                    arrayOf(Manifest.permission.READ_PHONE_STATE),
-                    MANAGECALLS_REQCODE
-                )
+                permissionRequestLauncher.launch(arrayOf(Manifest.permission.READ_PHONE_STATE))
             } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !InCallManagerService.hasPermission(
                     requireContext()
                 )
@@ -220,10 +292,7 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
                     Manifest.permission.POST_NOTIFICATIONS
                 ) == PackageManager.PERMISSION_DENIED
             ) {
-                requestPermissions(
-                    arrayOf(Manifest.permission.POST_NOTIFICATIONS),
-                    NOTIF_REQCODE
-                )
+                permissionRequestLauncher.launch(arrayOf(Manifest.permission.POST_NOTIFICATIONS))
             }
         }
         binding.notifPref.visibility =
@@ -233,7 +302,6 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
     }
 
     override fun onPause() {
-        LocalBroadcastManager.getInstance(requireContext()).unregisterReceiver(mReceiver)
         super.onPause()
     }
 
@@ -251,55 +319,14 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
     private fun startDevicePairing() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             if (!isBluetoothConnectPermGranted()) {
-                requestPermissions(
-                    arrayOf(Manifest.permission.BLUETOOTH_CONNECT),
-                    BTCONNECT_REQCODE
-                )
+                permissionRequestLauncher.launch(arrayOf(Manifest.permission.BLUETOOTH_CONNECT))
                 return
             }
         }
 
-        LocalBroadcastManager.getInstance(requireContext())
-            .registerReceiver(
-                mReceiver,
-                IntentFilter(WearableDataListenerService.ACTION_GETCONNECTEDNODE)
-            )
-        if (timer == null) {
-            timer = object : CountDownTimer(5000, 1000) {
-                override fun onTick(millisUntilFinished: Long) {}
-                override fun onFinish() {
-                    if (context != null) {
-                        Toast.makeText(
-                            context,
-                            R.string.message_watchbttimeout,
-                            Toast.LENGTH_LONG
-                        ).show()
-                        binding.companionPairProgress.visibility = View.GONE
-                        Logger.writeLine(Log.INFO, "%s: BT Request Timeout", TAG)
-                        // Device not found showing all
-                        pairDevice()
-                    }
-                }
-            }
-        }
-        timer?.start()
         binding.companionPairProgress.visibility = View.VISIBLE
         enqueueAction(requireContext(), WearableWorker.ACTION_REQUESTBTDISCOVERABLE)
-        Logger.writeLine(Log.INFO, "%s: ACTION_REQUESTBTDISCOVERABLE", TAG)
-    }
-
-    // Android Q+
-    private val mReceiver: BroadcastReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context, intent: Intent) {
-            if (WearableDataListenerService.ACTION_GETCONNECTEDNODE == intent.action) {
-                timer?.cancel()
-                binding.companionPairProgress.visibility = View.GONE
-                Logger.writeLine(Log.INFO, "%s: node received", TAG)
-                pairDevice()
-                LocalBroadcastManager.getInstance(context)
-                        .unregisterReceiver(this)
-            }
-        }
+        pairDevice()
     }
 
     @TargetApi(Build.VERSION_CODES.Q)
@@ -308,46 +335,32 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
             val deviceManager =
                 requireContext().getSystemService(Context.COMPANION_DEVICE_SERVICE) as CompanionDeviceManager
 
-            for (assoc in deviceManager.associations) {
-                if (assoc != null) {
-                    runCatching {
-                        deviceManager.disassociate(assoc)
-                    }.onFailure {
-                        Logger.writeLine(Log.ERROR, it)
-                    }
-                }
-            }
+            deviceManager.disassociateAll()
             updatePairPermText(false)
 
             val request = AssociationRequest.Builder().apply {
+                addDeviceFilter(
+                    BluetoothDeviceFilter.Builder()
+                        .setNamePattern(Pattern.compile(".*", Pattern.DOTALL))
+                        .build()
+                )
                 if (BuildConfig.DEBUG) {
-                    addDeviceFilter(
-                        BluetoothDeviceFilter.Builder()
-                            .setNamePattern(Pattern.compile(".*", Pattern.DOTALL))
-                            .build()
-                    )
                     addDeviceFilter(
                         WifiDeviceFilter.Builder()
                             .setNamePattern(Pattern.compile(".*", Pattern.DOTALL))
                             .build()
                     )
-                    addDeviceFilter(
-                        BluetoothLeDeviceFilter.Builder()
-                            .setNamePattern(Pattern.compile(".*", Pattern.DOTALL))
-                            .build()
-                    )
-                } else {
-                    addDeviceFilter(
-                        BluetoothDeviceFilter.Builder()
-                            .setNamePattern(Pattern.compile(".*", Pattern.DOTALL))
-                            .build()
-                    )
-                    addDeviceFilter(
-                        BluetoothLeDeviceFilter.Builder()
-                            .setNamePattern(Pattern.compile(".*", Pattern.DOTALL))
-                            .build()
-                    )
                 }
+                addDeviceFilter(
+                    BluetoothLeDeviceFilter.Builder()
+                        .setNamePattern(Pattern.compile(".*", Pattern.DOTALL))
+                        .setScanFilter(
+                            ScanFilter.Builder()
+                                .setServiceUuid(WearableHelper.getBLEServiceUUID())
+                                .build()
+                        )
+                        .build()
+                )
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                     setDeviceProfile(AssociationRequest.DEVICE_PROFILE_WATCH)
@@ -358,47 +371,48 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
 
             // Verify bluetooth permissions
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !isBluetoothConnectPermGranted()) {
-                requestPermissions(
-                    arrayOf(Manifest.permission.BLUETOOTH_CONNECT),
-                    BTCONNECT_REQCODE
-                )
+                permissionRequestLauncher.launch(arrayOf(Manifest.permission.BLUETOOTH_CONNECT))
                 return@runWithView
             }
 
             Toast.makeText(requireContext(), R.string.message_watchbtdiscover, Toast.LENGTH_LONG)
                 .show()
 
-            delayLaunch(timeMillis = 5000) {
+            delayLaunch(timeMillis = 3500) {
                 Logger.writeLine(Log.INFO, "%s: sending pair request", TAG)
-                // Enable Bluetooth to discover devices
-                context?.let {
-                    if (!PhoneStatusHelper.isBluetoothEnabled(it)) {
-                        PhoneStatusHelper.setBluetoothEnabled(it, true)
-                    }
-                }
-                deviceManager.associate(request, object : CompanionDeviceManager.Callback() {
-                    override fun onDeviceFound(chooserLauncher: IntentSender) {
-                        if (context == null) return
-                        try {
-                            startIntentSenderForResult(
-                                chooserLauncher,
-                                SELECT_DEVICE_REQUEST_CODE, null, 0, 0, 0, null
-                            )
-                        } catch (e: SendIntentException) {
-                            Logger.writeLine(Log.ERROR, e)
+
+                deviceManager.associate(
+                    request,
+                    onDeviceFound = {
+                        context?.let { _ ->
+                            runCatching {
+                                lifecycleScope.launch {
+                                    binding.companionPairProgress.visibility = View.GONE
+                                }
+                                companionDeviceResultLauncher.launch(
+                                    IntentSenderRequest.Builder(it)
+                                        .build()
+                                )
+                            }.onFailure {
+                                Logger.writeLine(Log.ERROR, it)
+                            }
+                        }
+                    },
+                    onFailure = { error ->
+                        Logger.writeLine(Log.ERROR, "%s: failed to find any devices; $error", TAG)
+
+                        context?.let { ctx ->
+                            lifecycleScope.launch {
+                                binding.companionPairProgress.visibility = View.GONE
+                                Toast.makeText(
+                                    ctx,
+                                    R.string.message_nodevices_found,
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
                         }
                     }
-
-                    override fun onFailure(error: CharSequence?) {
-                        Logger.writeLine(Log.ERROR, "%s: failed to find any devices; $error", TAG)
-                        if (context == null) return
-                        Toast.makeText(
-                            context,
-                            R.string.message_nodevices_found,
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                }, null)
+                )
             }
         }
     }
@@ -433,7 +447,7 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             val deviceManager =
                 requireContext().getSystemService(Context.COMPANION_DEVICE_SERVICE) as CompanionDeviceManager
-            updatePairPermText(deviceManager.associations.isNotEmpty())
+            updatePairPermText(deviceManager.hasAssociations())
         }
 
         binding.bridgeMediaPref.isEnabled = notListenerEnabled
@@ -511,90 +525,21 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
         binding.notifPrefSummary.setTextColor(if (enabled) Color.GREEN else Color.RED)
     }
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        when (requestCode) {
-            DEVADMIN_REQCODE -> updateDeviceAdminText(resultCode == Activity.RESULT_OK)
-            SELECT_DEVICE_REQUEST_CODE -> if (data != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                val parcel =
-                    data.getParcelableExtra<Parcelable>(CompanionDeviceManager.EXTRA_DEVICE)
-                if (parcel is BluetoothDevice) {
-                    if (parcel.bondState != BluetoothDevice.BOND_BONDED) {
-                        parcel.createBond()
-                    }
-                }
-
-                updatePermissions()
-            }
-        }
-    }
-
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
-        val permGranted =
-            grantResults.isNotEmpty() && !grantResults.contains(PackageManager.PERMISSION_DENIED)
-
-        when (requestCode) {
-            CAMERA_REQCODE -> {
-                // If request is cancelled, the result arrays are empty.
-                if (permGranted) {
-                    // permission was granted, yay!
-                    // Do the task you need to do.
-                    updateCamPermText(true)
-                } else {
-                    // permission denied, boo! Disable the
-                    // functionality that depends on this permission.
-                    updateCamPermText(false)
-                    Toast.makeText(context, R.string.error_permissiondenied, Toast.LENGTH_SHORT)
-                        .show()
-                }
-            }
-            MANAGECALLS_REQCODE -> {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !InCallManagerService.hasPermission(
-                        requireContext()
-                    )
-                ) {
-                    startDevicePairing()
-                } else {
-                    updateManageCallsText(permGranted)
-                }
-            }
-
-            BTCONNECT_REQCODE -> {
-                if (permGranted) {
-                    startDevicePairing()
-                } else {
-                    Toast.makeText(context, R.string.error_permissiondenied, Toast.LENGTH_SHORT)
-                        .show()
-                }
-            }
-
-            NOTIF_REQCODE -> {
-                if (permGranted) {
-                    updateNotificationPref(true)
-                } else {
-                    updateNotificationPref(false)
-                    Toast.makeText(context, R.string.error_permissiondenied, Toast.LENGTH_SHORT)
-                        .show()
-                }
-            }
-        }
-    }
-
+    @Suppress("DEPRECATION")
     private fun requestUninstall() {
         val ctx = requireContext()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            try {
+            runCatching {
                 startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
                     data = Uri.parse("package:${ctx.packageName}")
                     flags = Intent.FLAG_ACTIVITY_NEW_TASK
                 })
-            } catch (e: ActivityNotFoundException) {
             }
         } else {
-            try {
+            runCatching {
                 startActivity(Intent(Intent.ACTION_UNINSTALL_PACKAGE).apply {
                     data = Uri.parse("package:${ctx.packageName}")
                 })
-            } catch (e: ActivityNotFoundException) {
             }
         }
     }

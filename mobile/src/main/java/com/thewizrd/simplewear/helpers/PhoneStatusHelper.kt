@@ -33,6 +33,7 @@ import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.simplewear.ScreenLockAdminReceiver
 import com.thewizrd.simplewear.services.TorchService
 import com.thewizrd.simplewear.services.TorchService.Companion.enqueueWork
+import com.thewizrd.simplewear.utils.hasAssociations
 import kotlinx.coroutines.delay
 import java.lang.reflect.Method
 import java.util.*
@@ -513,8 +514,7 @@ object PhoneStatusHelper {
     fun companionDeviceAssociated(context: Context): Boolean {
         val deviceManager =
             context.getSystemService(Context.COMPANION_DEVICE_SERVICE) as CompanionDeviceManager
-        val associatedDevices = deviceManager.associations
-        return associatedDevices.isNotEmpty()
+        return deviceManager.hasAssociations()
     }
 
     fun callStatePermissionEnabled(context: Context): Boolean {

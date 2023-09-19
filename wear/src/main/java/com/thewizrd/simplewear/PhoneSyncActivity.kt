@@ -1,5 +1,6 @@
 package com.thewizrd.simplewear
 
+import android.Manifest
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
 import android.content.BroadcastReceiver
@@ -8,11 +9,15 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.net.wifi.WifiManager
+import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.view.View
 import android.widget.Toast
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
+import androidx.core.content.PermissionChecker
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.lifecycleScope
 import androidx.wear.widget.ConfirmationOverlay
@@ -26,16 +31,15 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 class PhoneSyncActivity : WearableListenerActivity() {
-    companion object {
-        private const val ENABLE_BT_REQUEST_CODE = 0
-    }
-
     override lateinit var broadcastReceiver: BroadcastReceiver
         private set
     override lateinit var intentFilter: IntentFilter
         private set
 
     private lateinit var binding: ActivitySetupSyncBinding
+
+    private lateinit var bluetoothRequestLauncher: ActivityResultLauncher<Intent>
+    private lateinit var permissionRequestLauncher: ActivityResultLauncher<Array<String>>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -54,10 +58,15 @@ class PhoneSyncActivity : WearableListenerActivity() {
 
         binding.bluetoothButton.setOnClickListener {
             runCatching {
-                startActivityForResult(
-                    Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE),
-                    ENABLE_BT_REQUEST_CODE
-                )
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && PermissionChecker.checkSelfPermission(
+                        this,
+                        Manifest.permission.BLUETOOTH_CONNECT
+                    ) != PermissionChecker.PERMISSION_GRANTED
+                ) {
+                    permissionRequestLauncher.launch(arrayOf(Manifest.permission.BLUETOOTH_CONNECT))
+                } else {
+                    bluetoothRequestLauncher.launch(Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE))
+                }
             }
         }
 
@@ -180,6 +189,33 @@ class PhoneSyncActivity : WearableListenerActivity() {
         binding.message.setText(R.string.message_gettingstatus)
 
         intentFilter = IntentFilter(ACTION_UPDATECONNECTIONSTATUS)
+
+        bluetoothRequestLauncher =
+            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+                if (it.resultCode == RESULT_OK) {
+                    lifecycleScope.launch(Dispatchers.Main) {
+                        delay(2000)
+                        startProgressBar()
+                        delay(10000)
+                        if (isActive) {
+                            stopProgressBar()
+                        }
+                    }
+                }
+            }
+
+        permissionRequestLauncher =
+            registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
+                permissions.entries.forEach { (permission, granted) ->
+                    when (permission) {
+                        Manifest.permission.BLUETOOTH_CONNECT -> {
+                            if (granted) {
+                                bluetoothRequestLauncher.launch(Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE))
+                            }
+                        }
+                    }
+                }
+            }
     }
 
     private fun stopProgressBar() {
@@ -196,25 +232,6 @@ class PhoneSyncActivity : WearableListenerActivity() {
         // Update statuses
         lifecycleScope.launch {
             updateConnectionStatus()
-        }
-    }
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-
-        when (requestCode) {
-            ENABLE_BT_REQUEST_CODE -> {
-                if (resultCode == RESULT_OK) {
-                    lifecycleScope.launch(Dispatchers.Main) {
-                        delay(2000)
-                        startProgressBar()
-                        delay(10000)
-                        if (isActive) {
-                            stopProgressBar()
-                        }
-                    }
-                }
-            }
         }
     }
 
