@@ -103,12 +103,19 @@ class WearableDataListenerService : WearableListenerService() {
                 supervisorScope {
                     runCatching {
                         Logger.writeLine(Log.DEBUG, "${TAG}: starting BLE advertising")
-                        advertiser.startAdvertisingSet(params, data, null, null, null, callback)
-                        delay(10000)
-                        Logger.writeLine(Log.DEBUG, "${TAG}: stopping BLE advertising")
-                        advertiser.stopAdvertisingSet(callback)
+
+                        val startedAdv = runCatching {
+                            advertiser.startAdvertisingSet(params, data, null, null, null, callback)
+                            true
+                        }.getOrDefault(false)
+
+                        if (startedAdv) {
+                            delay(10000)
+                            Logger.writeLine(Log.DEBUG, "${TAG}: stopping BLE advertising")
+                            advertiser.stopAdvertisingSet(callback)
+                        }
                     }.onFailure {
-                        Logger.writeLine(Log.ERROR, it)
+                        Logger.writeLine(Log.ERROR, it, "Error with BT discovery")
                     }
                 }
             }

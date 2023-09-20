@@ -1,5 +1,7 @@
 package com.thewizrd.shared_resources.helpers
 
+import android.content.Intent
+
 object MediaHelper {
     const val MusicPlayersPath = "/music-players"
     const val PlayCommandPath = "/music/play"
@@ -60,4 +62,19 @@ object MediaHelper {
     const val KEY_SUPPORTEDPLAYERS = "key_supported_players"
 
     const val KEY_VOLUME = "key_volume"
+
+    // For Activity Launcher
+    const val URI_PARAM_MEDIAPLAYER = "media_player"
+
+    fun createRemoteActivityIntent(packageName: String, activityName: String): Intent {
+        return Intent(Intent.ACTION_VIEW)
+            .addCategory(Intent.CATEGORY_DEFAULT)
+            .addCategory(Intent.CATEGORY_BROWSABLE)
+            .setData(
+                WearableHelper.getLaunchActivityUri(packageName, activityName)
+                    .buildUpon()
+                    .appendQueryParameter(URI_PARAM_MEDIAPLAYER, "true")
+                    .build()
+            )
+    }
 }

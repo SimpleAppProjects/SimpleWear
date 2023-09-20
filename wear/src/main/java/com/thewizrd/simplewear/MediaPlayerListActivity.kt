@@ -8,7 +8,6 @@ import android.util.Log
 import android.view.View
 import androidx.activity.viewModels
 import androidx.core.content.ContextCompat
-import androidx.core.util.Pair
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.ConcatAdapter
 import androidx.wear.widget.WearableLinearLayoutManager
@@ -188,23 +187,24 @@ class MediaPlayerListActivity : WearableListenerActivity(), MessageClient.OnMess
         mAdapter.setOnClickListener(object : ListAdapterOnClickInterface<AppItemViewModel> {
             override fun onClick(view: View, item: AppItemViewModel) {
                 lifecycleScope.launch {
-                    if (connect()) {
-                        val nodeID = mPhoneNodeWithApp!!.id
-                        sendMessage(
-                            nodeID,
-                            MediaHelper.OpenMusicPlayerPath,
-                            JSONParser.serializer(
-                                Pair.create(item.packageName, item.activityName),
-                                Pair::class.java
-                            ).stringToBytes()
+                    val success = runCatching {
+                        val intent = MediaHelper.createRemoteActivityIntent(
+                            item.packageName!!,
+                            item.activityName!!
                         )
+                        startRemoteActivity(intent)
+                    }.getOrDefault(false)
+
+                    if (success) {
+                        startActivity(
+                            MediaPlayerActivity.buildIntent(
+                                this@MediaPlayerListActivity,
+                                item
+                            )
+                        )
+                    } else {
+                        showConfirmationOverlay(false)
                     }
-                    startActivity(
-                        MediaPlayerActivity.buildIntent(
-                            this@MediaPlayerListActivity,
-                            item
-                        )
-                    )
                 }
             }
         })

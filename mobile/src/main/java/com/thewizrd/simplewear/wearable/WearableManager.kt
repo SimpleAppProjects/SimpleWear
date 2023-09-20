@@ -163,11 +163,16 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
                         )
                     }
                 }
-            } else { // Android Q+ Devices
+            } else {
+                // Android Q+ Devices
                 // Android Q puts a limitation on starting activities from the background
                 // We are allowed to bypass this if we have a device registered as companion,
                 // which will be our WearOS device; Check if device is associated before we start
-                if (!PhoneStatusHelper.companionDeviceAssociated(mContext)) {
+                // OR if SYSTEM_ALERT_WINDOW is granted
+                if (!PhoneStatusHelper.companionDeviceAssociated(mContext) && !android.provider.Settings.canDrawOverlays(
+                        mContext
+                    )
+                ) {
                     // No devices associated; send message to user
                     sendMessage(
                         nodeID,
@@ -512,11 +517,16 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
                         Logger.writeLine(Log.ERROR, e)
                     }
                 }
-            } else { // Android Q+ Devices
+            } else {
+                // Android Q+ Devices
                 // Android Q puts a limitation on starting activities from the background
                 // We are allowed to bypass this if we have a device registered as companion,
                 // which will be our WearOS device; Check if device is associated before we start
-                if (!PhoneStatusHelper.companionDeviceAssociated(mContext)) {
+                // OR if SYSTEM_ALERT_WINDOW is granted
+                if (!PhoneStatusHelper.companionDeviceAssociated(mContext) && !android.provider.Settings.canDrawOverlays(
+                        mContext
+                    )
+                ) {
                     // No devices associated; send message to user
                     sendMessage(
                         nodeID,

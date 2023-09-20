@@ -9,7 +9,6 @@ import android.os.CountDownTimer
 import android.util.Log
 import android.view.View
 import androidx.core.content.ContextCompat
-import androidx.core.util.Pair
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.ConcatAdapter
 import androidx.wear.widget.WearableLinearLayoutManager
@@ -31,10 +30,8 @@ import com.thewizrd.shared_resources.helpers.WearConnectionStatus
 import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.shared_resources.utils.ContextUtils.dpToPx
 import com.thewizrd.shared_resources.utils.ImageUtils.toBitmap
-import com.thewizrd.shared_resources.utils.JSONParser
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.shared_resources.utils.bytesToString
-import com.thewizrd.shared_resources.utils.stringToBytes
 import com.thewizrd.simplewear.adapters.AppsListAdapter
 import com.thewizrd.simplewear.adapters.ListHeaderAdapter
 import com.thewizrd.simplewear.adapters.SpacerAdapter
@@ -147,16 +144,15 @@ class AppLauncherActivity : WearableListenerActivity(), OnDataChangedListener {
         mAdapter.setOnClickListener(object : ListAdapterOnClickInterface<AppItemViewModel> {
             override fun onClick(view: View, item: AppItemViewModel) {
                 lifecycleScope.launch {
-                    if (connect()) {
-                        val nodeID = mPhoneNodeWithApp!!.id
-                        sendMessage(
-                            nodeID, WearableHelper.LaunchAppPath,
-                            JSONParser.serializer(
-                                Pair.create(item.packageName, item.activityName),
-                                Pair::class.java
-                            ).stringToBytes()
+                    val success = runCatching {
+                        val intent = WearableHelper.createRemoteActivityIntent(
+                            item.packageName!!,
+                            item.activityName!!
                         )
-                    }
+                        startRemoteActivity(intent)
+                    }.getOrDefault(false)
+
+                    showConfirmationOverlay(success)
                 }
             }
         })
