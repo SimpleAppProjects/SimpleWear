@@ -1,5 +1,7 @@
 package com.thewizrd.wearsettings
 
+import android.Manifest
+import android.annotation.SuppressLint
 import android.content.ComponentName
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -10,6 +12,7 @@ import android.os.Bundle
 import android.os.PowerManager
 import android.provider.Settings
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.PermissionChecker
 import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
 import com.thewizrd.wearsettings.actions.checkSecureSettingsPermission
@@ -19,10 +22,15 @@ import kotlinx.coroutines.launch
 import com.thewizrd.wearsettings.Settings as SettingsHelper
 
 class MainActivity : AppCompatActivity() {
+    companion object {
+        private const val BTCONNECT_REQCODE = 0
+    }
+
     private lateinit var binding: ActivityMainBinding
 
     private lateinit var mPowerMgr: PowerManager
 
+    @SuppressLint("BatteryLife")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -86,6 +94,14 @@ class MainActivity : AppCompatActivity() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             binding.hidelauncherPref.isVisible = false
         }
+
+        binding.btPref.setOnClickListener {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !isBluetoothConnectPermGranted()) {
+                requestPermissions(arrayOf(Manifest.permission.BLUETOOTH_CONNECT), 0)
+            }
+        }
+
+        binding.btPref.isVisible = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
     }
 
     override fun onResume() {
@@ -96,8 +112,20 @@ class MainActivity : AppCompatActivity() {
             updateHideLauncherPref(isLauncherIconEnabled())
 
             val rootEnabled = SettingsHelper.isRootAccessEnabled() && RootHelper.isRootEnabled()
+            updateBTPref(isBluetoothConnectPermGranted() || rootEnabled)
             updateSecureSettingsPref(checkSecureSettingsPermission(this@MainActivity) || rootEnabled)
             updateRootAccessPref(rootEnabled)
+        }
+    }
+
+    private fun isBluetoothConnectPermGranted(): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            PermissionChecker.checkSelfPermission(
+                this,
+                Manifest.permission.BLUETOOTH_CONNECT
+            ) == PermissionChecker.PERMISSION_GRANTED
+        } else {
+            true
         }
     }
 
@@ -120,6 +148,11 @@ class MainActivity : AppCompatActivity() {
         binding.hidelauncherPrefToggle.isChecked = enabled
     }
 
+    private fun updateBTPref(enabled: Boolean) {
+        binding.btPrefSummary.setText(if (enabled) R.string.permission_bt_enabled else R.string.permission_bt_disabled)
+        binding.btPrefSummary.setTextColor(if (enabled) Color.GREEN else Color.RED)
+    }
+
     private fun isLauncherIconEnabled(): Boolean {
         val componentState = packageManager.getComponentEnabledSetting(
             ComponentName(this, LauncherActivity::class.java),
@@ -137,5 +170,22 @@ class MainActivity : AppCompatActivity() {
             },
             PackageManager.DONT_KILL_APP
         )
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+
+        val permGranted =
+            grantResults.isNotEmpty() && !grantResults.contains(PackageManager.PERMISSION_DENIED)
+
+        when (requestCode) {
+            BTCONNECT_REQCODE -> {
+                updateBTPref(permGranted)
+            }
+        }
     }
 }

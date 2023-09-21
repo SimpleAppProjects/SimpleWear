@@ -60,4 +60,8 @@
     <string name="permission_notifications_enabled">Notification permission enabled</string>
     <string name="permission_notifications_disabled">Notification permission disabled</string>
 
+    <string name="permission_title_bt">Bluetooth</string>
+    <string name="permission_bt_enabled">Bluetooth permission enabled</string>
+    <string name="permission_bt_disabled">Bluetooth permission disabled</string>
+
 </resources>

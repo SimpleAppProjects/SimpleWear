@@ -22,6 +22,7 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
+import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.thewizrd.shared_resources.helpers.WearSettingsHelper
@@ -57,6 +58,7 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
     private lateinit var permissionRequestLauncher: ActivityResultLauncher<Array<String>>
     private lateinit var devAdminResultLauncher: ActivityResultLauncher<Intent>
     private lateinit var companionDeviceResultLauncher: ActivityResultLauncher<IntentSenderRequest>
+    private lateinit var companionBTPermRequestLauncher: ActivityResultLauncher<String>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -93,8 +95,9 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
 
                         Manifest.permission.BLUETOOTH_CONNECT -> {
                             if (granted) {
-                                startDevicePairing()
+                                updateBTPref(true)
                             } else {
+                                updateBTPref(false)
                                 Toast.makeText(
                                     context,
                                     R.string.error_permissiondenied,
@@ -129,6 +132,20 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
         companionDeviceResultLauncher =
             registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) {
                 updatePermissions()
+            }
+
+        companionBTPermRequestLauncher =
+            registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+                if (granted) {
+                    startDevicePairing()
+                } else {
+                    Toast.makeText(
+                        context,
+                        R.string.error_permissiondenied,
+                        Toast.LENGTH_SHORT
+                    )
+                        .show()
+                }
             }
     }
 
@@ -320,6 +337,14 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
         binding.notifPref.visibility =
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) View.VISIBLE else View.GONE
 
+        binding.btPref.setOnClickListener {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !isBluetoothConnectPermGranted()) {
+                permissionRequestLauncher.launch(arrayOf(Manifest.permission.BLUETOOTH_CONNECT))
+            }
+        }
+        binding.btPref.isVisible =
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU
+
         return binding.root
     }
 
@@ -341,7 +366,7 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
     private fun startDevicePairing() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             if (!isBluetoothConnectPermGranted()) {
-                permissionRequestLauncher.launch(arrayOf(Manifest.permission.BLUETOOTH_CONNECT))
+                companionBTPermRequestLauncher.launch(Manifest.permission.BLUETOOTH_CONNECT)
                 return
             }
         }
@@ -393,7 +418,7 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
 
             // Verify bluetooth permissions
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !isBluetoothConnectPermGranted()) {
-                permissionRequestLauncher.launch(arrayOf(Manifest.permission.BLUETOOTH_CONNECT))
+                companionBTPermRequestLauncher.launch(Manifest.permission.BLUETOOTH_CONNECT)
                 return@runWithView
             }
 
@@ -545,6 +570,11 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
     private fun updateNotificationPref(enabled: Boolean) {
         binding.notifPrefSummary.setText(if (enabled) R.string.permission_notifications_enabled else R.string.permission_notifications_disabled)
         binding.notifPrefSummary.setTextColor(if (enabled) Color.GREEN else Color.RED)
+    }
+
+    private fun updateBTPref(enabled: Boolean) {
+        binding.btPrefSummary.setText(if (enabled) R.string.permission_bt_enabled else R.string.permission_bt_disabled)
+        binding.btPrefSummary.setTextColor(if (enabled) Color.GREEN else Color.RED)
     }
 
     @Suppress("DEPRECATION")

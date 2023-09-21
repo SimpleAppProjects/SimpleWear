@@ -18,4 +18,9 @@
 
     <string name="url_root_access_help" translatable="false">https://github.com/SimpleAppProjects/SimpleWear/wiki/Root-Access</string>
     <string name="url_secure_settings_help" translatable="false">https://github.com/SimpleAppProjects/SimpleWear/wiki/Enable-WRITE_SECURE_SETTINGS-permission</string>
+
+    <string name="permission_title_bt">Bluetooth</string>
+    <string name="permission_bt_enabled">Bluetooth permission enabled</string>
+    <string name="permission_bt_disabled">Bluetooth permission disabled</string>
+
 </resources>

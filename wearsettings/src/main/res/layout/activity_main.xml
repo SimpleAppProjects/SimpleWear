@@ -12,7 +12,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:fitsSystemWindows="true"
-        app:liftOnScroll="true">
+        app:liftOnScroll="true"
+        tools:visibility="gone">
 
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar"
@@ -122,6 +123,41 @@
                     android:layout_alignStart="@+id/securesettings_pref_title"
                     android:maxLines="4"
                     android:text="@string/message_securesettings_disabled"
+                    android:textAppearance="?android:textAppearanceSmall" />
+
+            </RelativeLayout>
+
+            <RelativeLayout
+                android:id="@+id/bt_pref"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="64dp"
+                android:padding="16dp"
+                android:background="?selectableItemBackground"
+                android:visibility="gone"
+                tools:visibility="visible">
+
+                <TextView
+                    android:id="@+id/bt_pref_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentStart="true"
+                    android:layout_alignParentTop="true"
+                    android:ellipsize="marquee"
+                    android:fadingEdge="horizontal"
+                    android:singleLine="true"
+                    android:text="@string/permission_title_bt"
+                    android:textAppearance="?textAppearanceTitleMedium"
+                    android:textSize="18sp" />
+
+                <TextView
+                    android:id="@+id/bt_pref_summary"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@+id/bt_pref_title"
+                    android:layout_alignStart="@+id/bt_pref_title"
+                    android:maxLines="4"
+                    android:text="@string/permission_bt_disabled"
                     android:textAppearance="?android:textAppearanceSmall" />
 
             </RelativeLayout>

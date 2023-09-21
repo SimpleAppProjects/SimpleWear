@@ -236,6 +236,39 @@
         </LinearLayout>
 
         <LinearLayout
+            android:id="@+id/bt_pref"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="64dp"
+            android:padding="16dp"
+            android:gravity="center_vertical"
+            android:orientation="vertical"
+            android:background="?selectableItemBackground"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <TextView
+                android:id="@+id/bt_pref_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:ellipsize="marquee"
+                android:fadingEdge="horizontal"
+                android:singleLine="true"
+                android:text="@string/permission_title_bt"
+                android:textAppearance="?textAppearanceTitleMedium"
+                android:textSize="18sp" />
+
+            <TextView
+                android:id="@+id/bt_pref_summary"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:maxLines="4"
+                android:textAppearance="?android:textAppearanceSmall"
+                tools:text="@string/permission_bt_disabled" />
+
+        </LinearLayout>
+
+        <LinearLayout
             android:id="@+id/wearsettings_pref"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

@@ -787,8 +787,33 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
             }
             Actions.BLUETOOTH -> {
                 tA = action as ToggleAction
-                tA.setActionSuccessful(PhoneStatusHelper.setBluetoothEnabled(mContext, tA.isEnabled))
-                sendMessage(nodeID, WearableHelper.ActionsPath, JSONParser.serializer(tA, Action::class.java).stringToBytes())
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    if (WearSettingsHelper.isWearSettingsInstalled()) {
+                        val status = performRemoteAction(action)
+                        if (status == ActionStatus.REMOTE_FAILURE ||
+                            status == ActionStatus.REMOTE_PERMISSION_DENIED
+                        ) {
+                            tA.setActionSuccessful(status)
+                            WearSettingsHelper.launchWearSettings()
+                        }
+                    } else {
+                        /* BluetoothAdapter.enable/disable is no-op as of Android 13 */
+                        tA.setActionSuccessful(PhoneStatusHelper.openBTSettings(mContext))
+                        tA.isEnabled = PhoneStatusHelper.isBluetoothEnabled(mContext)
+                    }
+                } else {
+                    tA.setActionSuccessful(
+                        PhoneStatusHelper.setBluetoothEnabled(
+                            mContext,
+                            tA.isEnabled
+                        )
+                    )
+                }
+                sendMessage(
+                    nodeID,
+                    WearableHelper.ActionsPath,
+                    JSONParser.serializer(tA, Action::class.java).stringToBytes()
+                )
             }
             Actions.MOBILEDATA -> {
                 tA = action as ToggleAction

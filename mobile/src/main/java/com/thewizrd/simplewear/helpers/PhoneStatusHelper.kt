@@ -24,6 +24,7 @@ import android.os.PowerManager
 import android.provider.Settings
 import android.util.Log
 import android.view.KeyEvent
+import androidx.annotation.DeprecatedSinceApi
 import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
 import androidx.core.location.LocationManagerCompat
@@ -73,6 +74,7 @@ object PhoneStatusHelper {
         return false
     }
 
+    @DeprecatedSinceApi(Build.VERSION_CODES.Q)
     fun setWifiEnabled(context: Context, enable: Boolean): ActionStatus {
         if (ContextCompat.checkSelfPermission(
                 context,
@@ -96,6 +98,7 @@ object PhoneStatusHelper {
         return btService.adapter?.isEnabled ?: false
     }
 
+    @DeprecatedSinceApi(Build.VERSION_CODES.TIRAMISU)
     fun setBluetoothEnabled(context: Context, enable: Boolean): ActionStatus {
         val btService = context.applicationContext.getSystemService(BluetoothManager::class.java)
         return btService.adapter?.let {
@@ -574,6 +577,19 @@ object PhoneStatusHelper {
         return try {
             context.startActivity(
                 Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
+                    .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            )
+            ActionStatus.SUCCESS
+        } catch (e: Exception) {
+            Logger.writeLine(Log.ERROR, e)
+            ActionStatus.FAILURE
+        }
+    }
+
+    fun openBTSettings(context: Context): ActionStatus {
+        return try {
+            context.startActivity(
+                Intent(Settings.ACTION_BLUETOOTH_SETTINGS)
                     .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             )
             ActionStatus.SUCCESS
