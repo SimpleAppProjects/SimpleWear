@@ -11,19 +11,27 @@ import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
 import android.provider.Settings
+import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.PermissionChecker
 import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.snackbar.Snackbar
+import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.wearsettings.actions.checkSecureSettingsPermission
 import com.thewizrd.wearsettings.databinding.ActivityMainBinding
 import com.thewizrd.wearsettings.root.RootHelper
+import com.thewizrd.wearsettings.shizuku.ShizukuState
+import com.thewizrd.wearsettings.shizuku.ShizukuUtils
 import kotlinx.coroutines.launch
+import rikka.shizuku.Shizuku
 import com.thewizrd.wearsettings.Settings as SettingsHelper
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListener {
     companion object {
         private const val BTCONNECT_REQCODE = 0
+        private const val SHIZUKU_REQCODE = 1
     }
 
     private lateinit var binding: ActivityMainBinding
@@ -102,6 +110,64 @@ class MainActivity : AppCompatActivity() {
         }
 
         binding.btPref.isVisible = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+
+        binding.shizukuPref.setOnClickListener {
+            runCatching {
+                val shizukuState = ShizukuUtils.getShizukuState(this)
+
+                when (shizukuState) {
+                    ShizukuState.RUNNING -> { /* no-op */
+                    }
+
+                    ShizukuState.NOT_INSTALLED -> {
+                        showShizukuInstallDialog()
+                    }
+
+                    ShizukuState.NOT_RUNNING -> {
+                        ShizukuUtils.startShizukuActivity(this)
+                    }
+
+                    ShizukuState.PERMISSION_DENIED -> {
+                        if (Shizuku.shouldShowRequestPermissionRationale()) {
+                            Snackbar.make(
+                                binding.root,
+                                R.string.message_shizuku_disabled,
+                                Snackbar.LENGTH_LONG
+                            ).apply {
+                                setAction(R.string.title_settings) {
+                                    runCatching {
+                                        startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                                            data = Uri.parse("package:${it.context.packageName}")
+                                            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                                        })
+                                    }
+                                }
+                            }
+                        } else {
+                            ShizukuUtils.requestPermission(this, SHIZUKU_REQCODE)
+                        }
+                    }
+                }
+            }.onFailure {
+                Logger.writeLine(Log.ERROR, it)
+            }
+        }
+
+        Shizuku.addRequestPermissionResultListener(this)
+    }
+
+    private fun showShizukuInstallDialog() {
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.permission_title_shizuku)
+            .setMessage(R.string.message_shizuku_alert)
+            .setCancelable(true)
+            .setNegativeButton(android.R.string.cancel) { d, _ ->
+                d.dismiss()
+            }
+            .setPositiveButton(android.R.string.ok) { d, which ->
+                ShizukuUtils.openPlayStoreListing(this)
+            }
+            .show()
     }
 
     override fun onResume() {
@@ -112,9 +178,11 @@ class MainActivity : AppCompatActivity() {
             updateHideLauncherPref(isLauncherIconEnabled())
 
             val rootEnabled = SettingsHelper.isRootAccessEnabled() && RootHelper.isRootEnabled()
-            updateBTPref(isBluetoothConnectPermGranted() || rootEnabled)
-            updateSecureSettingsPref(checkSecureSettingsPermission(this@MainActivity) || rootEnabled)
+            val shizukuState = ShizukuUtils.getShizukuState(this@MainActivity)
+            updateBTPref(isBluetoothConnectPermGranted() || rootEnabled || shizukuState == ShizukuState.RUNNING)
+            updateSecureSettingsPref(checkSecureSettingsPermission(this@MainActivity) || rootEnabled || shizukuState == ShizukuState.RUNNING)
             updateRootAccessPref(rootEnabled)
+            updateShizukuPref(shizukuState)
         }
     }
 
@@ -153,6 +221,18 @@ class MainActivity : AppCompatActivity() {
         binding.btPrefSummary.setTextColor(if (enabled) Color.GREEN else Color.RED)
     }
 
+    private fun updateShizukuPref(state: ShizukuState) {
+        binding.shizukuPrefSummary.setText(
+            when (state) {
+                ShizukuState.NOT_INSTALLED -> R.string.message_shizuku_not_installed
+                ShizukuState.NOT_RUNNING -> R.string.message_shizuku_not_running
+                ShizukuState.PERMISSION_DENIED -> R.string.message_shizuku_disabled
+                ShizukuState.RUNNING -> R.string.message_shizuku_running
+            }
+        )
+        binding.shizukuPrefSummary.setTextColor(if (state == ShizukuState.RUNNING) Color.GREEN else Color.RED)
+    }
+
     private fun isLauncherIconEnabled(): Boolean {
         val componentState = packageManager.getComponentEnabledSetting(
             ComponentName(this, LauncherActivity::class.java),
@@ -187,5 +267,20 @@ class MainActivity : AppCompatActivity() {
                 updateBTPref(permGranted)
             }
         }
+    }
+
+    // Shizuku
+    override fun onRequestPermissionResult(requestCode: Int, grantResult: Int) {
+        if (grantResult == PackageManager.PERMISSION_GRANTED) {
+            // granted!!
+            lifecycleScope.launch {
+                updateShizukuPref(ShizukuUtils.getShizukuState(this@MainActivity))
+            }
+        }
+    }
+
+    override fun onDestroy() {
+        Shizuku.removeRequestPermissionResultListener(this)
+        super.onDestroy()
     }
 }

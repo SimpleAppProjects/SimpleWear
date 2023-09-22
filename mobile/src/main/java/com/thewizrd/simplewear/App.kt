@@ -9,16 +9,19 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.pm.PackageManager
 import android.database.ContentObserver
 import android.location.LocationManager
 import android.media.AudioManager
-import android.net.*
+import android.net.Uri
 import android.net.wifi.WifiManager
 import android.os.BatteryManager
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
+import android.telephony.TelephonyManager
 import android.util.Log
 import androidx.work.Configuration
 import com.google.android.material.color.DynamicColors
@@ -33,6 +36,7 @@ import com.thewizrd.shared_resources.utils.JSONParser
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.simplewear.media.MediaControllerService
 import com.thewizrd.simplewear.services.CallControllerService
+import com.thewizrd.simplewear.telephony.SubscriptionListener
 import com.thewizrd.simplewear.wearable.WearableWorker
 import kotlin.system.exitProcess
 
@@ -149,41 +153,34 @@ class App : Application(), ApplicationLib, ActivityLifecycleCallbacks, Configura
         }
         appContext.registerReceiver(mActionsReceiver, actionsFilter)
 
-        // Register listener system settings
-        val setting = Settings.Global.getUriFor("mobile_data")
-        mContentObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
-            override fun onChange(selfChange: Boolean, uri: Uri?) {
-                super.onChange(selfChange, uri)
-                if (uri.toString().contains("mobile_data")) {
-                    WearableWorker.sendActionUpdate(appContext, Actions.MOBILEDATA)
+        runCatching {
+            if (appContext.packageManager.hasSystemFeature(PackageManager.FEATURE_TELEPHONY)) {
+                // Register listener for mobile data setting (default sim)
+                val setting = Settings.Global.getUriFor("mobile_data")
+                mContentObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
+                    override fun onChange(selfChange: Boolean, uri: Uri?) {
+                        super.onChange(selfChange, uri)
+                        if (uri.toString().contains("mobile_data")) {
+                            WearableWorker.sendActionUpdate(appContext, Actions.MOBILEDATA)
+                        }
+                    }
+                }
+                contentResolver.registerContentObserver(setting, false, mContentObserver)
+
+                if (appContext.packageManager.hasSystemFeature(PackageManager.FEATURE_TELEPHONY_SUBSCRIPTION)) {
+                    val telephonyManager = appContext.getSystemService(TelephonyManager::class.java)
+
+                    val modemCount = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                        telephonyManager.supportedModemCount
+                    } else {
+                        telephonyManager.phoneCount
+                    }
+
+                    if (modemCount > 1) {
+                        SubscriptionListener.registerListener(appContext)
+                    }
                 }
             }
-        }
-        contentResolver.registerContentObserver(setting, false, mContentObserver)
-
-        // Register connectivity listener
-        runCatching {
-            val connMgr = appContext.getSystemService(ConnectivityManager::class.java)
-            connMgr.registerNetworkCallback(
-                NetworkRequest.Builder()
-                    .addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR)
-                    .build(),
-                object : ConnectivityManager.NetworkCallback() {
-                    override fun onAvailable(network: Network) {
-                        super.onAvailable(network)
-                        WearableWorker.sendActionUpdate(appContext, Actions.MOBILEDATA)
-                    }
-
-                    override fun onUnavailable() {
-                        super.onUnavailable()
-                        WearableWorker.sendActionUpdate(appContext, Actions.MOBILEDATA)
-                    }
-                }
-            )
-        }.onFailure {
-            // SecurityException: Package android does not belong to xxxxx
-            // https://issuetracker.google.com/issues/175055271
-            Logger.writeLine(Log.ERROR, it)
         }
 
         val oldHandler = Thread.getDefaultUncaughtExceptionHandler()

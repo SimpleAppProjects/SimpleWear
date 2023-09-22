@@ -1,5 +1,8 @@
-apply plugin: 'com.android.application'
-apply plugin: 'kotlin-android'
+plugins {
+    id('com.android.application')
+    id('kotlin-android')
+    id('dev.rikka.tools.refine') version "$refine_version"
+}
 
 android {
     compileSdk rootProject.compileSdkVersion
@@ -48,6 +51,7 @@ android {
 
 dependencies {
     implementation project(":shared_resources")
+    compileOnly project(':hidden-api')
 
     // Unit Testing
     androidTestImplementation "androidx.test:core:$test_core_version"
@@ -71,4 +75,10 @@ dependencies {
 
     // Root
     implementation 'com.github.topjohnwu.libsu:core:3.1.2'
+
+    // Shizuku
+    implementation "dev.rikka.shizuku:api:$shizuku_version"
+    implementation "dev.rikka.shizuku:provider:$shizuku_version"
+    implementation "dev.rikka.tools.refine:runtime:$refine_version"
+    implementation 'org.lsposed.hiddenapibypass:hiddenapibypass:4.3'
 }

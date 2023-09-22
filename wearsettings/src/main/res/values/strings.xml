@@ -23,4 +23,12 @@
     <string name="permission_bt_enabled">Bluetooth permission enabled</string>
     <string name="permission_bt_disabled">Bluetooth permission disabled</string>
 
+    <string name="permission_title_shizuku">Shizuku</string>
+    <string name="message_shizuku_disabled">Shizuku permission disabled</string>
+    <string name="message_shizuku_not_installed">Shizuku not installed</string>
+    <string name="message_shizuku_not_running">Shizuku service not running</string>
+    <string name="message_shizuku_running">Shizuku service enabled</string>
+    <string name="message_shizuku_alert">Shizuku can be used as an option to provide system permissions to SimpleWear for non-root devices. As this is a third-party app, please use at your own discretion.
+        Please note that the Shizuku service will need to be manually restarted every time on boot.</string>
+
 </resources>

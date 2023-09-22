@@ -3,7 +3,7 @@
 buildscript {
     ext {
         compileSdkVersion = 34
-        minSdkVersion = 23
+        minSdkVersion = 24
         targetSdkVersion = 33
 
         kotlin_version = '1.9.0'
@@ -40,6 +40,10 @@ buildscript {
 
         gson_version = '2.10.1'
         timber_version = '5.0.1'
+
+        // Shizuku
+        shizuku_version = '13.1.5'
+        refine_version = '4.3.0'
     }
 
     repositories {

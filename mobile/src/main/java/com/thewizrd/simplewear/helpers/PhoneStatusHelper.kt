@@ -1,6 +1,7 @@
 package com.thewizrd.simplewear.helpers
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.ActivityManager
 import android.app.NotificationManager
 import android.app.admin.DevicePolicyManager
@@ -14,7 +15,6 @@ import android.content.pm.PackageManager
 import android.location.LocationManager
 import android.media.AudioManager
 import android.net.ConnectivityManager
-import android.net.NetworkCapabilities
 import android.net.wifi.WifiConfiguration
 import android.net.wifi.WifiManager
 import android.os.BatteryManager
@@ -22,6 +22,8 @@ import android.os.Build
 import android.os.Handler
 import android.os.PowerManager
 import android.provider.Settings
+import android.telephony.SubscriptionManager
+import android.telephony.TelephonyManager
 import android.util.Log
 import android.view.KeyEvent
 import androidx.annotation.DeprecatedSinceApi
@@ -116,13 +118,41 @@ object PhoneStatusHelper {
         } ?: ActionStatus.FAILURE
     }
 
+    @SuppressLint("MissingPermission")
     fun isMobileDataEnabled(context: Context): Boolean {
         return try {
-            val mobileDataSettingEnabled =
-                Settings.Global.getInt(context.contentResolver, "mobile_data", 0) == 1
-            val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-            val cap = cm.getNetworkCapabilities(cm.activeNetwork)
-            cap != null && cap.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) || mobileDataSettingEnabled
+            var telephonyManager = context.getSystemService(TelephonyManager::class.java)
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                val activeSubId = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    SubscriptionManager.getActiveDataSubscriptionId().takeUnless {
+                        it == SubscriptionManager.INVALID_SUBSCRIPTION_ID
+                    } ?: SubscriptionManager.getDefaultSubscriptionId()
+                } else {
+                    SubscriptionManager.getDefaultSubscriptionId()
+                }
+                if (activeSubId != SubscriptionManager.INVALID_SUBSCRIPTION_ID) {
+                    telephonyManager = telephonyManager.createForSubscriptionId(activeSubId)
+                }
+
+                telephonyManager.isDataEnabled
+            } else {
+                if (telephonyManager.phoneCount > 1) {
+                    val activeSubId = SubscriptionManager.getDefaultSubscriptionId()
+
+                    if (activeSubId != SubscriptionManager.INVALID_SUBSCRIPTION_ID) {
+                        Settings.Global.getInt(
+                            context.contentResolver,
+                            "mobile_data${activeSubId}",
+                            0
+                        ) == 1
+                    } else {
+                        Settings.Global.getInt(context.contentResolver, "mobile_data", 0) == 1
+                    }
+                } else {
+                    Settings.Global.getInt(context.contentResolver, "mobile_data", 0) == 1
+                }
+            }
         } catch (e: Exception) {
             Logger.writeLine(Log.ERROR, e)
             false

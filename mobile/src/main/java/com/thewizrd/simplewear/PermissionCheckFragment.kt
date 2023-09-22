@@ -91,6 +91,11 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
                                 ) {
                                     startDevicePairing()
                                 }
+
+                                // Register listener for state changes
+                                if (!SubscriptionListener.isRegistered) {
+                                    SubscriptionListener.registerListener(requireContext())
+                                }
                             }
 
                             updateManageCallsText(granted)
