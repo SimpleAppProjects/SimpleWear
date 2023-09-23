@@ -4,6 +4,7 @@ import android.Manifest
 import android.annotation.TargetApi
 import android.app.Activity
 import android.app.admin.DevicePolicyManager
+import android.bluetooth.BluetoothAdapter
 import android.bluetooth.le.ScanFilter
 import android.companion.*
 import android.content.*
@@ -40,6 +41,7 @@ import com.thewizrd.simplewear.media.MediaControllerService
 import com.thewizrd.simplewear.services.CallControllerService
 import com.thewizrd.simplewear.services.InCallManagerService
 import com.thewizrd.simplewear.services.NotificationListener
+import com.thewizrd.simplewear.telephony.SubscriptionListener
 import com.thewizrd.simplewear.utils.associate
 import com.thewizrd.simplewear.utils.disassociateAll
 import com.thewizrd.simplewear.utils.hasAssociations
@@ -59,6 +61,7 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
     private lateinit var devAdminResultLauncher: ActivityResultLauncher<Intent>
     private lateinit var companionDeviceResultLauncher: ActivityResultLauncher<IntentSenderRequest>
     private lateinit var companionBTPermRequestLauncher: ActivityResultLauncher<String>
+    private lateinit var requestBtResultLauncher: ActivityResultLauncher<Intent>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -145,6 +148,17 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
                         Toast.LENGTH_SHORT
                     )
                         .show()
+
+                    binding.companionPairProgress.visibility = View.GONE
+                }
+            }
+
+        requestBtResultLauncher =
+            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+                if (it.resultCode == Activity.RESULT_OK) {
+                    pairDevice()
+                } else {
+                    binding.companionPairProgress.visibility = View.GONE
                 }
             }
     }
@@ -419,6 +433,13 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
             // Verify bluetooth permissions
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !isBluetoothConnectPermGranted()) {
                 companionBTPermRequestLauncher.launch(Manifest.permission.BLUETOOTH_CONNECT)
+                return@runWithView
+            }
+
+            if (!PhoneStatusHelper.isBluetoothEnabled(requireContext())) {
+                runCatching {
+                    requestBtResultLauncher.launch(Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE))
+                }
                 return@runWithView
             }
 
