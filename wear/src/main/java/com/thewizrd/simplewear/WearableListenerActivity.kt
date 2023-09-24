@@ -182,11 +182,22 @@ abstract class WearableListenerActivity : AppCompatLiteActivity(), OnMessageRece
                 )
 
                 LocalBroadcastManager.getInstance(this@WearableListenerActivity)
-                        .sendBroadcast(Intent(ACTION_OPENONPHONE)
-                                .putExtra(EXTRA_SUCCESS, result != -1)
-                                .putExtra(EXTRA_SHOWANIMATION, showAnimation))
+                    .sendBroadcast(
+                        Intent(ACTION_OPENONPHONE)
+                            .putExtra(EXTRA_SUCCESS, result != -1)
+                            .putExtra(EXTRA_SHOWANIMATION, showAnimation)
+                    )
             }
         }
+    }
+
+    protected suspend fun startRemoteActivity(intent: Intent): Boolean {
+        return runCatching {
+            remoteActivityHelper.startRemoteActivity(intent).await()
+            true
+        }.onFailure {
+            Logger.writeLine(Log.ERROR, it, "Error starting remote activity")
+        }.getOrDefault(false)
     }
 
     override fun onMessageReceived(messageEvent: MessageEvent) {

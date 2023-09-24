@@ -97,8 +97,24 @@ class WearChipButton @JvmOverloads constructor(
             if (a.hasValue(R.styleable.WearChipButton_primaryText)) {
                 setPrimaryText(a.getString(R.styleable.WearChipButton_primaryText))
             }
+            if (a.hasValue(R.styleable.WearChipButton_primaryTextMaxLines)) {
+                setPrimaryTextMaxLines(
+                    a.getInt(
+                        R.styleable.WearChipButton_primaryTextMaxLines,
+                        mPrimaryTextView.maxLines
+                    )
+                )
+            }
             if (a.hasValue(R.styleable.WearChipButton_secondaryText)) {
                 setSecondaryText(a.getString(R.styleable.WearChipButton_secondaryText))
+            }
+            if (a.hasValue(R.styleable.WearChipButton_secondaryTextMaxLines)) {
+                setSecondaryTextMaxLines(
+                    a.getInt(
+                        R.styleable.WearChipButton_secondaryTextMaxLines,
+                        mSecondaryTextView.maxLines
+                    )
+                )
             }
             if (a.hasValue(R.styleable.WearChipButton_backgroundTint)) {
                 val colorResId = a.getResourceId(R.styleable.WearChipButton_backgroundTint, 0)
@@ -196,6 +212,10 @@ class WearChipButton @JvmOverloads constructor(
         mPrimaryTextView.visibility = if (text == null) View.GONE else View.VISIBLE
     }
 
+    fun setPrimaryTextMaxLines(maxLines: Int) {
+        mPrimaryTextView.maxLines = maxLines
+    }
+
     fun setSecondaryText(@StringRes resId: Int) {
         if (resId == 0) {
             setSecondaryText(null)
@@ -218,6 +238,10 @@ class WearChipButton @JvmOverloads constructor(
         } else {
             mPrimaryTextView.maxLines = 1
         }
+    }
+
+    fun setSecondaryTextMaxLines(maxLines: Int) {
+        mSecondaryTextView.maxLines = maxLines
     }
 
     fun setText(@StringRes primaryResId: Int, @StringRes secondaryResId: Int = 0) {

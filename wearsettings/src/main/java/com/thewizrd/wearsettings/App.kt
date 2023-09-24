@@ -3,6 +3,7 @@ package com.thewizrd.wearsettings
 import android.app.Activity
 import android.app.Application
 import android.content.Context
+import android.os.Build
 import android.os.Bundle
 import com.google.android.material.color.DynamicColors
 import com.thewizrd.shared_resources.ApplicationLib
@@ -10,6 +11,7 @@ import com.thewizrd.shared_resources.SimpleLibrary
 import com.thewizrd.shared_resources.helpers.AppState
 import com.thewizrd.shared_resources.utils.FileLoggingTree
 import com.thewizrd.shared_resources.utils.Logger
+import org.lsposed.hiddenapibypass.HiddenApiBypass
 
 class App : Application(), ApplicationLib, Application.ActivityLifecycleCallbacks {
     companion object {
@@ -44,6 +46,13 @@ class App : Application(), ApplicationLib, Application.ActivityLifecycleCallback
         }
 
         DynamicColors.applyToActivitiesIfAvailable(this)
+    }
+
+    override fun attachBaseContext(base: Context?) {
+        super.attachBaseContext(base)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            HiddenApiBypass.addHiddenApiExemptions("L");
+        }
     }
 
     override fun onTerminate() {

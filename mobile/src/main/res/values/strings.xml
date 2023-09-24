@@ -3,16 +3,17 @@
     <string name="permission_camera_enabled">Camera permission granted.</string>
     <string name="permission_camera_disabled">Camera permission disabled. Please click to enable controlling flashlight from WearOS device</string>
 
-    <string name="device_admin_description">Allows you to turn of your screen and lock your device from your WearOS device</string>
-    <string name="permission_admin_enabled">Device admin enabled</string>
+    <string name="device_admin_description">Allows you to turn off your screen and lock your device from your WearOS device</string>
+    <string name="permission_admin_enabled">Device admin enabled.\n<b>Note: To uninstall app please use \"Deactivate and uninstall\" option</b></string>
     <string name="permission_admin_disabled">Not enabled as device admin. Please click to enable locking screen from your WearOS device</string>
+    <string name="prompt_alert_message_device_admin">Please note that if you enable device admin access, you will need to deactivate the access prior to uninstalling. You can use the \"Deactivate and uninstall\" option in the app to do so.</string>
 
     <string name="permission_dnd_enabled">Do not Disturb access enabled</string>
     <string name="permission_dnd_disabled">Do not Disturb access disabled. Please click to enable changing Do not Disturb setting from your WearOS device</string>
 
     <string name="permission_title_pairdevice">Pair with WearOS device</string>
     <string name="permission_pairdevice_enabled">App is paired with WearOS device</string>
-    <string name="permission_pairdevice_disabled">WearOS device not paired with app. Please click to pair device. This is needed to start the media player, launch apps and/or manage calls</string>
+    <string name="permission_pairdevice_disabled">WearOS device not paired with app. Please click to pair device. This is needed to manage calls</string>
     <string name="message_watchbtdiscover">Please enable Bluetooth discovery on your WearOS device</string>
     <string name="message_watchbttimeout">Please ensure Bluetooth is enabled on your WearOS device</string>
     <string name="message_nodevices_found">No devices found</string>
@@ -58,5 +59,9 @@
     <string name="permission_title_notifications">Notifications</string>
     <string name="permission_notifications_enabled">Notification permission enabled</string>
     <string name="permission_notifications_disabled">Notification permission disabled</string>
+
+    <string name="permission_title_bt">Bluetooth</string>
+    <string name="permission_bt_enabled">Bluetooth permission enabled</string>
+    <string name="permission_bt_disabled">Bluetooth permission disabled</string>
 
 </resources>

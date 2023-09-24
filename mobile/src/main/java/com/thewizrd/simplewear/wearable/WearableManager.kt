@@ -1,7 +1,6 @@
 package com.thewizrd.simplewear.wearable
 
 import android.app.Activity
-import android.companion.CompanionDeviceManager
 import android.content.ActivityNotFoundException
 import android.content.ComponentName
 import android.content.Context
@@ -164,13 +163,16 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
                         )
                     }
                 }
-            } else { // Android Q+ Devices
+            } else {
+                // Android Q+ Devices
                 // Android Q puts a limitation on starting activities from the background
                 // We are allowed to bypass this if we have a device registered as companion,
                 // which will be our WearOS device; Check if device is associated before we start
-                val deviceManager = mContext.getSystemService(Context.COMPANION_DEVICE_SERVICE) as CompanionDeviceManager
-                val associated_devices = deviceManager.associations
-                if (associated_devices.isEmpty()) {
+                // OR if SYSTEM_ALERT_WINDOW is granted
+                if (!PhoneStatusHelper.companionDeviceAssociated(mContext) && !android.provider.Settings.canDrawOverlays(
+                        mContext
+                    )
+                ) {
                     // No devices associated; send message to user
                     sendMessage(
                         nodeID,
@@ -515,15 +517,22 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
                         Logger.writeLine(Log.ERROR, e)
                     }
                 }
-            } else { // Android Q+ Devices
+            } else {
+                // Android Q+ Devices
                 // Android Q puts a limitation on starting activities from the background
                 // We are allowed to bypass this if we have a device registered as companion,
                 // which will be our WearOS device; Check if device is associated before we start
-                val deviceManager = mContext.getSystemService(Context.COMPANION_DEVICE_SERVICE) as CompanionDeviceManager
-                val associated_devices = deviceManager.associations
-                if (associated_devices.isEmpty()) {
+                // OR if SYSTEM_ALERT_WINDOW is granted
+                if (!PhoneStatusHelper.companionDeviceAssociated(mContext) && !android.provider.Settings.canDrawOverlays(
+                        mContext
+                    )
+                ) {
                     // No devices associated; send message to user
-                    sendMessage(nodeID, WearableHelper.LaunchAppPath, ActionStatus.PERMISSION_DENIED.name.stringToBytes())
+                    sendMessage(
+                        nodeID,
+                        WearableHelper.LaunchAppPath,
+                        ActionStatus.PERMISSION_DENIED.name.stringToBytes()
+                    )
                 } else {
                     try {
                         mContext.startActivity(appIntent)
@@ -778,8 +787,33 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
             }
             Actions.BLUETOOTH -> {
                 tA = action as ToggleAction
-                tA.setActionSuccessful(PhoneStatusHelper.setBluetoothEnabled(mContext, tA.isEnabled))
-                sendMessage(nodeID, WearableHelper.ActionsPath, JSONParser.serializer(tA, Action::class.java).stringToBytes())
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    if (WearSettingsHelper.isWearSettingsInstalled()) {
+                        val status = performRemoteAction(action)
+                        if (status == ActionStatus.REMOTE_FAILURE ||
+                            status == ActionStatus.REMOTE_PERMISSION_DENIED
+                        ) {
+                            tA.setActionSuccessful(status)
+                            WearSettingsHelper.launchWearSettings()
+                        }
+                    } else {
+                        /* BluetoothAdapter.enable/disable is no-op as of Android 13 */
+                        tA.setActionSuccessful(PhoneStatusHelper.openBTSettings(mContext))
+                        tA.isEnabled = PhoneStatusHelper.isBluetoothEnabled(mContext)
+                    }
+                } else {
+                    tA.setActionSuccessful(
+                        PhoneStatusHelper.setBluetoothEnabled(
+                            mContext,
+                            tA.isEnabled
+                        )
+                    )
+                }
+                sendMessage(
+                    nodeID,
+                    WearableHelper.ActionsPath,
+                    JSONParser.serializer(tA, Action::class.java).stringToBytes()
+                )
             }
             Actions.MOBILEDATA -> {
                 tA = action as ToggleAction

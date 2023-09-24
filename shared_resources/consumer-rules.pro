@@ -25,6 +25,7 @@
 -keep class * extends com.thewizrd.shared_resources.actions.Action { *; }
 -keep public enum com.thewizrd.shared_resources.actions.* { <fields>; }
 -keep public enum com.thewizrd.shared_resources.helpers.* { <fields>; }
+-keep class androidx.core.util.Pair { *; }
 
 ##---------------Begin: proguard configuration for Gson  ----------
 # Gson uses generic type information stored in a class file when working with fields. Proguard

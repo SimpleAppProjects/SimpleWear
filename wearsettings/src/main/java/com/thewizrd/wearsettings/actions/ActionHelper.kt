@@ -21,12 +21,19 @@ object ActionHelper {
             Actions.WIFI -> {
                 WifiAction.executeAction(context, action)
             }
+
             Actions.LOCATION -> {
                 LocationAction.executeAction(context, action)
             }
+
             Actions.MOBILEDATA -> {
                 MobileDataAction.executeAction(context, action)
             }
+
+            Actions.BLUETOOTH -> {
+                BluetoothAction.executeAction(context, action)
+            }
+
             else -> ActionStatus.FAILURE
         }
     }

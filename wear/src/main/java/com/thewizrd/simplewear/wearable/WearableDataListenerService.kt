@@ -4,6 +4,10 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothManager
+import android.bluetooth.le.AdvertiseData
+import android.bluetooth.le.AdvertisingSetCallback
+import android.bluetooth.le.AdvertisingSetParameters
 import android.content.Intent
 import android.os.Build
 import android.util.Log
@@ -29,7 +33,9 @@ import com.thewizrd.simplewear.media.MediaPlayerActivity
 import com.thewizrd.simplewear.preferences.Settings
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.tasks.await
 
 class WearableDataListenerService : WearableListenerService() {
@@ -59,11 +65,7 @@ class WearableDataListenerService : WearableListenerService() {
             val startIntent = Intent(this, PhoneSyncActivity::class.java)
             this.startActivity(startIntent)
         } else if (messageEvent.path == WearableHelper.BtDiscoverPath) {
-            this.startActivity(
-                Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE)
-                    .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    .putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 30)
-            )
+            startBTDiscovery()
 
             GlobalScope.launch(Dispatchers.Default) {
                 sendMessage(
@@ -72,6 +74,57 @@ class WearableDataListenerService : WearableListenerService() {
                     Build.MODEL.stringToBytes()
                 )
             }
+        }
+    }
+
+    private fun startBTDiscovery() {
+        val btService = applicationContext.getSystemService(BluetoothManager::class.java)
+        val adapter = btService.adapter
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && adapter.isMultipleAdvertisementSupported) {
+            val advertiser = adapter.bluetoothLeAdvertiser
+
+            GlobalScope.launch(Dispatchers.Default) {
+                val params = AdvertisingSetParameters.Builder()
+                    .setLegacyMode(true)
+                    .setConnectable(false)
+                    .setInterval(AdvertisingSetParameters.INTERVAL_HIGH)
+                    .setTxPowerLevel(AdvertisingSetParameters.TX_POWER_ULTRA_LOW)
+                    .setScannable(true)
+                    .build()
+
+                val data = AdvertiseData.Builder()
+                    .setIncludeDeviceName(true)
+                    .addServiceUuid(WearableHelper.getBLEServiceUUID())
+                    .build()
+
+                val callback = object : AdvertisingSetCallback() {}
+
+                supervisorScope {
+                    runCatching {
+                        Logger.writeLine(Log.DEBUG, "${TAG}: starting BLE advertising")
+
+                        val startedAdv = runCatching {
+                            advertiser.startAdvertisingSet(params, data, null, null, null, callback)
+                            true
+                        }.getOrDefault(false)
+
+                        if (startedAdv) {
+                            delay(10000)
+                            Logger.writeLine(Log.DEBUG, "${TAG}: stopping BLE advertising")
+                            advertiser.stopAdvertisingSet(callback)
+                        }
+                    }.onFailure {
+                        Logger.writeLine(Log.ERROR, it, "Error with BT discovery")
+                    }
+                }
+            }
+        } else {
+            this.startActivity(
+                Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE)
+                    .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    .putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 20)
+            )
         }
     }
 

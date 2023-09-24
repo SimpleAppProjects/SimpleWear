@@ -9,10 +9,11 @@ import android.os.CountDownTimer
 import android.util.Log
 import android.view.View
 import androidx.core.content.ContextCompat
-import androidx.core.util.Pair
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.ConcatAdapter
 import androidx.wear.widget.WearableLinearLayoutManager
+import androidx.wear.widget.drawer.WearableDrawerLayout
+import androidx.wear.widget.drawer.WearableDrawerView
 import com.google.android.gms.wearable.ChannelClient
 import com.google.android.gms.wearable.DataClient.OnDataChangedListener
 import com.google.android.gms.wearable.DataEvent
@@ -31,10 +32,8 @@ import com.thewizrd.shared_resources.helpers.WearConnectionStatus
 import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.shared_resources.utils.ContextUtils.dpToPx
 import com.thewizrd.shared_resources.utils.ImageUtils.toBitmap
-import com.thewizrd.shared_resources.utils.JSONParser
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.shared_resources.utils.bytesToString
-import com.thewizrd.shared_resources.utils.stringToBytes
 import com.thewizrd.simplewear.adapters.AppsListAdapter
 import com.thewizrd.simplewear.adapters.ListHeaderAdapter
 import com.thewizrd.simplewear.adapters.SpacerAdapter
@@ -132,46 +131,38 @@ class AppLauncherActivity : WearableListenerActivity(), OnDataChangedListener {
             }
         }
 
-        binding.appList.setHasFixedSize(true)
-        //binding.appList.isEdgeItemsCenteringEnabled = true
-        binding.appList.addItemDecoration(
-            SpacerItemDecoration(
-                dpToPx(16f).toInt(),
-                dpToPx(4f).toInt()
-            )
-        )
+        binding.drawerLayout.setDrawerStateCallback(object :
+            WearableDrawerLayout.DrawerStateCallback() {
+            override fun onDrawerOpened(
+                layout: WearableDrawerLayout,
+                drawerView: WearableDrawerView
+            ) {
+                super.onDrawerOpened(layout, drawerView)
+                drawerView.requestFocus()
+            }
 
-        binding.appList.layoutManager =
-            WearableLinearLayoutManager(this, CustomScrollingLayoutCallback())
-        mAdapter = AppsListAdapter()
-        mAdapter.setOnClickListener(object : ListAdapterOnClickInterface<AppItemViewModel> {
-            override fun onClick(view: View, item: AppItemViewModel) {
-                lifecycleScope.launch {
-                    if (connect()) {
-                        val nodeID = mPhoneNodeWithApp!!.id
-                        sendMessage(
-                            nodeID, WearableHelper.LaunchAppPath,
-                            JSONParser.serializer(
-                                Pair.create(item.packageName, item.activityName),
-                                Pair::class.java
-                            ).stringToBytes()
-                        )
-                    }
+            override fun onDrawerClosed(
+                layout: WearableDrawerLayout,
+                drawerView: WearableDrawerView
+            ) {
+                super.onDrawerClosed(layout, drawerView)
+                drawerView.clearFocus()
+                binding.appList.requestFocus()
+            }
+
+            override fun onDrawerStateChanged(layout: WearableDrawerLayout, newState: Int) {
+                super.onDrawerStateChanged(layout, newState)
+                if (newState == WearableDrawerView.STATE_IDLE && binding.bottomActionDrawer.isPeeking) {
+                    binding.bottomActionDrawer.clearFocus()
+                    binding.appList.requestFocus()
                 }
             }
         })
-        binding.appList.adapter = ConcatAdapter(
-            ListHeaderAdapter(getString(R.string.action_apps)),
-            mAdapter,
-            SpacerAdapter(dpToPx(48f).toInt())
-        )
 
-        binding.retryFab.setOnClickListener {
-            lifecycleScope.launch {
-                updateConnectionStatus()
-                requestAppsUpdate()
-            }
-        }
+        binding.bottomActionDrawer.visibility = View.VISIBLE
+        binding.bottomActionDrawer.isPeekOnScrollDownEnabled = true
+        binding.bottomActionDrawer.setIsAutoPeekEnabled(true)
+        binding.bottomActionDrawer.setIsLocked(false)
 
         findViewById<WearChipButton>(R.id.icons_pref).also { iconsPref ->
             iconsPref.setOnClickListener {
@@ -192,6 +183,46 @@ class AppLauncherActivity : WearableListenerActivity(), OnDataChangedListener {
                 }
             }
             iconsPref.isChecked = Settings.isLoadAppIcons()
+        }
+
+        binding.appList.setHasFixedSize(true)
+        //binding.appList.isEdgeItemsCenteringEnabled = true
+        binding.appList.addItemDecoration(
+            SpacerItemDecoration(
+                dpToPx(16f).toInt(),
+                dpToPx(4f).toInt()
+            )
+        )
+
+        binding.appList.layoutManager =
+            WearableLinearLayoutManager(this, CustomScrollingLayoutCallback())
+        mAdapter = AppsListAdapter()
+        mAdapter.setOnClickListener(object : ListAdapterOnClickInterface<AppItemViewModel> {
+            override fun onClick(view: View, item: AppItemViewModel) {
+                lifecycleScope.launch {
+                    val success = runCatching {
+                        val intent = WearableHelper.createRemoteActivityIntent(
+                            item.packageName!!,
+                            item.activityName!!
+                        )
+                        startRemoteActivity(intent)
+                    }.getOrDefault(false)
+
+                    showConfirmationOverlay(success)
+                }
+            }
+        })
+        binding.appList.adapter = ConcatAdapter(
+            ListHeaderAdapter(getString(R.string.action_apps)),
+            mAdapter,
+            SpacerAdapter(dpToPx(48f).toInt())
+        )
+
+        binding.retryFab.setOnClickListener {
+            lifecycleScope.launch {
+                updateConnectionStatus()
+                requestAppsUpdate()
+            }
         }
 
         intentFilter = IntentFilter()
@@ -361,7 +392,7 @@ class AppLauncherActivity : WearableListenerActivity(), OnDataChangedListener {
             binding.noappsView.visibility = if (viewModels.isNotEmpty()) View.GONE else View.VISIBLE
             binding.appList.visibility = if (viewModels.isNotEmpty()) View.VISIBLE else View.GONE
             lifecycleScope.launch {
-                if (binding.appList.visibility == View.VISIBLE && !binding.appList.hasFocus()) {
+                if (!binding.bottomActionDrawer.isOpened && binding.appList.visibility == View.VISIBLE && !binding.appList.hasFocus()) {
                     binding.appList.requestFocus()
                 }
             }
@@ -381,7 +412,11 @@ class AppLauncherActivity : WearableListenerActivity(), OnDataChangedListener {
         Wearable.getDataClient(this).addListener(this)
         Wearable.getChannelClient(this).registerChannelCallback(mChannelCallback)
 
-        binding.appList.requestFocus()
+        if (binding.bottomActionDrawer.isOpened) {
+            binding.bottomActionDrawer.requestFocus()
+        } else {
+            binding.appList.requestFocus()
+        }
 
         // Update statuses
         lifecycleScope.launch {

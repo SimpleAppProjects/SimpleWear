@@ -352,14 +352,14 @@ class DashboardActivity : WearableListenerActivity(), OnSharedPreferenceChangeLi
             override fun onDrawerClosed(layout: WearableDrawerLayout, drawerView: WearableDrawerView) {
                 super.onDrawerClosed(layout, drawerView)
                 drawerView.clearFocus()
+                binding.scrollView.requestFocus()
             }
 
             override fun onDrawerStateChanged(layout: WearableDrawerLayout, newState: Int) {
                 super.onDrawerStateChanged(layout, newState)
-                if (newState == WearableDrawerView.STATE_IDLE &&
-                    binding.bottomActionDrawer.isPeeking && binding.bottomActionDrawer.hasFocus()
-                ) {
+                if (newState == WearableDrawerView.STATE_IDLE && binding.bottomActionDrawer.isPeeking) {
                     binding.bottomActionDrawer.clearFocus()
+                    binding.scrollView.requestFocus()
                 }
             }
         })
@@ -567,12 +567,26 @@ class DashboardActivity : WearableListenerActivity(), OnSharedPreferenceChangeLi
                 requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 0)
             }
         }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (PermissionChecker.checkSelfPermission(
+                    this,
+                    Manifest.permission.BLUETOOTH_ADVERTISE
+                ) != PermissionChecker.PERMISSION_GRANTED
+            ) {
+                requestPermissions(arrayOf(Manifest.permission.BLUETOOTH_ADVERTISE), 0)
+            }
+        }
     }
 
     override fun onResume() {
         super.onResume()
 
-        binding.scrollView.requestFocus()
+        if (binding.bottomActionDrawer.isOpened) {
+            binding.bottomActionDrawer.requestFocus()
+        } else {
+            binding.scrollView.requestFocus()
+        }
 
         // Update statuses
         binding.battStat.setText(R.string.state_syncing)

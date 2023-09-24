@@ -9,6 +9,7 @@
     android:fillViewport="true"
     android:focusable="true"
     android:focusableInTouchMode="true"
+    android:scrollbars="vertical"
     tools:background="?colorSurface"
     tools:context=".DashboardActivity"
     tools:deviceIds="wear">
@@ -79,6 +80,7 @@
             android:layout_height="wrap_content"
             style="@style/Widget.Wear.WearChipButton.Surface.Checkable"
             app:primaryText="@string/pref_title_mediacontroller_launcher"
+            app:primaryTextMaxLines="10"
             app:controlType="toggle" />
 
     </LinearLayout>
