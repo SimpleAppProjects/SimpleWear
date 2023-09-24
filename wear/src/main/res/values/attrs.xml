@@ -19,6 +19,8 @@
             <enum name="toggle" value="3" />
         </attr>
         <attr name="minHeight" />
+        <attr name="primaryTextMaxLines" format="integer" />
+        <attr name="secondaryTextMaxLines" format="integer" />
     </declare-styleable>
     <declare-styleable name="ActionButton">
         <attr name="minHeight" />

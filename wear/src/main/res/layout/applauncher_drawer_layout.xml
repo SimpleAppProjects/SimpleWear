@@ -35,6 +35,7 @@
         android:layout_height="wrap_content"
         style="@style/Widget.Wear.WearChipButton.Surface.Checkable"
         app:primaryText="@string/pref_loadicons_title"
+        app:primaryTextMaxLines="10"
         app:controlType="toggle" />
 
 </LinearLayout>

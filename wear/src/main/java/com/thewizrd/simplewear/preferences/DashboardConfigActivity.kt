@@ -4,6 +4,10 @@ import android.content.DialogInterface
 import android.graphics.Rect
 import android.os.Bundle
 import android.view.MotionEvent
+import android.view.ViewConfiguration
+import androidx.core.view.InputDeviceCompat
+import androidx.core.view.MotionEventCompat
+import androidx.core.view.ViewConfigurationCompat
 import androidx.recyclerview.widget.ConcatAdapter
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.ItemTouchHelper
@@ -15,6 +19,7 @@ import com.thewizrd.simplewear.adapters.TileActionAdapter
 import com.thewizrd.simplewear.databinding.LayoutDashboardConfigBinding
 import com.thewizrd.simplewear.helpers.AcceptDenyDialog
 import com.thewizrd.simplewear.helpers.TileActionsItemTouchCallback
+import kotlin.math.roundToInt
 
 class DashboardConfigActivity : AppCompatLiteActivity() {
     companion object {
@@ -121,5 +126,21 @@ class DashboardConfigActivity : AppCompatLiteActivity() {
             }
         }
         return super.dispatchTouchEvent(ev)
+    }
+
+    override fun onGenericMotionEvent(event: MotionEvent): Boolean {
+        if (event.action == MotionEvent.ACTION_SCROLL && event.isFromSource(InputDeviceCompat.SOURCE_ROTARY_ENCODER)) {
+            // Don't forget the negation here
+            val delta = -event.getAxisValue(MotionEventCompat.AXIS_SCROLL) *
+                    ViewConfigurationCompat.getScaledVerticalScrollFactor(
+                        ViewConfiguration.get(this), this
+                    )
+
+            // Swap these axes if you want to do horizontal scrolling instead
+            binding.root.scrollBy(0, delta.roundToInt())
+
+            return true
+        }
+        return super.onGenericMotionEvent(event)
     }
 }

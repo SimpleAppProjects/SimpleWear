@@ -54,6 +54,7 @@
             android:layout_height="wrap_content"
             style="@style/Widget.Wear.WearChipButton.Surface.Checkable"
             app:primaryText="@string/title_autolaunchmediactrls"
+            app:primaryTextMaxLines="10"
             app:controlType="toggle" />
 
     </LinearLayout>
