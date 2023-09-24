@@ -7,6 +7,8 @@
     android:layout_height="match_parent"
     android:background="@null"
     android:fillViewport="true"
+    android:focusable="true"
+    android:focusableInTouchMode="true"
     android:scrollbars="vertical"
     tools:background="?colorSurface"
     tools:context=".MediaPlayerListActivity"

@@ -1,12 +1,17 @@
 package com.thewizrd.simplewear.media
 
 import android.os.Bundle
-import android.view.*
+import android.view.LayoutInflater
+import android.view.MotionEvent
+import android.view.View
+import android.view.ViewConfiguration
+import android.view.ViewGroup
 import androidx.core.view.InputDeviceCompat
 import androidx.core.view.MotionEventCompat
 import androidx.core.view.ViewConfigurationCompat
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.activityViewModels
+import androidx.fragment.app.setFragmentResult
 import androidx.wear.widget.SwipeDismissFrameLayout
 import com.thewizrd.simplewear.adapters.MediaPlayerListAdapter
 import com.thewizrd.simplewear.databinding.MediaplayerfilterListBinding
@@ -82,14 +87,17 @@ class MediaPlayerFilterFragment : DialogFragment() {
         Settings.setMusicPlayersFilter(mAdapter.getSelectedItems())
         viewModel.filteredAppsList.postValue(mAdapter.getSelectedItems())
         dismiss()
+        tag?.let {
+            setFragmentResult(it, Bundle.EMPTY)
+        }
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         binding.scrollView.requestFocus()
 
-        viewModel.mediaAppsList.observe(viewLifecycleOwner, {
+        viewModel.mediaAppsList.observe(viewLifecycleOwner) {
             mAdapter.submitList(it.toList())
-        })
+        }
     }
 }

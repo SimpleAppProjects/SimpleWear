@@ -143,10 +143,9 @@ class MediaPlayerListActivity : WearableListenerActivity(), MessageClient.OnMess
 
             override fun onDrawerStateChanged(layout: WearableDrawerLayout, newState: Int) {
                 super.onDrawerStateChanged(layout, newState)
-                if (newState == WearableDrawerView.STATE_IDLE &&
-                    binding.bottomActionDrawer.isPeeking && binding.bottomActionDrawer.hasFocus()
-                ) {
+                if (newState == WearableDrawerView.STATE_IDLE && binding.bottomActionDrawer.isPeeking) {
                     binding.bottomActionDrawer.clearFocus()
+                    binding.playerList.requestFocus()
                 }
             }
         })
@@ -167,8 +166,19 @@ class MediaPlayerListActivity : WearableListenerActivity(), MessageClient.OnMess
         findViewById<View>(R.id.filter_apps_btn).setOnClickListener { v ->
             val fragment = MediaPlayerFilterFragment()
 
+            supportFragmentManager.setFragmentResultListener(
+                fragment.javaClass.simpleName,
+                this
+            ) { _, _ ->
+                if (binding.bottomActionDrawer.isOpened) {
+                    binding.bottomActionDrawer.requestFocus()
+                } else {
+                    binding.playerList.requestFocus()
+                }
+            }
+
             supportFragmentManager.beginTransaction()
-                .replace(android.R.id.content, fragment)
+                .replace(android.R.id.content, fragment, fragment.javaClass.simpleName)
                 .commit()
         }
 
@@ -403,7 +413,7 @@ class MediaPlayerListActivity : WearableListenerActivity(), MessageClient.OnMess
                 if (mMediaAppsList.size > 0) View.GONE else View.VISIBLE
             binding.playerList.visibility = if (mMediaAppsList.size > 0) View.VISIBLE else View.GONE
             lifecycleScope.launch {
-                if (binding.playerList.visibility == View.VISIBLE && !binding.playerList.hasFocus()) {
+                if (!binding.bottomActionDrawer.isOpened && binding.playerList.visibility == View.VISIBLE && !binding.playerList.hasFocus()) {
                     binding.playerList.requestFocus()
                 }
             }
@@ -430,7 +440,11 @@ class MediaPlayerListActivity : WearableListenerActivity(), MessageClient.OnMess
         super.onResume()
         Wearable.getDataClient(this).addListener(this)
 
-        binding.playerList.requestFocus()
+        if (binding.bottomActionDrawer.isOpened) {
+            binding.bottomActionDrawer.requestFocus()
+        } else {
+            binding.playerList.requestFocus()
+        }
 
         // Update statuses
         lifecycleScope.launch {
