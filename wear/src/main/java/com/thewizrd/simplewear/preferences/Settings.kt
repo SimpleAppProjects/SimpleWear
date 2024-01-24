@@ -15,6 +15,7 @@ object Settings {
     private const val KEY_LOADAPPICONS = "key_loadappicons"
     private const val KEY_DASHTILECONFIG = "key_dashtileconfig"
     const val KEY_DASHCONFIG = "key_dashconfig"
+    const val KEY_SHOWBATSTATUS = "key_showbatstatus"
 
     fun useGridLayout(): Boolean {
         val preferences = PreferenceManager.getDefaultSharedPreferences(App.instance.appContext)
@@ -100,6 +101,18 @@ object Settings {
                 val arrListType = object : TypeToken<List<Actions>>() {}.type
                 JSONParser.serializer(it, arrListType)
             })
+        }
+    }
+
+    fun isShowBatStatus(): Boolean {
+        val preferences = PreferenceManager.getDefaultSharedPreferences(App.instance.appContext)
+        return preferences.getBoolean(KEY_SHOWBATSTATUS, true)
+    }
+
+    fun setShowBatStatus(value: Boolean) {
+        val preferences = PreferenceManager.getDefaultSharedPreferences(App.instance.appContext)
+        preferences.edit {
+            putBoolean(KEY_SHOWBATSTATUS, value)
         }
     }
 }

@@ -26,6 +26,7 @@ import androidx.core.content.PermissionChecker
 import androidx.core.view.InputDeviceCompat
 import androidx.core.view.MotionEventCompat
 import androidx.core.view.ViewConfigurationCompat
+import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.withStarted
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
@@ -448,6 +449,16 @@ class DashboardActivity : WearableListenerActivity(), OnSharedPreferenceChangeLi
                 packageManager.getComponentEnabledSetting(mediaCtrlrComponent) <= PackageManager.COMPONENT_ENABLED_STATE_ENABLED
         }
 
+        findViewById<WearChipButton>(R.id.batt_stat_pref).also { battStatPref ->
+            battStatPref.setOnClickListener {
+                battStatPref.toggle()
+
+                Settings.setShowBatStatus(battStatPref.isChecked)
+            }
+
+            battStatPref.isChecked = Settings.isShowBatStatus()
+        }
+
         intentFilter = IntentFilter().apply {
             addAction(ACTION_UPDATECONNECTIONSTATUS)
             addAction(ACTION_OPENONPHONE)
@@ -616,11 +627,22 @@ class DashboardActivity : WearableListenerActivity(), OnSharedPreferenceChangeLi
                     }
                 }
             }
+
             Settings.KEY_DASHCONFIG -> {
                 lifecycleScope.launch {
                     runCatching {
                         withStarted {
                             updateDashboard()
+                        }
+                    }
+                }
+            }
+
+            Settings.KEY_SHOWBATSTATUS -> {
+                lifecycleScope.launch {
+                    runCatching {
+                        withStarted {
+                            binding.battStat.isVisible = Settings.isShowBatStatus()
                         }
                     }
                 }

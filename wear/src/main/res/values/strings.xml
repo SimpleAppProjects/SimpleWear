@@ -58,6 +58,7 @@
     <string name="pref_title_dasheditor">Dashboard Editor</string>
 
     <string name="pref_title_mediacontroller_launcher">Add Media Controller to launcher</string>
+    <string name="pref_title_show_batt_state">Show Battery Status</string>
 
     <string name="state_loading">Loading…</string>
     <string name="action_refresh">Refresh</string>
