@@ -295,7 +295,7 @@ class MediaPlayerActivity : WearableListenerActivity(), AmbientModeSupport.Ambie
         Queue(4);
 
         companion object {
-            fun valueOf(value: Int) = MediaPageType.values().firstOrNull() { it.value == value }
+            fun valueOf(value: Int) = entries.firstOrNull { it.value == value }
         }
     }
 

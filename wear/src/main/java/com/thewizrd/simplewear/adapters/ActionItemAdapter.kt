@@ -34,7 +34,7 @@ class ActionItemAdapter(activity: Activity) : RecyclerView.Adapter<ActionItemAda
         mDataset = ArrayList()
         mActivityContext = activity
 
-        val actions = Settings.getDashboardConfig() ?: Actions.values().toMutableList()
+        val actions = Settings.getDashboardConfig() ?: Actions.entries.toMutableList()
         resetActions(actions)
     }
 
@@ -164,7 +164,7 @@ class ActionItemAdapter(activity: Activity) : RecyclerView.Adapter<ActionItemAda
 
     @SuppressLint("NotifyDataSetChanged")
     fun updateActions(actions: List<Actions>?) {
-        resetActions(actions ?: Actions.values().toList())
+        resetActions(actions ?: Actions.entries)
         notifyDataSetChanged()
     }
 }

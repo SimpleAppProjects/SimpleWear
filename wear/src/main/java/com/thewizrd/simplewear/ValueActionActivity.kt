@@ -262,7 +262,7 @@ class ValueActionActivity : WearableListenerActivity() {
         }
         binding.actionIcon.setOnClickListener {
             if (mStreamType != null && mAction == Actions.VOLUME) {
-                val maxStates = AudioStreamType.values().size
+                val maxStates = AudioStreamType.entries.size
                 var newValue = (mStreamType!!.value + 1) % maxStates
                 if (newValue < 0) newValue += maxStates
                 mStreamType = AudioStreamType.valueOf(newValue)

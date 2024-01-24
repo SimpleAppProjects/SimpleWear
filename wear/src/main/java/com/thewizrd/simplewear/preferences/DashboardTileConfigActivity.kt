@@ -75,7 +75,7 @@ class DashboardTileConfigActivity : AppCompatLiteActivity() {
         }
 
         addButtonAdapter.setOnClickListener {
-            val allowedActions = Actions.values().toMutableList()
+            val allowedActions = Actions.entries.toMutableList()
             // Remove current actions
             allowedActions.removeAll(actionAdapter.getActions())
             // Remove other actions which need an activity

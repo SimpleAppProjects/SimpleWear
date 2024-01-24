@@ -23,8 +23,8 @@ import kotlin.math.roundToInt
 
 class DashboardConfigActivity : AppCompatLiteActivity() {
     companion object {
-        private val MAX_BUTTONS = Actions.values().size
-        private val DEFAULT_TILES = Actions.values().toList()
+        private val MAX_BUTTONS = Actions.entries.size
+        private val DEFAULT_TILES = Actions.entries
     }
 
     private lateinit var binding: LayoutDashboardConfigBinding
@@ -77,7 +77,7 @@ class DashboardConfigActivity : AppCompatLiteActivity() {
         }
 
         addButtonAdapter.setOnClickListener {
-            val allowedActions = Actions.values().toMutableList()
+            val allowedActions = Actions.entries.toMutableList()
             // Remove current actions
             allowedActions.removeAll(actionAdapter.getActions())
 

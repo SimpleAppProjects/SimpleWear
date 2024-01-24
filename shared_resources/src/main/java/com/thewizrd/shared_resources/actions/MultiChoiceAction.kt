@@ -29,9 +29,10 @@ class MultiChoiceAction : Action {
                 Actions.TORCH,
                 Actions.LOCKSCREEN,
                 Actions.VOLUME -> 1
-                Actions.LOCATION -> if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) LocationState.values().size else 1
-                Actions.DONOTDISTURB -> if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) DNDChoice.values().size else 1
-                Actions.RINGER -> RingerChoice.values().size
+
+                Actions.LOCATION -> if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) LocationState.entries.size else 1
+                Actions.DONOTDISTURB -> if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) DNDChoice.entries.size else 1
+                Actions.RINGER -> RingerChoice.entries.size
                 else -> 1
             }
         }
