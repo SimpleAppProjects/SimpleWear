@@ -10,11 +10,13 @@ import androidx.core.view.MotionEventCompat
 import androidx.core.view.ViewConfigurationCompat
 import androidx.recyclerview.widget.ConcatAdapter
 import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.GridLayoutManager.SpanSizeLookup
 import androidx.recyclerview.widget.ItemTouchHelper
 import com.thewizrd.shared_resources.actions.Actions
 import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.activities.AppCompatLiteActivity
 import com.thewizrd.simplewear.adapters.AddButtonAdapter
+import com.thewizrd.simplewear.adapters.DashBattStatusItemAdapter
 import com.thewizrd.simplewear.adapters.TileActionAdapter
 import com.thewizrd.simplewear.databinding.LayoutDashboardConfigBinding
 import com.thewizrd.simplewear.helpers.AcceptDenyDialog
@@ -29,6 +31,7 @@ class DashboardConfigActivity : AppCompatLiteActivity() {
 
     private lateinit var binding: LayoutDashboardConfigBinding
     private lateinit var concatAdapter: ConcatAdapter
+    private lateinit var dashBattStatAdapter: DashBattStatusItemAdapter
     private lateinit var actionAdapter: TileActionAdapter
     private lateinit var addButtonAdapter: AddButtonAdapter
     private lateinit var itemTouchHelper: ItemTouchHelper
@@ -39,8 +42,21 @@ class DashboardConfigActivity : AppCompatLiteActivity() {
         binding = LayoutDashboardConfigBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        binding.tileGridLayout.layoutManager = GridLayoutManager(this, 3)
+        binding.tileGridLayout.layoutManager = GridLayoutManager(this, 3).also { layoutMgr ->
+            layoutMgr.spanSizeLookup = object : SpanSizeLookup() {
+                override fun getSpanSize(position: Int): Int {
+                    return if (concatAdapter.getItemViewType(position) == DashBattStatusItemAdapter.ITEM_TYPE) {
+                        3
+                    } else {
+                        1
+                    }
+                }
+            }
+        }
 
+        dashBattStatAdapter = DashBattStatusItemAdapter().apply {
+            isVisible = Settings.isShowBatStatus()
+        }
         actionAdapter = TileActionAdapter()
         addButtonAdapter = AddButtonAdapter()
 
@@ -48,6 +64,7 @@ class DashboardConfigActivity : AppCompatLiteActivity() {
             ConcatAdapter.Config.Builder()
                 .setIsolateViewTypes(false)
                 .build(),
+            dashBattStatAdapter,
             actionAdapter
         ).also {
             concatAdapter = it
@@ -97,6 +114,9 @@ class DashboardConfigActivity : AppCompatLiteActivity() {
                     DialogInterface.BUTTON_POSITIVE -> {
                         actionAdapter.submitActions(DEFAULT_TILES)
                         Settings.setDashboardConfig(null)
+
+                        dashBattStatAdapter.isVisible = true
+                        Settings.setShowBatStatus(true)
                     }
                 }
             }
@@ -107,6 +127,8 @@ class DashboardConfigActivity : AppCompatLiteActivity() {
         binding.saveButton.setOnClickListener {
             val currentList = actionAdapter.getActions()
             Settings.setDashboardConfig(currentList)
+
+            Settings.setShowBatStatus(dashBattStatAdapter.isVisible)
 
             // Close activity
             finish()
@@ -122,6 +144,15 @@ class DashboardConfigActivity : AppCompatLiteActivity() {
                 }
                 if (!r.contains(ev.rawX.toInt(), ev.rawY.toInt())) {
                     actionAdapter.clearSelection()
+                }
+            } else {
+                dashBattStatAdapter.getSelection()?.let { battView ->
+                    val r = Rect().also {
+                        battView.getGlobalVisibleRect(it)
+                    }
+                    if (!r.contains(ev.rawX.toInt(), ev.rawY.toInt())) {
+                        dashBattStatAdapter.isChecked = false
+                    }
                 }
             }
         }

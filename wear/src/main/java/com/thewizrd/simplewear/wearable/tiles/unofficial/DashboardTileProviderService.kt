@@ -173,6 +173,14 @@ class DashboardTileProviderService : TileProviderService(), MessageClient.OnMess
             views.setTextViewText(R.id.batt_stat_text, battValue)
         }
 
+        if (Settings.isShowTileBatStatus()) {
+            views.setViewVisibility(R.id.batt_stat_layout, View.VISIBLE)
+            views.setViewVisibility(R.id.spacer, View.GONE)
+        } else {
+            views.setViewVisibility(R.id.batt_stat_layout, View.GONE)
+            views.setViewVisibility(R.id.spacer, View.VISIBLE)
+        }
+
         for (i in 0 until MAX_BUTTONS) {
             val action = tileActions.getOrNull(i)
             updateButton(views, i + 1, action)

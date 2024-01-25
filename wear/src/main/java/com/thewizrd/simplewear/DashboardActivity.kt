@@ -410,6 +410,7 @@ class DashboardActivity : WearableListenerActivity(), OnSharedPreferenceChangeLi
             isIndeterminate = true
             indicatorSize = height
         })
+        binding.battStat.isVisible = Settings.isShowBatStatus()
 
         binding.actionsList.isFocusable = false
         binding.actionsList.clearFocus()
@@ -447,16 +448,6 @@ class DashboardActivity : WearableListenerActivity(), OnSharedPreferenceChangeLi
             }
             mediaCtrlrPref.isChecked =
                 packageManager.getComponentEnabledSetting(mediaCtrlrComponent) <= PackageManager.COMPONENT_ENABLED_STATE_ENABLED
-        }
-
-        findViewById<WearChipButton>(R.id.batt_stat_pref).also { battStatPref ->
-            battStatPref.setOnClickListener {
-                battStatPref.toggle()
-
-                Settings.setShowBatStatus(battStatPref.isChecked)
-            }
-
-            battStatPref.isChecked = Settings.isShowBatStatus()
         }
 
         intentFilter = IntentFilter().apply {
@@ -498,6 +489,9 @@ class DashboardActivity : WearableListenerActivity(), OnSharedPreferenceChangeLi
                 }
             }
         }
+
+        PreferenceManager.getDefaultSharedPreferences(this@DashboardActivity)
+            .registerOnSharedPreferenceChangeListener(this@DashboardActivity)
     }
 
     private fun showProgressBar(show: Boolean) {
@@ -566,8 +560,6 @@ class DashboardActivity : WearableListenerActivity(), OnSharedPreferenceChangeLi
 
     override fun onStart() {
         super.onStart()
-        PreferenceManager.getDefaultSharedPreferences(this)
-            .registerOnSharedPreferenceChangeListener(this)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (PermissionChecker.checkSelfPermission(
@@ -610,9 +602,13 @@ class DashboardActivity : WearableListenerActivity(), OnSharedPreferenceChangeLi
     }
 
     override fun onStop() {
+        super.onStop()
+    }
+
+    override fun onDestroy() {
         PreferenceManager.getDefaultSharedPreferences(this)
             .unregisterOnSharedPreferenceChangeListener(this)
-        super.onStop()
+        super.onDestroy()
     }
 
     override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences?, key: String?) {

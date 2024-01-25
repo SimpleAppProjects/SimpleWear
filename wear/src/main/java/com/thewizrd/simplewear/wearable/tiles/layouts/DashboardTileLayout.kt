@@ -16,6 +16,7 @@ import androidx.wear.protolayout.LayoutElementBuilders.FONT_WEIGHT_MEDIUM
 import androidx.wear.protolayout.LayoutElementBuilders.FontStyle
 import androidx.wear.protolayout.LayoutElementBuilders.HORIZONTAL_ALIGN_CENTER
 import androidx.wear.protolayout.LayoutElementBuilders.LayoutElement
+import androidx.wear.protolayout.LayoutElementBuilders.Spacer
 import androidx.wear.protolayout.LayoutElementBuilders.SpanImage
 import androidx.wear.protolayout.LayoutElementBuilders.SpanText
 import androidx.wear.protolayout.LayoutElementBuilders.Spannable
@@ -152,48 +153,52 @@ internal fun DashboardTileLayout(
     } else {
         return PrimaryLayout.Builder(deviceParameters)
             .setPrimaryLabelTextContent(
-                Spannable.Builder()
-                    .addSpan(
-                        SpanImage.Builder()
-                            .setResourceId(ID_BATTERY)
-                            .setWidth(dp(16f))
-                            .setHeight(dp(16f))
-                            .build()
-                    )
-                    .addSpan(
-                        SpanText.Builder()
-                            .setText(
-                                state.batteryStatus?.let { status ->
-                                    String.format(
-                                        Locale.ROOT,
-                                        "%d%%, %s",
-                                        status.batteryLevel,
-                                        if (status.isCharging) {
-                                            context.getString(R.string.batt_state_charging)
-                                        } else context.getString(
-                                            R.string.batt_state_discharging
+                if (state.showBatteryStatus) {
+                    Spannable.Builder()
+                        .addSpan(
+                            SpanImage.Builder()
+                                .setResourceId(ID_BATTERY)
+                                .setWidth(dp(16f))
+                                .setHeight(dp(16f))
+                                .build()
+                        )
+                        .addSpan(
+                            SpanText.Builder()
+                                .setText(
+                                    state.batteryStatus?.let { status ->
+                                        String.format(
+                                            Locale.ROOT,
+                                            "%d%%, %s",
+                                            status.batteryLevel,
+                                            if (status.isCharging) {
+                                                context.getString(R.string.batt_state_charging)
+                                            } else context.getString(
+                                                R.string.batt_state_discharging
+                                            )
                                         )
-                                    )
-                                } ?: context.getString(R.string.state_unknown)
-                            )
-                            .setFontStyle(
-                                FontStyle.Builder()
-                                    .setSize(sp(12f))
-                                    .setWeight(FONT_WEIGHT_MEDIUM)
-                                    .setVariant(FONT_VARIANT_BODY)
-                                    .build()
-                            )
-                            .setAndroidTextStyle(
-                                AndroidTextStyle.Builder()
-                                    .setExcludeFontPadding(false)
-                                    .build()
-                            )
-                            .build()
-                    )
-                    .setMaxLines(1)
-                    .setMultilineAlignment(HORIZONTAL_ALIGN_CENTER)
-                    .setOverflow(TEXT_OVERFLOW_MARQUEE)
-                    .build()
+                                    } ?: context.getString(R.string.state_unknown)
+                                )
+                                .setFontStyle(
+                                    FontStyle.Builder()
+                                        .setSize(sp(12f))
+                                        .setWeight(FONT_WEIGHT_MEDIUM)
+                                        .setVariant(FONT_VARIANT_BODY)
+                                        .build()
+                                )
+                                .setAndroidTextStyle(
+                                    AndroidTextStyle.Builder()
+                                        .setExcludeFontPadding(false)
+                                        .build()
+                                )
+                                .build()
+                        )
+                        .setMaxLines(1)
+                        .setMultilineAlignment(HORIZONTAL_ALIGN_CENTER)
+                        .setOverflow(TEXT_OVERFLOW_MARQUEE)
+                        .build()
+                } else {
+                    Spacer.Builder().build()
+                }
             )
             .setContent(
                 MultiButtonLayout.Builder()

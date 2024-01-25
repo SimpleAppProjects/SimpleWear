@@ -107,6 +107,8 @@ class DashboardTileProviderService : SuspendingTileService() {
             tileModel.updateTileActions(Settings.getDashboardTileConfig() ?: DEFAULT_TILES)
         }
 
+        tileModel.setShowBatteryStatus(Settings.isShowTileBatStatus())
+
         return tileRenderer.renderTimeline(tileModel.tileState.value, requestParams)
     }
 

@@ -51,20 +51,6 @@
             android:layout_height="4dp" />
 
         <com.thewizrd.simplewear.controls.WearChipButton
-            android:id="@+id/batt_stat_pref"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            style="@style/Widget.Wear.WearChipButton.Surface.Checkable"
-            app:primaryText="@string/pref_title_show_batt_state"
-            app:primaryTextMaxLines="10"
-            app:controlType="toggle"
-            tools:checked="true" />
-
-        <Space
-            android:layout_width="wrap_content"
-            android:layout_height="4dp" />
-
-        <com.thewizrd.simplewear.controls.WearChipButton
             android:id="@+id/dashconfig_pref"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
