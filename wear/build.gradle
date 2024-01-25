@@ -91,6 +91,8 @@ dependencies {
     implementation 'androidx.wear:wear-ongoing:1.0.0'
     implementation 'androidx.wear:wear-phone-interactions:1.0.1'
     implementation 'androidx.wear:wear-remote-interactions:1.0.0'
+    implementation 'androidx.wear.watchface:watchface-complications-data:1.2.0'
+    implementation 'androidx.wear.watchface:watchface-complications-data-source-ktx:1.2.0'
 
     // WearOS Tiles
     implementation('androidx.wear.tiles:tiles:1.2.0')

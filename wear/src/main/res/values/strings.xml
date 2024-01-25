@@ -58,7 +58,7 @@
     <string name="pref_title_dasheditor">Dashboard Editor</string>
 
     <string name="pref_title_mediacontroller_launcher">Add Media Controller to launcher</string>
-    <string name="pref_title_show_batt_state">Show Battery Status</string>
+    <string name="pref_title_phone_batt_state">Phone Battery Status</string>
     <string name="title_batt_state">Battery State</string>
 
     <string name="state_loading">Loading…</string>

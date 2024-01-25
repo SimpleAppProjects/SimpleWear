@@ -455,6 +455,46 @@ class DashboardTileMessenger(private val context: Context) :
         }
     }
 
+    suspend fun requestBatteryStatusAsync(): BatteryStatus? {
+        return suspendCancellableCoroutine { continuation ->
+            val listener = MessageClient.OnMessageReceivedListener { event ->
+                when (event.path) {
+                    WearableHelper.BatteryPath -> {
+                        if (continuation.isActive) {
+                            val jsonData: String = event.data.bytesToString()
+                            val status = JSONParser.deserializer(
+                                jsonData,
+                                BatteryStatus::class.java
+                            )
+
+                            continuation.resume(status)
+                            return@OnMessageReceivedListener
+                        }
+                    }
+                }
+
+                if (continuation.isActive) {
+                    continuation.resume(null)
+                }
+            }
+
+            continuation.invokeOnCancellation {
+                Wearable.getMessageClient(context)
+                    .removeListener(listener)
+            }
+
+            scope.launch {
+                Wearable.getMessageClient(context)
+                    .addListener(listener)
+                    .await()
+
+                if (connect()) {
+                    sendMessage(mPhoneNodeWithApp!!.id, WearableHelper.BatteryPath, null)
+                }
+            }
+        }
+    }
+
     /*
      * There should only ever be one phone in a node set (much less w/ the correct capability), so
      * I am just grabbing the first one (which should be the only one).
