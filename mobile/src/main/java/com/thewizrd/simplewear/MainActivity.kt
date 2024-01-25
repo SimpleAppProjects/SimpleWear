@@ -12,9 +12,8 @@ class MainActivity : AppCompatActivity() {
     private var isReadyToView = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        installSplashScreen()
         super.onCreate(savedInstanceState)
-
-        val splashScreen = installSplashScreen()
 
         // Note: needed due to splash screen theme
         DynamicColors.applyIfAvailable(this)

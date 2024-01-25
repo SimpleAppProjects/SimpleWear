@@ -42,9 +42,8 @@ class PhoneSyncActivity : WearableListenerActivity() {
     private lateinit var permissionRequestLauncher: ActivityResultLauncher<Array<String>>
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-
         installSplashScreen()
+        super.onCreate(savedInstanceState)
 
         // Create your application here
         binding = ActivitySetupSyncBinding.inflate(layoutInflater)
