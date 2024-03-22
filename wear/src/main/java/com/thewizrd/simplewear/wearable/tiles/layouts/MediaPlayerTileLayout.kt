@@ -12,7 +12,17 @@ import androidx.wear.protolayout.DimensionBuilders
 import androidx.wear.protolayout.DimensionBuilders.dp
 import androidx.wear.protolayout.DimensionBuilders.expand
 import androidx.wear.protolayout.DimensionBuilders.wrap
-import androidx.wear.protolayout.LayoutElementBuilders.*
+import androidx.wear.protolayout.LayoutElementBuilders.Box
+import androidx.wear.protolayout.LayoutElementBuilders.CONTENT_SCALE_MODE_FIT
+import androidx.wear.protolayout.LayoutElementBuilders.Column
+import androidx.wear.protolayout.LayoutElementBuilders.HORIZONTAL_ALIGN_CENTER
+import androidx.wear.protolayout.LayoutElementBuilders.Image
+import androidx.wear.protolayout.LayoutElementBuilders.LayoutElement
+import androidx.wear.protolayout.LayoutElementBuilders.Row
+import androidx.wear.protolayout.LayoutElementBuilders.Spacer
+import androidx.wear.protolayout.LayoutElementBuilders.TEXT_ALIGN_CENTER
+import androidx.wear.protolayout.LayoutElementBuilders.TEXT_OVERFLOW_MARQUEE
+import androidx.wear.protolayout.LayoutElementBuilders.VERTICAL_ALIGN_CENTER
 import androidx.wear.protolayout.ModifiersBuilders.Background
 import androidx.wear.protolayout.ModifiersBuilders.Clickable
 import androidx.wear.protolayout.ModifiersBuilders.Modifiers
@@ -30,7 +40,7 @@ import androidx.wear.protolayout.material.layouts.PrimaryLayout
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
 import com.thewizrd.shared_resources.media.PlaybackState
 import com.thewizrd.simplewear.R
-import com.thewizrd.simplewear.wearable.tiles.MediaPlayerTileMessenger.*
+import com.thewizrd.simplewear.wearable.tiles.MediaPlayerTileMessenger.PlayerAction
 import com.thewizrd.simplewear.wearable.tiles.MediaPlayerTileRenderer.Companion.ID_ARTWORK
 import com.thewizrd.simplewear.wearable.tiles.MediaPlayerTileRenderer.Companion.ID_OPENONPHONE
 import com.thewizrd.simplewear.wearable.tiles.MediaPlayerTileRenderer.Companion.ID_PAUSE
@@ -74,7 +84,6 @@ internal fun MediaPlayerTileLayout(
                                 )
                                 .setMultilineAlignment(TEXT_ALIGN_CENTER)
                                 .setMaxLines(3)
-                                .setExcludeFontPadding(true)
                                 .build()
                         )
 
@@ -107,7 +116,6 @@ internal fun MediaPlayerTileLayout(
                                 )
                                 .setMultilineAlignment(TEXT_ALIGN_CENTER)
                                 .setMaxLines(3)
-                                .setExcludeFontPadding(true)
                                 .build()
                         )
 

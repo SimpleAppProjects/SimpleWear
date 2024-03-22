@@ -10,8 +10,8 @@ import androidx.wear.tiles.TileBuilders
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
 import com.google.android.horologist.tiles.SuspendingTileService
 import com.thewizrd.simplewear.PhoneSyncActivity
-import com.thewizrd.simplewear.wearable.tiles.MediaPlayerTileMessenger.*
 import com.thewizrd.simplewear.wearable.tiles.MediaPlayerTileMessenger.Companion.tileModel
+import com.thewizrd.simplewear.wearable.tiles.MediaPlayerTileMessenger.PlayerAction
 import com.thewizrd.simplewear.wearable.tiles.MediaPlayerTileRenderer.Companion.ID_OPENONPHONE
 import com.thewizrd.simplewear.wearable.tiles.MediaPlayerTileRenderer.Companion.ID_PHONEDISCONNECTED
 import kotlinx.coroutines.flow.SharingStarted
@@ -81,7 +81,7 @@ class MediaPlayerTileProviderService : SuspendingTileService() {
     private val tileRenderer = MediaPlayerTileRenderer(this)
 
     override suspend fun tileRequest(requestParams: RequestBuilders.TileRequest): TileBuilders.Tile {
-        Timber.tag(TAG).d("tileRequest")
+        Timber.tag(TAG).d("tileRequest: ${requestParams.currentState}")
 
         tileMessenger.checkConnectionStatus()
 

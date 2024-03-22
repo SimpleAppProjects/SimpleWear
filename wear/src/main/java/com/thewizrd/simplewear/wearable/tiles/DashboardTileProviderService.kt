@@ -81,7 +81,7 @@ class DashboardTileProviderService : SuspendingTileService() {
     private val tileRenderer = DashboardTileRenderer(this)
 
     override suspend fun tileRequest(requestParams: RequestBuilders.TileRequest): TileBuilders.Tile {
-        Timber.tag(TAG).d("tileRequest")
+        Timber.tag(TAG).d("tileRequest: ${requestParams.currentState}")
 
         if (requestParams.currentState.lastClickableId.isNotEmpty()) {
             if (ID_OPENONPHONE == requestParams.currentState.lastClickableId || ID_PHONEDISCONNECTED == requestParams.currentState.lastClickableId) {

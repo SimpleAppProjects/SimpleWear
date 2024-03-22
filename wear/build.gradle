@@ -9,7 +9,7 @@ android {
 
     defaultConfig {
         applicationId "com.thewizrd.simplewear"
-        minSdkVersion 25
+        minSdkVersion 26
         targetSdkVersion rootProject.targetSdkVersion
         // NOTE: Version Code Format (TargetSDK, Version Name, Build Number, Variant Code (Android: 00, WearOS: 01)
         versionCode 331913121
@@ -91,14 +91,14 @@ dependencies {
     implementation 'androidx.wear:wear-ongoing:1.0.0'
     implementation 'androidx.wear:wear-phone-interactions:1.0.1'
     implementation 'androidx.wear:wear-remote-interactions:1.0.0'
-    implementation 'androidx.wear.watchface:watchface-complications-data:1.2.0'
-    implementation 'androidx.wear.watchface:watchface-complications-data-source-ktx:1.2.0'
+    implementation "androidx.wear.watchface:watchface-complications-data:$wear_watchface_version"
+    implementation "androidx.wear.watchface:watchface-complications-data-source-ktx:$wear_watchface_version"
 
     // WearOS Tiles
-    implementation('androidx.wear.tiles:tiles:1.2.0')
-    debugImplementation('androidx.wear.tiles:tiles-renderer:1.2.0')
-    testImplementation('androidx.wear.tiles:tiles-testing:1.2.0')
-    implementation "androidx.wear.protolayout:protolayout-material:1.0.0"
+    implementation("androidx.wear.tiles:tiles:$wear_tiles_version")
+    debugImplementation("androidx.wear.tiles:tiles-renderer:$wear_tiles_version")
+    testImplementation("androidx.wear.tiles:tiles-testing:$wear_tiles_version")
+    implementation 'androidx.wear.protolayout:protolayout-material:1.1.0'
     implementation "com.google.android.horologist:horologist-tiles:$horologist_version"
     implementation "com.google.android.horologist:horologist-compose-tools:$horologist_version"
 

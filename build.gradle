@@ -6,12 +6,12 @@ buildscript {
         minSdkVersion = 24
         targetSdkVersion = 33
 
-        kotlin_version = '1.9.20'
-        kotlinx_version = '1.7.3'
+        kotlin_version = '1.9.23'
+        kotlinx_version = '1.8.0'
 
         desugar_version = '2.0.4'
 
-        firebase_version = '32.7.0'
+        firebase_version = '32.8.0'
 
         appcompat_version = '1.6.1'
         constraintlayout_version = '2.1.4'
@@ -28,15 +28,16 @@ buildscript {
         test_rules_version = '1.5.0'
         junit_version = '1.1.5'
         androidx_truth_version = '1.5.0'
-        google_truth_version = '1.3.0'
+        google_truth_version = '1.4.2'
 
         material_version = '1.11.0'
 
-        compose_bom_version = '2023.10.01'
-        compose_compiler_version = '1.5.4'
-        compose_version = '1.5.4'
+        compose_bom_version = '2024.03.00'
+        compose_compiler_version = '1.5.11'
         wear_compose_version = '1.2.0'
-        horologist_version = '0.5.19'
+        wear_tiles_version = '1.3.0'
+        wear_watchface_version = '1.2.1'
+        horologist_version = '0.5.25'
         accompanist_version = '0.30.1'
 
         gson_version = '2.10.1'
@@ -53,8 +54,8 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:8.2.1'
-        classpath 'com.google.gms:google-services:4.4.0'
+        classpath 'com.android.tools.build:gradle:8.3.1'
+        classpath 'com.google.gms:google-services:4.4.1'
         classpath 'com.google.firebase:firebase-crashlytics-gradle:2.9.9'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
         // NOTE: Do not place your application dependencies here; they belong

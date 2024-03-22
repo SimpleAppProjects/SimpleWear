@@ -10,7 +10,6 @@ import androidx.wear.protolayout.DeviceParametersBuilders.DeviceParameters
 import androidx.wear.protolayout.DimensionBuilders
 import androidx.wear.protolayout.DimensionBuilders.dp
 import androidx.wear.protolayout.DimensionBuilders.sp
-import androidx.wear.protolayout.LayoutElementBuilders.AndroidTextStyle
 import androidx.wear.protolayout.LayoutElementBuilders.FONT_VARIANT_BODY
 import androidx.wear.protolayout.LayoutElementBuilders.FONT_WEIGHT_MEDIUM
 import androidx.wear.protolayout.LayoutElementBuilders.FontStyle
@@ -100,7 +99,6 @@ internal fun DashboardTileLayout(
                                 )
                                 .setMultilineAlignment(TEXT_ALIGN_CENTER)
                                 .setMaxLines(3)
-                                .setExcludeFontPadding(true)
                                 .build()
                         )
 
@@ -133,7 +131,6 @@ internal fun DashboardTileLayout(
                                 )
                                 .setMultilineAlignment(TEXT_ALIGN_CENTER)
                                 .setMaxLines(3)
-                                .setExcludeFontPadding(true)
                                 .build()
                         )
 
@@ -183,11 +180,6 @@ internal fun DashboardTileLayout(
                                         .setSize(sp(12f))
                                         .setWeight(FONT_WEIGHT_MEDIUM)
                                         .setVariant(FONT_VARIANT_BODY)
-                                        .build()
-                                )
-                                .setAndroidTextStyle(
-                                    AndroidTextStyle.Builder()
-                                        .setExcludeFontPadding(false)
                                         .build()
                                 )
                                 .build()
