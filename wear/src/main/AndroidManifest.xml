@@ -225,13 +225,14 @@
             android:label="@string/pref_title_phone_batt_state"
             android:permission="com.google.android.wearable.permission.BIND_COMPLICATION_PROVIDER"
             android:name=".wearable.complications.BatteryStatusComplicationService"
-            android:exported="true">
+            android:exported="true"
+            android:directBootAware="true">
             <meta-data
                 android:name="android.support.wearable.complications.SUPPORTED_TYPES"
                 android:value="RANGED_VALUE,SHORT_TEXT,LONG_TEXT" />
             <meta-data
                 android:name="android.support.wearable.complications.UPDATE_PERIOD_SECONDS"
-                android:value="600" /> <!-- 10 min -->
+                android:value="300" /> <!-- 5 min -->
 
             <intent-filter>
                 <action android:name="android.support.wearable.complications.ACTION_COMPLICATION_UPDATE_REQUEST" />
