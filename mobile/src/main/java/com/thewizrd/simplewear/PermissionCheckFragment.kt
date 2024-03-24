@@ -6,8 +6,15 @@ import android.app.Activity
 import android.app.admin.DevicePolicyManager
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.le.ScanFilter
-import android.companion.*
-import android.content.*
+import android.companion.AssociationRequest
+import android.companion.BluetoothDeviceFilter
+import android.companion.BluetoothLeDeviceFilter
+import android.companion.CompanionDeviceManager
+import android.companion.WifiDeviceFilter
+import android.content.ComponentName
+import android.content.Context
+import android.content.DialogInterface
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.net.Uri
@@ -316,7 +323,7 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
         }
 
         binding.wearsettingsPref.setOnClickListener {
-            if (!WearSettingsHelper.isWearSettingsInstalled()) {
+            if (!WearSettingsHelper.isWearSettingsInstalled() || !WearSettingsHelper.isWearSettingsUpToDate()) {
                 val i = Intent(Intent.ACTION_VIEW).apply {
                     data = Uri.parse(getString(R.string.url_wearsettings_helper))
                 }
@@ -532,7 +539,10 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
             com.thewizrd.simplewear.preferences.Settings.setBridgeCallsEnabled(false)
         }
 
-        updateWearSettingsHelperPref(WearSettingsHelper.isWearSettingsInstalled())
+        updateWearSettingsHelperPref(
+            WearSettingsHelper.isWearSettingsInstalled(),
+            WearSettingsHelper.isWearSettingsUpToDate()
+        )
         updateSystemSettingsPref(
             PhoneStatusHelper.isWriteSystemSettingsPermissionEnabled(
                 requireContext()
@@ -583,9 +593,25 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
         binding.callcontrolSummary.setTextColor(if (enabled) Color.GREEN else Color.RED)
     }
 
-    private fun updateWearSettingsHelperPref(installed: Boolean) {
-        binding.wearsettingsPrefSummary.setText(if (installed) R.string.preference_summary_wearsettings_installed else R.string.preference_summary_wearsettings_notinstalled)
-        binding.wearsettingsPrefSummary.setTextColor(if (installed) Color.GREEN else Color.RED)
+    private fun updateWearSettingsHelperPref(installed: Boolean, upToDate: Boolean) {
+        binding.wearsettingsPrefSummary.setText(
+            if (installed) {
+                if (upToDate) {
+                    R.string.preference_summary_wearsettings_installed
+                } else {
+                    R.string.preference_summary_wearsettings_outdated
+                }
+            } else {
+                R.string.preference_summary_wearsettings_notinstalled
+            }
+        )
+        binding.wearsettingsPrefSummary.setTextColor(
+            if (installed) {
+                if (upToDate) Color.GREEN else Color.argb(0xFF, 0xFF, 0xA5, 0)
+            } else {
+                Color.RED
+            }
+        )
     }
 
     private fun updateSystemSettingsPref(enabled: Boolean) {
