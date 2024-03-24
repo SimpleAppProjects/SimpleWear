@@ -1,156 +1,179 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.wear.widget.drawer.WearableDrawerLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.swiperefreshlayout.widget.SwipeRefreshLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:id="@+id/drawer_layout"
+    android:id="@+id/swipe_layout"
     tools:context=".DashboardActivity"
     tools:deviceIds="wear">
 
-    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-        android:id="@+id/swipe_layout"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent">
-
-        <androidx.core.widget.NestedScrollView
-            android:id="@+id/scrollView"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:fillViewport="true"
-            android:scrollbars="vertical">
-
-            <androidx.constraintlayout.widget.ConstraintLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:paddingTop="8dp"
-                android:paddingBottom="8dp">
-
-                <androidx.constraintlayout.widget.Guideline
-                    android:id="@+id/left"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    app:layout_constraintGuide_begin="@dimen/dashboard_horizontal_margin" />
-
-                <androidx.constraintlayout.widget.Guideline
-                    android:id="@+id/top"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    app:layout_constraintGuide_begin="@dimen/dashboard_top_margin" />
-
-                <androidx.constraintlayout.widget.Guideline
-                    android:id="@+id/right"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    app:layout_constraintGuide_end="@dimen/dashboard_horizontal_margin" />
-
-                <androidx.constraintlayout.widget.Guideline
-                    android:id="@+id/bottom"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    app:layout_constraintGuide_end="48dp" />
-
-                <com.thewizrd.simplewear.controls.timetext.TimeText
-                    android:id="@+id/timeText"
-                    android:layout_width="0dp"
-                    android:layout_height="0dp"
-                    app:layout_constraintVertical_bias="0.0"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    android:titleTextColor="?colorPrimary" />
-
-                <com.thewizrd.simplewear.controls.WearChipButton
-                    android:id="@+id/device_state"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:focusable="false"
-                    android:clickable="false"
-                    android:layout_marginHorizontal="@dimen/dashboard_item_horizontal_margin"
-                    app:layout_constraintTop_toBottomOf="@id/top"
-                    app:backgroundTint="?android:colorBackground"
-                    app:icon="@drawable/ic_smartphone_white_24dp"
-                    app:primaryText="Connected" />
-
-                <com.thewizrd.simplewear.controls.WearChipButton
-                    android:id="@+id/batt_stat"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:focusable="false"
-                    android:clickable="false"
-                    android:layout_marginHorizontal="@dimen/dashboard_item_horizontal_margin"
-                    app:layout_constraintTop_toBottomOf="@id/device_state"
-                    app:backgroundTint="?android:colorBackground"
-                    app:icon="@drawable/ic_battery_std_white_24dp"
-                    tools:primaryText="Charging"
-                    tools:secondaryText="90%" />
-
-                <androidx.appcompat.widget.AppCompatTextView
-                    android:id="@+id/actions_title"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:minHeight="48dp"
-                    android:gravity="center"
-                    android:padding="4dp"
-                    android:text="@string/title_actions"
-                    android:textAppearance="?textAppearanceButton"
-                    app:layout_constraintEnd_toStartOf="@id/right"
-                    app:layout_constraintStart_toEndOf="@id/left"
-                    app:layout_constraintTop_toBottomOf="@id/batt_stat" />
-
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/actions_list"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:clipChildren="false"
-                    android:clipToPadding="false"
-                    app:layout_constraintBottom_toTopOf="@id/bottom"
-                    app:layout_constraintEnd_toStartOf="@id/right"
-                    app:layout_constraintStart_toEndOf="@id/left"
-                    app:layout_constraintTop_toBottomOf="@id/actions_title"
-                    android:overScrollMode="never" />
-
-            </androidx.constraintlayout.widget.ConstraintLayout>
-
-        </androidx.core.widget.NestedScrollView>
-
-    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
-
-    <androidx.wear.widget.drawer.WearableDrawerView
-        android:id="@+id/bottom_action_drawer"
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/scrollView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_gravity="bottom"
-        android:background="?colorSurface"
-        app:drawerContent="@id/drawer_content"
-        app:peekView="@id/peek_view">
+        android:fillViewport="true"
+        android:scrollbars="vertical">
 
-        <include layout="@layout/dashboard_drawer_layout" />
-
-        <FrameLayout
-            android:id="@+id/peek_view"
-            android:layout_width="wrap_content"
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:orientation="horizontal"
-            android:background="?colorSurface"
-            android:paddingTop="@dimen/ws_peek_view_top_padding"
-            android:paddingBottom="@dimen/ws_peek_view_bottom_padding">
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp">
 
-            <ImageView
-                android:layout_width="@dimen/ws_peek_view_icon_size"
-                android:layout_height="@dimen/ws_peek_view_icon_size"
-                android:layout_gravity="center_horizontal"
-                android:src="@drawable/ws_ic_more_vert_24dp_wht" />
+            <androidx.constraintlayout.widget.Guideline
+                android:id="@+id/left"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                app:layout_constraintGuide_begin="@dimen/dashboard_horizontal_margin" />
 
-        </FrameLayout>
+            <androidx.constraintlayout.widget.Guideline
+                android:id="@+id/top"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                app:layout_constraintGuide_begin="@dimen/dashboard_top_margin" />
 
-    </androidx.wear.widget.drawer.WearableDrawerView>
+            <androidx.constraintlayout.widget.Guideline
+                android:id="@+id/right"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                app:layout_constraintGuide_end="@dimen/dashboard_horizontal_margin" />
 
-</androidx.wear.widget.drawer.WearableDrawerLayout>
+            <androidx.constraintlayout.widget.Guideline
+                android:id="@+id/bottom"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                app:layout_constraintGuide_percent="0.8733032" />
 
+            <com.thewizrd.simplewear.controls.timetext.TimeText
+                android:id="@+id/timeText"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                app:layout_constraintVertical_bias="0.0"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                android:titleTextColor="?colorPrimary" />
+
+            <com.thewizrd.simplewear.controls.WearChipButton
+                android:id="@+id/device_state"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:focusable="false"
+                android:clickable="false"
+                android:layout_marginHorizontal="@dimen/dashboard_item_horizontal_margin"
+                app:layout_constraintTop_toBottomOf="@id/top"
+                app:backgroundTint="?android:colorBackground"
+                app:icon="@drawable/ic_smartphone_white_24dp"
+                app:primaryText="Connected" />
+
+            <com.thewizrd.simplewear.controls.WearChipButton
+                android:id="@+id/batt_stat"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:focusable="false"
+                android:clickable="false"
+                android:layout_marginHorizontal="@dimen/dashboard_item_horizontal_margin"
+                app:layout_constraintTop_toBottomOf="@id/device_state"
+                app:backgroundTint="?android:colorBackground"
+                app:icon="@drawable/ic_battery_std_white_24dp"
+                tools:primaryText="Charging"
+                tools:secondaryText="90%" />
+
+            <androidx.appcompat.widget.AppCompatTextView
+                android:id="@+id/actions_title"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:minHeight="48dp"
+                android:gravity="center"
+                android:padding="4dp"
+                android:text="@string/title_actions"
+                android:textAppearance="?textAppearanceButton"
+                app:layout_constraintEnd_toStartOf="@id/right"
+                app:layout_constraintStart_toEndOf="@id/left"
+                app:layout_constraintTop_toBottomOf="@id/batt_stat" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/actions_list"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:clipChildren="false"
+                android:clipToPadding="false"
+                app:layout_constraintBottom_toTopOf="@id/settings_divider"
+                app:layout_constraintEnd_toStartOf="@id/right"
+                app:layout_constraintStart_toEndOf="@id/left"
+                app:layout_constraintTop_toBottomOf="@id/actions_title"
+                android:overScrollMode="never" />
+
+            <androidx.appcompat.widget.AppCompatImageView
+                android:id="@+id/settings_divider"
+                android:layout_width="48dp"
+                android:layout_height="wrap_content"
+                android:contentDescription="@null"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="8dp"
+                app:srcCompat="@drawable/wear_divider"
+                app:layout_constraintBottom_toTopOf="@id/settings_flow"
+                app:layout_constraintEnd_toStartOf="@id/right"
+                app:layout_constraintStart_toEndOf="@id/left"
+                app:layout_constraintTop_toBottomOf="@id/actions_list" />
+
+            <androidx.constraintlayout.helper.widget.Flow
+                android:id="@+id/settings_flow"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                app:flow_maxElementsWrap="1"
+                app:flow_horizontalStyle="spread"
+                app:flow_verticalGap="4dp"
+                app:flow_verticalStyle="spread"
+                app:flow_wrapMode="aligned"
+                app:layout_constraintBottom_toBottomOf="@id/bottom"
+                app:layout_constraintEnd_toStartOf="@id/right"
+                app:layout_constraintStart_toEndOf="@id/left"
+                app:layout_constraintTop_toBottomOf="@id/settings_divider"
+                app:constraint_referenced_ids="layout_pref,dashconfig_pref,tiledashconfig_pref,media_ctrlr_pref" />
+
+            <com.thewizrd.simplewear.controls.WearChipButton
+                android:id="@+id/layout_pref"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                style="@style/Widget.Wear.WearChipButton"
+                app:icon="@drawable/ic_apps_white_24dp"
+                app:primaryText="@string/pref_layout"
+                app:secondaryText="@string/option_grid" />
+
+            <com.thewizrd.simplewear.controls.WearChipButton
+                android:id="@+id/dashconfig_pref"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                style="@style/Widget.Wear.WearChipButton"
+                app:icon="@drawable/ic_baseline_edit_24"
+                app:primaryText="@string/pref_title_dasheditor" />
+
+            <com.thewizrd.simplewear.controls.WearChipButton
+                android:id="@+id/tiledashconfig_pref"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                style="@style/Widget.Wear.WearChipButton"
+                app:icon="@drawable/ic_baseline_edit_24"
+                app:primaryText="@string/pref_title_tiledasheditor" />
+
+            <com.thewizrd.simplewear.controls.WearChipButton
+                android:id="@+id/media_ctrlr_pref"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                style="@style/Widget.Wear.WearChipButton.Checkable"
+                app:primaryText="@string/pref_title_mediacontroller_launcher"
+                app:primaryTextMaxLines="10"
+                app:controlType="toggle" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </androidx.core.widget.NestedScrollView>
+
+</androidx.swiperefreshlayout.widget.SwipeRefreshLayout>

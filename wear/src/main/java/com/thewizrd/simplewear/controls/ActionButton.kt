@@ -13,6 +13,7 @@ import androidx.core.view.setPadding
 import androidx.core.view.updateLayoutParams
 import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.databinding.ControlFabtogglebuttonBinding
+import com.thewizrd.simplewear.ui.utils.setTextResId
 
 class ActionButton @JvmOverloads constructor(
     context: Context,
@@ -69,9 +70,9 @@ class ActionButton @JvmOverloads constructor(
     }
 
     fun updateButton(viewModel: ActionButtonViewModel) {
-        binding.actionIcon.setImageResource(viewModel.drawableID)
-        binding.buttonLabel.text = viewModel.actionLabel
-        binding.buttonState.text = viewModel.stateLabel
+        binding.actionIcon.setImageResource(viewModel.drawableResId)
+        binding.buttonLabel.setTextResId(viewModel.actionLabelResId)
+        binding.buttonState.setTextResId(viewModel.stateLabelResId)
 
         if (viewModel.buttonState == null) {
             // Indeterminate state

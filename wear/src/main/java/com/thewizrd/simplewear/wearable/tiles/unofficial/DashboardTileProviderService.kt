@@ -213,7 +213,7 @@ class DashboardTileProviderService : TileProviderService(), MessageClient.OnMess
         if (action != null) {
             actionMap[action]?.let {
                 val model = ActionButtonViewModel(it)
-                views.setImageViewResource(buttonId, model.drawableID)
+                views.setImageViewResource(buttonId, model.drawableResId)
                 views.setInt(
                     buttonId,
                     "setBackgroundResource",
@@ -223,7 +223,12 @@ class DashboardTileProviderService : TileProviderService(), MessageClient.OnMess
                     buttonId,
                     getActionClickIntent(applicationContext, it.actionType)
                 )
-                views.setContentDescription(buttonId, model.actionLabel)
+                views.setContentDescription(
+                    buttonId,
+                    model.actionLabelResId.takeIf { it != 0 }?.let {
+                        applicationContext.getString(it)
+                    }
+                )
             }
             views.setViewVisibility(layoutId, View.VISIBLE)
         } else {

@@ -41,7 +41,7 @@ class TileActionAdapter : ListAdapter<ActionButtonViewModel, TileActionAdapter.V
                 )
                 itemView.requestFocus()
             } else {
-                binding.button.setImageResource(model.drawableID)
+                binding.button.setImageResource(model.drawableResId)
                 ImageViewCompat.setImageTintList(
                     binding.button,
                     itemView.context.getAttrColorStateList(R.attr.colorOnSurface)

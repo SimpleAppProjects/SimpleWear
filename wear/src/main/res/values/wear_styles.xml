@@ -39,4 +39,8 @@
         <item name="buttonTint">@color/button_checkable</item>
     </style>
 
+    <style name="Widget.Wear.WearChipButton.Stroke" parent="Widget.Wear.WearChipButton">
+        <item name="android:background">@drawable/button_background_stroke</item>
+    </style>
+
 </resources>

@@ -13,6 +13,7 @@ buildscript {
 
         firebase_version = '32.8.0'
 
+        activity_version = '1.8.2'
         appcompat_version = '1.6.1'
         constraintlayout_version = '2.1.4'
         core_version = '1.12.0'

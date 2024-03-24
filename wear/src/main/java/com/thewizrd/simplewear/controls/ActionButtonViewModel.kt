@@ -4,28 +4,43 @@ import android.app.Activity
 import android.content.Intent
 import android.os.Build
 import androidx.annotation.DrawableRes
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import androidx.annotation.StringRes
 import androidx.recyclerview.widget.DiffUtil
-import com.thewizrd.shared_resources.actions.*
-import com.thewizrd.shared_resources.helpers.WearableHelper
+import com.thewizrd.shared_resources.actions.Action
+import com.thewizrd.shared_resources.actions.ActionStatus
+import com.thewizrd.shared_resources.actions.Actions
+import com.thewizrd.shared_resources.actions.DNDChoice
+import com.thewizrd.shared_resources.actions.LocationState
+import com.thewizrd.shared_resources.actions.MultiChoiceAction
+import com.thewizrd.shared_resources.actions.NormalAction
+import com.thewizrd.shared_resources.actions.RingerChoice
+import com.thewizrd.shared_resources.actions.ToggleAction
+import com.thewizrd.shared_resources.actions.ValueAction
+import com.thewizrd.shared_resources.actions.ValueDirection
 import com.thewizrd.shared_resources.sleeptimer.SleepTimerHelper
-import com.thewizrd.shared_resources.utils.JSONParser.serializer
-import com.thewizrd.simplewear.*
+import com.thewizrd.simplewear.AppLauncherActivity
+import com.thewizrd.simplewear.CallManagerActivity
+import com.thewizrd.simplewear.MediaPlayerListActivity
+import com.thewizrd.simplewear.R
+import com.thewizrd.simplewear.ValueActionActivity
 import com.thewizrd.simplewear.WearableListenerActivity.Companion.EXTRA_ACTION
-import java.util.*
+import java.util.Objects
 
 class ActionButtonViewModel(val action: Action) {
     @get:DrawableRes
     @DrawableRes
-    var drawableID: Int
+    var drawableResId: Int
         private set
 
     val actionType: Actions
         get() = action.actionType
 
-    var actionLabel: String? = null
+    @StringRes
+    var actionLabelResId: Int = 0
         private set
-    var stateLabel: String? = null
+
+    @StringRes
+    var stateLabelResId: Int = 0
         private set
 
     var buttonState: Boolean? = null
@@ -85,14 +100,14 @@ class ActionButtonViewModel(val action: Action) {
     }
 
     init {
-        drawableID = R.drawable.ic_close_white_24dp
+        drawableResId = R.drawable.ic_close_white_24dp
         buttonState = false
         initialize(action)
     }
 
     private fun initialize(action: Action?) {
         buttonState = true
-        drawableID = R.drawable.ic_close_white_24dp
+        drawableResId = R.drawable.ic_close_white_24dp
 
         if (action is ToggleAction) {
             val tA = action
@@ -121,7 +136,11 @@ class ActionButtonViewModel(val action: Action) {
         }
     }
 
-    fun onClick(activityContext: Activity) {
+    fun onClick(
+        activityContext: Activity,
+        onActionChanged: (Action) -> Unit,
+        onActionStatus: (Action) -> Unit
+    ) {
         action.isActionSuccessful = true
 
         if (action is ValueAction) {
@@ -136,14 +155,8 @@ class ActionButtonViewModel(val action: Action) {
                 SleepTimerHelper.launchSleepTimer()
             } else {
                 action.setActionSuccessful(ActionStatus.PERMISSION_DENIED)
-                LocalBroadcastManager.getInstance(activityContext)
-                    .sendBroadcast(
-                        Intent(WearableHelper.ActionsPath)
-                            .putExtra(
-                                WearableListenerActivity.EXTRA_ACTIONDATA,
-                                serializer(action, Action::class.java)
-                            )
-                    )
+
+                onActionStatus.invoke(action)
             }
         } else if (action is NormalAction && action.actionType == Actions.APPS) {
             val intent = Intent(activityContext, AppLauncherActivity::class.java)
@@ -164,39 +177,38 @@ class ActionButtonViewModel(val action: Action) {
                 updateIconAndLabel()
             }
 
-            LocalBroadcastManager.getInstance(activityContext)
-                .sendBroadcast(Intent(WearableListenerActivity.ACTION_CHANGED)
-                    .putExtra(WearableListenerActivity.EXTRA_ACTIONDATA,
-                        serializer(action, Action::class.java)))
+            onActionChanged.invoke(action)
         }
     }
 
     private fun updateIconAndLabel() {
         val tA: ToggleAction
         val mA: MultiChoiceAction
-        val context = App.instance.appContext
 
         when (actionType) {
             Actions.WIFI -> {
                 tA = action as ToggleAction
-                drawableID = if (tA.isEnabled) R.drawable.ic_network_wifi_white_24dp else R.drawable.ic_signal_wifi_off_white_24dp
-                actionLabel = context.getString(R.string.action_wifi)
-                stateLabel = if (tA.isEnabled) context.getString(R.string.state_on) else context.getString(R.string.state_off)
+                drawableResId =
+                    if (tA.isEnabled) R.drawable.ic_network_wifi_white_24dp else R.drawable.ic_signal_wifi_off_white_24dp
+                actionLabelResId = R.string.action_wifi
+                stateLabelResId = if (tA.isEnabled) R.string.state_on else R.string.state_off
             }
             Actions.BLUETOOTH -> {
                 tA = action as ToggleAction
-                drawableID = if (tA.isEnabled) R.drawable.ic_bluetooth_white_24dp else R.drawable.ic_bluetooth_disabled_white_24dp
-                actionLabel = context.getString(R.string.action_bt)
-                stateLabel = if (tA.isEnabled) context.getString(R.string.state_on) else context.getString(R.string.state_off)
+                drawableResId =
+                    if (tA.isEnabled) R.drawable.ic_bluetooth_white_24dp else R.drawable.ic_bluetooth_disabled_white_24dp
+                actionLabelResId = R.string.action_bt
+                stateLabelResId = if (tA.isEnabled) R.string.state_on else R.string.state_off
             }
             Actions.MOBILEDATA -> {
                 tA = action as ToggleAction
-                drawableID = if (tA.isEnabled) R.drawable.ic_network_cell_white_24dp else R.drawable.ic_signal_cellular_off_white_24dp
-                actionLabel = context.getString(R.string.action_mobiledata)
-                stateLabel = if (tA.isEnabled) context.getString(R.string.state_on) else context.getString(R.string.state_off)
+                drawableResId =
+                    if (tA.isEnabled) R.drawable.ic_network_cell_white_24dp else R.drawable.ic_signal_cellular_off_white_24dp
+                actionLabelResId = R.string.action_mobiledata
+                stateLabelResId = if (tA.isEnabled) R.string.state_on else R.string.state_off
             }
             Actions.LOCATION -> {
-                actionLabel = context.getString(R.string.action_location)
+                actionLabelResId = R.string.action_location
 
                 val locationState = if (action is ToggleAction) {
                     if (action.isEnabled) LocationState.HIGH_ACCURACY else LocationState.OFF
@@ -206,47 +218,45 @@ class ActionButtonViewModel(val action: Action) {
                 }
                 when (locationState) {
                     LocationState.OFF -> {
-                        drawableID = R.drawable.ic_location_off_white_24dp
-                        stateLabel = context.getString(R.string.state_off)
+                        drawableResId = R.drawable.ic_location_off_white_24dp
+                        stateLabelResId = R.string.state_off
                     }
                     LocationState.SENSORS_ONLY -> {
-                        drawableID = R.drawable.ic_baseline_gps_fixed_24dp
-                        stateLabel = context.getString(R.string.locationstate_sensorsonly)
+                        drawableResId = R.drawable.ic_baseline_gps_fixed_24dp
+                        stateLabelResId = R.string.locationstate_sensorsonly
                     }
                     LocationState.BATTERY_SAVING -> {
-                        drawableID = R.drawable.ic_outline_location_on_24dp
-                        stateLabel = context.getString(R.string.locationstate_batterysaving)
+                        drawableResId = R.drawable.ic_outline_location_on_24dp
+                        stateLabelResId = R.string.locationstate_batterysaving
                     }
                     LocationState.HIGH_ACCURACY -> {
-                        drawableID = R.drawable.ic_location_on_white_24dp
-                        stateLabel = context.getString(
-                                if (action is ToggleAction) {
-                                    R.string.state_on
-                                } else {
-                                    R.string.locationstate_highaccuracy
-                                }
-                        )
+                        drawableResId = R.drawable.ic_location_on_white_24dp
+                        stateLabelResId = if (action is ToggleAction) {
+                            R.string.state_on
+                        } else {
+                            R.string.locationstate_highaccuracy
+                        }
                     }
                 }
             }
             Actions.TORCH -> {
                 tA = action as ToggleAction
-                drawableID = R.drawable.ic_lightbulb_outline_white_24dp
-                actionLabel = context.getString(R.string.action_torch)
-                stateLabel = if (tA.isEnabled) context.getString(R.string.state_on) else context.getString(R.string.state_off)
+                drawableResId = R.drawable.ic_lightbulb_outline_white_24dp
+                actionLabelResId = R.string.action_torch
+                stateLabelResId = if (tA.isEnabled) R.string.state_on else R.string.state_off
             }
             Actions.LOCKSCREEN -> {
-                drawableID = R.drawable.ic_lock_outline_white_24dp
-                actionLabel = context.getString(R.string.action_lockscreen)
-                stateLabel = null
+                drawableResId = R.drawable.ic_lock_outline_white_24dp
+                actionLabelResId = R.string.action_lockscreen
+                stateLabelResId = 0
             }
             Actions.VOLUME -> {
-                drawableID = R.drawable.ic_volume_up_white_24dp
-                actionLabel = context.getString(R.string.action_volume)
-                stateLabel = null
+                drawableResId = R.drawable.ic_volume_up_white_24dp
+                actionLabelResId = R.string.action_volume
+                stateLabelResId = 0
             }
             Actions.DONOTDISTURB -> {
-                actionLabel = context.getString(R.string.action_dnd)
+                actionLabelResId = R.string.action_dnd
 
                 val dndChoice = if (action is ToggleAction) {
                     if (action.isEnabled) DNDChoice.PRIORITY else DNDChoice.OFF
@@ -256,80 +266,78 @@ class ActionButtonViewModel(val action: Action) {
                 }
                 when (dndChoice) {
                     DNDChoice.OFF -> {
-                        drawableID = R.drawable.ic_do_not_disturb_off_white_24dp
-                        stateLabel = context.getString(R.string.state_off)
+                        drawableResId = R.drawable.ic_do_not_disturb_off_white_24dp
+                        stateLabelResId = R.string.state_off
                     }
                     DNDChoice.PRIORITY -> {
-                        drawableID = R.drawable.ic_error_white_24dp
-                        stateLabel = context.getString(
-                                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
-                                    R.string.dndstate_priority
-                                } else {
-                                    R.string.state_on
-                                }
-                        )
+                        drawableResId = R.drawable.ic_error_white_24dp
+                        stateLabelResId = if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
+                            R.string.dndstate_priority
+                        } else {
+                            R.string.state_on
+                        }
                     }
                     DNDChoice.ALARMS -> {
-                        drawableID = R.drawable.ic_alarm_white_24dp
-                        stateLabel = context.getString(R.string.dndstate_alarms)
+                        drawableResId = R.drawable.ic_alarm_white_24dp
+                        stateLabelResId = R.string.dndstate_alarms
                     }
                     DNDChoice.SILENCE -> {
-                        drawableID = R.drawable.ic_notifications_off_white_24dp
-                        stateLabel = context.getString(R.string.dndstate_silence)
+                        drawableResId = R.drawable.ic_notifications_off_white_24dp
+                        stateLabelResId = R.string.dndstate_silence
                     }
                 }
             }
             Actions.RINGER -> {
                 mA = action as MultiChoiceAction
 
-                actionLabel = context.getString(R.string.action_ringer)
+                actionLabelResId = R.string.action_ringer
 
                 when (RingerChoice.valueOf(mA.choice)) {
                     RingerChoice.VIBRATION -> {
-                        drawableID = R.drawable.ic_vibration_white_24dp
-                        stateLabel = context.getString(R.string.ringerstate_vib)
+                        drawableResId = R.drawable.ic_vibration_white_24dp
+                        stateLabelResId = R.string.ringerstate_vib
                     }
                     RingerChoice.SOUND -> {
-                        drawableID = R.drawable.ic_notifications_active_white_24dp
-                        stateLabel = context.getString(R.string.ringerstate_sound)
+                        drawableResId = R.drawable.ic_notifications_active_white_24dp
+                        stateLabelResId = R.string.ringerstate_sound
                     }
                     RingerChoice.SILENT -> {
-                        drawableID = R.drawable.ic_volume_off_white_24dp
-                        stateLabel = context.getString(R.string.ringerstate_silent)
+                        drawableResId = R.drawable.ic_volume_off_white_24dp
+                        stateLabelResId = R.string.ringerstate_silent
                     }
                 }
             }
             Actions.MUSICPLAYBACK -> {
-                drawableID = R.drawable.ic_play_circle_filled_white_24dp
-                actionLabel = context.getString(R.string.action_musicplayback)
-                stateLabel = null
+                drawableResId = R.drawable.ic_play_circle_filled_white_24dp
+                actionLabelResId = R.string.action_musicplayback
+                stateLabelResId = 0
             }
             Actions.SLEEPTIMER -> {
-                drawableID = R.drawable.ic_sleep_timer
-                actionLabel = context.getString(R.string.action_sleeptimer)
-                stateLabel = null
+                drawableResId = R.drawable.ic_sleep_timer
+                actionLabelResId = R.string.action_sleeptimer
+                stateLabelResId = 0
             }
             Actions.APPS -> {
-                drawableID = R.drawable.ic_apps_white_24dp
-                actionLabel = context.getString(R.string.action_apps)
-                stateLabel = null
+                drawableResId = R.drawable.ic_apps_white_24dp
+                actionLabelResId = R.string.action_apps
+                stateLabelResId = 0
             }
             Actions.PHONE -> {
-                drawableID = R.drawable.ic_phone_24dp
-                actionLabel = context.getString(R.string.action_phone)
-                stateLabel = null
+                drawableResId = R.drawable.ic_phone_24dp
+                actionLabelResId = R.string.action_phone
+                stateLabelResId = 0
             }
             Actions.BRIGHTNESS -> {
-                drawableID = R.drawable.ic_brightness_medium
-                actionLabel = context.getString(R.string.action_brightness)
-                stateLabel = null
+                drawableResId = R.drawable.ic_brightness_medium
+                actionLabelResId = R.string.action_brightness
+                stateLabelResId = 0
             }
             Actions.HOTSPOT -> {
                 tA = action as ToggleAction
-                drawableID = R.drawable.ic_wifi_tethering
-                actionLabel = context.getString(R.string.action_hotspot)
-                stateLabel =
-                    if (tA.isEnabled) context.getString(R.string.state_on) else context.getString(R.string.state_off)
+                drawableResId = R.drawable.ic_wifi_tethering
+                actionLabelResId = R.string.action_hotspot
+                stateLabelResId =
+                    if (tA.isEnabled) R.string.state_on else R.string.state_off
             }
         }
     }
@@ -342,8 +350,8 @@ class ActionButtonViewModel(val action: Action) {
 
         if (action != other.action) return false
         if (actionType != other.actionType) return false
-        if (actionLabel != other.actionLabel) return false
-        if (stateLabel != other.stateLabel) return false
+        if (actionLabelResId != other.actionLabelResId) return false
+        if (stateLabelResId != other.stateLabelResId) return false
         if (buttonState != other.buttonState) return false
 
         return true
@@ -352,8 +360,8 @@ class ActionButtonViewModel(val action: Action) {
     override fun hashCode(): Int {
         var result = action.hashCode()
         result = 31 * result + actionType.hashCode()
-        result = 31 * result + (actionLabel?.hashCode() ?: 0)
-        result = 31 * result + (stateLabel?.hashCode() ?: 0)
+        result = 31 * result + actionLabelResId
+        result = 31 * result + stateLabelResId
         result = 31 * result + (buttonState?.hashCode() ?: 0)
         return result
     }
