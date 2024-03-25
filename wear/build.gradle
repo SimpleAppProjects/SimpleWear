@@ -121,6 +121,7 @@ dependencies {
     implementation "com.google.accompanist:accompanist-flowlayout:$accompanist_version"
     implementation "com.google.accompanist:accompanist-swiperefresh:$accompanist_version"
     implementation "com.google.android.horologist:horologist-compose-layout:$horologist_version"
+    implementation "com.google.android.horologist:horologist-audio-ui:$horologist_version"
 
     androidTestImplementation "androidx.compose.ui:ui-test-junit4"
     debugImplementation "androidx.compose.ui:ui-tooling"

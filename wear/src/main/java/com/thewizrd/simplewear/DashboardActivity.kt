@@ -7,11 +7,11 @@ import android.content.SharedPreferences.OnSharedPreferenceChangeListener
 import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
+import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.core.content.ContextCompat
 import androidx.core.content.PermissionChecker
-import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.withStarted
 import androidx.preference.PreferenceManager
@@ -40,7 +40,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.guava.await
 import kotlinx.coroutines.launch
 
-class DashboardActivity : FragmentActivity(), OnSharedPreferenceChangeListener {
+class DashboardActivity : ComponentActivity(), OnSharedPreferenceChangeListener {
     private val dashboardViewModel by viewModels<DashboardViewModel>()
 
     private lateinit var remoteActivityHelper: RemoteActivityHelper
