@@ -49,7 +49,7 @@ import kotlin.coroutines.cancellation.CancellationException
 
 abstract class WearableListenerViewModel(private val app: Application) : AndroidViewModel(app),
     OnMessageReceivedListener, OnCapabilityChangedListener {
-    private val context: Context
+    protected val appContext: Context
         get() = app.applicationContext
 
     @SuppressLint("StaticFieldLeak")
@@ -59,7 +59,7 @@ abstract class WearableListenerViewModel(private val app: Application) : Android
     protected var mPhoneNodeWithApp: Node? = null
     private var mConnectionStatus = WearConnectionStatus.CONNECTING
 
-    protected val remoteActivityHelper: RemoteActivityHelper = RemoteActivityHelper(context)
+    protected val remoteActivityHelper: RemoteActivityHelper = RemoteActivityHelper(appContext)
 
     protected val _eventsFlow = MutableSharedFlow<WearableEvent>(
         replay = 0,
@@ -72,8 +72,9 @@ abstract class WearableListenerViewModel(private val app: Application) : Android
     val errorMessagesFlow: SharedFlow<String> = _errorMessagesFlow
 
     init {
-        Wearable.getCapabilityClient(context).addListener(this, WearableHelper.CAPABILITY_PHONE_APP)
-        Wearable.getMessageClient(context).addListener(this)
+        Wearable.getCapabilityClient(appContext)
+            .addListener(this, WearableHelper.CAPABILITY_PHONE_APP)
+        Wearable.getMessageClient(appContext).addListener(this)
     }
 
     fun initActivityContext(activity: Activity) {
@@ -82,9 +83,9 @@ abstract class WearableListenerViewModel(private val app: Application) : Android
 
     override fun onCleared() {
         super.onCleared()
-        Wearable.getCapabilityClient(context)
+        Wearable.getCapabilityClient(appContext)
             .removeListener(this, WearableHelper.CAPABILITY_PHONE_APP)
-        Wearable.getMessageClient(context).removeListener(this)
+        Wearable.getMessageClient(appContext).removeListener(this)
         activityContext = null
     }
 
@@ -95,7 +96,7 @@ abstract class WearableListenerViewModel(private val app: Application) : Android
             if (mPhoneNodeWithApp == null) {
                 _errorMessagesFlow.tryEmit("Device is not connected or app is not installed on device...")
 
-                when (PhoneTypeHelper.getPhoneDeviceType(context)) {
+                when (PhoneTypeHelper.getPhoneDeviceType(appContext)) {
                     PhoneTypeHelper.DEVICE_TYPE_ANDROID -> {
                         // Open store on remote device
                         val intentAndroid = Intent(Intent.ACTION_VIEW)
@@ -138,7 +139,7 @@ abstract class WearableListenerViewModel(private val app: Application) : Android
         }
     }
 
-    protected suspend fun startRemoteActivity(intent: Intent): Boolean {
+    suspend fun startRemoteActivity(intent: Intent): Boolean {
         return runCatching {
             remoteActivityHelper.startRemoteActivity(intent).await()
             true
@@ -331,7 +332,7 @@ abstract class WearableListenerViewModel(private val app: Application) : Android
         var node: Node? = null
 
         try {
-            val capabilityInfo = Wearable.getCapabilityClient(context)
+            val capabilityInfo = Wearable.getCapabilityClient(appContext)
                 .getCapability(
                     WearableHelper.CAPABILITY_PHONE_APP,
                     CapabilityClient.FILTER_ALL
@@ -395,7 +396,7 @@ abstract class WearableListenerViewModel(private val app: Application) : Android
 
     private suspend fun getConnectedNodes(): List<Node> {
         try {
-            return Wearable.getNodeClient(context)
+            return Wearable.getNodeClient(appContext)
                 .connectedNodes
                 .await()
         } catch (e: Exception) {
@@ -407,7 +408,7 @@ abstract class WearableListenerViewModel(private val app: Application) : Android
 
     protected suspend fun sendMessage(nodeID: String, path: String, data: ByteArray?): Int? {
         try {
-            return Wearable.getMessageClient(context)
+            return Wearable.getMessageClient(appContext)
                 .sendMessage(nodeID, path, data).await()
         } catch (e: Exception) {
             if (e is ApiException || e.cause is ApiException) {
@@ -434,7 +435,7 @@ abstract class WearableListenerViewModel(private val app: Application) : Android
     @Throws(ApiException::class)
     protected suspend fun sendPing(nodeID: String) {
         try {
-            Wearable.getMessageClient(context)
+            Wearable.getMessageClient(appContext)
                 .sendMessage(nodeID, WearableHelper.PingPath, null).await()
         } catch (e: Exception) {
             if (e is ApiException || e.cause is ApiException) {

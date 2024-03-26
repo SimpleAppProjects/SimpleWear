@@ -193,7 +193,7 @@ fun DashboardScreen(
                     onActionClicked = onActionClicked
                 )
                 // Settings
-                WearDivider()
+                WearDivider(modifier = Modifier.padding(vertical = 8.dp))
                 DashboardSettings(dashboardState, scrollState)
             }
         }

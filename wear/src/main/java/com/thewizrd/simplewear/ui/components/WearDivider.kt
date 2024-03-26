@@ -18,11 +18,13 @@ import com.thewizrd.shared_resources.utils.ContextUtils.dpToPx
 
 @Preview
 @Composable
-fun WearDivider() {
+fun WearDivider(
+    modifier: Modifier = Modifier
+) {
     val ctx = LocalContext.current
 
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .height(24.dp),
         contentAlignment = Alignment.Center
