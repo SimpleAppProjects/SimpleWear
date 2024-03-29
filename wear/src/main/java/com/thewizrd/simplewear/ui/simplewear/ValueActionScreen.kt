@@ -22,6 +22,7 @@ import androidx.wear.compose.material.PositionIndicator
 import androidx.wear.compose.material.Scaffold
 import androidx.wear.compose.material.Stepper
 import androidx.wear.compose.material.Text
+import androidx.wear.compose.material.TimeText
 import androidx.wear.compose.material.Vignette
 import androidx.wear.compose.material.VignettePosition
 import androidx.wear.compose.ui.tooling.preview.WearPreviewDevices
@@ -51,6 +52,9 @@ fun ValueActionScreen(
         Scaffold(
             modifier = modifier.background(MaterialTheme.colors.background),
             vignette = { Vignette(vignettePosition = VignettePosition.TopAndBottom) },
+            timeText = {
+                TimeText()
+            },
         ) {
             ValueActionScreen(valueActionViewModel)
         }
