@@ -15,8 +15,6 @@ import androidx.core.content.PermissionChecker
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.withStarted
 import androidx.preference.PreferenceManager
-import androidx.wear.remote.interactions.RemoteActivityHelper
-import androidx.wear.widget.ConfirmationOverlay
 import com.thewizrd.shared_resources.actions.Action
 import com.thewizrd.shared_resources.actions.ActionStatus
 import com.thewizrd.shared_resources.actions.Actions
@@ -26,29 +24,20 @@ import com.thewizrd.shared_resources.sleeptimer.SleepTimerHelper
 import com.thewizrd.shared_resources.utils.JSONParser
 import com.thewizrd.simplewear.controls.ActionButtonViewModel
 import com.thewizrd.simplewear.controls.CustomConfirmationOverlay
-import com.thewizrd.simplewear.helpers.showConfirmationOverlay
 import com.thewizrd.simplewear.preferences.Settings
 import com.thewizrd.simplewear.ui.simplewear.Dashboard
+import com.thewizrd.simplewear.utils.ErrorMessage
 import com.thewizrd.simplewear.viewmodels.DashboardViewModel
-import com.thewizrd.simplewear.viewmodels.WearableListenerViewModel.Companion.ACTION_OPENONPHONE
 import com.thewizrd.simplewear.viewmodels.WearableListenerViewModel.Companion.ACTION_UPDATECONNECTIONSTATUS
 import com.thewizrd.simplewear.viewmodels.WearableListenerViewModel.Companion.EXTRA_ACTIONDATA
 import com.thewizrd.simplewear.viewmodels.WearableListenerViewModel.Companion.EXTRA_CONNECTIONSTATUS
-import com.thewizrd.simplewear.viewmodels.WearableListenerViewModel.Companion.EXTRA_SHOWANIMATION
-import com.thewizrd.simplewear.viewmodels.WearableListenerViewModel.Companion.EXTRA_SUCCESS
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.guava.await
 import kotlinx.coroutines.launch
 
 class DashboardActivity : ComponentActivity(), OnSharedPreferenceChangeListener {
     private val dashboardViewModel by viewModels<DashboardViewModel>()
 
-    private lateinit var remoteActivityHelper: RemoteActivityHelper
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        remoteActivityHelper = RemoteActivityHelper(this)
 
         PreferenceManager.getDefaultSharedPreferences(this@DashboardActivity)
             .registerOnSharedPreferenceChangeListener(this@DashboardActivity)
@@ -108,20 +97,7 @@ class DashboardActivity : ComponentActivity(), OnSharedPreferenceChangeListener 
                             WearConnectionStatus.CONNECTING -> {}
                             WearConnectionStatus.APPNOTINSTALLED -> {
                                 // Open store on remote device
-                                val intentAndroid = Intent(Intent.ACTION_VIEW)
-                                    .addCategory(Intent.CATEGORY_BROWSABLE)
-                                    .setData(WearableHelper.getPlayStoreURI())
-
-                                runCatching {
-                                    remoteActivityHelper.startRemoteActivity(intentAndroid)
-                                        .await()
-
-                                    showConfirmationOverlay(true)
-                                }.onFailure {
-                                    if (it !is CancellationException) {
-                                        showConfirmationOverlay(false)
-                                    }
-                                }
+                                dashboardViewModel.openPlayStore(this@DashboardActivity)
 
                                 // Navigate
                                 startActivity(
@@ -134,16 +110,6 @@ class DashboardActivity : ComponentActivity(), OnSharedPreferenceChangeListener 
                             }
 
                             WearConnectionStatus.CONNECTED -> {}
-                        }
-                    }
-
-                    ACTION_OPENONPHONE -> {
-                        val success = event.data.getBoolean(EXTRA_SUCCESS, false)
-                        val showAni = event.data.getBoolean(EXTRA_SHOWANIMATION, false)
-                        if (showAni) {
-                            ConfirmationOverlay()
-                                .setType(if (success) ConfirmationOverlay.OPEN_ON_PHONE_ANIMATION else ConfirmationOverlay.FAILURE_ANIMATION)
-                                .showOn(this@DashboardActivity)
                         }
                     }
 
@@ -281,7 +247,16 @@ class DashboardActivity : ComponentActivity(), OnSharedPreferenceChangeListener 
 
         lifecycleScope.launch {
             dashboardViewModel.errorMessagesFlow.collect { error ->
-                Toast.makeText(applicationContext, error, Toast.LENGTH_SHORT).show()
+                when (error) {
+                    is ErrorMessage.String -> {
+                        Toast.makeText(applicationContext, error.message, Toast.LENGTH_SHORT).show()
+                    }
+
+                    is ErrorMessage.Resource -> {
+                        Toast.makeText(applicationContext, error.stringId, Toast.LENGTH_SHORT)
+                            .show()
+                    }
+                }
             }
         }
     }

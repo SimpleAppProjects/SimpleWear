@@ -39,6 +39,7 @@ import com.thewizrd.simplewear.App
 import com.thewizrd.simplewear.ValueActionActivity
 import com.thewizrd.simplewear.WearableListenerActivity
 import com.thewizrd.simplewear.helpers.showConfirmationOverlay
+import com.thewizrd.simplewear.utils.ErrorMessage
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -68,8 +69,8 @@ abstract class WearableListenerViewModel(private val app: Application) : Android
     )
     val eventFlow: SharedFlow<WearableEvent> = _eventsFlow
 
-    protected val _errorMessagesFlow = MutableSharedFlow<String>(replay = 0)
-    val errorMessagesFlow: SharedFlow<String> = _errorMessagesFlow
+    protected val _errorMessagesFlow = MutableSharedFlow<ErrorMessage>(replay = 0)
+    val errorMessagesFlow: SharedFlow<ErrorMessage> = _errorMessagesFlow
 
     init {
         Wearable.getCapabilityClient(appContext)
@@ -94,33 +95,19 @@ abstract class WearableListenerViewModel(private val app: Application) : Android
             connect()
 
             if (mPhoneNodeWithApp == null) {
-                _errorMessagesFlow.tryEmit("Device is not connected or app is not installed on device...")
+                _errorMessagesFlow.tryEmit(ErrorMessage.String("Device is not connected or app is not installed on device..."))
 
                 when (PhoneTypeHelper.getPhoneDeviceType(appContext)) {
                     PhoneTypeHelper.DEVICE_TYPE_ANDROID -> {
-                        // Open store on remote device
-                        val intentAndroid = Intent(Intent.ACTION_VIEW)
-                            .addCategory(Intent.CATEGORY_BROWSABLE)
-                            .setData(WearableHelper.getPlayStoreURI())
-
-                        runCatching {
-                            remoteActivityHelper.startRemoteActivity(intentAndroid)
-                                .await()
-
-                            activity.showConfirmationOverlay(true)
-                        }.onFailure {
-                            if (it !is CancellationException) {
-                                activity.showConfirmationOverlay(false)
-                            }
-                        }
+                        openPlayStore(activity, showAnimation)
                     }
 
                     PhoneTypeHelper.DEVICE_TYPE_IOS -> {
-                        _errorMessagesFlow.tryEmit("Connected device is not supported")
+                        _errorMessagesFlow.tryEmit(ErrorMessage.String("Connected device is not supported"))
                     }
 
                     else -> {
-                        _errorMessagesFlow.tryEmit("Connected device is not supported")
+                        _errorMessagesFlow.tryEmit(ErrorMessage.String("Connected device is not supported"))
                     }
                 }
             } else {
@@ -131,10 +118,34 @@ abstract class WearableListenerViewModel(private val app: Application) : Android
                     ByteArray(0)
                 )
 
+                if (showAnimation) {
+                    activity.showConfirmationOverlay(result != -1)
+                }
+
                 _eventsFlow.tryEmit(WearableEvent(ACTION_OPENONPHONE, Bundle().apply {
                     putBoolean(EXTRA_SUCCESS, result != -1)
                     putBoolean(EXTRA_SHOWANIMATION, showAnimation)
                 }))
+            }
+        }
+    }
+
+    suspend fun openPlayStore(activity: Activity, showAnimation: Boolean = true) {
+        // Open store on remote device
+        val intentAndroid = Intent(Intent.ACTION_VIEW)
+            .addCategory(Intent.CATEGORY_BROWSABLE)
+            .setData(WearableHelper.getPlayStoreURI())
+
+        runCatching {
+            remoteActivityHelper.startRemoteActivity(intentAndroid)
+                .await()
+
+            if (showAnimation) {
+                activity.showConfirmationOverlay(true)
+            }
+        }.onFailure {
+            if (it !is CancellationException && showAnimation) {
+                activity.showConfirmationOverlay(false)
             }
         }
     }

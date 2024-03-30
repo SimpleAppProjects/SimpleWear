@@ -7,28 +7,20 @@ import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
-import androidx.wear.remote.interactions.RemoteActivityHelper
 import com.thewizrd.shared_resources.actions.ActionStatus
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
 import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.simplewear.controls.CustomConfirmationOverlay
-import com.thewizrd.simplewear.helpers.showConfirmationOverlay
 import com.thewizrd.simplewear.ui.simplewear.AppLauncherScreen
 import com.thewizrd.simplewear.viewmodels.AppLauncherViewModel
 import com.thewizrd.simplewear.viewmodels.WearableListenerViewModel
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.guava.await
 import kotlinx.coroutines.launch
 
 class AppLauncherActivity : ComponentActivity() {
     private val appLauncherViewModel by viewModels<AppLauncherViewModel>()
 
-    private lateinit var remoteActivityHelper: RemoteActivityHelper
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        remoteActivityHelper = RemoteActivityHelper(this)
 
         setContent {
             AppLauncherScreen()
@@ -65,20 +57,7 @@ class AppLauncherActivity : ComponentActivity() {
 
                             WearConnectionStatus.APPNOTINSTALLED -> {
                                 // Open store on remote device
-                                val intentAndroid = Intent(Intent.ACTION_VIEW)
-                                    .addCategory(Intent.CATEGORY_BROWSABLE)
-                                    .setData(WearableHelper.getPlayStoreURI())
-
-                                runCatching {
-                                    remoteActivityHelper.startRemoteActivity(intentAndroid)
-                                        .await()
-
-                                    showConfirmationOverlay(true)
-                                }.onFailure {
-                                    if (it !is CancellationException) {
-                                        showConfirmationOverlay(false)
-                                    }
-                                }
+                                appLauncherViewModel.openPlayStore(this@AppLauncherActivity)
 
                                 // Navigate
                                 startActivity(
