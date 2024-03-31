@@ -11,36 +11,4 @@
         <item name="minHeight">52dp</item>
     </style>
 
-    <style name="Widget.Wear.WearChipButton.Accent" parent="Widget.Wear.WearChipButton">
-        <item name="android:background">@drawable/button_background_accent</item>
-        <item name="backgroundTint">?colorPrimary</item>
-    </style>
-
-    <style name="Widget.Wear.WearChipButton.Surface" parent="Widget.Wear.WearChipButton">
-        <item name="android:background">@drawable/button_background_onsurface</item>
-    </style>
-
-    <style name="Widget.Wear.WearChipButton.Surface.Accent" parent="Widget.Wear.WearChipButton">
-        <item name="android:background">@drawable/button_background_accent_onsurface</item>
-        <item name="backgroundTint">?colorPrimary</item>
-    </style>
-
-    <style name="Widget.Wear.WearChipButton.Checkable" parent="Widget.Wear.WearChipButton">
-        <item name="android:background">@drawable/button_background_accent</item>
-        <item name="android:checkable">true</item>
-        <item name="backgroundTint">@color/button_background_checkable</item>
-        <item name="buttonTint">@color/button_checkable</item>
-    </style>
-
-    <style name="Widget.Wear.WearChipButton.Surface.Checkable" parent="Widget.Wear.WearChipButton">
-        <item name="android:background">@drawable/button_background_accent_onsurface</item>
-        <item name="android:checkable">true</item>
-        <item name="backgroundTint">@color/button_background_checkable</item>
-        <item name="buttonTint">@color/button_checkable</item>
-    </style>
-
-    <style name="Widget.Wear.WearChipButton.Stroke" parent="Widget.Wear.WearChipButton">
-        <item name="android:background">@drawable/button_background_stroke</item>
-    </style>
-
 </resources>
