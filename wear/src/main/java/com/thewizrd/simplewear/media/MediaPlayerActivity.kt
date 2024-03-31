@@ -1,7 +1,10 @@
 package com.thewizrd.simplewear.media
 
 import android.annotation.SuppressLint
-import android.content.*
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -14,12 +17,23 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.wear.ambient.AmbientModeSupport
-import com.google.android.gms.wearable.*
+import com.google.android.gms.wearable.DataClient
+import com.google.android.gms.wearable.DataEvent
+import com.google.android.gms.wearable.DataEventBuffer
+import com.google.android.gms.wearable.DataItem
+import com.google.android.gms.wearable.DataMapItem
+import com.google.android.gms.wearable.MessageEvent
+import com.google.android.gms.wearable.Wearable
 import com.thewizrd.shared_resources.actions.ActionStatus
 import com.thewizrd.shared_resources.helpers.MediaHelper
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
 import com.thewizrd.shared_resources.helpers.WearableHelper
-import com.thewizrd.shared_resources.utils.*
+import com.thewizrd.shared_resources.utils.JSONParser
+import com.thewizrd.shared_resources.utils.Logger
+import com.thewizrd.shared_resources.utils.booleanToBytes
+import com.thewizrd.shared_resources.utils.bytesToString
+import com.thewizrd.shared_resources.utils.intToBytes
+import com.thewizrd.shared_resources.utils.stringToBytes
 import com.thewizrd.simplewear.PhoneSyncActivity
 import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.WearableListenerActivity
@@ -28,10 +42,14 @@ import com.thewizrd.simplewear.controls.AppItemViewModel
 import com.thewizrd.simplewear.controls.CustomConfirmationOverlay
 import com.thewizrd.simplewear.databinding.ActivityMusicplaybackBinding
 import com.thewizrd.simplewear.helpers.showConfirmationOverlay
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.guava.await
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
-import java.util.*
 
 class MediaPlayerActivity : WearableListenerActivity(), AmbientModeSupport.AmbientCallbackProvider,
     DataClient.OnDataChangedListener {
@@ -44,18 +62,18 @@ class MediaPlayerActivity : WearableListenerActivity(), AmbientModeSupport.Ambie
         const val ACTION_UPDATEAMBIENTMODE = "SimpleWear.Droid.action.UPDATE_AMBIENT_MODE"
 
         fun buildIntent(context: Context, appDetails: AppItemViewModel): Intent {
-            val intent = Intent(context, MediaPlayerActivity::class.java)
-            intent.putExtra(
-                KEY_APPDETAILS,
-                JSONParser.serializer(appDetails, AppItemViewModel::class.java)
-            )
-            return intent
+            return Intent(context, MediaPlayerActivity::class.java).apply {
+                putExtra(
+                    KEY_APPDETAILS,
+                    JSONParser.serializer(appDetails, AppItemViewModel::class.java)
+                )
+            }
         }
 
         fun buildAutoLaunchIntent(context: Context): Intent {
-            val intent = Intent(context, MediaPlayerActivity::class.java)
-            intent.putExtra(KEY_AUTOLAUNCH, true)
-            return intent
+            return Intent(context, MediaPlayerActivity::class.java).apply {
+                putExtra(KEY_AUTOLAUNCH, true)
+            }
         }
     }
 

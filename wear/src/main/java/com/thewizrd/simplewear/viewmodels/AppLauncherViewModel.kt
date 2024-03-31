@@ -1,5 +1,6 @@
 package com.thewizrd.simplewear.viewmodels
 
+import android.app.Activity
 import android.app.Application
 import android.os.Bundle
 import android.os.CountDownTimer
@@ -24,6 +25,7 @@ import com.thewizrd.shared_resources.utils.ImageUtils.toBitmap
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.shared_resources.utils.bytesToString
 import com.thewizrd.simplewear.controls.AppItemViewModel
+import com.thewizrd.simplewear.helpers.showConfirmationOverlay
 import com.thewizrd.simplewear.preferences.Settings
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -259,6 +261,20 @@ class AppLauncherViewModel(app: Application) : WearableListenerViewModel(app),
                 // Wait for apps update
                 timer.start()
             }
+        }
+    }
+
+    fun openRemoteApp(activity: Activity, item: AppItemViewModel) {
+        viewModelScope.launch {
+            val success = runCatching {
+                val intent = WearableHelper.createRemoteActivityIntent(
+                    item.packageName!!,
+                    item.activityName!!
+                )
+                startRemoteActivity(intent)
+            }.getOrDefault(false)
+
+            activity.showConfirmationOverlay(success)
         }
     }
 

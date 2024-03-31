@@ -19,12 +19,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
-import androidx.lifecycle.lifecycleScope
 import androidx.wear.compose.foundation.ExperimentalWearFoundationApi
 import androidx.wear.compose.foundation.HierarchicalFocusCoordinator
 import androidx.wear.compose.foundation.edgeSwipeToDismiss
@@ -53,17 +52,14 @@ import com.google.android.horologist.compose.material.ListHeaderDefaults.firstIt
 import com.google.android.horologist.compose.material.ResponsiveListHeader
 import com.google.android.horologist.compose.pager.HorizontalPagerDefaults
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
-import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.controls.AppItemViewModel
-import com.thewizrd.simplewear.helpers.showConfirmationOverlay
 import com.thewizrd.simplewear.ui.components.LoadingContent
 import com.thewizrd.simplewear.ui.theme.WearAppTheme
 import com.thewizrd.simplewear.ui.theme.activityViewModel
 import com.thewizrd.simplewear.ui.theme.findActivity
 import com.thewizrd.simplewear.viewmodels.AppLauncherUiState
 import com.thewizrd.simplewear.viewmodels.AppLauncherViewModel
-import kotlinx.coroutines.launch
 
 @OptIn(
     ExperimentalFoundationApi::class,
@@ -78,6 +74,7 @@ fun AppLauncherScreen(
     val activity = context.findActivity()
 
     val appLauncherViewModel = activityViewModel<AppLauncherViewModel>()
+    val uiState by appLauncherViewModel.uiState.collectAsState()
 
     val scrollState = rememberResponsiveColumnState(
         contentPadding = ScalingLazyColumnDefaults.padding(
@@ -100,7 +97,7 @@ fun AppLauncherScreen(
                     TimeText(modifier = Modifier.scrollAway { scrollState })
                 }
             },
-            pagerState = pagerState
+            pagerState = if (uiState.isLoading) null else pagerState
         ) {
             SwipeToDismissBox(
                 modifier = Modifier.background(MaterialTheme.colors.background),
@@ -149,25 +146,16 @@ private fun AppLauncherScreen(
     val context = LocalContext.current
     val activity = context.findActivity()
 
-    val lifecycleOwner = LocalLifecycleOwner.current
-
     val uiState by appLauncherViewModel.uiState.collectAsState()
 
     AppLauncherScreen(
         uiState = uiState,
         scrollState = scrollState,
         onItemClicked = {
-            lifecycleOwner.lifecycleScope.launch {
-                val success = runCatching {
-                    val intent = WearableHelper.createRemoteActivityIntent(
-                        it.packageName!!,
-                        it.activityName!!
-                    )
-                    appLauncherViewModel.startRemoteActivity(intent)
-                }.getOrDefault(false)
-
-                activity.showConfirmationOverlay(success)
-            }
+            appLauncherViewModel.openRemoteApp(activity, it)
+        },
+        onRefresh = {
+            appLauncherViewModel.refreshApps()
         }
     )
 }
@@ -196,7 +184,10 @@ private fun AppLauncherScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text(text = stringResource(id = R.string.error_noapps))
+                        Text(
+                            text = stringResource(id = R.string.error_noapps),
+                            textAlign = TextAlign.Center
+                        )
                         CompactChip(
                             label = {
                                 Text(text = stringResource(id = R.string.action_refresh))
