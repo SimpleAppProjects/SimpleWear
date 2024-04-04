@@ -299,6 +299,7 @@ private fun NoCallActiveScreen() {
         contentAlignment = Alignment.Center
     ) {
         Text(
+            modifier = Modifier.padding(horizontal = 14.dp),
             text = stringResource(id = R.string.message_nocall_active),
             textAlign = TextAlign.Center
         )

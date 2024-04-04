@@ -139,9 +139,6 @@ class MediaPlayerListViewModel(app: Application) : WearableListenerViewModel(app
         viewModelScope.launch {
             // Cancel timer
             timer.cancel()
-            viewModelState.update {
-                it.copy(isLoading = false)
-            }
 
             for (event in dataEventBuffer) {
                 if (event.type == DataEvent.TYPE_CHANGED) {
@@ -152,6 +149,10 @@ class MediaPlayerListViewModel(app: Application) : WearableListenerViewModel(app
                             updateMusicPlayers(dataMap)
                         } catch (e: Exception) {
                             Logger.writeLine(Log.ERROR, e)
+
+                            viewModelState.update {
+                                it.copy(isLoading = false)
+                            }
                         }
                     }
                 }
@@ -278,25 +279,23 @@ class MediaPlayerListViewModel(app: Application) : WearableListenerViewModel(app
     }
 
     private fun updateAppsList() {
-        viewModelScope.launch {
-            val filteredApps = Settings.getMusicPlayersFilter()
+        val filteredApps = Settings.getMusicPlayersFilter()
 
-            if (filteredApps.isEmpty()) {
-                viewModelState.update {
-                    it.copy(
-                        mediaAppsSet = it.allMediaAppsSet.toSortedSet(AppItemComparator()),
-                        isLoading = false
-                    )
-                }
-            } else {
-                viewModelState.update { state ->
-                    state.copy(
-                        mediaAppsSet = state.allMediaAppsSet.toMutableList().apply {
-                            removeIf { !filteredApps.contains(it.packageName) }
-                        }.toSortedSet(AppItemComparator()),
-                        isLoading = false
-                    )
-                }
+        if (filteredApps.isEmpty()) {
+            viewModelState.update {
+                it.copy(
+                    mediaAppsSet = it.allMediaAppsSet.toSortedSet(AppItemComparator()),
+                    isLoading = false
+                )
+            }
+        } else {
+            viewModelState.update { state ->
+                state.copy(
+                    mediaAppsSet = state.allMediaAppsSet.toMutableList().apply {
+                        removeIf { !filteredApps.contains(it.packageName) }
+                    }.toSortedSet(AppItemComparator()),
+                    isLoading = false
+                )
             }
         }
     }

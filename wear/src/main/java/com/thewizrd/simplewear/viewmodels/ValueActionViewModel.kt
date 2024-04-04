@@ -30,7 +30,6 @@ import kotlinx.coroutines.launch
 data class ValueActionUiState(
     val connectionStatus: WearConnectionStatus? = null,
     val action: Actions? = null,
-    val remoteValue: Float? = null,
     val valueActionState: ValueActionState? = null,
     val streamType: AudioStreamType? = AudioStreamType.MUSIC,
     val isAutoBrightnessEnabled: Boolean = true
