@@ -54,6 +54,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.NavController
 import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.ButtonDefaults
 import androidx.wear.compose.material.Chip
@@ -96,7 +97,8 @@ import kotlin.math.sqrt
 @Composable
 fun DashboardScreen(
     dashboardViewModel: DashboardViewModel,
-    scrollState: ScrollState = rememberScrollState()
+    scrollState: ScrollState = rememberScrollState(),
+    navController: NavController
 ) {
     val lifecycleOwner = LocalLifecycleOwner.current
     val activityCtx = LocalContext.current.findActivity()
@@ -118,7 +120,7 @@ fun DashboardScreen(
         scrollState = scrollState,
         onActionClicked = { model ->
             model.onClick(
-                activityCtx,
+                navController,
                 onActionChanged = {
                     dashboardViewModel.requestActionChange(it)
                 },

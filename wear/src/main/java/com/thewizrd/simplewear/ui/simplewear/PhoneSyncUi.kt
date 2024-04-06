@@ -1,6 +1,7 @@
 package com.thewizrd.simplewear.ui.simplewear
 
 import android.Manifest
+import android.app.Activity
 import android.bluetooth.BluetoothAdapter
 import android.content.Intent
 import android.os.Build
@@ -51,7 +52,6 @@ import androidx.wear.compose.ui.tooling.preview.WearPreviewFontScales
 import com.google.accompanist.drawablepainter.rememberDrawablePainter
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
 import com.thewizrd.simplewear.R
-import com.thewizrd.simplewear.activities.AppCompatLiteActivity
 import com.thewizrd.simplewear.ui.theme.WearAppTheme
 import com.thewizrd.simplewear.ui.theme.activityViewModel
 import com.thewizrd.simplewear.ui.theme.findActivity
@@ -92,7 +92,7 @@ private fun PhoneSyncUi(
 
     val bluetoothRequestLauncher =
         rememberLauncherForActivityResult(contract = ActivityResultContracts.StartActivityForResult()) {
-            if (it.resultCode == AppCompatLiteActivity.RESULT_OK) {
+            if (it.resultCode == Activity.RESULT_OK) {
                 lifecycleOwner.lifecycleScope.launch(Dispatchers.Main) {
                     delay(2000)
                     phoneSyncViewModel.showProgressBar()

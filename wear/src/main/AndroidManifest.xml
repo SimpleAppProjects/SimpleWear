@@ -57,31 +57,30 @@
             android:name=".PhoneSyncActivity"
             android:launchMode="singleInstance"
             android:theme="@style/WearAppTheme.Launcher"
-            android:exported="true">
+            android:exported="true"
+            android:taskAffinity="com.thewizrd.simplewear.PhoneSyncActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
         <activity
             android:name=".DashboardActivity"
             android:label="@string/title_activity_dashboard"
             android:launchMode="singleInstance"
-            android:theme="@style/WearAppTheme" />
-        <activity
-            android:name=".ValueActionActivity"
-            android:launchMode="singleInstance"
-            android:theme="@style/WearAppTheme" />
+            android:theme="@style/WearAppTheme"
+            android:taskAffinity="com.thewizrd.simplewear.DashboardActivity" />
 
         <activity-alias
             android:name=".MediaControllerActivity"
-            android:targetActivity=".MediaPlayerListActivity"
+            android:targetActivity=".media.MediaPlayerActivity"
             android:icon="@drawable/ic_play_circle_simpleblue"
             android:label="@string/title_media_controller"
             android:exported="true"
             android:launchMode="singleInstance"
             android:parentActivityName=".DashboardActivity"
-            android:theme="@style/WearAppTheme">
+            android:theme="@style/WearAppTheme.MediaLauncher">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -89,39 +88,22 @@
         </activity-alias>
 
         <activity
-            android:name=".MediaPlayerListActivity"
-            android:launchMode="singleInstance"
-            android:theme="@style/WearAppTheme" />
-        <activity
-            android:name=".AppLauncherActivity"
-            android:launchMode="singleInstance"
-            android:theme="@style/WearAppTheme" />
-        <activity
             android:name=".media.MediaPlayerActivity"
             android:launchMode="singleInstance"
-            android:theme="@style/WearAppTheme" />
-        <activity
-            android:name=".CallManagerActivity"
-            android:icon="@drawable/ic_phone_24dp"
-            android:label="@string/title_callcontroller"
-            android:theme="@style/WearAppTheme"
-            android:launchMode="singleInstance"
-            android:parentActivityName=".DashboardActivity">
-            <!--<intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>-->
-        </activity>
+            android:theme="@style/WearAppTheme.MediaLauncher"
+            android:taskAffinity="com.thewizrd.simplewear.media.MediaPlayerActivity" />
 
         <activity
             android:name=".preferences.DashboardTileConfigActivity"
             android:launchMode="singleInstance"
-            android:theme="@style/WearAppTheme" />
+            android:theme="@style/WearAppTheme"
+            android:taskAffinity="com.thewizrd.simplewear.preferences.DashboardTileConfigActivity" />
 
         <activity
             android:name=".preferences.DashboardConfigActivity"
             android:launchMode="singleInstance"
-            android:theme="@style/WearAppTheme" />
+            android:theme="@style/WearAppTheme"
+            android:taskAffinity="com.thewizrd.simplewear.preferences.DashboardConfigActivity" />
 
         <service
             android:name=".wearable.WearableDataListenerService"

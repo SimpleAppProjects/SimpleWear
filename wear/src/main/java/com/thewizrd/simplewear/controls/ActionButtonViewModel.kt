@@ -1,10 +1,9 @@
 package com.thewizrd.simplewear.controls
 
-import android.app.Activity
-import android.content.Intent
 import android.os.Build
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
+import androidx.navigation.NavController
 import androidx.recyclerview.widget.DiffUtil
 import com.thewizrd.shared_resources.actions.Action
 import com.thewizrd.shared_resources.actions.ActionStatus
@@ -18,12 +17,8 @@ import com.thewizrd.shared_resources.actions.ToggleAction
 import com.thewizrd.shared_resources.actions.ValueAction
 import com.thewizrd.shared_resources.actions.ValueDirection
 import com.thewizrd.shared_resources.sleeptimer.SleepTimerHelper
-import com.thewizrd.simplewear.AppLauncherActivity
-import com.thewizrd.simplewear.CallManagerActivity
-import com.thewizrd.simplewear.MediaPlayerListActivity
 import com.thewizrd.simplewear.R
-import com.thewizrd.simplewear.ValueActionActivity
-import com.thewizrd.simplewear.WearableListenerActivity.Companion.EXTRA_ACTION
+import com.thewizrd.simplewear.ui.navigation.Screen
 import java.util.Objects
 
 class ActionButtonViewModel(val action: Action) {
@@ -137,19 +132,16 @@ class ActionButtonViewModel(val action: Action) {
     }
 
     fun onClick(
-        activityContext: Activity,
+        navController: NavController,
         onActionChanged: (Action) -> Unit,
         onActionStatus: (Action) -> Unit
     ) {
         action.isActionSuccessful = true
 
         if (action is ValueAction) {
-            val intent: Intent = Intent(activityContext, ValueActionActivity::class.java)
-                    .putExtra(EXTRA_ACTION, actionType)
-            activityContext.startActivityForResult(intent, -1)
+            navController.navigate("${Screen.ValueAction.route}/${actionType.value}")
         } else if (action is NormalAction && action.actionType == Actions.MUSICPLAYBACK) {
-            val intent = Intent(activityContext, MediaPlayerListActivity::class.java)
-            activityContext.startActivityForResult(intent, -1)
+            navController.navigate(Screen.MediaPlayerList.route)
         } else if (action is NormalAction && action.actionType == Actions.SLEEPTIMER) {
             if (SleepTimerHelper.isSleepTimerInstalled()) {
                 SleepTimerHelper.launchSleepTimer()
@@ -159,11 +151,9 @@ class ActionButtonViewModel(val action: Action) {
                 onActionStatus.invoke(action)
             }
         } else if (action is NormalAction && action.actionType == Actions.APPS) {
-            val intent = Intent(activityContext, AppLauncherActivity::class.java)
-            activityContext.startActivityForResult(intent, -1)
+            navController.navigate(Screen.AppLauncher.route)
         } else if (action is NormalAction && action.actionType == Actions.PHONE) {
-            val intent = Intent(activityContext, CallManagerActivity::class.java)
-            activityContext.startActivityForResult(intent, -1)
+            navController.navigate(Screen.CallManager.route)
         } else {
             if (action is ToggleAction) {
                 val tA = action

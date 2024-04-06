@@ -37,6 +37,13 @@
         <item name="windowSplashScreenIconBackgroundColor">@color/ic_launcher_background</item>
     </style>
 
+    <style name="WearAppTheme.MediaLauncher" parent="Theme.SplashScreen.IconBackground">
+        <item name="postSplashScreenTheme">@style/WearAppTheme</item>
+        <item name="windowSplashScreenBackground">@android:color/black</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_play_circle_simpleblue</item>
+        <item name="windowSplashScreenIconBackgroundColor">@color/ic_launcher_background</item>
+    </style>
+
     <style name="Base.AppTheme" parent="Theme.MaterialComponents.NoActionBar.Bridge">
         <!-- Text styles -->
         <item name="android:textAppearance">@style/TextAppearance.Roboto</item>

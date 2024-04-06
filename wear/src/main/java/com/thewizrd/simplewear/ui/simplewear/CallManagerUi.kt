@@ -1,5 +1,6 @@
 package com.thewizrd.simplewear.ui.simplewear
 
+import android.content.Intent
 import android.graphics.Bitmap
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -26,6 +27,7 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -41,6 +43,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -50,6 +53,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
+import androidx.navigation.NavController
 import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.ButtonDefaults
 import androidx.wear.compose.material.Icon
@@ -62,49 +68,132 @@ import androidx.wear.compose.material.VignettePosition
 import androidx.wear.compose.material.dialog.Dialog
 import androidx.wear.compose.ui.tooling.preview.WearPreviewDevices
 import androidx.wear.compose.ui.tooling.preview.WearPreviewFontScales
+import com.thewizrd.shared_resources.actions.ActionStatus
+import com.thewizrd.shared_resources.actions.Actions
+import com.thewizrd.shared_resources.actions.AudioStreamType
+import com.thewizrd.shared_resources.helpers.InCallUIHelper
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
+import com.thewizrd.simplewear.PhoneSyncActivity
 import com.thewizrd.simplewear.R
+import com.thewizrd.simplewear.controls.CustomConfirmationOverlay
 import com.thewizrd.simplewear.ui.components.LoadingContent
-import com.thewizrd.simplewear.ui.theme.WearAppTheme
+import com.thewizrd.simplewear.ui.navigation.Screen
 import com.thewizrd.simplewear.ui.theme.activityViewModel
 import com.thewizrd.simplewear.ui.theme.findActivity
 import com.thewizrd.simplewear.viewmodels.CallManagerUiState
 import com.thewizrd.simplewear.viewmodels.CallManagerViewModel
+import com.thewizrd.simplewear.viewmodels.WearableListenerViewModel
+import kotlinx.coroutines.launch
 
 @Composable
 fun CallManagerUi(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    navController: NavController
 ) {
     val context = LocalContext.current
     val activity = context.findActivity()
 
+    val lifecycleOwner = LocalLifecycleOwner.current
     val callManagerViewModel = activityViewModel<CallManagerViewModel>()
     val uiState by callManagerViewModel.uiState.collectAsState()
 
-    WearAppTheme {
-        Scaffold(
-            modifier = modifier.background(MaterialTheme.colors.background),
-            vignette = { Vignette(vignettePosition = VignettePosition.TopAndBottom) },
-            timeText = {
-                if (!uiState.isLoading) TimeText()
+    Scaffold(
+        modifier = modifier.background(MaterialTheme.colors.background),
+        vignette = { Vignette(vignettePosition = VignettePosition.TopAndBottom) },
+        timeText = {
+            if (!uiState.isLoading) TimeText()
+        },
+    ) {
+        LoadingContent(
+            empty = !uiState.isCallActive,
+            emptyContent = {
+                NoCallActiveScreen()
             },
+            loading = uiState.isLoading
         ) {
-            LoadingContent(
-                empty = !uiState.isCallActive,
-                emptyContent = {
-                    NoCallActiveScreen()
-                },
-                loading = uiState.isLoading
-            ) {
-                CallManagerUi(callManagerViewModel = callManagerViewModel)
+            CallManagerUi(
+                callManagerViewModel = callManagerViewModel,
+                navController = navController
+            )
+        }
+    }
+
+    LaunchedEffect(lifecycleOwner) {
+        lifecycleOwner.lifecycleScope.launch {
+            callManagerViewModel.eventFlow.collect { event ->
+                when (event.eventType) {
+                    WearableListenerViewModel.ACTION_UPDATECONNECTIONSTATUS -> {
+                        val connectionStatus = WearConnectionStatus.valueOf(
+                            event.data.getInt(
+                                WearableListenerViewModel.EXTRA_CONNECTIONSTATUS,
+                                0
+                            )
+                        )
+
+                        when (connectionStatus) {
+                            WearConnectionStatus.DISCONNECTED -> {
+                                // Navigate
+                                activity.startActivity(
+                                    Intent(
+                                        activity,
+                                        PhoneSyncActivity::class.java
+                                    )
+                                )
+                                activity.finishAffinity()
+                            }
+
+                            WearConnectionStatus.APPNOTINSTALLED -> {
+                                // Open store on remote device
+                                callManagerViewModel.openPlayStore(activity)
+
+                                // Navigate
+                                activity.startActivity(
+                                    Intent(
+                                        activity,
+                                        PhoneSyncActivity::class.java
+                                    )
+                                )
+                                activity.finishAffinity()
+                            }
+
+                            else -> {}
+                        }
+                    }
+
+                    InCallUIHelper.CallStatePath -> {
+                        val status =
+                            event.data.getSerializable(WearableListenerViewModel.EXTRA_STATUS) as ActionStatus
+
+                        if (status == ActionStatus.PERMISSION_DENIED) {
+                            CustomConfirmationOverlay()
+                                .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
+                                .setCustomDrawable(
+                                    ContextCompat.getDrawable(
+                                        activity,
+                                        R.drawable.ws_full_sad
+                                    )
+                                )
+                                .setMessage(activity.getString(R.string.error_permissiondenied))
+                                .showOn(activity)
+
+                            callManagerViewModel.openAppOnPhone(activity, false)
+                        }
+                    }
+                }
             }
         }
+    }
+
+    LaunchedEffect(Unit) {
+        // Update statuses
+        callManagerViewModel.refreshCallState()
     }
 }
 
 @Composable
 fun CallManagerUi(
-    callManagerViewModel: CallManagerViewModel
+    callManagerViewModel: CallManagerViewModel,
+    navController: NavController
 ) {
     val context = LocalContext.current
     val activity = context.findActivity()
@@ -125,7 +214,9 @@ fun CallManagerUi(
             callManagerViewModel.enableSpeakerphone(!uiState.isSpeakerPhoneOn)
         },
         onVolume = {
-            callManagerViewModel.showCallVolumeActivity(activity)
+            navController.navigate(
+                Screen.ValueAction.getRoute(Actions.VOLUME, AudioStreamType.VOICE_CALL)
+            )
         },
         onEndCall = {
             callManagerViewModel.endCall()

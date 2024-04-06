@@ -36,8 +36,6 @@ import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.shared_resources.utils.bytesToString
 import com.thewizrd.shared_resources.utils.stringToBytes
 import com.thewizrd.simplewear.App
-import com.thewizrd.simplewear.ValueActionActivity
-import com.thewizrd.simplewear.WearableListenerActivity
 import com.thewizrd.simplewear.helpers.showConfirmationOverlay
 import com.thewizrd.simplewear.utils.ErrorMessage
 import kotlinx.coroutines.channels.BufferOverflow
@@ -494,8 +492,6 @@ abstract class WearableListenerViewModel(private val app: Application) : Android
          * Extra contains Action type to be changed for ValueActionActivity
          *
          * @see Actions
-         *
-         * @see ValueActionActivity
          */
         const val EXTRA_ACTION = "SimpleWear.Droid.Wear.extra.ACTION"
 
@@ -503,8 +499,6 @@ abstract class WearableListenerViewModel(private val app: Application) : Android
          * Extra contains Action data (serialized class in JSON) to be passed to BroadcastReceiver or Activity
          *
          * @see Action
-         *
-         * @see WearableListenerActivity
          */
         const val EXTRA_ACTIONDATA = "SimpleWear.Droid.Wear.extra.ACTION_DATA"
 
@@ -519,8 +513,6 @@ abstract class WearableListenerViewModel(private val app: Application) : Android
          * Extra contains connection status for WearOS device and connected phone
          *
          * @see WearConnectionStatus
-         *
-         * @see WearableListenerActivity
          */
         const val EXTRA_CONNECTIONSTATUS = "SimpleWear.Droid.Wear.extra.CONNECTION_STATUS"
     }

@@ -12,6 +12,7 @@ import com.thewizrd.shared_resources.SimpleLibrary
 import com.thewizrd.shared_resources.helpers.AppState
 import com.thewizrd.shared_resources.utils.CrashlyticsLoggingTree
 import com.thewizrd.shared_resources.utils.Logger
+import com.thewizrd.simplewear.media.MediaPlayerActivity
 import kotlin.system.exitProcess
 
 class App : Application(), ApplicationLib, ActivityLifecycleCallbacks {
@@ -73,7 +74,7 @@ class App : Application(), ApplicationLib, ActivityLifecycleCallbacks {
     }
 
     override fun onActivityResumed(activity: Activity) {
-        if (activity is WearableListenerActivity && applicationState != AppState.FOREGROUND) {
+        if ((activity is DashboardActivity || activity is MediaPlayerActivity) && applicationState != AppState.FOREGROUND) {
             applicationState = AppState.FOREGROUND
         }
     }

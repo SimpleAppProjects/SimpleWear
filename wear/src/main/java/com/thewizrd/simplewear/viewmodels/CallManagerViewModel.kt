@@ -1,8 +1,6 @@
 package com.thewizrd.simplewear.viewmodels
 
-import android.app.Activity
 import android.app.Application
-import android.content.Intent
 import android.graphics.Bitmap
 import android.os.Bundle
 import android.os.CountDownTimer
@@ -16,8 +14,6 @@ import com.google.android.gms.wearable.DataMapItem
 import com.google.android.gms.wearable.MessageEvent
 import com.google.android.gms.wearable.Wearable
 import com.thewizrd.shared_resources.actions.ActionStatus
-import com.thewizrd.shared_resources.actions.Actions
-import com.thewizrd.shared_resources.actions.AudioStreamType
 import com.thewizrd.shared_resources.helpers.InCallUIHelper
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
 import com.thewizrd.shared_resources.helpers.WearableHelper
@@ -28,7 +24,6 @@ import com.thewizrd.shared_resources.utils.bytesToBool
 import com.thewizrd.shared_resources.utils.bytesToString
 import com.thewizrd.shared_resources.utils.charToBytes
 import com.thewizrd.simplewear.R
-import com.thewizrd.simplewear.ValueActionActivity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -314,13 +309,6 @@ class CallManagerViewModel(app: Application) : WearableListenerViewModel(app),
                 sendMessage(mPhoneNodeWithApp!!.id, InCallUIHelper.EndCallPath, null)
             }
         }
-    }
-
-    fun showCallVolumeActivity(activityContext: Activity) {
-        val intent: Intent = Intent(activityContext, ValueActionActivity::class.java)
-            .putExtra(EXTRA_ACTION, Actions.VOLUME)
-            .putExtra(ValueActionActivity.EXTRA_STREAMTYPE, AudioStreamType.VOICE_CALL)
-        activityContext.startActivityForResult(intent, -1)
     }
 
     override fun onCleared() {

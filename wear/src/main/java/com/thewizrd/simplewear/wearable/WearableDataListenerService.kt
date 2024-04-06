@@ -20,17 +20,27 @@ import androidx.core.content.pm.ShortcutManagerCompat
 import androidx.core.graphics.drawable.IconCompat
 import androidx.wear.ongoing.OngoingActivity
 import androidx.wear.ongoing.Status
-import com.google.android.gms.wearable.*
+import com.google.android.gms.wearable.CapabilityInfo
+import com.google.android.gms.wearable.DataEvent
+import com.google.android.gms.wearable.DataEventBuffer
+import com.google.android.gms.wearable.DataItem
+import com.google.android.gms.wearable.DataMapItem
+import com.google.android.gms.wearable.MessageEvent
+import com.google.android.gms.wearable.Node
+import com.google.android.gms.wearable.Wearable
+import com.google.android.gms.wearable.WearableListenerService
+import com.thewizrd.shared_resources.actions.Actions
 import com.thewizrd.shared_resources.helpers.InCallUIHelper
 import com.thewizrd.shared_resources.helpers.MediaHelper
 import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.shared_resources.utils.stringToBytes
-import com.thewizrd.simplewear.CallManagerActivity
+import com.thewizrd.simplewear.DashboardActivity
 import com.thewizrd.simplewear.PhoneSyncActivity
 import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.media.MediaPlayerActivity
 import com.thewizrd.simplewear.preferences.Settings
+import com.thewizrd.simplewear.viewmodels.WearableListenerViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
@@ -281,7 +291,9 @@ class WearableDataListenerService : WearableListenerService() {
     private fun getCallControllerIntent(): PendingIntent {
         return PendingIntent.getActivity(
             this, 1000,
-            Intent(this, CallManagerActivity::class.java),
+            Intent(this, DashboardActivity::class.java).apply {
+                putExtra(WearableListenerViewModel.EXTRA_ACTION, Actions.PHONE)
+            },
             PendingIntent.FLAG_IMMUTABLE
         )
     }
@@ -316,8 +328,10 @@ class WearableDataListenerService : WearableListenerService() {
             .setShortLabel(getString(R.string.title_callcontroller))
             .setIcon(IconCompat.createWithResource(this, R.drawable.ic_phone_simpleblue))
             .setIntent(
-                Intent(this, CallManagerActivity::class.java)
-                    .setAction(Intent.ACTION_VIEW)
+                Intent(this, DashboardActivity::class.java)
+                    .setAction(Intent.ACTION_VIEW).apply {
+                        putExtra(WearableListenerViewModel.EXTRA_ACTION, Actions.PHONE)
+                    }
             )
             .setLocusId(LocusIdCompat(CALLS_LOCUS_ID))
             .build()

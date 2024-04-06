@@ -1,5 +1,6 @@
 package com.thewizrd.simplewear.ui.simplewear
 
+import android.content.Intent
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -20,20 +21,26 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import androidx.wear.compose.foundation.ExperimentalWearFoundationApi
 import androidx.wear.compose.foundation.HierarchicalFocusCoordinator
+import androidx.wear.compose.foundation.SwipeToDismissBoxState
 import androidx.wear.compose.foundation.edgeSwipeToDismiss
 import androidx.wear.compose.foundation.lazy.items
 import androidx.wear.compose.foundation.rememberSwipeToDismissBoxState
@@ -44,7 +51,6 @@ import androidx.wear.compose.material.CompactChip
 import androidx.wear.compose.material.Icon
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.PositionIndicator
-import androidx.wear.compose.material.SwipeToDismissBox
 import androidx.wear.compose.material.Switch
 import androidx.wear.compose.material.Text
 import androidx.wear.compose.material.TimeText
@@ -63,16 +69,22 @@ import com.google.android.horologist.compose.material.ListHeaderDefaults
 import com.google.android.horologist.compose.material.ResponsiveListHeader
 import com.google.android.horologist.compose.pager.HorizontalPagerDefaults
 import com.google.android.horologist.compose.rotaryinput.rotaryWithScroll
+import com.thewizrd.shared_resources.actions.ActionStatus
+import com.thewizrd.shared_resources.helpers.MediaHelper
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
+import com.thewizrd.simplewear.PhoneSyncActivity
 import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.controls.AppItemViewModel
+import com.thewizrd.simplewear.controls.CustomConfirmationOverlay
+import com.thewizrd.simplewear.helpers.showConfirmationOverlay
 import com.thewizrd.simplewear.preferences.Settings
 import com.thewizrd.simplewear.ui.components.LoadingContent
-import com.thewizrd.simplewear.ui.theme.WearAppTheme
-import com.thewizrd.simplewear.ui.theme.activityViewModel
+import com.thewizrd.simplewear.ui.navigation.Screen
 import com.thewizrd.simplewear.ui.theme.findActivity
 import com.thewizrd.simplewear.viewmodels.MediaPlayerListUiState
 import com.thewizrd.simplewear.viewmodels.MediaPlayerListViewModel
+import com.thewizrd.simplewear.viewmodels.WearableListenerViewModel
+import kotlinx.coroutines.launch
 
 @OptIn(
     ExperimentalHorologistApi::class, ExperimentalFoundationApi::class,
@@ -80,12 +92,15 @@ import com.thewizrd.simplewear.viewmodels.MediaPlayerListViewModel
 )
 @Composable
 fun MediaPlayerListUi(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    navController: NavController,
+    swipeToDismissBoxState: SwipeToDismissBoxState = rememberSwipeToDismissBoxState()
 ) {
     val context = LocalContext.current
     val activity = context.findActivity()
 
-    val mediaPlayerListViewModel = activityViewModel<MediaPlayerListViewModel>()
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val mediaPlayerListViewModel = viewModel<MediaPlayerListViewModel>()
     val uiState by mediaPlayerListViewModel.uiState.collectAsState()
 
     val scrollState = rememberResponsiveColumnState(
@@ -94,58 +109,137 @@ fun MediaPlayerListUi(
             last = ScalingLazyColumnDefaults.ItemType.Chip,
         )
     )
-    val swipeToDismissBoxState = rememberSwipeToDismissBoxState()
 
     val pagerState = rememberPagerState(
         initialPage = 0,
         pageCount = { 2 }
     )
 
-    WearAppTheme {
-        PagerScaffold(
-            modifier = Modifier.fillMaxSize(),
-            timeText = {
-                if (pagerState.currentPage == 0) {
-                    TimeText(modifier = Modifier.scrollAway { scrollState })
-                }
-            },
-            pagerState = if (uiState.isLoading) null else pagerState
-        ) {
-            SwipeToDismissBox(
-                modifier = Modifier.background(MaterialTheme.colors.background),
-                onDismissed = {
-                    activity.onBackPressed()
-                },
-                state = swipeToDismissBoxState
-            ) { isBackground ->
-                if (isBackground) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(MaterialTheme.colors.background)
+    var autoLaunched by rememberSaveable(navController) { mutableStateOf(false) }
+
+    PagerScaffold(
+        modifier = Modifier
+            .fillMaxSize()
+            .edgeSwipeToDismiss(swipeToDismissBoxState),
+        timeText = {
+            if (pagerState.currentPage == 0) {
+                TimeText(modifier = Modifier.scrollAway { scrollState })
+            }
+        },
+        pagerState = if (uiState.isLoading) null else pagerState
+    ) {
+        HorizontalPager(
+            state = pagerState,
+            flingBehavior = HorizontalPagerDefaults.flingParams(pagerState)
+        ) { pageIdx ->
+            HierarchicalFocusCoordinator(requiresFocus = { pageIdx == pagerState.currentPage }) {
+                if (pageIdx == 0) {
+                    MediaPlayerListScreen(
+                        mediaPlayerListViewModel = mediaPlayerListViewModel,
+                        navController = navController,
+                        scrollState = scrollState
                     )
                 } else {
-                    HorizontalPager(
-                        modifier = modifier.edgeSwipeToDismiss(swipeToDismissBoxState),
-                        state = pagerState,
-                        flingBehavior = HorizontalPagerDefaults.flingParams(pagerState)
-                    ) { pageIdx ->
-                        HierarchicalFocusCoordinator(requiresFocus = { pageIdx == pagerState.currentPage }) {
-                            if (pageIdx == 0) {
-                                MediaPlayerListScreen(
-                                    mediaPlayerListViewModel = mediaPlayerListViewModel,
-                                    scrollState = scrollState
+                    MediaPlayerListSettings(
+                        mediaPlayerListViewModel = mediaPlayerListViewModel
+                    )
+                }
+            }
+        }
+    }
+
+    LaunchedEffect(context) {
+        mediaPlayerListViewModel.initActivityContext(activity)
+    }
+
+    LaunchedEffect(lifecycleOwner) {
+        lifecycleOwner.lifecycleScope.launchWhenResumed {
+            if (!autoLaunched) {
+                mediaPlayerListViewModel.autoLaunchMediaControls()
+                autoLaunched = true
+            }
+        }
+
+        lifecycleOwner.lifecycleScope.launch {
+            mediaPlayerListViewModel.eventFlow.collect { event ->
+                when (event.eventType) {
+                    WearableListenerViewModel.ACTION_UPDATECONNECTIONSTATUS -> {
+                        val connectionStatus = WearConnectionStatus.valueOf(
+                            event.data.getInt(
+                                WearableListenerViewModel.EXTRA_CONNECTIONSTATUS,
+                                0
+                            )
+                        )
+
+                        when (connectionStatus) {
+                            WearConnectionStatus.DISCONNECTED -> {
+                                // Navigate
+                                activity.startActivity(
+                                    Intent(
+                                        activity,
+                                        PhoneSyncActivity::class.java
+                                    )
                                 )
-                            } else {
-                                MediaPlayerListSettings(
-                                    mediaPlayerListViewModel = mediaPlayerListViewModel
-                                )
+                                activity.finishAffinity()
                             }
+
+                            WearConnectionStatus.APPNOTINSTALLED -> {
+                                // Open store on remote device
+                                mediaPlayerListViewModel.openPlayStore(activity)
+
+                                // Navigate
+                                activity.startActivity(
+                                    Intent(
+                                        activity,
+                                        PhoneSyncActivity::class.java
+                                    )
+                                )
+                                activity.finishAffinity()
+                            }
+
+                            else -> {}
+                        }
+                    }
+
+                    MediaHelper.MusicPlayersPath -> {
+                        val status =
+                            event.data.getSerializable(WearableListenerViewModel.EXTRA_STATUS) as ActionStatus
+
+                        if (status == ActionStatus.PERMISSION_DENIED) {
+                            CustomConfirmationOverlay()
+                                .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
+                                .setCustomDrawable(
+                                    ContextCompat.getDrawable(
+                                        activity,
+                                        R.drawable.ws_full_sad
+                                    )
+                                )
+                                .setMessage(activity.getString(R.string.error_permissiondenied))
+                                .showOn(activity)
+
+                            mediaPlayerListViewModel.openAppOnPhone(
+                                activity,
+                                false
+                            )
+                        }
+                    }
+
+                    MediaHelper.MediaPlayerAutoLaunchPath -> {
+                        val status =
+                            event.data.getSerializable(WearableListenerViewModel.EXTRA_STATUS) as ActionStatus
+
+                        if (status == ActionStatus.SUCCESS) {
+                            navController.navigate(Screen.MediaPlayer.autoLaunch())
                         }
                     }
                 }
             }
         }
+    }
+
+    LaunchedEffect(Unit) {
+        // Update statuses
+        mediaPlayerListViewModel.refreshState(true)
     }
 }
 
@@ -153,18 +247,28 @@ fun MediaPlayerListUi(
 @Composable
 private fun MediaPlayerListScreen(
     mediaPlayerListViewModel: MediaPlayerListViewModel,
+    navController: NavController,
     scrollState: ScalingLazyColumnState
 ) {
     val context = LocalContext.current
     val activity = context.findActivity()
 
+    val lifecycleOwner = LocalLifecycleOwner.current
     val uiState by mediaPlayerListViewModel.uiState.collectAsState()
 
     MediaPlayerListScreen(
         uiState = uiState,
         scrollState = scrollState,
         onItemClicked = {
-            mediaPlayerListViewModel.startMediaApp(activity, it)
+            lifecycleOwner.lifecycleScope.launch {
+                val success = mediaPlayerListViewModel.startMediaApp(it)
+
+                if (success) {
+                    navController.navigate(Screen.MediaPlayer.getRoute(it))
+                } else {
+                    activity.showConfirmationOverlay(false)
+                }
+            }
         },
         onRefresh = {
             mediaPlayerListViewModel.refreshState()

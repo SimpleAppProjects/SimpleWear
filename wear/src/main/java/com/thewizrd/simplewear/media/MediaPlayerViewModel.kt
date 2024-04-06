@@ -1,8 +1,6 @@
 package com.thewizrd.simplewear.media
 
-import android.app.Activity
 import android.app.Application
-import android.content.Intent
 import android.graphics.Bitmap
 import android.os.Bundle
 import android.util.Log
@@ -18,9 +16,7 @@ import com.google.android.gms.wearable.Wearable
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
 import com.google.android.horologist.media.model.PlaybackStateEvent
 import com.thewizrd.shared_resources.actions.ActionStatus
-import com.thewizrd.shared_resources.actions.Actions
 import com.thewizrd.shared_resources.actions.AudioStreamState
-import com.thewizrd.shared_resources.actions.AudioStreamType
 import com.thewizrd.shared_resources.helpers.MediaHelper
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
 import com.thewizrd.shared_resources.helpers.WearableHelper
@@ -33,8 +29,6 @@ import com.thewizrd.shared_resources.utils.booleanToBytes
 import com.thewizrd.shared_resources.utils.bytesToString
 import com.thewizrd.shared_resources.utils.intToBytes
 import com.thewizrd.shared_resources.utils.stringToBytes
-import com.thewizrd.simplewear.ValueActionActivity
-import com.thewizrd.simplewear.WearableListenerActivity
 import com.thewizrd.simplewear.controls.AppItemViewModel
 import com.thewizrd.simplewear.viewmodels.WearableEvent
 import com.thewizrd.simplewear.viewmodels.WearableListenerViewModel
@@ -202,8 +196,7 @@ class MediaPlayerViewModel(app: Application) : WearableListenerViewModel(app),
                     }
 
                     ACTION_CHANGED -> {
-                        val jsonData =
-                            event.data.getString(WearableListenerActivity.EXTRA_ACTIONDATA)
+                        val jsonData = event.data.getString(EXTRA_ACTIONDATA)
                         requestAction(jsonData)
                     }
                 }
@@ -374,10 +367,24 @@ class MediaPlayerViewModel(app: Application) : WearableListenerViewModel(app),
         }
     }
 
+    fun autoLaunch() {
+        viewModelState.update {
+            it.copy(
+                mediaPlayerDetails = AppItemViewModel(),
+                isAutoLaunch = false
+            )
+        }
+        requestPlayerConnect()
+    }
+
     fun updateMediaPlayerDetails(player: AppItemViewModel) {
         viewModelState.update {
-            it.copy(mediaPlayerDetails = player)
+            it.copy(
+                mediaPlayerDetails = player,
+                isAutoLaunch = false
+            )
         }
+        requestPlayerConnect()
     }
 
     private fun updatePager() {
@@ -606,13 +613,6 @@ class MediaPlayerViewModel(app: Application) : WearableListenerViewModel(app),
                 }
             }
         }
-    }
-
-    fun showCallVolumeActivity(activityContext: Activity) {
-        val intent: Intent = Intent(activityContext, ValueActionActivity::class.java)
-            .putExtra(EXTRA_ACTION, Actions.VOLUME)
-            .putExtra(ValueActionActivity.EXTRA_STREAMTYPE, AudioStreamType.MUSIC)
-        activityContext.startActivityForResult(intent, -1)
     }
 
     // Custom Controls
