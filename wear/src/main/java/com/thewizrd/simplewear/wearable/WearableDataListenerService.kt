@@ -1,5 +1,6 @@
 package com.thewizrd.simplewear.wearable
 
+import android.annotation.SuppressLint
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -87,6 +88,7 @@ class WearableDataListenerService : WearableListenerService() {
         }
     }
 
+    @SuppressLint("MissingPermission")
     private fun startBTDiscovery() {
         val btService = applicationContext.getSystemService(BluetoothManager::class.java)
         val adapter = btService.adapter
@@ -292,7 +294,7 @@ class WearableDataListenerService : WearableListenerService() {
         return PendingIntent.getActivity(
             this, 1000,
             Intent(this, DashboardActivity::class.java).apply {
-                putExtra(WearableListenerViewModel.EXTRA_ACTION, Actions.PHONE)
+                putExtra(WearableListenerViewModel.EXTRA_ACTION, Actions.PHONE.value)
             },
             PendingIntent.FLAG_IMMUTABLE
         )
@@ -330,7 +332,7 @@ class WearableDataListenerService : WearableListenerService() {
             .setIntent(
                 Intent(this, DashboardActivity::class.java)
                     .setAction(Intent.ACTION_VIEW).apply {
-                        putExtra(WearableListenerViewModel.EXTRA_ACTION, Actions.PHONE)
+                        putExtra(WearableListenerViewModel.EXTRA_ACTION, Actions.PHONE.value)
                     }
             )
             .setLocusId(LocusIdCompat(CALLS_LOCUS_ID))

@@ -1,6 +1,5 @@
 package com.thewizrd.simplewear
 
-import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -16,10 +15,8 @@ class DashboardActivity : ComponentActivity() {
         var startDestination = Screen.Dashboard.route
 
         if (intent?.hasExtra(EXTRA_ACTION) == true) {
-            val actionType = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                intent.getSerializableExtra(EXTRA_ACTION, Actions::class.java)
-            } else {
-                intent.getSerializableExtra(EXTRA_ACTION) as Actions
+            val actionType = intent.getIntExtra(EXTRA_ACTION, 0).let {
+                Actions.valueOf(it)
             }
 
             when (actionType) {
