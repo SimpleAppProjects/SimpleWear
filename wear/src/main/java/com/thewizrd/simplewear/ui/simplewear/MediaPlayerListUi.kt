@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -38,12 +37,7 @@ import androidx.core.graphics.drawable.toBitmap
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import androidx.wear.compose.foundation.ExperimentalWearFoundationApi
-import androidx.wear.compose.foundation.HierarchicalFocusCoordinator
-import androidx.wear.compose.foundation.SwipeToDismissBoxState
-import androidx.wear.compose.foundation.edgeSwipeToDismiss
 import androidx.wear.compose.foundation.lazy.items
-import androidx.wear.compose.foundation.rememberSwipeToDismissBoxState
 import androidx.wear.compose.material.Checkbox
 import androidx.wear.compose.material.Chip
 import androidx.wear.compose.material.ChipDefaults
@@ -59,7 +53,6 @@ import androidx.wear.compose.material.dialog.Dialog
 import androidx.wear.compose.ui.tooling.preview.WearPreviewDevices
 import androidx.wear.compose.ui.tooling.preview.WearPreviewFontScales
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
-import com.google.android.horologist.compose.layout.PagerScaffold
 import com.google.android.horologist.compose.layout.ScalingLazyColumn
 import com.google.android.horologist.compose.layout.ScalingLazyColumnDefaults
 import com.google.android.horologist.compose.layout.ScalingLazyColumnState
@@ -67,7 +60,6 @@ import com.google.android.horologist.compose.layout.rememberResponsiveColumnStat
 import com.google.android.horologist.compose.layout.scrollAway
 import com.google.android.horologist.compose.material.ListHeaderDefaults
 import com.google.android.horologist.compose.material.ResponsiveListHeader
-import com.google.android.horologist.compose.pager.HorizontalPagerDefaults
 import com.google.android.horologist.compose.rotaryinput.rotaryWithScroll
 import com.thewizrd.shared_resources.actions.ActionStatus
 import com.thewizrd.shared_resources.helpers.MediaHelper
@@ -79,6 +71,7 @@ import com.thewizrd.simplewear.controls.CustomConfirmationOverlay
 import com.thewizrd.simplewear.helpers.showConfirmationOverlay
 import com.thewizrd.simplewear.preferences.Settings
 import com.thewizrd.simplewear.ui.components.LoadingContent
+import com.thewizrd.simplewear.ui.components.SwipeToDismissPagerScreen
 import com.thewizrd.simplewear.ui.navigation.Screen
 import com.thewizrd.simplewear.ui.theme.findActivity
 import com.thewizrd.simplewear.viewmodels.MediaPlayerListUiState
@@ -86,15 +79,11 @@ import com.thewizrd.simplewear.viewmodels.MediaPlayerListViewModel
 import com.thewizrd.simplewear.viewmodels.WearableListenerViewModel
 import kotlinx.coroutines.launch
 
-@OptIn(
-    ExperimentalHorologistApi::class, ExperimentalFoundationApi::class,
-    ExperimentalWearFoundationApi::class
-)
+@OptIn(ExperimentalHorologistApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun MediaPlayerListUi(
     modifier: Modifier = Modifier,
-    navController: NavController,
-    swipeToDismissBoxState: SwipeToDismissBoxState = rememberSwipeToDismissBoxState()
+    navController: NavController
 ) {
     val context = LocalContext.current
     val activity = context.findActivity()
@@ -117,34 +106,25 @@ fun MediaPlayerListUi(
 
     var autoLaunched by rememberSaveable(navController) { mutableStateOf(false) }
 
-    PagerScaffold(
-        modifier = Modifier
-            .fillMaxSize()
-            .edgeSwipeToDismiss(swipeToDismissBoxState),
+    SwipeToDismissPagerScreen(
+        state = pagerState,
+        hidePagerIndicator = uiState.isLoading,
         timeText = {
             if (pagerState.currentPage == 0) {
                 TimeText(modifier = Modifier.scrollAway { scrollState })
             }
-        },
-        pagerState = if (uiState.isLoading) null else pagerState
-    ) {
-        HorizontalPager(
-            state = pagerState,
-            flingBehavior = HorizontalPagerDefaults.flingParams(pagerState)
-        ) { pageIdx ->
-            HierarchicalFocusCoordinator(requiresFocus = { pageIdx == pagerState.currentPage }) {
-                if (pageIdx == 0) {
-                    MediaPlayerListScreen(
-                        mediaPlayerListViewModel = mediaPlayerListViewModel,
-                        navController = navController,
-                        scrollState = scrollState
-                    )
-                } else {
-                    MediaPlayerListSettings(
-                        mediaPlayerListViewModel = mediaPlayerListViewModel
-                    )
-                }
-            }
+        }
+    ) { pageIdx ->
+        if (pageIdx == 0) {
+            MediaPlayerListScreen(
+                mediaPlayerListViewModel = mediaPlayerListViewModel,
+                navController = navController,
+                scrollState = scrollState
+            )
+        } else {
+            MediaPlayerListSettings(
+                mediaPlayerListViewModel = mediaPlayerListViewModel
+            )
         }
     }
 

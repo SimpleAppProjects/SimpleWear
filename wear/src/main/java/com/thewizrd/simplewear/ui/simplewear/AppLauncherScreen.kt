@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -31,11 +30,7 @@ import androidx.core.graphics.drawable.toBitmap
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.wear.compose.foundation.ExperimentalWearFoundationApi
-import androidx.wear.compose.foundation.HierarchicalFocusCoordinator
-import androidx.wear.compose.foundation.SwipeToDismissBoxState
-import androidx.wear.compose.foundation.edgeSwipeToDismiss
 import androidx.wear.compose.foundation.lazy.items
-import androidx.wear.compose.foundation.rememberSwipeToDismissBoxState
 import androidx.wear.compose.material.Chip
 import androidx.wear.compose.material.ChipDefaults
 import androidx.wear.compose.material.CompactChip
@@ -47,7 +42,6 @@ import androidx.wear.compose.material.TimeText
 import androidx.wear.compose.material.ToggleChip
 import androidx.wear.compose.ui.tooling.preview.WearPreviewDevices
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
-import com.google.android.horologist.compose.layout.PagerScaffold
 import com.google.android.horologist.compose.layout.ScalingLazyColumn
 import com.google.android.horologist.compose.layout.ScalingLazyColumnDefaults
 import com.google.android.horologist.compose.layout.ScalingLazyColumnState
@@ -55,7 +49,6 @@ import com.google.android.horologist.compose.layout.rememberResponsiveColumnStat
 import com.google.android.horologist.compose.layout.scrollAway
 import com.google.android.horologist.compose.material.ListHeaderDefaults.firstItemPadding
 import com.google.android.horologist.compose.material.ResponsiveListHeader
-import com.google.android.horologist.compose.pager.HorizontalPagerDefaults
 import com.thewizrd.shared_resources.actions.ActionStatus
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
 import com.thewizrd.shared_resources.helpers.WearableHelper
@@ -64,6 +57,7 @@ import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.controls.AppItemViewModel
 import com.thewizrd.simplewear.controls.CustomConfirmationOverlay
 import com.thewizrd.simplewear.ui.components.LoadingContent
+import com.thewizrd.simplewear.ui.components.SwipeToDismissPagerScreen
 import com.thewizrd.simplewear.ui.theme.findActivity
 import com.thewizrd.simplewear.viewmodels.AppLauncherUiState
 import com.thewizrd.simplewear.viewmodels.AppLauncherViewModel
@@ -77,8 +71,7 @@ import kotlinx.coroutines.launch
 )
 @Composable
 fun AppLauncherScreen(
-    modifier: Modifier = Modifier,
-    swipeToDismissBoxState: SwipeToDismissBoxState = rememberSwipeToDismissBoxState()
+    modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
     val activity = context.findActivity()
@@ -99,33 +92,25 @@ fun AppLauncherScreen(
         pageCount = { 2 }
     )
 
-    PagerScaffold(
-        modifier = Modifier
-            .fillMaxSize()
-            .edgeSwipeToDismiss(swipeToDismissBoxState),
+    SwipeToDismissPagerScreen(
+        modifier = modifier,
+        state = pagerState,
+        hidePagerIndicator = uiState.isLoading,
         timeText = {
             if (pagerState.currentPage == 0) {
                 TimeText(modifier = Modifier.scrollAway { scrollState })
             }
-        },
-        pagerState = if (uiState.isLoading) null else pagerState
-    ) {
-        HorizontalPager(
-            state = pagerState,
-            flingBehavior = HorizontalPagerDefaults.flingParams(pagerState)
-        ) { pageIdx ->
-            HierarchicalFocusCoordinator(requiresFocus = { pageIdx == pagerState.currentPage }) {
-                if (pageIdx == 0) {
-                    AppLauncherScreen(
-                        appLauncherViewModel = appLauncherViewModel,
-                        scrollState = scrollState
-                    )
-                } else {
-                    AppLauncherSettings(
-                        appLauncherViewModel = appLauncherViewModel
-                    )
-                }
-            }
+        }
+    ) { pageIdx ->
+        if (pageIdx == 0) {
+            AppLauncherScreen(
+                appLauncherViewModel = appLauncherViewModel,
+                scrollState = scrollState
+            )
+        } else {
+            AppLauncherSettings(
+                appLauncherViewModel = appLauncherViewModel
+            )
         }
     }
 

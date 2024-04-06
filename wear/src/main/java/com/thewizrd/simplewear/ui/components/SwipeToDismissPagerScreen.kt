@@ -33,17 +33,22 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.foundation.ExperimentalWearFoundationApi
 import androidx.wear.compose.foundation.HierarchicalFocusCoordinator
+import androidx.wear.compose.foundation.SwipeToDismissBoxState
+import androidx.wear.compose.foundation.edgeSwipeToDismiss
+import androidx.wear.compose.foundation.rememberSwipeToDismissBoxState
 import com.google.android.horologist.compose.layout.PagerScaffold
+import com.google.android.horologist.compose.pager.HorizontalPagerDefaults
 import kotlinx.coroutines.coroutineScope
 
 // https://slack-chats.kotlinlang.org/t/16230979/problem-changing-basicswipetodismiss-background-color-gt
 @OptIn(ExperimentalFoundationApi::class, ExperimentalWearFoundationApi::class)
 @Composable
-fun SwipeToClosePagerScreen(
+fun SwipeToDismissPagerScreen(
     modifier: Modifier = Modifier,
     state: PagerState,
-    isLoading: Boolean = false,
+    hidePagerIndicator: Boolean = false,
     timeText: (@Composable () -> Unit)? = null,
+    pagerKey: ((index: Int) -> Any)? = null,
     content: @Composable (Int) -> Unit
 ) {
     val screenWidth = with(LocalDensity.current) {
@@ -55,48 +60,110 @@ fun SwipeToClosePagerScreen(
 
     CustomTouchSlopProvider(newTouchSlop = originalTouchSlop * 2) {
         PagerScaffold(
-            modifier = Modifier
-                .fillMaxSize()
-                .pointerInput(screenWidth) {
-                    coroutineScope {
-                        awaitEachGesture {
-                            allowPaging = true
-                            val firstDown =
-                                awaitFirstDown(false, PointerEventPass.Initial)
-                            val xPosition = firstDown.position.x
-                            // Define edge zone of 15%
-                            allowPaging = xPosition > screenWidth * 0.15f
-                        }
-                    }
-                }
-                .semantics {
-                    horizontalScrollAxisRange = if (allowPaging) {
-                        ScrollAxisRange(value = { state.currentPage.toFloat() },
-                            maxValue = { 3f })
-                    } else {
-                        // signals system swipe to dismiss that they can take over
-                        ScrollAxisRange(value = { 0f },
-                            maxValue = { 0f })
-                    }
-                },
+            modifier = Modifier.fillMaxSize(),
             timeText = timeText,
-            pagerState = if (isLoading) null else state
+            pagerState = if (hidePagerIndicator) null else state
         ) {
             HorizontalPager(
-                modifier = modifier,
-                state = state,
-                flingBehavior =
-                PagerDefaults.flingBehavior(
-                    state,
-                    snapAnimationSpec = tween(10, 0),
-                ),
-                userScrollEnabled = allowPaging
-            ) { page ->
-                ClippedBox(state) {
-                    HierarchicalFocusCoordinator(requiresFocus = { page == state.currentPage }) {
-                        content(page)
+                modifier = modifier
+                    .pointerInput(screenWidth) {
+                        coroutineScope {
+                            awaitEachGesture {
+                                allowPaging = true
+                                val firstDown =
+                                    awaitFirstDown(false, PointerEventPass.Initial)
+                                val xPosition = firstDown.position.x
+                                // Define edge zone of 15%
+                                allowPaging = xPosition > screenWidth * 0.15f
+                            }
+                        }
                     }
+                    .semantics {
+                        horizontalScrollAxisRange = if (allowPaging) {
+                            ScrollAxisRange(value = { state.currentPage.toFloat() },
+                                maxValue = { 3f })
+                        } else {
+                            // signals system swipe to dismiss that they can take over
+                            ScrollAxisRange(value = { 0f },
+                                maxValue = { 0f })
+                        }
+                    },
+                state = state,
+                flingBehavior = PagerDefaults.flingBehavior(
+                    state,
+                    snapAnimationSpec = tween(150, 0),
+                ),
+                userScrollEnabled = allowPaging,
+                key = pagerKey
+            ) { page ->
+                HierarchicalFocusCoordinator(requiresFocus = { page == state.currentPage }) {
+                    content(page)
                 }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun SwipeToDismissPagerScreen(
+    modifier: Modifier = Modifier,
+    isRoot: Boolean = true,
+    swipeToDismissBoxState: SwipeToDismissBoxState = rememberSwipeToDismissBoxState(),
+    state: PagerState,
+    hidePagerIndicator: Boolean = false,
+    timeText: (@Composable () -> Unit)? = null,
+    pagerKey: ((index: Int) -> Any)? = null,
+    content: @Composable (Int) -> Unit
+) {
+    if (isRoot) {
+        SwipeToDismissPagerScreen(
+            modifier,
+            state,
+            hidePagerIndicator,
+            timeText,
+            pagerKey,
+            content
+        )
+    } else {
+        SwipeToDismissPagerScreen(
+            modifier,
+            swipeToDismissBoxState,
+            state,
+            hidePagerIndicator,
+            timeText,
+            pagerKey,
+            content
+        )
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class, ExperimentalWearFoundationApi::class)
+@Composable
+private fun SwipeToDismissPagerScreen(
+    modifier: Modifier = Modifier,
+    swipeToDismissBoxState: SwipeToDismissBoxState = rememberSwipeToDismissBoxState(),
+    state: PagerState,
+    hidePagerIndicator: Boolean = false,
+    timeText: (@Composable () -> Unit)? = null,
+    pagerKey: ((index: Int) -> Any)? = null,
+    content: @Composable (Int) -> Unit
+) {
+    PagerScaffold(
+        modifier = Modifier
+            .fillMaxSize()
+            .edgeSwipeToDismiss(swipeToDismissBoxState),
+        timeText = timeText,
+        pagerState = if (hidePagerIndicator) null else state
+    ) {
+        HorizontalPager(
+            modifier = modifier,
+            state = state,
+            flingBehavior = HorizontalPagerDefaults.flingParams(state),
+            key = pagerKey
+        ) { page ->
+            HierarchicalFocusCoordinator(requiresFocus = { page == state.currentPage }) {
+                content(page)
             }
         }
     }

@@ -1,4 +1,4 @@
-@file:OptIn(ExperimentalHorologistApi::class)
+@file:OptIn(ExperimentalHorologistApi::class, ExperimentalFoundationApi::class)
 
 package com.thewizrd.simplewear.ui.simplewear
 
@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
@@ -36,6 +35,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
@@ -43,15 +43,13 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.wear.ambient.AmbientLifecycleObserver
-import androidx.wear.compose.foundation.ExperimentalWearFoundationApi
-import androidx.wear.compose.foundation.HierarchicalFocusCoordinator
 import androidx.wear.compose.foundation.SwipeToDismissBoxState
-import androidx.wear.compose.foundation.edgeSwipeToDismiss
 import androidx.wear.compose.foundation.lazy.items
 import androidx.wear.compose.foundation.rememberSwipeToDismissBoxState
 import androidx.wear.compose.material.ChipDefaults
 import androidx.wear.compose.material.CompactChip
 import androidx.wear.compose.material.Icon
+import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
 import androidx.wear.compose.material.TimeText
 import androidx.wear.compose.ui.tooling.preview.WearPreviewDevices
@@ -62,13 +60,11 @@ import com.google.android.horologist.audio.ui.components.actions.SetVolumeButton
 import com.google.android.horologist.audio.ui.components.animated.AnimatedSetVolumeButton
 import com.google.android.horologist.compose.ambient.AmbientAware
 import com.google.android.horologist.compose.ambient.AmbientState
-import com.google.android.horologist.compose.layout.PagerScaffold
 import com.google.android.horologist.compose.layout.ScalingLazyColumn
 import com.google.android.horologist.compose.layout.ScalingLazyColumnDefaults
 import com.google.android.horologist.compose.layout.rememberResponsiveColumnState
 import com.google.android.horologist.compose.layout.scrollAway
 import com.google.android.horologist.compose.material.Chip
-import com.google.android.horologist.compose.pager.HorizontalPagerDefaults
 import com.google.android.horologist.media.model.PlaybackStateEvent
 import com.google.android.horologist.media.model.TimestampProvider
 import com.google.android.horologist.media.ui.components.ControlButtonLayout
@@ -77,7 +73,6 @@ import com.google.android.horologist.media.ui.components.animated.MarqueeTextMed
 import com.google.android.horologist.media.ui.components.controls.MediaButton
 import com.google.android.horologist.media.ui.components.display.LoadingMediaDisplay
 import com.google.android.horologist.media.ui.components.display.NothingPlayingDisplay
-import com.google.android.horologist.media.ui.components.display.TextMediaDisplay
 import com.google.android.horologist.media.ui.screens.player.PlayerScreen
 import com.google.android.horologist.media.ui.state.LocalTimestampProvider
 import com.google.android.horologist.media.ui.state.mapper.TrackPositionUiModelMapper
@@ -99,16 +94,13 @@ import com.thewizrd.simplewear.media.PlayerState
 import com.thewizrd.simplewear.media.toPlaybackStateEvent
 import com.thewizrd.simplewear.ui.ambient.ambientMode
 import com.thewizrd.simplewear.ui.components.LoadingContent
+import com.thewizrd.simplewear.ui.components.SwipeToDismissPagerScreen
 import com.thewizrd.simplewear.ui.navigation.Screen
 import com.thewizrd.simplewear.ui.theme.findActivity
 import com.thewizrd.simplewear.viewmodels.WearableListenerViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-@OptIn(
-    ExperimentalFoundationApi::class,
-    ExperimentalWearFoundationApi::class
-)
 @Composable
 fun MediaPlayerUi(
     modifier: Modifier = Modifier,
@@ -125,6 +117,8 @@ fun MediaPlayerUi(
     val uiState by mediaPlayerViewModel.uiState.collectAsState()
     val mediaPagerState = remember(uiState) { uiState.pagerState }
 
+    val isRoot = navController.previousBackStackEntry == null
+
     val pagerState = rememberPagerState(
         initialPage = 0,
         pageCount = { mediaPagerState.pageCount }
@@ -133,82 +127,76 @@ fun MediaPlayerUi(
     AmbientAware { ambientStateUpdate ->
         val ambientState = remember(ambientStateUpdate) { ambientStateUpdate.ambientState }
 
-        PagerScaffold(
-            modifier = Modifier
-                .fillMaxSize()
-                .edgeSwipeToDismiss(swipeToDismissBoxState),
+        val keyFunc: (Int) -> MediaPageType = remember(mediaPagerState, ambientState) {
+            pagerKey@{ pageIdx ->
+                if (ambientState != AmbientState.Interactive)
+                    return@pagerKey MediaPageType.Player
+
+                if (pageIdx == 1) {
+                    if (mediaPagerState.supportsCustomActions) {
+                        return@pagerKey MediaPageType.CustomControls
+                    }
+                    if (mediaPagerState.supportsQueue) {
+                        return@pagerKey MediaPageType.Queue
+                    }
+                    if (mediaPagerState.supportsBrowser) {
+                        return@pagerKey MediaPageType.Browser
+                    }
+                } else if (pageIdx == 2) {
+                    if (mediaPagerState.supportsQueue) {
+                        return@pagerKey MediaPageType.Queue
+                    }
+                    if (mediaPagerState.supportsBrowser) {
+                        return@pagerKey MediaPageType.Browser
+                    }
+                } else if (pageIdx == 3) {
+                    return@pagerKey MediaPageType.Browser
+                }
+
+                MediaPageType.Player
+            }
+        }
+
+        SwipeToDismissPagerScreen(
+            modifier = modifier,
+            isRoot = isRoot,
+            swipeToDismissBoxState = swipeToDismissBoxState,
+            state = pagerState,
+            hidePagerIndicator = ambientState != AmbientState.Interactive || uiState.isLoading || !uiState.isPlayerAvailable,
             timeText = {
                 if (pagerState.currentPage == 0) {
                     TimeText()
                 }
             },
-            pagerState = if (ambientState != AmbientState.Interactive || uiState.isLoading || !uiState.isPlayerAvailable) null else pagerState
-        ) {
-            val keyFunc: (Int) -> MediaPageType = remember(uiState) {
-                pagerKey@{ pageIdx ->
-                    if (ambientState != AmbientState.Interactive)
-                        return@pagerKey MediaPageType.Player
+            pagerKey = keyFunc
+        ) { pageIdx ->
+            val key = keyFunc(pageIdx)
 
-                    if (pageIdx == 1) {
-                        if (mediaPagerState.supportsCustomActions) {
-                            return@pagerKey MediaPageType.CustomControls
-                        }
-                        if (mediaPagerState.supportsQueue) {
-                            return@pagerKey MediaPageType.Queue
-                        }
-                        if (mediaPagerState.supportsBrowser) {
-                            return@pagerKey MediaPageType.Browser
-                        }
-                    } else if (pageIdx == 2) {
-                        if (mediaPagerState.supportsQueue) {
-                            return@pagerKey MediaPageType.Queue
-                        }
-                        if (mediaPagerState.supportsBrowser) {
-                            return@pagerKey MediaPageType.Browser
-                        }
-                    } else if (pageIdx == 3) {
-                        return@pagerKey MediaPageType.Browser
-                    }
-
-                    MediaPageType.Player
+            when (key) {
+                MediaPageType.Player -> {
+                    MediaPlayerControlsPage(
+                        mediaPlayerViewModel = mediaPlayerViewModel,
+                        navController = navController,
+                        ambientState = ambientState
+                    )
                 }
-            }
 
-            HorizontalPager(
-                state = pagerState,
-                flingBehavior = HorizontalPagerDefaults.flingParams(pagerState),
-                key = keyFunc
-            ) { pageIdx ->
-                HierarchicalFocusCoordinator(requiresFocus = { pageIdx == pagerState.currentPage }) {
-                    val key = keyFunc(pageIdx)
+                MediaPageType.CustomControls -> {
+                    MediaCustomControlsPage(
+                        mediaPlayerViewModel = mediaPlayerViewModel
+                    )
+                }
 
-                    when (key) {
-                        MediaPageType.Player -> {
-                            MediaPlayerControlsPage(
-                                mediaPlayerViewModel = mediaPlayerViewModel,
-                                navController = navController,
-                                ambientState = ambientState
-                            )
-                        }
+                MediaPageType.Browser -> {
+                    MediaBrowserPage(
+                        mediaPlayerViewModel = mediaPlayerViewModel
+                    )
+                }
 
-                        MediaPageType.CustomControls -> {
-                            MediaCustomControlsPage(
-                                mediaPlayerViewModel = mediaPlayerViewModel
-                            )
-                        }
-
-                        MediaPageType.Browser -> {
-                            MediaBrowserPage(
-                                mediaPlayerViewModel = mediaPlayerViewModel
-                            )
-                        }
-
-                        MediaPageType.Queue -> {
-                            MediaQueuePage(
-                                mediaPlayerViewModel = mediaPlayerViewModel
-                            )
-                        }
-                    }
+                MediaPageType.Queue -> {
+                    MediaQueuePage(
+                        mediaPlayerViewModel = mediaPlayerViewModel
+                    )
                 }
             }
         }
@@ -427,7 +415,7 @@ private fun MediaPlayerControlsPage(
         PlayerScreen(
             modifier = Modifier.ambientMode(ambientState),
             mediaDisplay = {
-                if (uiState.isPlaybackLoading) {
+                if (uiState.isPlaybackLoading && !isAmbient) {
                     LoadingMediaDisplay()
                 } else if (!playerState.isEmpty()) {
                     if (!isAmbient) {
@@ -436,10 +424,32 @@ private fun MediaPlayerControlsPage(
                             artist = playerState.artist
                         )
                     } else {
-                        TextMediaDisplay(
-                            title = playerState.title.orEmpty(),
-                            subtitle = playerState.artist.orEmpty()
-                        )
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = playerState.title.orEmpty(),
+                                modifier = Modifier
+                                    .fillMaxWidth(0.7f)
+                                    .padding(top = 2.dp, bottom = .8.dp),
+                                color = MaterialTheme.colors.onBackground,
+                                textAlign = TextAlign.Center,
+                                overflow = TextOverflow.Ellipsis,
+                                maxLines = 1,
+                                style = MaterialTheme.typography.button,
+                            )
+                            Text(
+                                text = playerState.artist.orEmpty(),
+                                modifier = Modifier
+                                    .fillMaxWidth(0.8f)
+                                    .padding(top = 2.dp, bottom = .6.dp),
+                                color = MaterialTheme.colors.onBackground,
+                                textAlign = TextAlign.Center,
+                                overflow = TextOverflow.Ellipsis,
+                                maxLines = 1,
+                                style = MaterialTheme.typography.body2,
+                            )
+                        }
                     }
                 } else {
                     NothingPlayingDisplay()

@@ -39,10 +39,7 @@ fun MediaPlayer(
             state = swipeDismissNavState
         ) {
             composable(route = Screen.MediaPlayerList.route) {
-                MediaPlayerListUi(
-                    navController = navController,
-                    swipeToDismissBoxState = swipeToDismissBoxState
-                )
+                MediaPlayerListUi(navController = navController)
             }
 
             composable(

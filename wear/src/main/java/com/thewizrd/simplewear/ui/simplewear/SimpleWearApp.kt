@@ -75,9 +75,7 @@ fun SimpleWearApp(
             }
 
             composable(Screen.AppLauncher.route) {
-                AppLauncherScreen(
-                    swipeToDismissBoxState = swipeToDismissBoxState
-                )
+                AppLauncherScreen()
             }
 
             composable(Screen.CallManager.route) {
