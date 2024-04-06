@@ -15,6 +15,8 @@ import com.google.android.gms.wearable.DataMap
 import com.google.android.gms.wearable.DataMapItem
 import com.google.android.gms.wearable.MessageEvent
 import com.google.android.gms.wearable.Wearable
+import com.google.android.horologist.annotations.ExperimentalHorologistApi
+import com.google.android.horologist.media.model.PlaybackStateEvent
 import com.thewizrd.shared_resources.actions.ActionStatus
 import com.thewizrd.shared_resources.actions.Actions
 import com.thewizrd.shared_resources.actions.AudioStreamState
@@ -23,6 +25,7 @@ import com.thewizrd.shared_resources.helpers.MediaHelper
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
 import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.shared_resources.media.PlaybackState
+import com.thewizrd.shared_resources.media.PositionState
 import com.thewizrd.shared_resources.utils.ImageUtils
 import com.thewizrd.shared_resources.utils.JSONParser
 import com.thewizrd.shared_resources.utils.Logger
@@ -51,7 +54,7 @@ data class MediaPlayerUiState(
     val connectionStatus: WearConnectionStatus? = null,
     val isLoading: Boolean = false,
     val isPlaybackLoading: Boolean = false,
-    val isPlayerAvailable: Boolean = false,
+    val isPlayerAvailable: Boolean = true,
     val mediaPlayerDetails: AppItemViewModel = AppItemViewModel(),
     val audioStreamState: AudioStreamState? = null,
     // ViewPager pages
@@ -84,7 +87,8 @@ data class PlayerState(
     val playbackState: PlaybackState = PlaybackState.NONE,
     val title: String? = null,
     val artist: String? = null,
-    val artworkBitmap: Bitmap? = null
+    val artworkBitmap: Bitmap? = null,
+    val positionState: PositionState? = null
 ) {
     fun isEmpty(): Boolean = title.isNullOrEmpty() && artist.isNullOrEmpty()
 }
@@ -120,6 +124,13 @@ class MediaPlayerViewModel(app: Application) : WearableListenerViewModel(app),
         viewModelScope,
         SharingStarted.Eagerly,
         viewModelState.value.playerState
+    )
+
+    @OptIn(ExperimentalHorologistApi::class)
+    val playbackStateEvent = viewModelState.map { it.playerState.toPlaybackStateEvent() }.stateIn(
+        viewModelScope,
+        SharingStarted.Eagerly,
+        PlaybackStateEvent.INITIAL
     )
 
     private var deleteJob: Job? = null
@@ -495,6 +506,9 @@ class MediaPlayerViewModel(app: Application) : WearableListenerViewModel(app),
                     null
                 }
             }
+            val positionState = dataMap.getString(MediaHelper.KEY_MEDIA_POSITIONSTATE)?.let {
+                JSONParser.deserializer(it, PositionState::class.java)
+            }
 
             if (playbackState != PlaybackState.NONE) {
                 viewModelState.update {
@@ -503,7 +517,8 @@ class MediaPlayerViewModel(app: Application) : WearableListenerViewModel(app),
                             playbackState = playbackState,
                             title = title,
                             artist = artist,
-                            artworkBitmap = artBitmap
+                            artworkBitmap = artBitmap,
+                            positionState = positionState
                         ),
                         isLoading = false,
                         isPlaybackLoading = playbackState == PlaybackState.LOADING

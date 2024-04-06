@@ -16,6 +16,7 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -29,6 +30,7 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
@@ -36,6 +38,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
+import androidx.lifecycle.lifecycleScope
 import androidx.wear.ambient.AmbientLifecycleObserver
 import androidx.wear.compose.foundation.ExperimentalWearFoundationApi
 import androidx.wear.compose.foundation.HierarchicalFocusCoordinator
@@ -64,14 +67,18 @@ import com.google.android.horologist.compose.layout.rememberResponsiveColumnStat
 import com.google.android.horologist.compose.layout.scrollAway
 import com.google.android.horologist.compose.material.Chip
 import com.google.android.horologist.compose.pager.HorizontalPagerDefaults
+import com.google.android.horologist.media.model.PlaybackStateEvent
+import com.google.android.horologist.media.model.TimestampProvider
 import com.google.android.horologist.media.ui.components.ControlButtonLayout
 import com.google.android.horologist.media.ui.components.animated.AnimatedMediaControlButtons
 import com.google.android.horologist.media.ui.components.animated.MarqueeTextMediaDisplay
 import com.google.android.horologist.media.ui.components.controls.MediaButton
 import com.google.android.horologist.media.ui.components.display.LoadingMediaDisplay
 import com.google.android.horologist.media.ui.components.display.NothingPlayingDisplay
+import com.google.android.horologist.media.ui.components.display.TextMediaDisplay
 import com.google.android.horologist.media.ui.screens.player.PlayerScreen
-import com.google.android.horologist.media.ui.state.model.TrackPositionUiModel
+import com.google.android.horologist.media.ui.state.LocalTimestampProvider
+import com.google.android.horologist.media.ui.state.mapper.TrackPositionUiModelMapper
 import com.thewizrd.shared_resources.helpers.MediaHelper
 import com.thewizrd.shared_resources.media.PlaybackState
 import com.thewizrd.simplewear.R
@@ -80,11 +87,14 @@ import com.thewizrd.simplewear.media.MediaPageType
 import com.thewizrd.simplewear.media.MediaPlayerUiState
 import com.thewizrd.simplewear.media.MediaPlayerViewModel
 import com.thewizrd.simplewear.media.PlayerState
+import com.thewizrd.simplewear.media.toPlaybackStateEvent
 import com.thewizrd.simplewear.ui.ambient.ambientMode
 import com.thewizrd.simplewear.ui.components.LoadingContent
 import com.thewizrd.simplewear.ui.theme.WearAppTheme
 import com.thewizrd.simplewear.ui.theme.activityViewModel
 import com.thewizrd.simplewear.ui.theme.findActivity
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @OptIn(
     ExperimentalFoundationApi::class,
@@ -218,10 +228,12 @@ private fun MediaPlayerControlsPage(
 
     val uiState by mediaPlayerViewModel.uiState.collectAsState()
     val playerState by mediaPlayerViewModel.playerState.collectAsState()
+    val playbackStateEvent by mediaPlayerViewModel.playbackStateEvent.collectAsState()
 
     MediaPlayerControlsPage(
         uiState = uiState,
         playerState = playerState,
+        playbackStateEvent = playbackStateEvent,
         ambientState = ambientState,
         onRefresh = {
             mediaPlayerViewModel.refreshStatus()
@@ -252,6 +264,7 @@ private fun MediaPlayerControlsPage(
 private fun MediaPlayerControlsPage(
     uiState: MediaPlayerUiState,
     playerState: PlayerState = uiState.playerState,
+    playbackStateEvent: PlaybackStateEvent = uiState.playerState.toPlaybackStateEvent(),
     ambientState: AmbientState = AmbientState.Interactive,
     onRefresh: () -> Unit = {},
     onPlay: () -> Unit = {},
@@ -266,6 +279,9 @@ private fun MediaPlayerControlsPage(
         }
     }
     val isAmbient = ambientState != AmbientState.Interactive
+
+    // Progress
+    val timestampProvider = remember { TimestampProvider { System.currentTimeMillis() } }
 
     LoadingContent(
         empty = !uiState.isPlayerAvailable && !isAmbient,
@@ -308,27 +324,36 @@ private fun MediaPlayerControlsPage(
                 if (uiState.isPlaybackLoading) {
                     LoadingMediaDisplay()
                 } else if (!playerState.isEmpty()) {
-                    MarqueeTextMediaDisplay(
-                        title = playerState.title,
-                        artist = playerState.artist
-                    )
+                    if (!isAmbient) {
+                        MarqueeTextMediaDisplay(
+                            title = playerState.title,
+                            artist = playerState.artist
+                        )
+                    } else {
+                        TextMediaDisplay(
+                            title = playerState.title.orEmpty(),
+                            subtitle = playerState.artist.orEmpty()
+                        )
+                    }
                 } else {
                     NothingPlayingDisplay()
                 }
             },
             controlButtons = {
                 if (!isAmbient) {
-                    AnimatedMediaControlButtons(
-                        onPlayButtonClick = onPlay,
-                        onPauseButtonClick = onPause,
-                        playPauseButtonEnabled = !uiState.isPlaybackLoading || playerState.playbackState > PlaybackState.LOADING,
-                        playing = playerState.playbackState == PlaybackState.PLAYING,
-                        onSeekToPreviousButtonClick = onSkipBack,
-                        seekToPreviousButtonEnabled = !uiState.isPlaybackLoading || playerState.playbackState > PlaybackState.LOADING,
-                        onSeekToNextButtonClick = onSkipForward,
-                        seekToNextButtonEnabled = !uiState.isPlaybackLoading || playerState.playbackState > PlaybackState.LOADING,
-                        trackPositionUiModel = TrackPositionUiModel.Hidden
-                    )
+                    CompositionLocalProvider(LocalTimestampProvider provides timestampProvider) {
+                        AnimatedMediaControlButtons(
+                            onPlayButtonClick = onPlay,
+                            onPauseButtonClick = onPause,
+                            playPauseButtonEnabled = !uiState.isPlaybackLoading || playerState.playbackState > PlaybackState.LOADING,
+                            playing = playerState.playbackState == PlaybackState.PLAYING,
+                            onSeekToPreviousButtonClick = onSkipBack,
+                            seekToPreviousButtonEnabled = !uiState.isPlaybackLoading || playerState.playbackState > PlaybackState.LOADING,
+                            onSeekToNextButtonClick = onSkipForward,
+                            seekToNextButtonEnabled = !uiState.isPlaybackLoading || playerState.playbackState > PlaybackState.LOADING,
+                            trackPositionUiModel = TrackPositionUiModelMapper.map(playbackStateEvent)
+                        )
+                    }
                 } else {
                     ControlButtonLayout(
                         leftButton = {},
@@ -373,6 +398,7 @@ private fun MediaPlayerControlsPage(
             background = {
                 playerState.artworkBitmap?.takeUnless { isAmbient }?.let {
                     Image(
+                        modifier = Modifier.fillMaxSize(),
                         bitmap = it.asImageBitmap(),
                         colorFilter = ColorFilter.tint(
                             Color.Black.copy(alpha = 0.66f),
@@ -570,6 +596,8 @@ private fun MediaQueuePage(
     uiState: MediaPlayerUiState,
     onItemClick: (MediaItemModel) -> Unit = {}
 ) {
+    val lifecycleOwner = LocalLifecycleOwner.current
+
     LoadingContent(
         empty = false,
         emptyContent = {},
@@ -605,6 +633,10 @@ private fun MediaQueuePage(
                         },
                         onClick = {
                             onItemClick(it)
+                            lifecycleOwner.lifecycleScope.launch {
+                                delay(1000)
+                                scrollState.state.scrollToItem(0)
+                            }
                         },
                         colors = if (it.id.toLong() == uiState.activeQueueItemId) {
                             ChipDefaults.gradientBackgroundChipColors()
@@ -694,8 +726,8 @@ private fun PreviewMediaControlsInAmbientMode() {
         uiState = uiState,
         ambientState = AmbientState.Ambient(
             ambientDetails = AmbientLifecycleObserver.AmbientDetails(
-                true,
-                true
+                burnInProtectionRequired = true,
+                deviceHasLowBitAmbient = true
             )
         )
     )

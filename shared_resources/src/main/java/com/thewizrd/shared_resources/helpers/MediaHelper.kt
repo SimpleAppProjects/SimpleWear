@@ -53,6 +53,7 @@ object MediaHelper {
     const val KEY_MEDIA_METADATA_ARTIST = "key_media_metadata_artist"
     const val KEY_MEDIA_METADATA_ART = "key_media_metadata_art"
     const val KEY_MEDIA_PLAYBACKSTATE = "key_media_playbackstate"
+    const val KEY_MEDIA_POSITIONSTATE = "key_media_positionstate"
 
     const val KEY_MEDIA_SUPPORTS_PLAYFROMSEARCH = "key_media_supports_playfromsearch"
 

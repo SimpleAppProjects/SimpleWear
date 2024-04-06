@@ -1,6 +1,11 @@
 package com.thewizrd.simplewear.media
 
-import android.app.*
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.app.SearchManager
+import android.app.Service
 import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
@@ -9,7 +14,13 @@ import android.content.res.Resources
 import android.media.AudioManager
 import android.media.session.MediaController
 import android.media.session.MediaSessionManager
-import android.os.*
+import android.os.Build
+import android.os.Bundle
+import android.os.CountDownTimer
+import android.os.Handler
+import android.os.IBinder
+import android.os.Looper
+import android.os.SystemClock
 import android.provider.MediaStore
 import android.support.v4.media.MediaBrowserCompat
 import android.support.v4.media.MediaMetadataCompat
@@ -23,22 +34,43 @@ import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import androidx.media.MediaBrowserServiceCompat
-import com.google.android.gms.wearable.*
-import com.thewizrd.shared_resources.actions.*
+import com.google.android.gms.wearable.DataClient
+import com.google.android.gms.wearable.DataMap
+import com.google.android.gms.wearable.MessageClient
+import com.google.android.gms.wearable.MessageEvent
+import com.google.android.gms.wearable.PutDataMapRequest
+import com.google.android.gms.wearable.Wearable
+import com.thewizrd.shared_resources.actions.ActionStatus
+import com.thewizrd.shared_resources.actions.AudioStreamState
+import com.thewizrd.shared_resources.actions.AudioStreamType
+import com.thewizrd.shared_resources.actions.ValueDirection
 import com.thewizrd.shared_resources.helpers.MediaHelper
 import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.shared_resources.helpers.toImmutableCompatFlag
 import com.thewizrd.shared_resources.media.PlaybackState
-import com.thewizrd.shared_resources.utils.*
+import com.thewizrd.shared_resources.media.PositionState
+import com.thewizrd.shared_resources.utils.ImageUtils
+import com.thewizrd.shared_resources.utils.JSONParser
+import com.thewizrd.shared_resources.utils.Logger
+import com.thewizrd.shared_resources.utils.bytesToInt
+import com.thewizrd.shared_resources.utils.bytesToString
+import com.thewizrd.shared_resources.utils.stringToBytes
 import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.helpers.PhoneStatusHelper
 import com.thewizrd.simplewear.preferences.Settings
 import com.thewizrd.simplewear.services.NotificationListener
 import com.thewizrd.simplewear.wearable.WearableManager
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import timber.log.Timber
-import java.util.*
+import java.util.Stack
 import java.util.concurrent.Executors
 
 class MediaControllerService : Service(), MessageClient.OnMessageReceivedListener,
@@ -699,6 +731,23 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
                     MediaHelper.KEY_MEDIA_METADATA_ART,
                     ImageUtils.createAssetFromBitmap(art)
                 )
+            }
+
+            mController?.let {
+                val durationMs = mediaMetadata.getLong(MediaMetadataCompat.METADATA_KEY_DURATION)
+                if (durationMs > 0) {
+                    mapRequest.dataMap.putString(
+                        MediaHelper.KEY_MEDIA_POSITIONSTATE,
+                        JSONParser.serializer(
+                            PositionState(
+                                durationMs,
+                                it.playbackState.position,
+                                it.playbackState.playbackSpeed
+                            ),
+                            PositionState::class.java
+                        )
+                    )
+                }
             }
         } else {
             mapRequest.dataMap.putString(
