@@ -12,6 +12,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
+import android.hardware.camera2.CameraManager
 import android.location.LocationManager
 import android.media.AudioManager
 import android.net.ConnectivityManager
@@ -20,6 +21,7 @@ import android.net.wifi.WifiManager
 import android.os.BatteryManager
 import android.os.Build
 import android.os.Handler
+import android.os.Looper
 import android.os.PowerManager
 import android.provider.Settings
 import android.telephony.SubscriptionManager
@@ -31,15 +33,27 @@ import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
 import androidx.core.location.LocationManagerCompat
 import com.android.dx.stock.ProxyBuilder
-import com.thewizrd.shared_resources.actions.*
+import com.thewizrd.shared_resources.actions.ActionStatus
+import com.thewizrd.shared_resources.actions.Actions
+import com.thewizrd.shared_resources.actions.AudioStreamState
+import com.thewizrd.shared_resources.actions.AudioStreamType
+import com.thewizrd.shared_resources.actions.BatteryStatus
+import com.thewizrd.shared_resources.actions.DNDChoice
+import com.thewizrd.shared_resources.actions.LocationState
+import com.thewizrd.shared_resources.actions.RingerChoice
+import com.thewizrd.shared_resources.actions.ValueActionState
+import com.thewizrd.shared_resources.actions.ValueDirection
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.simplewear.ScreenLockAdminReceiver
 import com.thewizrd.simplewear.services.TorchService
 import com.thewizrd.simplewear.services.TorchService.Companion.enqueueWork
 import com.thewizrd.simplewear.utils.hasAssociations
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.suspendCancellableCoroutine
 import java.lang.reflect.Method
-import java.util.*
+import java.util.Arrays
+import java.util.concurrent.Executors
+import kotlin.coroutines.resume
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
@@ -238,8 +252,43 @@ object PhoneStatusHelper {
         ) == PackageManager.PERMISSION_GRANTED
     }
 
-    fun isTorchEnabled(context: Context): Boolean {
-        return isServiceRunning(context, TorchService::class.java)
+    suspend fun isTorchEnabled(context: Context): Boolean {
+        return isServiceRunning(context, TorchService::class.java) || isSystemTorchEnabled(context)
+    }
+
+    private suspend fun isSystemTorchEnabled(context: Context): Boolean {
+        return try {
+            suspendCancellableCoroutine { continuation ->
+                val cameraMgr = context.getSystemService(Context.CAMERA_SERVICE) as CameraManager
+                val primaryCameraId = cameraMgr.cameraIdList[0]
+
+                val torchCallback = object : CameraManager.TorchCallback() {
+                    override fun onTorchModeChanged(cameraId: String, enabled: Boolean) {
+                        if (cameraId == primaryCameraId) {
+                            if (continuation.isActive) {
+                                continuation.resume(enabled)
+                            }
+                        }
+                    }
+                }
+
+                continuation.invokeOnCancellation {
+                    cameraMgr.unregisterTorchCallback(torchCallback)
+                }
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    cameraMgr.registerTorchCallback(
+                        Executors.newSingleThreadExecutor(),
+                        torchCallback
+                    )
+                } else {
+                    cameraMgr.registerTorchCallback(torchCallback, Handler(Looper.getMainLooper()))
+                }
+            }
+        } catch (e: Exception) {
+            Logger.writeLine(Log.ERROR, e)
+            false
+        }
     }
 
     fun isServiceRunning(context: Context, serviceClass: Class<*>): Boolean {
