@@ -36,4 +36,7 @@ sealed class Screen(
             return "$route?app=${JSONParser.serializer(model, AppItemViewModel::class.java)}"
         }
     }
+
+    data object DashboardConfig : Screen("dashboardConfig")
+    data object DashboardTileConfig : Screen("dashboardTileConfig")
 }

@@ -1,7 +1,6 @@
 package com.thewizrd.simplewear.ui.simplewear
 
 import android.content.ComponentName
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.widget.Toast
@@ -81,11 +80,9 @@ import com.thewizrd.shared_resources.utils.ContextUtils.dpToPx
 import com.thewizrd.shared_resources.utils.ContextUtils.isSmallestWidth
 import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.controls.ActionButtonViewModel
-import com.thewizrd.simplewear.preferences.DashboardConfigActivity
-import com.thewizrd.simplewear.preferences.DashboardTileConfigActivity
 import com.thewizrd.simplewear.preferences.Settings
 import com.thewizrd.simplewear.ui.components.WearDivider
-import com.thewizrd.simplewear.ui.theme.findActivity
+import com.thewizrd.simplewear.ui.navigation.Screen
 import com.thewizrd.simplewear.viewmodels.DashboardState
 import com.thewizrd.simplewear.viewmodels.DashboardViewModel
 import kotlinx.coroutines.delay
@@ -101,7 +98,6 @@ fun DashboardScreen(
     navController: NavController
 ) {
     val lifecycleOwner = LocalLifecycleOwner.current
-    val activityCtx = LocalContext.current.findActivity()
 
     var refreshing by remember { mutableStateOf(false) }
 
@@ -128,14 +124,18 @@ fun DashboardScreen(
                     dashboardViewModel.requestActionStatusUpdate(it)
                 }
             )
+        },
+        onDashSettingsClick = {
+            navController.navigate(Screen.DashboardConfig.route)
+        },
+        onDashTileSettingsClick = {
+            navController.navigate(Screen.DashboardTileConfig.route)
         }
     )
 }
 
 @Suppress("DEPRECATION")
-@OptIn(
-    ExperimentalHorologistApi::class
-)
+@OptIn(ExperimentalHorologistApi::class)
 @Composable
 fun DashboardScreen(
     modifier: Modifier = Modifier,
@@ -144,6 +144,8 @@ fun DashboardScreen(
     dashboardState: DashboardState,
     scrollState: ScrollState = rememberScrollState(),
     onActionClicked: (ActionButtonViewModel) -> Unit = {},
+    onDashSettingsClick: () -> Unit = {},
+    onDashTileSettingsClick: () -> Unit = {},
 ) {
     val isPreview = LocalInspectionMode.current
 
@@ -196,7 +198,12 @@ fun DashboardScreen(
                 )
                 // Settings
                 WearDivider(modifier = Modifier.padding(vertical = 8.dp))
-                DashboardSettings(dashboardState, scrollState)
+                DashboardSettings(
+                    dashboardState,
+                    scrollState,
+                    onDashSettingsClick,
+                    onDashTileSettingsClick
+                )
             }
         }
     }
@@ -542,14 +549,16 @@ private fun ActionListButton(
 @Composable
 private fun DashboardSettings(
     dashboardState: DashboardState,
-    scrollState: ScrollState
+    scrollState: ScrollState,
+    onDashSettingsClick: () -> Unit = {},
+    onDashTileSettingsClick: () -> Unit = {}
 ) {
     Column(
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         LayoutPreferenceButton(dashboardState.isGridLayout, scrollState)
-        DashboardConfigButton()
-        TileDashboardConfigButton()
+        DashboardConfigButton(onDashSettingsClick)
+        TileDashboardConfigButton(onDashTileSettingsClick)
         MediaControllerSwitch()
     }
 }
@@ -599,9 +608,9 @@ private fun LayoutPreferenceButton(
 }
 
 @Composable
-private fun DashboardConfigButton() {
-    val context = LocalContext.current
-
+private fun DashboardConfigButton(
+    onClick: () -> Unit = {}
+) {
     Chip(
         modifier = Modifier.fillMaxWidth(),
         label = {
@@ -614,16 +623,14 @@ private fun DashboardConfigButton() {
             )
         },
         colors = ChipDefaults.secondaryChipColors(),
-        onClick = {
-            context.startActivity(Intent(context, DashboardConfigActivity::class.java))
-        }
+        onClick = onClick
     )
 }
 
 @Composable
-private fun TileDashboardConfigButton() {
-    val context = LocalContext.current
-
+private fun TileDashboardConfigButton(
+    onClick: () -> Unit = {}
+) {
     Chip(
         modifier = Modifier.fillMaxWidth(),
         label = {
@@ -636,9 +643,7 @@ private fun TileDashboardConfigButton() {
             )
         },
         colors = ChipDefaults.secondaryChipColors(),
-        onClick = {
-            context.startActivity(Intent(context, DashboardTileConfigActivity::class.java))
-        }
+        onClick = onClick
     )
 }
 

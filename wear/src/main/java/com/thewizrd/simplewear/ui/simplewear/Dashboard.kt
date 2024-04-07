@@ -12,12 +12,16 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.core.content.ContextCompat
 import androidx.core.content.PermissionChecker
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.withStarted
@@ -60,6 +64,7 @@ fun Dashboard(
     val dashboardViewModel = viewModel<DashboardViewModel>()
 
     val scrollState = rememberScrollState()
+    var stateRefreshed by remember { mutableStateOf(false) }
 
     Scaffold(
         modifier = modifier.background(MaterialTheme.colors.background),
@@ -339,8 +344,15 @@ fun Dashboard(
         }
     }
 
-    LaunchedEffect(Unit) {
+    LifecycleResumeEffect(Unit) {
         // Update statuses
-        dashboardViewModel.refreshStatus()
+        if (!stateRefreshed) {
+            dashboardViewModel.refreshStatus()
+            stateRefreshed = true
+        }
+
+        onPauseOrDispose {
+            stateRefreshed = false
+        }
     }
 }

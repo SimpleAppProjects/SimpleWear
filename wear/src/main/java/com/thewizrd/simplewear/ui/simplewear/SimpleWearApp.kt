@@ -14,6 +14,8 @@ import androidx.wear.compose.navigation.rememberSwipeDismissableNavHostState
 import com.thewizrd.shared_resources.actions.Actions
 import com.thewizrd.shared_resources.actions.AudioStreamType
 import com.thewizrd.simplewear.media.MediaPlayerActivity
+import com.thewizrd.simplewear.preferences.DashboardConfigActivity
+import com.thewizrd.simplewear.preferences.DashboardTileConfigActivity
 import com.thewizrd.simplewear.ui.navigation.Screen
 import com.thewizrd.simplewear.ui.theme.WearAppTheme
 
@@ -80,6 +82,16 @@ fun SimpleWearApp(
 
             composable(Screen.CallManager.route) {
                 CallManagerUi(navController = navController)
+            }
+
+            activity(route = Screen.DashboardConfig.route) {
+                targetPackage = context.packageName
+                activityClass = DashboardConfigActivity::class
+            }
+
+            activity(route = Screen.DashboardTileConfig.route) {
+                targetPackage = context.packageName
+                activityClass = DashboardTileConfigActivity::class
             }
         }
     }
