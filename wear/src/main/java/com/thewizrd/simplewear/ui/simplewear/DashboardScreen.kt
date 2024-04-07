@@ -466,7 +466,7 @@ private fun ActionGridButton(
 
     // Detect long press
     // https://stackoverflow.com/a/76395585
-    LaunchedEffect(interactionSource) {
+    LaunchedEffect(model, interactionSource) {
         interactionSource.interactions.collectLatest { interaction ->
             when (interaction) {
                 is PressInteraction.Press -> {
