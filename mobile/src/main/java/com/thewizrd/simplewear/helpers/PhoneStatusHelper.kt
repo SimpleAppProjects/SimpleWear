@@ -45,6 +45,7 @@ import com.thewizrd.shared_resources.actions.ValueActionState
 import com.thewizrd.shared_resources.actions.ValueDirection
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.simplewear.ScreenLockAdminReceiver
+import com.thewizrd.simplewear.camera.TorchListener
 import com.thewizrd.simplewear.services.TorchService
 import com.thewizrd.simplewear.services.TorchService.Companion.enqueueWork
 import com.thewizrd.simplewear.utils.hasAssociations
@@ -252,8 +253,8 @@ object PhoneStatusHelper {
         ) == PackageManager.PERMISSION_GRANTED
     }
 
-    suspend fun isTorchEnabled(context: Context): Boolean {
-        return isServiceRunning(context, TorchService::class.java) || isSystemTorchEnabled(context)
+    fun isTorchEnabled(context: Context): Boolean {
+        return isServiceRunning(context, TorchService::class.java) || TorchListener.isTorchEnabled
     }
 
     private suspend fun isSystemTorchEnabled(context: Context): Boolean {
