@@ -148,6 +148,7 @@ fun DashboardNotInstalledTilePreview() {
 
 @OptIn(ExperimentalHorologistApi::class)
 @WearPreviewDevices
+@WearPreviewFontScales
 @Composable
 fun MediaPlayerTilePreview() {
     val context = LocalContext.current
