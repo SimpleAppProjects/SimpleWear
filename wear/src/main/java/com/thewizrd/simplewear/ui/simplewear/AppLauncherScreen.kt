@@ -29,8 +29,10 @@ import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.wear.compose.foundation.ExperimentalWearFoundationApi
+import androidx.navigation.NavController
+import androidx.wear.compose.foundation.SwipeToDismissBoxState
 import androidx.wear.compose.foundation.lazy.items
+import androidx.wear.compose.foundation.rememberSwipeToDismissBoxState
 import androidx.wear.compose.material.Chip
 import androidx.wear.compose.material.ChipDefaults
 import androidx.wear.compose.material.CompactChip
@@ -66,12 +68,13 @@ import kotlinx.coroutines.launch
 
 @OptIn(
     ExperimentalFoundationApi::class,
-    ExperimentalWearFoundationApi::class,
     ExperimentalHorologistApi::class
 )
 @Composable
 fun AppLauncherScreen(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    navController: NavController,
+    swipeToDismissBoxState: SwipeToDismissBoxState = rememberSwipeToDismissBoxState()
 ) {
     val context = LocalContext.current
     val activity = context.findActivity()
@@ -87,6 +90,8 @@ fun AppLauncherScreen(
         )
     )
 
+    val isRoot = navController.previousBackStackEntry == null
+
     val pagerState = rememberPagerState(
         initialPage = 0,
         pageCount = { 2 }
@@ -94,6 +99,8 @@ fun AppLauncherScreen(
 
     SwipeToDismissPagerScreen(
         modifier = modifier,
+        isRoot = isRoot,
+        swipeToDismissBoxState = swipeToDismissBoxState,
         state = pagerState,
         hidePagerIndicator = uiState.isLoading,
         timeText = {
