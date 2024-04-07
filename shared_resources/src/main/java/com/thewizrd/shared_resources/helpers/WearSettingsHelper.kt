@@ -41,18 +41,23 @@ object WearSettingsHelper {
         }
     }
 
-    private fun getWearSettingsVersionCode(): Int {
+    private fun getWearSettingsVersionCode(): Int = try {
         val context = SimpleLibrary.instance.app.appContext
         val packageInfo = context.packageManager.getPackageInfo(getPackageName(), 0)
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             packageInfo.longVersionCode.toInt()
         } else {
             packageInfo.versionCode
         }
+    } catch (e: PackageManager.NameNotFoundException) {
+        0
     }
 
-    fun isWearSettingsUpToDate(): Boolean {
-        return getWearSettingsVersionCode() >= SUPPORTED_VERSION_CODE
+    fun isWearSettingsUpToDate(): Boolean = try {
+        getWearSettingsVersionCode() >= SUPPORTED_VERSION_CODE
+    } catch (e: PackageManager.NameNotFoundException) {
+        false
     }
 
     fun getSettingsServiceComponent(): ComponentName {
