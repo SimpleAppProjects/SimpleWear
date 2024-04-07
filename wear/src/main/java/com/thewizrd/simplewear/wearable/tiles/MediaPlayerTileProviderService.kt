@@ -14,6 +14,7 @@ import com.thewizrd.simplewear.wearable.tiles.MediaPlayerTileMessenger.Companion
 import com.thewizrd.simplewear.wearable.tiles.MediaPlayerTileMessenger.PlayerAction
 import com.thewizrd.simplewear.wearable.tiles.MediaPlayerTileRenderer.Companion.ID_OPENONPHONE
 import com.thewizrd.simplewear.wearable.tiles.MediaPlayerTileRenderer.Companion.ID_PHONEDISCONNECTED
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.filterNotNull
@@ -28,12 +29,15 @@ class MediaPlayerTileProviderService : SuspendingTileService() {
         private const val TAG = "MediaPlayerTileProviderService"
 
         fun requestTileUpdate(context: Context) {
+            Timber.tag(TAG).d("$TAG: requesting tile update")
             getUpdater(context).requestUpdate(MediaPlayerTileProviderService::class.java)
         }
     }
 
     private val tileMessenger = MediaPlayerTileMessenger(this)
     private lateinit var tileStateFlow: StateFlow<MediaPlayerTileState?>
+
+    private var isUpdating = false
 
     override fun onCreate() {
         super.onCreate()
@@ -43,7 +47,7 @@ class MediaPlayerTileProviderService : SuspendingTileService() {
         tileStateFlow = tileModel.tileState
             .stateIn(
                 lifecycleScope,
-                started = SharingStarted.WhileSubscribed(5000),
+                started = SharingStarted.WhileSubscribed(2000),
                 null
             )
     }
@@ -59,13 +63,16 @@ class MediaPlayerTileProviderService : SuspendingTileService() {
 
         Timber.tag(TAG).d("$TAG: onTileEnterEvent called with: tileId = ${requestParams.tileId}")
 
-        requestTileUpdate(this)
-
         lifecycleScope.launch {
             tileMessenger.checkConnectionStatus()
             tileMessenger.requestPlayerConnect()
             tileMessenger.requestVolumeStatus()
             tileMessenger.updatePlayerStateAsync()
+        }.invokeOnCompletion {
+            if (it is CancellationException || !isUpdating) {
+                // If update timed out
+                requestTileUpdate(this)
+            }
         }
     }
 
@@ -82,6 +89,7 @@ class MediaPlayerTileProviderService : SuspendingTileService() {
 
     override suspend fun tileRequest(requestParams: RequestBuilders.TileRequest): TileBuilders.Tile {
         Timber.tag(TAG).d("tileRequest: ${requestParams.currentState}")
+        isUpdating = true
 
         tileMessenger.checkConnectionStatus()
 
@@ -106,6 +114,7 @@ class MediaPlayerTileProviderService : SuspendingTileService() {
 
         val tileState = latestTileState()
         Timber.tag(TAG).d("State: ${tileState.title} - ${tileState.artist}")
+        isUpdating = false
         return tileRenderer.renderTimeline(tileState, requestParams)
     }
 

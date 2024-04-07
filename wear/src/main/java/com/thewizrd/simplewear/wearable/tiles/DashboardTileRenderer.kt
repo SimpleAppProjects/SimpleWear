@@ -22,6 +22,7 @@ import com.thewizrd.simplewear.PhoneSyncActivity
 import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.wearable.tiles.layouts.DashboardTileLayout
 import timber.log.Timber
+import kotlin.time.Duration.Companion.minutes
 
 @OptIn(ExperimentalHorologistApi::class)
 class DashboardTileRenderer(context: Context, debugResourceMode: Boolean = false) :
@@ -61,6 +62,13 @@ class DashboardTileRenderer(context: Context, debugResourceMode: Boolean = false
     }
 
     private var state: DashboardTileState? = null
+
+    override val freshnessIntervalMillis: Long
+        get() = if (DashboardTileProviderService.isInFocus) {
+            1.minutes.inWholeMilliseconds
+        } else {
+            5.minutes.inWholeMilliseconds
+        }
 
     override fun renderTile(
         state: DashboardTileState,
