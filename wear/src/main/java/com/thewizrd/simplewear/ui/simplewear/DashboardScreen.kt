@@ -54,6 +54,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
+import androidx.navigation.NavOptions
 import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.ButtonDefaults
 import androidx.wear.compose.material.Chip
@@ -126,10 +127,20 @@ fun DashboardScreen(
             )
         },
         onDashSettingsClick = {
-            navController.navigate(Screen.DashboardConfig.route)
+            navController.navigate(
+                Screen.DashboardConfig.route,
+                navOptions = NavOptions.Builder()
+                    .setLaunchSingleTop(true)
+                    .build()
+            )
         },
         onDashTileSettingsClick = {
-            navController.navigate(Screen.DashboardTileConfig.route)
+            navController.navigate(
+                Screen.DashboardTileConfig.route,
+                navOptions = NavOptions.Builder()
+                    .setLaunchSingleTop(true)
+                    .build()
+            )
         }
     )
 }

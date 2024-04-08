@@ -1,5 +1,6 @@
 package com.thewizrd.simplewear.wearable.tiles
 
+import android.content.ComponentName
 import android.content.Context
 import androidx.core.content.ContextCompat
 import androidx.wear.protolayout.ActionBuilders
@@ -181,13 +182,8 @@ class DashboardTileRenderer(context: Context, debugResourceMode: Boolean = false
     }
 
     private fun getTapAction(context: Context): ActionBuilders.Action {
-        return ActionBuilders.LaunchAction.Builder()
-            .setAndroidActivity(
-                ActionBuilders.AndroidActivity.Builder()
-                    .setPackageName(context.packageName)
-                    .setClassName(PhoneSyncActivity::class.java.name)
-                    .build()
-            )
-            .build()
+        return ActionBuilders.launchAction(
+            ComponentName(context, PhoneSyncActivity::class.java)
+        )
     }
 }

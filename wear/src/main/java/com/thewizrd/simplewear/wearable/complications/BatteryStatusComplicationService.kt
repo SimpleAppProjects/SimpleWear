@@ -17,6 +17,7 @@ import androidx.wear.watchface.complications.datasource.ComplicationRequest
 import androidx.wear.watchface.complications.datasource.SuspendingComplicationDataSourceService
 import com.thewizrd.simplewear.DashboardActivity
 import com.thewizrd.simplewear.R
+import com.thewizrd.simplewear.utils.asLauncherIntent
 import com.thewizrd.simplewear.wearable.tiles.DashboardTileMessenger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -179,13 +180,15 @@ class BatteryStatusComplicationService : SuspendingComplicationDataSourceService
     }
 
     private fun getTapIntent(): PendingIntent {
-        val onClickIntent = Intent(applicationContext, DashboardActivity::class.java)
-            .setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-        return PendingIntent.getActivity(
-            applicationContext,
-            0,
-            onClickIntent,
-            PendingIntent.FLAG_IMMUTABLE
-        )
+        return with(
+            Intent(applicationContext, DashboardActivity::class.java).asLauncherIntent()
+        ) {
+            PendingIntent.getActivity(
+                applicationContext,
+                0,
+                this,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+        }
     }
 }
