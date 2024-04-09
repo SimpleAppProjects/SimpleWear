@@ -97,12 +97,16 @@
         <activity
             android:name=".preferences.DashboardTileConfigActivity"
             android:theme="@style/WearAppTheme"
-            android:taskAffinity="com.thewizrd.simplewear.preferences.DashboardTileConfigActivity" />
+            android:taskAffinity="com.thewizrd.simplewear.preferences.DashboardTileConfigActivity"
+            android:excludeFromRecents="true"
+            android:noHistory="true" />
 
         <activity
             android:name=".preferences.DashboardConfigActivity"
             android:theme="@style/WearAppTheme"
-            android:taskAffinity="com.thewizrd.simplewear.preferences.DashboardConfigActivity" />
+            android:taskAffinity="com.thewizrd.simplewear.preferences.DashboardConfigActivity"
+            android:excludeFromRecents="true"
+            android:noHistory="true" />
 
         <service
             android:name=".wearable.WearableDataListenerService"
