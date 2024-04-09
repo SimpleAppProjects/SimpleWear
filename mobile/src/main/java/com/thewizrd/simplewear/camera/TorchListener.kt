@@ -9,6 +9,7 @@ import android.util.Log
 import com.thewizrd.shared_resources.actions.Actions
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.simplewear.App
+import com.thewizrd.simplewear.helpers.PhoneStatusHelper
 import com.thewizrd.simplewear.wearable.WearableWorker
 import java.util.concurrent.Executors
 
@@ -23,8 +24,15 @@ object TorchListener {
         object : CameraManager.TorchCallback() {
             override fun onTorchModeChanged(cameraId: String, enabled: Boolean) {
                 if (cameraId == primaryCameraId.value) {
+                    val context = App.instance.appContext
+
                     isTorchEnabled = enabled
-                    WearableWorker.sendActionUpdate(App.instance.appContext, Actions.TORCH)
+
+                    if (!enabled && PhoneStatusHelper.isTorchEnabled(context)) {
+                        PhoneStatusHelper.setTorchEnabled(context, false)
+                    }
+
+                    WearableWorker.sendActionUpdate(context, Actions.TORCH)
                 }
             }
         }
