@@ -51,8 +51,6 @@ import com.thewizrd.simplewear.services.TorchService.Companion.enqueueWork
 import com.thewizrd.simplewear.utils.hasAssociations
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.suspendCancellableCoroutine
-import java.lang.reflect.Method
-import java.util.Arrays
 import java.util.concurrent.Executors
 import kotlin.coroutines.resume
 import kotlin.math.max
@@ -419,6 +417,9 @@ object PhoneStatusHelper {
             }
 
             ActionStatus.SUCCESS
+        } catch (e: SecurityException) {
+            Logger.writeLine(Log.ERROR, e)
+            ActionStatus.PERMISSION_DENIED
         } catch (e: Exception) {
             Logger.writeLine(Log.ERROR, e)
             ActionStatus.FAILURE
@@ -840,10 +841,7 @@ object PhoneStatusHelper {
                     context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    return if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R || isWriteSystemSettingsPermissionEnabled(
-                            context
-                        )
-                    ) {
+                    return if (isWriteSystemSettingsPermissionEnabled(context)) {
                         val retVal = if (enable) {
                             startTethering(context)
                         } else {
@@ -875,8 +873,14 @@ object PhoneStatusHelper {
             }
             return ActionStatus.PERMISSION_DENIED
         }.onFailure {
-            Logger.writeLine(Log.ERROR, it, "Error getting wifi AP state")
-        }.getOrDefault(ActionStatus.FAILURE)
+            Logger.writeLine(Log.ERROR, it, "Error setting wifi AP state")
+        }.getOrElse {
+            if (it is SecurityException || it.cause is SecurityException) {
+                ActionStatus.PERMISSION_DENIED
+            } else {
+                ActionStatus.FAILURE
+            }
+        }
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -885,15 +889,9 @@ object PhoneStatusHelper {
             val cm =
                 context.applicationContext.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
 
-            val getTetheredIfacesMethod = cm.javaClass.getDeclaredMethod("getTetheredIfaces")
-            if (getTetheredIfacesMethod != null) {
-                val resArr = getTetheredIfacesMethod.invoke(cm) as? Array<*>
-                if (!resArr.isNullOrEmpty()) {
-                    return true
-                }
-            }
-
-            return false
+            val getTetheredIfacesMethod = cm.javaClass.getMethod("getTetheredIfaces")
+            val resArr = getTetheredIfacesMethod.invoke(cm) as? Array<*>
+            return !resArr.isNullOrEmpty()
         }.onFailure {
             Logger.writeLine(Log.ERROR, it, "Error getting tethering state")
         }.getOrDefault(false)
@@ -926,7 +924,7 @@ object PhoneStatusHelper {
                             "onTetheringFailed" -> {
                                 Logger.writeLine(
                                     Log.INFO,
-                                    "Proxy: onTetheringFailed: args = " + Arrays.toString(args)
+                                    "Proxy: onTetheringFailed: args = " + args.contentToString()
                                 )
                             }
                             else -> {
@@ -944,26 +942,27 @@ object PhoneStatusHelper {
             val cm =
                 context.applicationContext.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
 
-            try {
-                val method = cm.javaClass.getDeclaredMethod(
-                    "startTethering",
-                    Int::class.java,
-                    Boolean::class.java,
-                    getOnStartTetheringCallbackClass(),
-                    Handler::class.java
-                ) as? Method?
-                if (method != null) {
-                    method.invoke(cm, TETHERING_WIFI, false, proxy, null)
-                    return true
-                } else {
-                    Logger.writeLine(Log.ERROR, "startTethering method is unavailable")
-                }
-            } catch (e: Exception) {
-                Logger.writeLine(Log.ERROR, e, "Error starting tethering")
+            val method = cm.javaClass.getMethod(
+                "startTethering",
+                Int::class.java,
+                Boolean::class.java,
+                getOnStartTetheringCallbackClass(),
+                Handler::class.java
+            )
+            method.invoke(cm, TETHERING_WIFI, false, proxy, null)
+            true
+        }.getOrElse {
+            if (it is SecurityException || it.cause is SecurityException) {
+                Logger.writeLine(Log.ERROR, it, "Permission denied starting tethering")
+                throw it
+            } else if (it is NoSuchMethodException) {
+                Logger.writeLine(Log.ERROR, "startTethering method is unavailable")
+            } else {
+                Logger.writeLine(Log.ERROR, it, "Error starting tethering")
             }
 
             false
-        }.getOrDefault(false)
+        }
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -971,19 +970,21 @@ object PhoneStatusHelper {
         return runCatching {
             val cm =
                 context.applicationContext.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-            val method =
-                cm.javaClass.getDeclaredMethod("stopTethering", Int::class.java) as? Method?
-            if (method != null) {
-                method.invoke(cm, TETHERING_WIFI)
-                return true
-            } else {
+            val method = cm.javaClass.getMethod("stopTethering", Int::class.java)
+            method.invoke(cm, TETHERING_WIFI)
+            true
+        }.getOrElse {
+            if (it is SecurityException || it.cause is SecurityException) {
+                Logger.writeLine(Log.ERROR, it, "Permission denied stopping tethering")
+                throw it
+            } else if (it is NoSuchMethodException) {
                 Logger.writeLine(Log.ERROR, "stopTethering method is unavailable")
+            } else {
+                Logger.writeLine(Log.ERROR, it, "Error stopping tethering")
             }
 
             false
-        }.onFailure {
-            Logger.writeLine(Log.ERROR, it, "Error stopping tethering")
-        }.getOrDefault(false)
+        }
     }
 
     @RequiresApi(Build.VERSION_CODES.O)

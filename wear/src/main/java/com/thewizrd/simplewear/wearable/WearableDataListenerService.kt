@@ -132,11 +132,15 @@ class WearableDataListenerService : WearableListenerService() {
                 }
             }
         } else {
-            this.startActivity(
-                Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE)
-                    .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    .putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 20)
-            )
+            runCatching {
+                this.startActivity(
+                    Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE)
+                        .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        .putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 20)
+                )
+            }.onFailure {
+                Logger.writeLine(Log.ERROR, it, "Error requesting BT discovery")
+            }
         }
     }
 

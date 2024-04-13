@@ -296,7 +296,8 @@ private fun BatteryStatusChip(
                     text = batteryStatus?.let {
                         "${it.batteryLevel}%"
                     } ?: stringResource(id = R.string.state_syncing),
-                    maxLines = 2,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             },
             secondaryLabel = batteryStatus?.let {

@@ -1,7 +1,10 @@
 package com.thewizrd.simplewear.services
 
 import android.annotation.SuppressLint
-import android.app.*
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.media.AudioManager
@@ -21,7 +24,12 @@ import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleService
-import com.google.android.gms.wearable.*
+import com.google.android.gms.wearable.DataClient
+import com.google.android.gms.wearable.MessageClient
+import com.google.android.gms.wearable.MessageEvent
+import com.google.android.gms.wearable.PutDataMapRequest
+import com.google.android.gms.wearable.PutDataRequest
+import com.google.android.gms.wearable.Wearable
 import com.thewizrd.shared_resources.helpers.InCallUIHelper
 import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.shared_resources.helpers.toImmutableCompatFlag
@@ -33,7 +41,13 @@ import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.helpers.PhoneStatusHelper
 import com.thewizrd.simplewear.preferences.Settings
 import com.thewizrd.simplewear.wearable.WearableManager
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import timber.log.Timber
 import java.util.concurrent.Executors
@@ -228,12 +242,12 @@ class CallControllerService : LifecycleService(), MessageClient.OnMessageReceive
 
         registerMediaControllerListener()
         registerPhoneStateListener()
-        OngoingCall.callState.observe(this, {
+        OngoingCall.callState.observe(this) {
             scope.launch {
                 onCallStateChanged(it)
             }
-        })
-        OngoingCall.callAudioState.observe(this, {
+        }
+        OngoingCall.callAudioState.observe(this) {
             scope.launch {
                 it?.let {
                     mWearableManager.sendMessage(
@@ -248,7 +262,7 @@ class CallControllerService : LifecycleService(), MessageClient.OnMessageReceive
                     )
                 }
             }
-        })
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -349,10 +363,22 @@ class CallControllerService : LifecycleService(), MessageClient.OnMessageReceive
                             this@CallControllerService.onCallStateChanged(state, "")
                         }
                     }
-                tm.registerTelephonyCallback(
-                    Executors.newSingleThreadExecutor(),
-                    mTelephonyCallback!!
-                )
+
+                runCatching {
+                    tm.registerTelephonyCallback(
+                        Executors.newSingleThreadExecutor(),
+                        mTelephonyCallback!!
+                    )
+                }.onFailure {
+                    if (it is SecurityException) {
+                        Logger.writeLine(
+                            Log.WARN,
+                            "${TAG}: registerPhoneStateListener - missing read_call_state permission"
+                        )
+                    } else {
+                        Logger.writeLine(Log.ERROR, it)
+                    }
+                }
             } else {
                 mPhoneStateListener = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                     object : PhoneStateListener(Executors.newSingleThreadExecutor()) {
@@ -369,7 +395,19 @@ class CallControllerService : LifecycleService(), MessageClient.OnMessageReceive
                         }
                     }
                 }
-                tm.listen(mPhoneStateListener!!, PhoneStateListener.LISTEN_CALL_STATE)
+
+                runCatching {
+                    tm.listen(mPhoneStateListener!!, PhoneStateListener.LISTEN_CALL_STATE)
+                }.onFailure {
+                    if (it is SecurityException) {
+                        Logger.writeLine(
+                            Log.WARN,
+                            "${TAG}: registerPhoneStateListener - missing read_call_state permission"
+                        )
+                    } else {
+                        Logger.writeLine(Log.ERROR, it)
+                    }
+                }
             }
         }
     }
@@ -389,10 +427,21 @@ class CallControllerService : LifecycleService(), MessageClient.OnMessageReceive
     }
 
     private fun registerMediaControllerListener() {
-        mMediaSessionManager.addOnActiveSessionsChangedListener(
-            this,
-            NotificationListener.getComponentName(this)
-        )
+        runCatching {
+            mMediaSessionManager.addOnActiveSessionsChangedListener(
+                this,
+                NotificationListener.getComponentName(this)
+            )
+        }.onFailure {
+            if (it is SecurityException) {
+                Logger.writeLine(
+                    Log.WARN,
+                    "${TAG}: registerMediaControllerListener - missing notification permission"
+                )
+            } else {
+                Logger.writeLine(Log.ERROR, it)
+            }
+        }
     }
 
     private fun unregisterMediaControllerListener() {

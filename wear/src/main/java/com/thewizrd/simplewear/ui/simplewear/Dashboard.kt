@@ -138,9 +138,18 @@ fun Dashboard(
             if (PermissionChecker.checkSelfPermission(
                     context,
                     Manifest.permission.BLUETOOTH_ADVERTISE
+                ) != PermissionChecker.PERMISSION_GRANTED ||
+                PermissionChecker.checkSelfPermission(
+                    context,
+                    Manifest.permission.BLUETOOTH_SCAN
                 ) != PermissionChecker.PERMISSION_GRANTED
             ) {
-                permissionLauncher.launch(arrayOf(Manifest.permission.BLUETOOTH_ADVERTISE))
+                permissionLauncher.launch(
+                    arrayOf(
+                        Manifest.permission.BLUETOOTH_ADVERTISE,
+                        Manifest.permission.BLUETOOTH_SCAN
+                    )
+                )
             }
         }
 

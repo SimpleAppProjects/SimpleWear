@@ -193,8 +193,8 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
         mMessageClient.addListener(this)
 
         mCustomControlsAdapter = CustomControlsAdapter()
-        //mBrowseMediaItemsAdapter = BrowseMediaItemsAdapter(MediaHelper.MediaItemsPath)
-        //mBrowseMediaItemsExtraSuggestedAdapter = BrowseMediaItemsAdapter(MediaHelper.MediaItemsExtraSuggestedPath)
+        //mBrowseMediaItemsAdapter = BrowseMediaItemsAdapter(MediaHelper.MediaBrowserItemsPath)
+        //mBrowseMediaItemsExtraSuggestedAdapter = BrowseMediaItemsAdapter(MediaHelper.MediaBrowserItemsExtraSuggestedPath)
         mQueueItemsAdapter = QueueItemsAdapter()
 
         playFromSearchTimer = object : CountDownTimer(3000, 500) {
@@ -309,6 +309,19 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
             runCatching {
                 mDataClient.deleteDataItems(
                     WearableHelper.getWearDataUri(MediaHelper.MediaBrowserItemsPath)
+                ).await()
+            }.onFailure {
+                Logger.writeLine(Log.ERROR, it)
+            }
+        }
+    }
+
+    private fun removeBrowserExtraItems() {
+        scope.launch {
+            Timber.tag(TAG).d("removeBrowserExtraItems")
+            runCatching {
+                mDataClient.deleteDataItems(
+                    WearableHelper.getWearDataUri(MediaHelper.MediaBrowserItemsExtraSuggestedPath)
                 ).await()
             }.onFailure {
                 Logger.writeLine(Log.ERROR, it)
@@ -1064,10 +1077,10 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
                     val d = DataMap().apply {
                         putString(MediaHelper.KEY_MEDIA_ACTIONITEM_ACTION, it.action)
                         putString(MediaHelper.KEY_MEDIA_ACTIONITEM_TITLE, it.name.toString())
-                        if (mMediaAppResources != null) {
+                        mMediaAppResources?.let { mediaResources ->
                             val iconDrawable = try {
                                 ResourcesCompat.getDrawable(
-                                    mMediaAppResources!!, it.icon,  /* theme = */null
+                                    mediaResources, it.icon,  /* theme = */null
                                 )
                             } catch (e: Exception) {
                                 Logger.writeLine(Log.ERROR, e)
@@ -1125,13 +1138,14 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
             customActions: List<PlaybackStateCompat.CustomAction>
         ) {
             mControls = controller.transportControls
-            try {
-                mMediaAppResources = packageManager
-                    .getResourcesForApplication(controller.packageName)
-            } catch (e: PackageManager.NameNotFoundException) {
+
+            mMediaAppResources = runCatching {
+                packageManager.getResourcesForApplication(controller.packageName)
+            }.onFailure {
+                // Expected: PackageManager.NameNotFoundException
                 // Shouldn't happen, because the controller must come from an installed app.
-                Timber.tag(TAG).e(e, "Failed to fetch resources from media app")
-            }
+                Timber.tag(TAG).e(it, "Failed to fetch resources from media app")
+            }.getOrNull()
 
             supportsPlayFromSearch = (actions and PlaybackStateCompat.ACTION_PLAY_FROM_SEARCH) != 0L
 
