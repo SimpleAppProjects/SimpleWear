@@ -23,6 +23,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.pullrefresh.PullRefreshDefaults
+import androidx.compose.material.pullrefresh.PullRefreshIndicator
+import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
@@ -69,9 +73,6 @@ import androidx.wear.compose.material.Text
 import androidx.wear.compose.material.TimeText
 import androidx.wear.compose.material.ToggleChip
 import androidx.wear.compose.ui.tooling.preview.WearPreviewDevices
-import com.google.accompanist.swiperefresh.SwipeRefresh
-import com.google.accompanist.swiperefresh.SwipeRefreshIndicator
-import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
 import com.google.android.horologist.compose.rotaryinput.rotaryWithScroll
 import com.thewizrd.shared_resources.actions.Actions
@@ -82,6 +83,7 @@ import com.thewizrd.shared_resources.utils.ContextUtils.isSmallestWidth
 import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.controls.ActionButtonViewModel
 import com.thewizrd.simplewear.preferences.Settings
+import com.thewizrd.simplewear.ui.components.PullRefresh
 import com.thewizrd.simplewear.ui.components.WearDivider
 import com.thewizrd.simplewear.ui.navigation.Screen
 import com.thewizrd.simplewear.viewmodels.DashboardState
@@ -110,6 +112,7 @@ fun DashboardScreen(
             refreshing = true
             lifecycleOwner.lifecycleScope.launch {
                 dashboardViewModel.requestUpdate()
+                delay(1000)
                 refreshing = false
             }
         },
@@ -145,8 +148,7 @@ fun DashboardScreen(
     )
 }
 
-@Suppress("DEPRECATION")
-@OptIn(ExperimentalHorologistApi::class)
+@OptIn(ExperimentalHorologistApi::class, ExperimentalMaterialApi::class)
 @Composable
 fun DashboardScreen(
     modifier: Modifier = Modifier,
@@ -159,27 +161,38 @@ fun DashboardScreen(
     onDashTileSettingsClick: () -> Unit = {},
 ) {
     val isPreview = LocalInspectionMode.current
+    val configuration = LocalConfiguration.current
 
-    SwipeRefresh(
-        state = rememberSwipeRefreshState(isRefreshing),
+    val refreshThreshold = remember(configuration) {
+        (configuration.screenHeightDp / 3f).dp
+    }
+
+    val pullRefreshState = rememberPullRefreshState(
+        refreshing = isRefreshing,
         onRefresh = onRefresh,
-        indicator = { state, trigger ->
-            SwipeRefreshIndicator(
-                state = state,
-                refreshTriggerDistance = trigger,
-                scale = true,
+        refreshThreshold = refreshThreshold,
+        refreshingOffset = PullRefreshDefaults.RefreshingOffset + 4.dp
+    )
+
+    PullRefresh(
+        modifier = modifier.fillMaxSize(),
+        state = pullRefreshState,
+        indicator = {
+            PullRefreshIndicator(
+                modifier = Modifier.align(Alignment.TopCenter),
+                refreshing = isRefreshing,
+                state = pullRefreshState,
                 backgroundColor = MaterialTheme.colors.surface,
                 contentColor = MaterialTheme.colors.primary,
-                shape = MaterialTheme.shapes.small
+                scale = true
             )
         }
     ) {
         Box(
-            modifier = modifier
+            modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(scrollState)
-                .rotaryWithScroll(scrollState),
-            contentAlignment = Alignment.Center
+                .rotaryWithScroll(scrollState)
         ) {
             if (isPreview) {
                 TimeText()
