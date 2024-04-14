@@ -43,7 +43,7 @@ fun MediaPlayer(
             }
 
             composable(
-                route = Screen.MediaPlayer.route,
+                route = Screen.MediaPlayer.route + "?autoLaunch={autoLaunch}&app={app}",
                 arguments = listOf(
                     navArgument("autoLaunch") {
                         type = NavType.BoolType

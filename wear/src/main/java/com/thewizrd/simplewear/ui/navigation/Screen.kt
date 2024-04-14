@@ -33,7 +33,13 @@ sealed class Screen(
         }
 
         fun getRoute(model: AppItemViewModel): String {
-            return "$route?app=${JSONParser.serializer(model, AppItemViewModel::class.java)}"
+            val modelLite = AppItemViewModel().apply {
+                packageName = model.packageName
+                activityName = model.activityName
+                this.appLabel = model.appLabel
+            }
+
+            return "$route?app=${JSONParser.serializer(modelLite, AppItemViewModel::class.java)}"
         }
     }
 
