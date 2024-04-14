@@ -592,6 +592,8 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
                     mController?.let {
                         mCustomControlsAdapter.setActions(it, state.actions, state.customActions)
                     }
+                } else {
+                    mCustomControlsAdapter.clearActions()
                 }
             }
         }
@@ -665,6 +667,15 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
                 Timber.tag(TAG).d("Removing media bridge")
                 mDataClient.deleteDataItems(WearableHelper.getWearDataUri(MediaHelper.MediaPlayerStateBridgePath))
                     .await()
+                mDataClient.deleteDataItems(
+                    WearableHelper.getWearDataUri(MediaHelper.MediaBrowserItemsPath)
+                ).await()
+                mDataClient.deleteDataItems(
+                    WearableHelper.getWearDataUri(MediaHelper.MediaActionsPath)
+                ).await()
+                mDataClient.deleteDataItems(
+                    WearableHelper.getWearDataUri(MediaHelper.MediaQueueItemsPath)
+                ).await()
             }.onFailure {
                 Logger.writeLine(Log.ERROR, it)
             }
@@ -1150,6 +1161,14 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
             supportsPlayFromSearch = (actions and PlaybackStateCompat.ACTION_PLAY_FROM_SEARCH) != 0L
 
             mActions = customActions
+            onDatasetChanged()
+        }
+
+        fun clearActions() {
+            mControls = null
+            mMediaAppResources = null
+            supportsPlayFromSearch = false
+            mActions = emptyList()
             onDatasetChanged()
         }
     }
