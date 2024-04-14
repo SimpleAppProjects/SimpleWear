@@ -982,7 +982,26 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
 
             Actions.HOTSPOT -> {
                 tA = action as ToggleAction
-                tA.setActionSuccessful(PhoneStatusHelper.setWifiApEnabled(mContext, tA.isEnabled))
+                if (WearSettingsHelper.isWearSettingsInstalled() && Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+                    val status = performRemoteAction(action)
+                    if (status == ActionStatus.REMOTE_FAILURE ||
+                        status == ActionStatus.REMOTE_PERMISSION_DENIED
+                    ) {
+                        tA.setActionSuccessful(
+                            PhoneStatusHelper.setWifiApEnabled(
+                                mContext,
+                                tA.isEnabled
+                            )
+                        )
+                    }
+                } else {
+                    tA.setActionSuccessful(
+                        PhoneStatusHelper.setWifiApEnabled(
+                            mContext,
+                            tA.isEnabled
+                        )
+                    )
+                }
                 sendMessage(
                     nodeID,
                     WearableHelper.ActionsPath,
