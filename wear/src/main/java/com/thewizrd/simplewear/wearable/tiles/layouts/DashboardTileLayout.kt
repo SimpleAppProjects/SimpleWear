@@ -22,6 +22,10 @@ import androidx.wear.protolayout.LayoutElementBuilders.Spannable
 import androidx.wear.protolayout.LayoutElementBuilders.TEXT_ALIGN_CENTER
 import androidx.wear.protolayout.LayoutElementBuilders.TEXT_OVERFLOW_MARQUEE
 import androidx.wear.protolayout.ModifiersBuilders.Clickable
+import androidx.wear.protolayout.StateBuilders
+import androidx.wear.protolayout.expression.AppDataKey
+import androidx.wear.protolayout.expression.DynamicBuilders
+import androidx.wear.protolayout.expression.DynamicDataBuilders
 import androidx.wear.protolayout.expression.ProtoLayoutExperimental
 import androidx.wear.protolayout.material.Button
 import androidx.wear.protolayout.material.ButtonColors
@@ -37,6 +41,7 @@ import com.thewizrd.shared_resources.actions.Actions
 import com.thewizrd.shared_resources.actions.DNDChoice
 import com.thewizrd.shared_resources.actions.LocationState
 import com.thewizrd.shared_resources.actions.MultiChoiceAction
+import com.thewizrd.shared_resources.actions.NormalAction
 import com.thewizrd.shared_resources.actions.RingerChoice
 import com.thewizrd.shared_resources.actions.ToggleAction
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
@@ -236,22 +241,38 @@ private fun ActionButton(
     Clickable.Builder()
         .setId(action.name)
         .setOnClick(
-            ActionBuilders.LoadAction.Builder().build()
+            ActionBuilders.LoadAction.Builder()
+                .setRequestState(
+                    StateBuilders.State.Builder()
+                        .addKeyToValueMapping(
+                            AppDataKey(action.name),
+                            DynamicDataBuilders.DynamicDataValue.fromBool(
+                                state.isNextActionEnabled(
+                                    action
+                                )
+                            )
+                        )
+                        .build()
+                )
+                .build()
         )
         .build()
 )
     .setButtonColors(
         ButtonColors(
-            ColorBuilders.argb(
-                ContextCompat.getColor(
-                    context,
-                    if (isActionEnabled(
-                            state,
-                            action
+            ColorBuilders.ColorProp.Builder(
+                ContextCompat.getColor(context, R.color.buttonDisabled)
+            )
+                .setDynamicValue(
+                    DynamicBuilders.DynamicColor
+                        .onCondition(
+                            DynamicBuilders.DynamicBool.from(AppDataKey(action.name))
                         )
-                    ) R.color.colorPrimary else R.color.buttonDisabled
+                        .use(ContextCompat.getColor(context, R.color.colorPrimary))
+                        .elseUse(ContextCompat.getColor(context, R.color.buttonDisabled))
+                        .animate()
                 )
-            ),
+                .build(),
             ColorBuilders.argb(Color.WHITE)
         )
     )
@@ -354,14 +375,14 @@ private fun getResourceIdForAction(state: DashboardTileState, action: Actions): 
     }
 }
 
-private fun isActionEnabled(state: DashboardTileState, action: Actions): Boolean {
+fun DashboardTileState.isActionEnabled(action: Actions): Boolean {
     return when (action) {
         Actions.WIFI, Actions.BLUETOOTH, Actions.MOBILEDATA, Actions.TORCH, Actions.HOTSPOT -> {
-            (state.getAction(action) as? ToggleAction)?.isEnabled == true
+            (getAction(action) as? ToggleAction)?.isEnabled == true
         }
 
         Actions.LOCATION -> {
-            val locationAction = state.getAction(action)
+            val locationAction = getAction(action)
 
             val locChoice = if (locationAction is ToggleAction) {
                 if (locationAction.isEnabled) LocationState.HIGH_ACCURACY else LocationState.OFF
@@ -376,7 +397,7 @@ private fun isActionEnabled(state: DashboardTileState, action: Actions): Boolean
 
         Actions.LOCKSCREEN -> true
         Actions.DONOTDISTURB -> {
-            val dndAction = state.getAction(action)
+            val dndAction = getAction(action)
 
             val dndChoice = if (dndAction is ToggleAction) {
                 if (dndAction.isEnabled) DNDChoice.PRIORITY else DNDChoice.OFF
@@ -390,7 +411,7 @@ private fun isActionEnabled(state: DashboardTileState, action: Actions): Boolean
         }
 
         Actions.RINGER -> {
-            val ringerAction = state.getAction(action) as? MultiChoiceAction
+            val ringerAction = getAction(action) as? MultiChoiceAction
             val ringerChoice = ringerAction?.choice?.let {
                 RingerChoice.valueOf(it)
             } ?: RingerChoice.VIBRATION
@@ -399,5 +420,38 @@ private fun isActionEnabled(state: DashboardTileState, action: Actions): Boolean
         }
 
         else -> false
+    }
+}
+
+fun DashboardTileState.isNextActionEnabled(action: Actions): Boolean {
+    val actionState = getAction(action)
+
+    if (actionState == null) {
+        return when (action) {
+            // Normal actions
+            Actions.LOCKSCREEN -> true
+            // others
+            else -> false
+        }
+    } else {
+        return when (actionState) {
+            is ToggleAction -> {
+                !actionState.isEnabled
+            }
+
+            is MultiChoiceAction -> {
+                val newChoice = actionState.choice + 1
+                val ma = MultiChoiceAction(action, newChoice)
+                ma.choice > 0
+            }
+
+            is NormalAction -> {
+                true
+            }
+
+            else -> {
+                false
+            }
+        }
     }
 }

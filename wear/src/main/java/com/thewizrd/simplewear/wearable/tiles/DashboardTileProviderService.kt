@@ -123,9 +123,8 @@ class DashboardTileProviderService : SuspendingTileService() {
         }
 
         tileModel.setShowBatteryStatus(Settings.isShowTileBatStatus())
-        val tileState = latestTileState()
         isUpdating = false
-        return tileRenderer.renderTimeline(tileState, requestParams)
+        return tileRenderer.renderTimeline(tileModel.tileState.value, requestParams)
     }
 
     private suspend fun latestTileState(): DashboardTileState {

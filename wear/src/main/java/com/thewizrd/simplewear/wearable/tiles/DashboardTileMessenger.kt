@@ -39,7 +39,7 @@ class DashboardTileMessenger(private val context: Context) :
     CapabilityClient.OnCapabilityChangedListener, MessageClient.OnMessageReceivedListener {
     companion object {
         private const val TAG = "DashboardTileMessenger"
-        internal val tileModel = DashboardTileModel()
+        internal val tileModel by lazy { DashboardTileModel() }
     }
 
     @Volatile
