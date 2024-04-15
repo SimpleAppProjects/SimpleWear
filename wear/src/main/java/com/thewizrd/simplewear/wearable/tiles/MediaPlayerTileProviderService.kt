@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import timber.log.Timber
 
 @OptIn(ExperimentalHorologistApi::class)
@@ -32,6 +33,9 @@ class MediaPlayerTileProviderService : SuspendingTileService() {
             Timber.tag(TAG).d("$TAG: requesting tile update")
             getUpdater(context).requestUpdate(MediaPlayerTileProviderService::class.java)
         }
+
+        var isInFocus: Boolean = false
+            private set
     }
 
     private val tileMessenger = MediaPlayerTileMessenger(this)
@@ -62,6 +66,7 @@ class MediaPlayerTileProviderService : SuspendingTileService() {
         super.onTileEnterEvent(requestParams)
 
         Timber.tag(TAG).d("$TAG: onTileEnterEvent called with: tileId = ${requestParams.tileId}")
+        isInFocus = true
 
         lifecycleScope.launch {
             tileMessenger.checkConnectionStatus()
@@ -79,6 +84,7 @@ class MediaPlayerTileProviderService : SuspendingTileService() {
     override fun onTileLeaveEvent(requestParams: EventBuilders.TileLeaveEvent) {
         super.onTileLeaveEvent(requestParams)
         Timber.tag(TAG).d("$TAG: onTileLeaveEvent called with: tileId = ${requestParams.tileId}")
+        isInFocus = false
 
         lifecycleScope.launch {
             tileMessenger.requestPlayerDisconnect()
@@ -104,15 +110,20 @@ class MediaPlayerTileProviderService : SuspendingTileService() {
                     Timber.tag(TAG)
                         .d("lastClickableId = ${requestParams.currentState.lastClickableId}")
                     val action = PlayerAction.valueOf(requestParams.currentState.lastClickableId)
-                    val ret = tileMessenger.requestPlayerActionAsync(action)
-                    Timber.tag(TAG).d("requestPlayerActionAsync = $ret")
+                    withTimeoutOrNull(5000) {
+                        val ret = tileMessenger.requestPlayerActionAsync(action)
+                        Timber.tag(TAG).d("requestPlayerActionAsync = $ret")
+                        tileMessenger.updatePlayerStateAsync()
+                    }
                 }
             }
         } else {
-            tileMessenger.updatePlayerStateAsync()
+            withTimeoutOrNull(5000) {
+                tileMessenger.updatePlayerStateAsync()
+            }
         }
 
-        val tileState = latestTileState()
+        val tileState = tileModel.tileState.value
         Timber.tag(TAG).d("State: ${tileState.title} - ${tileState.artist}")
         isUpdating = false
         return tileRenderer.renderTimeline(tileState, requestParams)

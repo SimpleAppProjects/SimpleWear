@@ -46,7 +46,7 @@ class MediaPlayerTileMessenger(private val context: Context) :
     CapabilityClient.OnCapabilityChangedListener {
     companion object {
         private const val TAG = "MediaPlayerTileMessenger"
-        internal val tileModel = MediaPlayerTileModel()
+        internal val tileModel by lazy { MediaPlayerTileModel() }
     }
 
     enum class PlayerAction {
