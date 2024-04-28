@@ -5,10 +5,18 @@ import android.view.View
 import android.view.ViewTreeObserver
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.lifecycle.lifecycleScope
 import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.color.DynamicColors
+import com.thewizrd.simplewear.updates.InAppUpdateManager
+import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
+    companion object {
+        private const val INSTALL_REQUESTCODE = 168
+    }
+
+    private lateinit var inAppUpdateManager: InAppUpdateManager
     private var isReadyToView = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -17,6 +25,8 @@ class MainActivity : AppCompatActivity() {
 
         // Note: needed due to splash screen theme
         DynamicColors.applyIfAvailable(this)
+
+        inAppUpdateManager = InAppUpdateManager.create(applicationContext)
 
         // Stop activity from rendering until next activity or if immediate update available
         val content = findViewById<View>(android.R.id.content)
@@ -33,14 +43,20 @@ class MainActivity : AppCompatActivity() {
 
         setContentView(R.layout.activity_main)
 
-        // Check if fragment exists
-        if (supportFragmentManager.findFragmentById(R.id.fragment_container) == null) {
-            supportFragmentManager.beginTransaction()
-                .replace(R.id.fragment_container, PermissionCheckFragment())
-                .runOnCommit {
-                    isReadyToView = true
+        lifecycleScope.launch {
+            if (inAppUpdateManager.shouldStartImmediateUpdateFlow()) {
+                inAppUpdateManager.startImmediateUpdateFlow(this@MainActivity, INSTALL_REQUESTCODE)
+            } else {
+                // Check if fragment exists
+                if (supportFragmentManager.findFragmentById(R.id.fragment_container) == null) {
+                    supportFragmentManager.beginTransaction()
+                        .replace(R.id.fragment_container, PermissionCheckFragment())
+                        .runOnCommit {
+                            isReadyToView = true
+                        }
+                        .commit()
                 }
-                .commit()
+            }
         }
 
         val appBarLayout = findViewById<AppBarLayout>(R.id.app_bar)

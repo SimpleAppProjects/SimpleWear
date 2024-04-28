@@ -6,6 +6,8 @@ import android.os.CountDownTimer
 import android.util.ArrayMap
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewModelScope
+import com.google.android.gms.wearable.MessageClient
+import com.google.android.gms.wearable.Wearable
 import com.thewizrd.shared_resources.actions.Action
 import com.thewizrd.shared_resources.actions.ActionStatus
 import com.thewizrd.shared_resources.actions.Actions
@@ -13,6 +15,7 @@ import com.thewizrd.shared_resources.actions.BatteryStatus
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
 import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.shared_resources.utils.JSONParser
+import com.thewizrd.shared_resources.utils.bytesToLong
 import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.controls.ActionButtonViewModel
 import com.thewizrd.simplewear.controls.CustomConfirmationOverlay
@@ -22,6 +25,9 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.tasks.await
+import kotlin.coroutines.resume
 
 data class DashboardState(
     val connectionStatus: WearConnectionStatus? = null,
@@ -231,6 +237,39 @@ class DashboardViewModel(app: Application) : WearableListenerViewModel(app) {
         _eventsFlow.tryEmit(WearableEvent(WearableHelper.ActionsPath, Bundle().apply {
             putString(EXTRA_ACTIONDATA, JSONParser.serializer(action, Action::class.java))
         }))
+    }
+
+    suspend fun requestPhoneAppVersion(): Long {
+        return suspendCancellableCoroutine { continuation ->
+            val listener = MessageClient.OnMessageReceivedListener { event ->
+                when (event.path) {
+                    WearableHelper.VersionPath -> {
+                        if (continuation.isActive) {
+                            val versionCode = event.data.bytesToLong()
+                            continuation.resume(versionCode)
+                        }
+                    }
+                }
+            }
+
+            continuation.invokeOnCancellation {
+                Wearable.getMessageClient(appContext)
+                    .removeListener(listener)
+            }
+
+            viewModelScope.launch {
+                Wearable.getMessageClient(appContext)
+                    .addListener(
+                        listener,
+                        WearableHelper.getWearDataUri("*", WearableHelper.VersionPath),
+                        MessageClient.FILTER_LITERAL
+                    ).await()
+
+                if (connect()) {
+                    sendMessage(mPhoneNodeWithApp!!.id, WearableHelper.VersionPath, null)
+                }
+            }
+        }
     }
 
     fun cancelTimer(action: Actions) {

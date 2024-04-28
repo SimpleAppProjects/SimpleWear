@@ -6,6 +6,7 @@ import com.google.gson.reflect.TypeToken
 import com.thewizrd.shared_resources.actions.Actions
 import com.thewizrd.shared_resources.utils.JSONParser
 import com.thewizrd.simplewear.App
+import java.time.Instant
 
 object Settings {
     const val TAG = "Settings"
@@ -17,6 +18,7 @@ object Settings {
     const val KEY_DASHCONFIG = "key_dashconfig"
     const val KEY_SHOWBATSTATUS = "key_showbatstatus"
     const val KEY_SHOWTILEBATSTATUS = "key_showtilebatstatus"
+    private const val KEY_LASTUPDATECHECK = "key_lastupdatecheck"
 
     fun useGridLayout(): Boolean {
         val preferences = PreferenceManager.getDefaultSharedPreferences(App.instance.appContext)
@@ -126,6 +128,19 @@ object Settings {
         val preferences = PreferenceManager.getDefaultSharedPreferences(App.instance.appContext)
         preferences.edit {
             putBoolean(KEY_SHOWTILEBATSTATUS, value)
+        }
+    }
+
+    fun getLastUpdateCheckTime(): Instant {
+        val preferences = PreferenceManager.getDefaultSharedPreferences(App.instance.appContext)
+        val epochSeconds = preferences.getLong(KEY_LASTUPDATECHECK, Instant.EPOCH.epochSecond)
+        return Instant.ofEpochSecond(epochSeconds)
+    }
+
+    fun setLastUpdateCheckTime(value: Instant) {
+        val preferences = PreferenceManager.getDefaultSharedPreferences(App.instance.appContext)
+        preferences.edit {
+            putLong(KEY_LASTUPDATECHECK, value.epochSecond)
         }
     }
 }

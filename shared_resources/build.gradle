@@ -70,6 +70,7 @@ dependencies {
     implementation platform("com.google.firebase:firebase-bom:$firebase_version")
     implementation 'com.google.firebase:firebase-analytics'
     implementation 'com.google.firebase:firebase-crashlytics'
+    implementation 'com.google.firebase:firebase-config'
 
     implementation "com.jakewharton.timber:timber:$timber_version"
     implementation "com.google.code.gson:gson:$gson_version"

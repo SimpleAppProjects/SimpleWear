@@ -4,13 +4,27 @@ import android.content.Intent
 import android.os.Build
 import androidx.core.util.Pair
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
-import com.google.android.gms.wearable.*
-import com.thewizrd.shared_resources.actions.*
+import com.google.android.gms.wearable.DataEvent
+import com.google.android.gms.wearable.DataEventBuffer
+import com.google.android.gms.wearable.DataMapItem
+import com.google.android.gms.wearable.MessageEvent
+import com.google.android.gms.wearable.WearableListenerService
+import com.thewizrd.shared_resources.actions.Action
+import com.thewizrd.shared_resources.actions.ActionStatus
+import com.thewizrd.shared_resources.actions.Actions
+import com.thewizrd.shared_resources.actions.AudioStreamState
+import com.thewizrd.shared_resources.actions.AudioStreamType
+import com.thewizrd.shared_resources.actions.ValueActionState
 import com.thewizrd.shared_resources.helpers.AppState
 import com.thewizrd.shared_resources.helpers.InCallUIHelper
 import com.thewizrd.shared_resources.helpers.MediaHelper
 import com.thewizrd.shared_resources.helpers.WearableHelper
-import com.thewizrd.shared_resources.utils.*
+import com.thewizrd.shared_resources.utils.JSONParser
+import com.thewizrd.shared_resources.utils.bytesToBool
+import com.thewizrd.shared_resources.utils.bytesToInt
+import com.thewizrd.shared_resources.utils.bytesToString
+import com.thewizrd.shared_resources.utils.longToBytes
+import com.thewizrd.shared_resources.utils.stringToBytes
 import com.thewizrd.simplewear.MainActivity
 import com.thewizrd.simplewear.helpers.PhoneStatusHelper
 import com.thewizrd.simplewear.media.MediaAppControllerUtils
@@ -221,6 +235,11 @@ class WearableDataListenerService : WearableListenerService() {
                             CallControllerService.EXTRA_FORCEDISCONNECT,
                             !Settings.isBridgeCallsEnabled()
                         )
+                )
+            } else if (messageEvent.path == WearableHelper.VersionPath) {
+                mWearMgr.sendMessage(
+                    messageEvent.sourceNodeId, messageEvent.path,
+                    WearableHelper.getAppVersionCode().longToBytes()
                 )
             }
             return@runBlocking

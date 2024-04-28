@@ -90,10 +90,12 @@ dependencies {
     implementation "androidx.core:core-splashscreen:$coresplash_version"
 
     implementation 'com.google.android.gms:play-services-wearable:18.1.0'
+    implementation 'com.google.android.play:app-update-ktx:2.1.0'
 
     implementation platform("com.google.firebase:firebase-bom:$firebase_version")
     implementation 'com.google.firebase:firebase-analytics'
     implementation 'com.google.firebase:firebase-crashlytics'
+    implementation 'com.google.firebase:firebase-config'
 
     implementation "androidx.appcompat:appcompat:$appcompat_version"
     implementation "androidx.constraintlayout:constraintlayout:$constraintlayout_version"

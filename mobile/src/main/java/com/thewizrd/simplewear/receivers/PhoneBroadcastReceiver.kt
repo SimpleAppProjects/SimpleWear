@@ -21,6 +21,7 @@ class PhoneBroadcastReceiver : BroadcastReceiver() {
             Intent.ACTION_MY_PACKAGE_REPLACED,
             Intent.ACTION_BOOT_COMPLETED -> {
                 WearableWorker.sendStatusUpdate(context)
+
                 if (Settings.isBridgeMediaEnabled()) {
                     MediaControllerService.enqueueWork(
                         context,
@@ -29,6 +30,7 @@ class PhoneBroadcastReceiver : BroadcastReceiver() {
                             .putExtra(MediaControllerService.EXTRA_SOFTLAUNCH, true)
                     )
                 }
+
                 if (Settings.isBridgeCallsEnabled()) {
                     CallControllerService.enqueueWork(
                         context,

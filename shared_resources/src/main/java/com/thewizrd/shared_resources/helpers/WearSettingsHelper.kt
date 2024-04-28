@@ -11,7 +11,7 @@ import com.thewizrd.shared_resources.utils.Logger
 object WearSettingsHelper {
     // Link to Play Store listing
     const val PACKAGE_NAME = "com.thewizrd.wearsettings"
-    private const val SUPPORTED_VERSION_CODE = 1010000
+    private const val SUPPORTED_VERSION_CODE: Long = 1010000
 
     fun getPackageName(): String {
         var packageName = PACKAGE_NAME
@@ -41,15 +41,17 @@ object WearSettingsHelper {
         }
     }
 
-    private fun getWearSettingsVersionCode(): Int = try {
+    private fun getWearSettingsVersionCode(): Long = try {
         val context = SimpleLibrary.instance.app.appContext
         val packageInfo = context.packageManager.getPackageInfo(getPackageName(), 0)
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            packageInfo.longVersionCode.toInt()
+        val versionCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            packageInfo.longVersionCode
         } else {
-            packageInfo.versionCode
+            packageInfo.versionCode.toLong()
         }
+
+        versionCode
     } catch (e: PackageManager.NameNotFoundException) {
         0
     }
