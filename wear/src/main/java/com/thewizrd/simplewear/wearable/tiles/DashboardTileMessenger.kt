@@ -434,10 +434,6 @@ class DashboardTileMessenger(private val context: Context) :
                         }
                     }
                 }
-
-                if (continuation.isActive) {
-                    continuation.resume(false)
-                }
             }
 
             continuation.invokeOnCancellation {
@@ -472,10 +468,6 @@ class DashboardTileMessenger(private val context: Context) :
                         }
                     }
                 }
-
-                if (continuation.isActive) {
-                    continuation.resume(null)
-                }
             }
 
             continuation.invokeOnCancellation {
@@ -485,7 +477,11 @@ class DashboardTileMessenger(private val context: Context) :
 
             scope.launch {
                 Wearable.getMessageClient(context)
-                    .addListener(listener)
+                    .addListener(
+                        listener,
+                        WearableHelper.getWearDataUri("*", WearableHelper.BatteryPath),
+                        MessageClient.FILTER_LITERAL
+                    )
                     .await()
 
                 if (connect()) {

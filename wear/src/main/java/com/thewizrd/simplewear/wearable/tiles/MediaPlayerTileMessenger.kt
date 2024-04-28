@@ -342,11 +342,19 @@ class MediaPlayerTileMessenger(private val context: Context) :
             scope.launch {
                 if (listener is MessageClient.OnMessageReceivedListener) {
                     Wearable.getMessageClient(context)
-                        .addListener(listener)
+                        .addListener(
+                            listener,
+                            WearableHelper.getWearDataUri("*", MediaHelper.MediaVolumeStatusPath),
+                            DataClient.FILTER_LITERAL
+                        )
                         .await()
                 } else if (listener is DataClient.OnDataChangedListener) {
                     Wearable.getDataClient(context)
-                        .addListener(listener)
+                        .addListener(
+                            listener,
+                            WearableHelper.getWearDataUri("*", MediaHelper.MediaPlayerStatePath),
+                            DataClient.FILTER_LITERAL
+                        )
                         .await()
                 }
 
