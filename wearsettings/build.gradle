@@ -12,6 +12,7 @@ android {
         minSdk rootProject.minSdkVersion
         //noinspection ExpiredTargetSdkVersion
         targetSdk 28
+        // NOTE: update SUPPORTED_VERSION_CODE
         versionCode 1010001
         versionName "1.1.1"
 
