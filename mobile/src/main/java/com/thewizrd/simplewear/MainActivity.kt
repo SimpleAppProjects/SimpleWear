@@ -1,5 +1,6 @@
 package com.thewizrd.simplewear
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.view.ViewTreeObserver
@@ -62,5 +63,26 @@ class MainActivity : AppCompatActivity() {
         val appBarLayout = findViewById<AppBarLayout>(R.id.app_bar)
         appBarLayout.liftOnScrollTargetViewId = R.id.scrollView
         appBarLayout.isLiftOnScroll = true
+    }
+
+    override fun onResume() {
+        super.onResume()
+
+        // Checks that the update is not stalled during 'onResume()'.
+        // However, you should execute this check at all entry points into the app.
+        inAppUpdateManager.resumeUpdateIfStarted(this, INSTALL_REQUESTCODE)
+        isReadyToView = true
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if (requestCode == INSTALL_REQUESTCODE) {
+            if (resultCode != RESULT_OK) {
+                // Update flow failed; exit
+                finishAffinity()
+            }
+        } else {
+            super.onActivityResult(requestCode, resultCode, data)
+        }
     }
 }

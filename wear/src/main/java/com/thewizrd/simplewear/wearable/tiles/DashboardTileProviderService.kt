@@ -2,6 +2,7 @@ package com.thewizrd.simplewear.wearable.tiles
 
 import android.content.Context
 import android.content.Intent
+import android.os.Bundle
 import androidx.lifecycle.lifecycleScope
 import androidx.wear.protolayout.ResourceBuilders
 import androidx.wear.tiles.EventBuilders
@@ -10,6 +11,7 @@ import androidx.wear.tiles.TileBuilders
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
 import com.google.android.horologist.tiles.SuspendingTileService
 import com.thewizrd.shared_resources.actions.Actions
+import com.thewizrd.shared_resources.utils.AnalyticsLogger
 import com.thewizrd.simplewear.PhoneSyncActivity
 import com.thewizrd.simplewear.preferences.DashboardTileUtils.DEFAULT_TILES
 import com.thewizrd.simplewear.preferences.Settings
@@ -21,10 +23,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import timber.log.Timber
 import kotlin.coroutines.cancellation.CancellationException
+import kotlin.coroutines.coroutineContext
 
 @OptIn(ExperimentalHorologistApi::class)
 class DashboardTileProviderService : SuspendingTileService() {
@@ -68,6 +72,9 @@ class DashboardTileProviderService : SuspendingTileService() {
         super.onTileEnterEvent(requestParams)
 
         Timber.tag(TAG).d("$TAG: onTileEnterEvent called with: tileId = ${requestParams.tileId}")
+        AnalyticsLogger.logEvent("on_tile_enter", Bundle().apply {
+            putString("tile", TAG)
+        })
         isInFocus = true
 
         // Update tile actions
@@ -110,6 +117,10 @@ class DashboardTileProviderService : SuspendingTileService() {
                         .d("lastClickableId = ${requestParams.currentState.lastClickableId}")
                     val action = Actions.valueOf(requestParams.currentState.lastClickableId)
                     withTimeoutOrNull(5000) {
+                        AnalyticsLogger.logEvent("dashtile_action_clicked", Bundle().apply {
+                            putString("action", action.name)
+                        })
+
                         tileMessenger.processActionAsync(action)
                     }
                 }
@@ -124,6 +135,13 @@ class DashboardTileProviderService : SuspendingTileService() {
 
         tileModel.setShowBatteryStatus(Settings.isShowTileBatStatus())
         isUpdating = false
+
+        if (tileModel.tileState.value.isEmpty) {
+            AnalyticsLogger.logEvent("dashtile_state_empty", Bundle().apply {
+                putBoolean("isCoroutineActive", coroutineContext.isActive)
+            })
+        }
+
         return tileRenderer.renderTimeline(tileModel.tileState.value, requestParams)
     }
 

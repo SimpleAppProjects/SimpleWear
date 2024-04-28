@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.ConcatAdapter
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.ItemTouchHelper
 import com.thewizrd.shared_resources.actions.Actions
+import com.thewizrd.shared_resources.utils.AnalyticsLogger
 import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.activities.AppCompatLiteActivity
 import com.thewizrd.simplewear.adapters.AddButtonAdapter
@@ -23,6 +24,7 @@ import com.thewizrd.simplewear.helpers.TileActionsItemTouchCallback
 import com.thewizrd.simplewear.preferences.DashboardTileUtils.DEFAULT_TILES
 import com.thewizrd.simplewear.preferences.DashboardTileUtils.MAX_BUTTONS
 import com.thewizrd.simplewear.preferences.DashboardTileUtils.isActionAllowed
+import com.thewizrd.simplewear.ui.navigation.Screen
 import kotlin.math.roundToInt
 
 class DashboardTileConfigActivity : AppCompatLiteActivity() {
@@ -132,6 +134,14 @@ class DashboardTileConfigActivity : AppCompatLiteActivity() {
             // Close activity
             finish()
         }
+    }
+
+    override fun onStart() {
+        super.onStart()
+
+        AnalyticsLogger.logEvent("nav_route", Bundle().apply {
+            putString("screen", Screen.DashboardTileConfig.route)
+        })
     }
 
     override fun dispatchTouchEvent(ev: MotionEvent?): Boolean {

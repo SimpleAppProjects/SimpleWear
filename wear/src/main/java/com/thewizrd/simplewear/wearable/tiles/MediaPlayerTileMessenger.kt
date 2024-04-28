@@ -35,9 +35,9 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withTimeoutOrNull
 import timber.log.Timber
 import kotlin.coroutines.resume
 
@@ -64,6 +64,7 @@ class MediaPlayerTileMessenger(private val context: Context) :
     private var mPhoneNodeWithApp: Node? = null
 
     private var deleteJob: Job? = null
+    private var updateJob: Job? = null
 
     fun register() {
         Wearable.getCapabilityClient(context)
@@ -129,7 +130,8 @@ class MediaPlayerTileMessenger(private val context: Context) :
 
             deleteJob?.cancel()
             val dataMap = DataMapItem.fromDataItem(item).dataMap
-            runBlocking {
+            updateJob?.cancel()
+            updateJob = scope.launch {
                 updatePlayerState(dataMap)
             }
         } else if (event.type == DataEvent.TYPE_DELETED) {
@@ -247,10 +249,9 @@ class MediaPlayerTileMessenger(private val context: Context) :
         val artist = dataMap.getString(MediaHelper.KEY_MEDIA_METADATA_ARTIST)
         val artBitmap = dataMap.getAsset(MediaHelper.KEY_MEDIA_METADATA_ART)?.let {
             try {
-                ImageUtils.bitmapFromAssetStream(
-                    Wearable.getDataClient(context),
-                    it
-                )
+                withTimeoutOrNull(5000) {
+                    ImageUtils.bitmapFromAssetStream(Wearable.getDataClient(context), it)
+                }
             } catch (e: Exception) {
                 null
             }

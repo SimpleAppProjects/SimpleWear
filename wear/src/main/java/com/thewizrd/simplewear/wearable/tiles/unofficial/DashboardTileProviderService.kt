@@ -5,6 +5,7 @@ import android.bluetooth.BluetoothAdapter
 import android.content.Context
 import android.content.Intent
 import android.net.wifi.WifiManager
+import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.widget.RemoteViews
@@ -27,6 +28,7 @@ import com.thewizrd.shared_resources.actions.ToggleAction
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
 import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.shared_resources.helpers.toImmutableCompatFlag
+import com.thewizrd.shared_resources.utils.AnalyticsLogger
 import com.thewizrd.shared_resources.utils.JSONParser
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.shared_resources.utils.bytesToString
@@ -79,6 +81,10 @@ class DashboardTileProviderService : TileProviderService(), MessageClient.OnMess
         if (!isIdForDummyData(tileId)) {
             id = tileId
             mInFocus = true
+            AnalyticsLogger.logEvent("on_tile_enter", Bundle().apply {
+                putString("tile", TAG)
+                putBoolean("isUnofficial", true)
+            })
 
             // Update tile actions
             tileActions.clear()
@@ -563,6 +569,10 @@ class DashboardTileProviderService : TileProviderService(), MessageClient.OnMess
     }
 
     private fun requestAction(action: Action) {
+        AnalyticsLogger.logEvent("dashtile_action_clicked", Bundle().apply {
+            putString("action", action.actionType.name)
+        })
+
         requestAction(JSONParser.serializer(action, Action::class.java))
     }
 

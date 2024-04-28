@@ -3,6 +3,7 @@ package com.thewizrd.simplewear.ui.simplewear
 import android.content.ComponentName
 import android.content.pm.PackageManager
 import android.os.Build
+import android.os.Bundle
 import android.widget.Toast
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -78,6 +79,7 @@ import com.google.android.horologist.compose.rotaryinput.rotaryWithScroll
 import com.thewizrd.shared_resources.actions.Actions
 import com.thewizrd.shared_resources.actions.BatteryStatus
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
+import com.thewizrd.shared_resources.utils.AnalyticsLogger
 import com.thewizrd.shared_resources.utils.ContextUtils.dpToPx
 import com.thewizrd.shared_resources.utils.ContextUtils.isSmallestWidth
 import com.thewizrd.simplewear.R
@@ -119,6 +121,10 @@ fun DashboardScreen(
         dashboardState = uiState,
         scrollState = scrollState,
         onActionClicked = { model ->
+            AnalyticsLogger.logEvent("dash_action_clicked", Bundle().apply {
+                putString("action", model.action.actionType.name)
+            })
+
             model.onClick(
                 navController,
                 onActionChanged = {
@@ -623,6 +629,10 @@ private fun LayoutPreferenceButton(
             secondaryContentColor = MaterialTheme.colors.onSurfaceVariant
         ),
         onClick = {
+            AnalyticsLogger.logEvent("dash_layout_btn_clicked", Bundle().apply {
+                putBoolean("isGridLayout", isGridLayout)
+            })
+
             Settings.setGridLayout(!isGridLayout)
 
             lifecycleOwner.lifecycleScope.launch {

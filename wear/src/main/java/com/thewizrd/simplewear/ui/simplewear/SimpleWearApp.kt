@@ -1,7 +1,9 @@
 package com.thewizrd.simplewear.ui.simplewear
 
 import android.os.Build
+import android.os.Bundle
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavType
 import androidx.navigation.activity
@@ -13,6 +15,7 @@ import androidx.wear.compose.navigation.rememberSwipeDismissableNavController
 import androidx.wear.compose.navigation.rememberSwipeDismissableNavHostState
 import com.thewizrd.shared_resources.actions.Actions
 import com.thewizrd.shared_resources.actions.AudioStreamType
+import com.thewizrd.shared_resources.utils.AnalyticsLogger
 import com.thewizrd.simplewear.media.MediaPlayerActivity
 import com.thewizrd.simplewear.preferences.DashboardConfigActivity
 import com.thewizrd.simplewear.preferences.DashboardTileConfigActivity
@@ -39,6 +42,12 @@ fun SimpleWearApp(
         ) {
             composable(Screen.Dashboard.route) {
                 Dashboard(navController = navController)
+
+                LaunchedEffect(navController) {
+                    AnalyticsLogger.logEvent("nav_route", Bundle().apply {
+                        putString("screen", Screen.Dashboard.route)
+                    })
+                }
             }
 
             composable(
@@ -69,6 +78,15 @@ fun SimpleWearApp(
                     actionType = actionType ?: Actions.VOLUME,
                     audioStreamType = streamType
                 )
+
+                LaunchedEffect(navController, actionType) {
+                    AnalyticsLogger.logEvent("nav_route", Bundle().apply {
+                        putString("screen", Screen.ValueAction.route)
+                        actionType?.let {
+                            putString("actionType", it.name)
+                        }
+                    })
+                }
             }
 
             activity(route = Screen.MediaPlayerList.route) {
@@ -81,10 +99,22 @@ fun SimpleWearApp(
                     navController = navController,
                     swipeToDismissBoxState = swipeToDismissBoxState
                 )
+
+                LaunchedEffect(navController) {
+                    AnalyticsLogger.logEvent("nav_route", Bundle().apply {
+                        putString("screen", Screen.AppLauncher.route)
+                    })
+                }
             }
 
             composable(Screen.CallManager.route) {
                 CallManagerUi(navController = navController)
+
+                LaunchedEffect(navController) {
+                    AnalyticsLogger.logEvent("nav_route", Bundle().apply {
+                        putString("screen", Screen.CallManager.route)
+                    })
+                }
             }
 
             activity(route = Screen.DashboardConfig.route) {

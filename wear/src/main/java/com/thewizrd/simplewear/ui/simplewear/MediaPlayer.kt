@@ -1,7 +1,9 @@
 package com.thewizrd.simplewear.ui.simplewear
 
 import android.os.Build
+import android.os.Bundle
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavType
@@ -13,6 +15,7 @@ import androidx.wear.compose.navigation.rememberSwipeDismissableNavController
 import androidx.wear.compose.navigation.rememberSwipeDismissableNavHostState
 import com.thewizrd.shared_resources.actions.Actions
 import com.thewizrd.shared_resources.actions.AudioStreamType
+import com.thewizrd.shared_resources.utils.AnalyticsLogger
 import com.thewizrd.shared_resources.utils.JSONParser
 import com.thewizrd.simplewear.controls.AppItemViewModel
 import com.thewizrd.simplewear.ui.navigation.Screen
@@ -40,6 +43,12 @@ fun MediaPlayer(
         ) {
             composable(route = Screen.MediaPlayerList.route) {
                 MediaPlayerListUi(navController = navController)
+
+                LaunchedEffect(navController) {
+                    AnalyticsLogger.logEvent("nav_route", Bundle().apply {
+                        putString("screen", Screen.MediaPlayerList.route)
+                    })
+                }
             }
 
             composable(
@@ -69,6 +78,15 @@ fun MediaPlayer(
                     autoLaunch = autoLaunch ?: (app == null),
                     app = app
                 )
+
+                LaunchedEffect(navController) {
+                    AnalyticsLogger.logEvent("nav_route", Bundle().apply {
+                        putString("screen", Screen.MediaPlayer.route)
+                        app?.let {
+                            putString("app", it.packageName)
+                        }
+                    })
+                }
             }
 
             composable(
@@ -99,6 +117,15 @@ fun MediaPlayer(
                     actionType = actionType ?: Actions.VOLUME,
                     audioStreamType = streamType
                 )
+
+                LaunchedEffect(navController, actionType) {
+                    AnalyticsLogger.logEvent("nav_route", Bundle().apply {
+                        putString("screen", Screen.ValueAction.route)
+                        actionType?.let {
+                            putString("actionType", it.name)
+                        }
+                    })
+                }
             }
         }
     }

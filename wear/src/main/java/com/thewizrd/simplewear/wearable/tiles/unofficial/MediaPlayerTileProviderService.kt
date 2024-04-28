@@ -4,6 +4,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
+import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.widget.RemoteViews
@@ -74,6 +75,11 @@ class MediaPlayerTileProviderService : TileProviderService(),
         if (!isIdForDummyData(tileId)) {
             id = tileId
             mInFocus = true
+            AnalyticsLogger.logEvent("on_tile_enter", Bundle().apply {
+                putString("tile", TAG)
+                putBoolean("isUnofficial", true)
+            })
+
             sendRemoteViews()
 
             Wearable.getCapabilityClient(this)

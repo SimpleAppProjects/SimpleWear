@@ -2,6 +2,7 @@ package com.thewizrd.simplewear.wearable.tiles
 
 import android.content.Context
 import android.content.Intent
+import android.os.Bundle
 import androidx.lifecycle.lifecycleScope
 import androidx.wear.protolayout.ResourceBuilders
 import androidx.wear.tiles.EventBuilders
@@ -9,6 +10,7 @@ import androidx.wear.tiles.RequestBuilders
 import androidx.wear.tiles.TileBuilders
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
 import com.google.android.horologist.tiles.SuspendingTileService
+import com.thewizrd.shared_resources.utils.AnalyticsLogger
 import com.thewizrd.simplewear.PhoneSyncActivity
 import com.thewizrd.simplewear.wearable.tiles.MediaPlayerTileMessenger.Companion.tileModel
 import com.thewizrd.simplewear.wearable.tiles.MediaPlayerTileMessenger.PlayerAction
@@ -20,9 +22,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import timber.log.Timber
+import kotlin.coroutines.coroutineContext
 
 @OptIn(ExperimentalHorologistApi::class)
 class MediaPlayerTileProviderService : SuspendingTileService() {
@@ -66,6 +70,9 @@ class MediaPlayerTileProviderService : SuspendingTileService() {
         super.onTileEnterEvent(requestParams)
 
         Timber.tag(TAG).d("$TAG: onTileEnterEvent called with: tileId = ${requestParams.tileId}")
+        AnalyticsLogger.logEvent("on_tile_enter", Bundle().apply {
+            putString("tile", TAG)
+        })
         isInFocus = true
 
         lifecycleScope.launch {
@@ -126,6 +133,13 @@ class MediaPlayerTileProviderService : SuspendingTileService() {
         val tileState = tileModel.tileState.value
         Timber.tag(TAG).d("State: ${tileState.title} - ${tileState.artist}")
         isUpdating = false
+
+        if (tileState.isEmpty) {
+            AnalyticsLogger.logEvent("mediatile_state_empty", Bundle().apply {
+                putBoolean("isCoroutineActive", coroutineContext.isActive)
+            })
+        }
+
         return tileRenderer.renderTimeline(tileState, requestParams)
     }
 

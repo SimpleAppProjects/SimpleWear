@@ -15,6 +15,7 @@ import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.google.gson.reflect.TypeToken
 import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.shared_resources.updates.UpdateInfo
+import com.thewizrd.shared_resources.utils.AnalyticsLogger
 import com.thewizrd.shared_resources.utils.JSONParser
 import com.thewizrd.shared_resources.utils.Logger
 import kotlinx.coroutines.Dispatchers
@@ -121,6 +122,8 @@ class InAppUpdateManager private constructor(context: Context) {
     }
 
     fun startImmediateUpdateFlow(activity: Activity, requestCode: Int) {
+        AnalyticsLogger.logEvent("$TAG: startImmedUpdateFlow")
+
         try {
             appUpdateManager.startUpdateFlowForResult( // Pass the intent that is returned by 'getAppUpdateInfo()'.
                 appUpdateInfo!!,  // Or 'AppUpdateType.FLEXIBLE' for flexible updates.
@@ -140,6 +143,8 @@ class InAppUpdateManager private constructor(context: Context) {
             if (info.updateAvailability() == UpdateAvailability.DEVELOPER_TRIGGERED_UPDATE_IN_PROGRESS) {
                 // If an in-app update is already running, resume the update.
                 try {
+                    AnalyticsLogger.logEvent("$TAG: resuming update flow")
+
                     appUpdateManager.startUpdateFlowForResult(
                         info,
                         AppUpdateType.IMMEDIATE,
@@ -148,10 +153,6 @@ class InAppUpdateManager private constructor(context: Context) {
                     )
                 } catch (e: IntentSender.SendIntentException) {
                     Logger.writeLine(Log.ERROR, e)
-                }
-            } else if (info.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE && shouldStartImmediateUpdate()) {
-                if (!activity.isDestroyed && !activity.isFinishing) {
-                    startImmediateUpdateFlow(activity, requestCode)
                 }
             }
         }
