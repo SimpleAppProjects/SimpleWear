@@ -511,7 +511,7 @@ fun Dashboard(
         }
     }
 
-    LifecycleResumeEffect(Unit) {
+    LifecycleResumeEffect(Unit, lifecycleOwner = lifecycleOwner) {
         // Update statuses
         if (!stateRefreshed) {
             dashboardViewModel.refreshStatus()
