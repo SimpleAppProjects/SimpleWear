@@ -18,7 +18,8 @@ android {
             minifyEnabled false
         }
         release {
-            minifyEnabled true
+            // Let the app module take care of this
+            minifyEnabled false
         }
     }
 
