@@ -39,7 +39,7 @@ class DashboardTileMessenger(private val context: Context) :
     CapabilityClient.OnCapabilityChangedListener, MessageClient.OnMessageReceivedListener {
     companion object {
         private const val TAG = "DashboardTileMessenger"
-        internal val tileModel = DashboardTileModel()
+        internal val tileModel by lazy { DashboardTileModel() }
     }
 
     @Volatile
@@ -434,10 +434,6 @@ class DashboardTileMessenger(private val context: Context) :
                         }
                     }
                 }
-
-                if (continuation.isActive) {
-                    continuation.resume(false)
-                }
             }
 
             continuation.invokeOnCancellation {
@@ -451,6 +447,46 @@ class DashboardTileMessenger(private val context: Context) :
                     .await()
 
                 processAction(actionType)
+            }
+        }
+    }
+
+    suspend fun requestBatteryStatusAsync(): BatteryStatus? {
+        return suspendCancellableCoroutine { continuation ->
+            val listener = MessageClient.OnMessageReceivedListener { event ->
+                when (event.path) {
+                    WearableHelper.BatteryPath -> {
+                        if (continuation.isActive) {
+                            val jsonData: String = event.data.bytesToString()
+                            val status = JSONParser.deserializer(
+                                jsonData,
+                                BatteryStatus::class.java
+                            )
+
+                            continuation.resume(status)
+                            return@OnMessageReceivedListener
+                        }
+                    }
+                }
+            }
+
+            continuation.invokeOnCancellation {
+                Wearable.getMessageClient(context)
+                    .removeListener(listener)
+            }
+
+            scope.launch {
+                Wearable.getMessageClient(context)
+                    .addListener(
+                        listener,
+                        WearableHelper.getWearDataUri("*", WearableHelper.BatteryPath),
+                        MessageClient.FILTER_LITERAL
+                    )
+                    .await()
+
+                if (connect()) {
+                    sendMessage(mPhoneNodeWithApp!!.id, WearableHelper.BatteryPath, null)
+                }
             }
         }
     }

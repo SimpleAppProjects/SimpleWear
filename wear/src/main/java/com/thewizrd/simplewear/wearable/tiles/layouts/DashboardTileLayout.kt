@@ -10,18 +10,22 @@ import androidx.wear.protolayout.DeviceParametersBuilders.DeviceParameters
 import androidx.wear.protolayout.DimensionBuilders
 import androidx.wear.protolayout.DimensionBuilders.dp
 import androidx.wear.protolayout.DimensionBuilders.sp
-import androidx.wear.protolayout.LayoutElementBuilders.AndroidTextStyle
 import androidx.wear.protolayout.LayoutElementBuilders.FONT_VARIANT_BODY
 import androidx.wear.protolayout.LayoutElementBuilders.FONT_WEIGHT_MEDIUM
 import androidx.wear.protolayout.LayoutElementBuilders.FontStyle
 import androidx.wear.protolayout.LayoutElementBuilders.HORIZONTAL_ALIGN_CENTER
 import androidx.wear.protolayout.LayoutElementBuilders.LayoutElement
+import androidx.wear.protolayout.LayoutElementBuilders.Spacer
 import androidx.wear.protolayout.LayoutElementBuilders.SpanImage
 import androidx.wear.protolayout.LayoutElementBuilders.SpanText
 import androidx.wear.protolayout.LayoutElementBuilders.Spannable
 import androidx.wear.protolayout.LayoutElementBuilders.TEXT_ALIGN_CENTER
 import androidx.wear.protolayout.LayoutElementBuilders.TEXT_OVERFLOW_MARQUEE
 import androidx.wear.protolayout.ModifiersBuilders.Clickable
+import androidx.wear.protolayout.StateBuilders
+import androidx.wear.protolayout.expression.AppDataKey
+import androidx.wear.protolayout.expression.DynamicBuilders
+import androidx.wear.protolayout.expression.DynamicDataBuilders
 import androidx.wear.protolayout.expression.ProtoLayoutExperimental
 import androidx.wear.protolayout.material.Button
 import androidx.wear.protolayout.material.ButtonColors
@@ -37,6 +41,7 @@ import com.thewizrd.shared_resources.actions.Actions
 import com.thewizrd.shared_resources.actions.DNDChoice
 import com.thewizrd.shared_resources.actions.LocationState
 import com.thewizrd.shared_resources.actions.MultiChoiceAction
+import com.thewizrd.shared_resources.actions.NormalAction
 import com.thewizrd.shared_resources.actions.RingerChoice
 import com.thewizrd.shared_resources.actions.ToggleAction
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
@@ -99,7 +104,6 @@ internal fun DashboardTileLayout(
                                 )
                                 .setMultilineAlignment(TEXT_ALIGN_CENTER)
                                 .setMaxLines(3)
-                                .setExcludeFontPadding(true)
                                 .build()
                         )
 
@@ -132,7 +136,6 @@ internal fun DashboardTileLayout(
                                 )
                                 .setMultilineAlignment(TEXT_ALIGN_CENTER)
                                 .setMaxLines(3)
-                                .setExcludeFontPadding(true)
                                 .build()
                         )
 
@@ -152,48 +155,47 @@ internal fun DashboardTileLayout(
     } else {
         return PrimaryLayout.Builder(deviceParameters)
             .setPrimaryLabelTextContent(
-                Spannable.Builder()
-                    .addSpan(
-                        SpanImage.Builder()
-                            .setResourceId(ID_BATTERY)
-                            .setWidth(dp(16f))
-                            .setHeight(dp(16f))
-                            .build()
-                    )
-                    .addSpan(
-                        SpanText.Builder()
-                            .setText(
-                                state.batteryStatus?.let { status ->
-                                    String.format(
-                                        Locale.ROOT,
-                                        "%d%%, %s",
-                                        status.batteryLevel,
-                                        if (status.isCharging) {
-                                            context.getString(R.string.batt_state_charging)
-                                        } else context.getString(
-                                            R.string.batt_state_discharging
+                if (state.showBatteryStatus) {
+                    Spannable.Builder()
+                        .addSpan(
+                            SpanImage.Builder()
+                                .setResourceId(ID_BATTERY)
+                                .setWidth(dp(16f))
+                                .setHeight(dp(16f))
+                                .build()
+                        )
+                        .addSpan(
+                            SpanText.Builder()
+                                .setText(
+                                    state.batteryStatus?.let { status ->
+                                        String.format(
+                                            Locale.ROOT,
+                                            "%d%%, %s",
+                                            status.batteryLevel,
+                                            if (status.isCharging) {
+                                                context.getString(R.string.batt_state_charging)
+                                            } else context.getString(
+                                                R.string.batt_state_discharging
+                                            )
                                         )
-                                    )
-                                } ?: context.getString(R.string.state_unknown)
-                            )
-                            .setFontStyle(
-                                FontStyle.Builder()
-                                    .setSize(sp(12f))
-                                    .setWeight(FONT_WEIGHT_MEDIUM)
-                                    .setVariant(FONT_VARIANT_BODY)
-                                    .build()
-                            )
-                            .setAndroidTextStyle(
-                                AndroidTextStyle.Builder()
-                                    .setExcludeFontPadding(false)
-                                    .build()
-                            )
-                            .build()
-                    )
-                    .setMaxLines(1)
-                    .setMultilineAlignment(HORIZONTAL_ALIGN_CENTER)
-                    .setOverflow(TEXT_OVERFLOW_MARQUEE)
-                    .build()
+                                    } ?: context.getString(R.string.state_unknown)
+                                )
+                                .setFontStyle(
+                                    FontStyle.Builder()
+                                        .setSize(sp(12f))
+                                        .setWeight(FONT_WEIGHT_MEDIUM)
+                                        .setVariant(FONT_VARIANT_BODY)
+                                        .build()
+                                )
+                                .build()
+                        )
+                        .setMaxLines(1)
+                        .setMultilineAlignment(HORIZONTAL_ALIGN_CENTER)
+                        .setOverflow(TEXT_OVERFLOW_MARQUEE)
+                        .build()
+                } else {
+                    Spacer.Builder().build()
+                }
             )
             .setContent(
                 MultiButtonLayout.Builder()
@@ -239,22 +241,38 @@ private fun ActionButton(
     Clickable.Builder()
         .setId(action.name)
         .setOnClick(
-            ActionBuilders.LoadAction.Builder().build()
+            ActionBuilders.LoadAction.Builder()
+                .setRequestState(
+                    StateBuilders.State.Builder()
+                        .addKeyToValueMapping(
+                            AppDataKey(action.name),
+                            DynamicDataBuilders.DynamicDataValue.fromBool(
+                                state.isNextActionEnabled(
+                                    action
+                                )
+                            )
+                        )
+                        .build()
+                )
+                .build()
         )
         .build()
 )
     .setButtonColors(
         ButtonColors(
-            ColorBuilders.argb(
-                ContextCompat.getColor(
-                    context,
-                    if (isActionEnabled(
-                            state,
-                            action
+            ColorBuilders.ColorProp.Builder(
+                ContextCompat.getColor(context, R.color.buttonDisabled)
+            )
+                .setDynamicValue(
+                    DynamicBuilders.DynamicColor
+                        .onCondition(
+                            DynamicBuilders.DynamicBool.from(AppDataKey(action.name))
                         )
-                    ) R.color.colorPrimary else R.color.buttonDisabled
+                        .use(ContextCompat.getColor(context, R.color.colorPrimary))
+                        .elseUse(ContextCompat.getColor(context, R.color.buttonDisabled))
+                        .animate()
                 )
-            ),
+                .build(),
             ColorBuilders.argb(Color.WHITE)
         )
     )
@@ -357,14 +375,14 @@ private fun getResourceIdForAction(state: DashboardTileState, action: Actions): 
     }
 }
 
-private fun isActionEnabled(state: DashboardTileState, action: Actions): Boolean {
+fun DashboardTileState.isActionEnabled(action: Actions): Boolean {
     return when (action) {
         Actions.WIFI, Actions.BLUETOOTH, Actions.MOBILEDATA, Actions.TORCH, Actions.HOTSPOT -> {
-            (state.getAction(action) as? ToggleAction)?.isEnabled == true
+            (getAction(action) as? ToggleAction)?.isEnabled == true
         }
 
         Actions.LOCATION -> {
-            val locationAction = state.getAction(action)
+            val locationAction = getAction(action)
 
             val locChoice = if (locationAction is ToggleAction) {
                 if (locationAction.isEnabled) LocationState.HIGH_ACCURACY else LocationState.OFF
@@ -379,7 +397,7 @@ private fun isActionEnabled(state: DashboardTileState, action: Actions): Boolean
 
         Actions.LOCKSCREEN -> true
         Actions.DONOTDISTURB -> {
-            val dndAction = state.getAction(action)
+            val dndAction = getAction(action)
 
             val dndChoice = if (dndAction is ToggleAction) {
                 if (dndAction.isEnabled) DNDChoice.PRIORITY else DNDChoice.OFF
@@ -393,7 +411,7 @@ private fun isActionEnabled(state: DashboardTileState, action: Actions): Boolean
         }
 
         Actions.RINGER -> {
-            val ringerAction = state.getAction(action) as? MultiChoiceAction
+            val ringerAction = getAction(action) as? MultiChoiceAction
             val ringerChoice = ringerAction?.choice?.let {
                 RingerChoice.valueOf(it)
             } ?: RingerChoice.VIBRATION
@@ -402,5 +420,38 @@ private fun isActionEnabled(state: DashboardTileState, action: Actions): Boolean
         }
 
         else -> false
+    }
+}
+
+fun DashboardTileState.isNextActionEnabled(action: Actions): Boolean {
+    val actionState = getAction(action)
+
+    if (actionState == null) {
+        return when (action) {
+            // Normal actions
+            Actions.LOCKSCREEN -> true
+            // others
+            else -> false
+        }
+    } else {
+        return when (actionState) {
+            is ToggleAction -> {
+                !actionState.isEnabled
+            }
+
+            is MultiChoiceAction -> {
+                val newChoice = actionState.choice + 1
+                val ma = MultiChoiceAction(action, newChoice)
+                ma.choice > 0
+            }
+
+            is NormalAction -> {
+                true
+            }
+
+            else -> {
+                false
+            }
+        }
     }
 }

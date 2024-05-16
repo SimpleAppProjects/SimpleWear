@@ -6,6 +6,7 @@ import com.google.gson.reflect.TypeToken
 import com.thewizrd.shared_resources.actions.Actions
 import com.thewizrd.shared_resources.utils.JSONParser
 import com.thewizrd.simplewear.App
+import java.time.Instant
 
 object Settings {
     const val TAG = "Settings"
@@ -15,6 +16,9 @@ object Settings {
     private const val KEY_LOADAPPICONS = "key_loadappicons"
     private const val KEY_DASHTILECONFIG = "key_dashtileconfig"
     const val KEY_DASHCONFIG = "key_dashconfig"
+    const val KEY_SHOWBATSTATUS = "key_showbatstatus"
+    const val KEY_SHOWTILEBATSTATUS = "key_showtilebatstatus"
+    private const val KEY_LASTUPDATECHECK = "key_lastupdatecheck"
 
     fun useGridLayout(): Boolean {
         val preferences = PreferenceManager.getDefaultSharedPreferences(App.instance.appContext)
@@ -100,6 +104,43 @@ object Settings {
                 val arrListType = object : TypeToken<List<Actions>>() {}.type
                 JSONParser.serializer(it, arrListType)
             })
+        }
+    }
+
+    fun isShowBatStatus(): Boolean {
+        val preferences = PreferenceManager.getDefaultSharedPreferences(App.instance.appContext)
+        return preferences.getBoolean(KEY_SHOWBATSTATUS, true)
+    }
+
+    fun setShowBatStatus(value: Boolean) {
+        val preferences = PreferenceManager.getDefaultSharedPreferences(App.instance.appContext)
+        preferences.edit {
+            putBoolean(KEY_SHOWBATSTATUS, value)
+        }
+    }
+
+    fun isShowTileBatStatus(): Boolean {
+        val preferences = PreferenceManager.getDefaultSharedPreferences(App.instance.appContext)
+        return preferences.getBoolean(KEY_SHOWTILEBATSTATUS, true)
+    }
+
+    fun setShowTileBatStatus(value: Boolean) {
+        val preferences = PreferenceManager.getDefaultSharedPreferences(App.instance.appContext)
+        preferences.edit {
+            putBoolean(KEY_SHOWTILEBATSTATUS, value)
+        }
+    }
+
+    fun getLastUpdateCheckTime(): Instant {
+        val preferences = PreferenceManager.getDefaultSharedPreferences(App.instance.appContext)
+        val epochSeconds = preferences.getLong(KEY_LASTUPDATECHECK, Instant.EPOCH.epochSecond)
+        return Instant.ofEpochSecond(epochSeconds)
+    }
+
+    fun setLastUpdateCheckTime(value: Instant) {
+        val preferences = PreferenceManager.getDefaultSharedPreferences(App.instance.appContext)
+        preferences.edit {
+            putLong(KEY_LASTUPDATECHECK, value.epochSecond)
         }
     }
 }

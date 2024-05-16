@@ -9,6 +9,7 @@
     <uses-permission
         android:name="android.permission.BLUETOOTH_ADMIN"
         android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
@@ -55,33 +56,31 @@
 
         <activity
             android:name=".PhoneSyncActivity"
-            android:launchMode="singleInstance"
+            android:launchMode="singleTask"
             android:theme="@style/WearAppTheme.Launcher"
-            android:exported="true">
+            android:exported="true"
+            android:taskAffinity=".dashboard">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
         <activity
             android:name=".DashboardActivity"
             android:label="@string/title_activity_dashboard"
-            android:launchMode="singleInstance"
-            android:theme="@style/WearAppTheme" />
-        <activity
-            android:name=".ValueActionActivity"
-            android:launchMode="singleInstance"
-            android:theme="@style/WearAppTheme" />
+            android:launchMode="singleTask"
+            android:theme="@style/WearAppTheme"
+            android:taskAffinity=".dashboard"
+            android:excludeFromRecents="true"
+            android:noHistory="false" />
 
         <activity-alias
             android:name=".MediaControllerActivity"
-            android:targetActivity=".MediaPlayerListActivity"
+            android:targetActivity=".media.MediaPlayerActivity"
             android:icon="@drawable/ic_play_circle_simpleblue"
             android:label="@string/title_media_controller"
-            android:exported="true"
-            android:launchMode="singleInstance"
-            android:parentActivityName=".DashboardActivity"
-            android:theme="@style/WearAppTheme">
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -89,39 +88,26 @@
         </activity-alias>
 
         <activity
-            android:name=".MediaPlayerListActivity"
-            android:launchMode="singleInstance"
-            android:theme="@style/WearAppTheme" />
-        <activity
-            android:name=".AppLauncherActivity"
-            android:launchMode="singleInstance"
-            android:theme="@style/WearAppTheme" />
-        <activity
             android:name=".media.MediaPlayerActivity"
-            android:launchMode="singleInstance"
-            android:theme="@style/WearAppTheme" />
-        <activity
-            android:name=".CallManagerActivity"
-            android:icon="@drawable/ic_phone_24dp"
-            android:label="@string/title_callcontroller"
-            android:theme="@style/WearAppTheme"
-            android:launchMode="singleInstance"
-            android:parentActivityName=".DashboardActivity">
-            <!--<intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>-->
-        </activity>
+            android:launchMode="singleTask"
+            android:icon="@drawable/ic_play_circle_simpleblue"
+            android:label="@string/title_media_controller"
+            android:theme="@style/WearAppTheme.MediaLauncher"
+            android:taskAffinity=".mediaPlayer" />
 
         <activity
             android:name=".preferences.DashboardTileConfigActivity"
-            android:launchMode="singleInstance"
-            android:theme="@style/WearAppTheme" />
+            android:theme="@style/WearAppTheme"
+            android:taskAffinity="com.thewizrd.simplewear.preferences.DashboardTileConfigActivity"
+            android:excludeFromRecents="true"
+            android:noHistory="true" />
 
         <activity
             android:name=".preferences.DashboardConfigActivity"
-            android:launchMode="singleInstance"
-            android:theme="@style/WearAppTheme" />
+            android:theme="@style/WearAppTheme"
+            android:taskAffinity="com.thewizrd.simplewear.preferences.DashboardConfigActivity"
+            android:excludeFromRecents="true"
+            android:noHistory="true" />
 
         <service
             android:name=".wearable.WearableDataListenerService"
@@ -155,6 +141,15 @@
                     android:path="/media/playback_state/bridge" />
             </intent-filter>
         </service>
+
+        <receiver
+            android:name=".receivers.WearBroadcastReceiver"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
 
         <service
             android:icon="@mipmap/ic_launcher"
@@ -218,6 +213,25 @@
             <meta-data
                 android:name="androidx.wear.tiles.PREVIEW"
                 android:resource="@drawable/mediatile_preview" />
+        </service>
+
+        <service
+            android:icon="@drawable/ic_smartphone_white_24dp"
+            android:label="@string/pref_title_phone_batt_state"
+            android:permission="com.google.android.wearable.permission.BIND_COMPLICATION_PROVIDER"
+            android:name=".wearable.complications.BatteryStatusComplicationService"
+            android:exported="true"
+            android:directBootAware="true">
+            <meta-data
+                android:name="android.support.wearable.complications.SUPPORTED_TYPES"
+                android:value="RANGED_VALUE,SHORT_TEXT,LONG_TEXT" />
+            <meta-data
+                android:name="android.support.wearable.complications.UPDATE_PERIOD_SECONDS"
+                android:value="300" /> <!-- 5 min -->
+
+            <intent-filter>
+                <action android:name="android.support.wearable.complications.ACTION_COMPLICATION_UPDATE_REQUEST" />
+            </intent-filter>
         </service>
 
     </application>

@@ -8,13 +8,25 @@ import androidx.wear.protolayout.ActionBuilders
 import androidx.wear.protolayout.ColorBuilders
 import androidx.wear.protolayout.ColorBuilders.ColorProp
 import androidx.wear.protolayout.DeviceParametersBuilders.DeviceParameters
+import androidx.wear.protolayout.DeviceParametersBuilders.SCREEN_SHAPE_ROUND
 import androidx.wear.protolayout.DimensionBuilders
 import androidx.wear.protolayout.DimensionBuilders.dp
 import androidx.wear.protolayout.DimensionBuilders.expand
 import androidx.wear.protolayout.DimensionBuilders.wrap
-import androidx.wear.protolayout.LayoutElementBuilders.*
+import androidx.wear.protolayout.LayoutElementBuilders.Box
+import androidx.wear.protolayout.LayoutElementBuilders.CONTENT_SCALE_MODE_FIT
+import androidx.wear.protolayout.LayoutElementBuilders.Column
+import androidx.wear.protolayout.LayoutElementBuilders.HORIZONTAL_ALIGN_CENTER
+import androidx.wear.protolayout.LayoutElementBuilders.Image
+import androidx.wear.protolayout.LayoutElementBuilders.LayoutElement
+import androidx.wear.protolayout.LayoutElementBuilders.Row
+import androidx.wear.protolayout.LayoutElementBuilders.Spacer
+import androidx.wear.protolayout.LayoutElementBuilders.TEXT_ALIGN_CENTER
+import androidx.wear.protolayout.LayoutElementBuilders.TEXT_OVERFLOW_MARQUEE
+import androidx.wear.protolayout.LayoutElementBuilders.VERTICAL_ALIGN_CENTER
 import androidx.wear.protolayout.ModifiersBuilders.Background
 import androidx.wear.protolayout.ModifiersBuilders.Clickable
+import androidx.wear.protolayout.ModifiersBuilders.Corner
 import androidx.wear.protolayout.ModifiersBuilders.Modifiers
 import androidx.wear.protolayout.ModifiersBuilders.Padding
 import androidx.wear.protolayout.expression.ProtoLayoutExperimental
@@ -24,13 +36,12 @@ import androidx.wear.protolayout.material.Colors
 import androidx.wear.protolayout.material.CompactChip
 import androidx.wear.protolayout.material.Text
 import androidx.wear.protolayout.material.Typography
-import androidx.wear.protolayout.material.layouts.LayoutDefaults.DEFAULT_VERTICAL_SPACER_HEIGHT
 import androidx.wear.protolayout.material.layouts.MultiSlotLayout
 import androidx.wear.protolayout.material.layouts.PrimaryLayout
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
 import com.thewizrd.shared_resources.media.PlaybackState
 import com.thewizrd.simplewear.R
-import com.thewizrd.simplewear.wearable.tiles.MediaPlayerTileMessenger.*
+import com.thewizrd.simplewear.wearable.tiles.MediaPlayerTileMessenger.PlayerAction
 import com.thewizrd.simplewear.wearable.tiles.MediaPlayerTileRenderer.Companion.ID_ARTWORK
 import com.thewizrd.simplewear.wearable.tiles.MediaPlayerTileRenderer.Companion.ID_OPENONPHONE
 import com.thewizrd.simplewear.wearable.tiles.MediaPlayerTileRenderer.Companion.ID_PAUSE
@@ -74,7 +85,6 @@ internal fun MediaPlayerTileLayout(
                                 )
                                 .setMultilineAlignment(TEXT_ALIGN_CENTER)
                                 .setMaxLines(3)
-                                .setExcludeFontPadding(true)
                                 .build()
                         )
 
@@ -107,7 +117,6 @@ internal fun MediaPlayerTileLayout(
                                 )
                                 .setMultilineAlignment(TEXT_ALIGN_CENTER)
                                 .setMaxLines(3)
-                                .setExcludeFontPadding(true)
                                 .build()
                         )
 
@@ -194,10 +203,13 @@ internal fun MediaPlayerTileLayout(
                                     .setWidth(expand())
                                     .setHorizontalAlignment(HORIZONTAL_ALIGN_CENTER)
                                     .apply {
+                                        val isRound =
+                                            deviceParameters.screenShape == SCREEN_SHAPE_ROUND
+
                                         if (!state.title.isNullOrBlank()) {
                                             addContent(
                                                 Text.Builder(context, state.title)
-                                                    .setTypography(Typography.TYPOGRAPHY_CAPTION1)
+                                                    .setTypography(Typography.TYPOGRAPHY_BUTTON)
                                                     .setColor(
                                                         ColorProp.Builder(Color.WHITE)
                                                             .build()
@@ -205,14 +217,26 @@ internal fun MediaPlayerTileLayout(
                                                     .setMaxLines(1)
                                                     .setMultilineAlignment(TEXT_ALIGN_CENTER)
                                                     .setOverflow(TEXT_OVERFLOW_MARQUEE)
-                                                    .build()
-                                            )
-                                        }
-
-                                        if (!state.title.isNullOrBlank() && !state.artist.isNullOrBlank()) {
-                                            addContent(
-                                                Spacer.Builder()
-                                                    .setHeight(DEFAULT_VERTICAL_SPACER_HEIGHT)
+                                                    .setModifiers(
+                                                        Modifiers.Builder()
+                                                            .setPadding(
+                                                                Padding.Builder()
+                                                                    .setTop(dp(2f))
+                                                                    .setBottom(dp(0.8f))
+                                                                    .setStart(
+                                                                        if (isRound) dp(32f) else dp(
+                                                                            8f
+                                                                        )
+                                                                    )
+                                                                    .setEnd(
+                                                                        if (isRound) dp(32f) else dp(
+                                                                            8f
+                                                                        )
+                                                                    )
+                                                                    .build()
+                                                            )
+                                                            .build()
+                                                    )
                                                     .build()
                                             )
                                         }
@@ -220,14 +244,33 @@ internal fun MediaPlayerTileLayout(
                                         if (!state.artist.isNullOrBlank()) {
                                             addContent(
                                                 Text.Builder(context, state.artist)
-                                                    .setTypography(Typography.TYPOGRAPHY_CAPTION2)
+                                                    .setTypography(Typography.TYPOGRAPHY_BODY2)
                                                     .setColor(
-                                                        ColorProp.Builder(Color.WHITE)
-                                                            .build()
+                                                        ColorProp.Builder(Color.WHITE).build()
                                                     )
                                                     .setMaxLines(1)
                                                     .setMultilineAlignment(TEXT_ALIGN_CENTER)
                                                     .setOverflow(TEXT_OVERFLOW_MARQUEE)
+                                                    .setModifiers(
+                                                        Modifiers.Builder()
+                                                            .setPadding(
+                                                                Padding.Builder()
+                                                                    .setTop(dp(2f))
+                                                                    .setBottom(dp(0.6f))
+                                                                    .setStart(
+                                                                        if (isRound) dp(32f) else dp(
+                                                                            8f
+                                                                        )
+                                                                    )
+                                                                    .setEnd(
+                                                                        if (isRound) dp(32f) else dp(
+                                                                            8f
+                                                                        )
+                                                                    )
+                                                                    .build()
+                                                            )
+                                                            .build()
+                                                    )
                                                     .build()
                                             )
                                         }
@@ -281,18 +324,28 @@ private fun PlayerButton(
     deviceParameters: DeviceParameters,
     action: PlayerAction
 ): LayoutElement {
-    val isSmol = minOf(deviceParameters.screenHeightDp, deviceParameters.screenWidthDp) <= 192f
-    val imgSize = if (isSmol) dp(44f) else dp(48f)
-    return Image.Builder()
-        .setWidth(imgSize)
-        .setHeight(imgSize)
-        .setResourceId(getResourceIdForPlayerAction(action))
-        .setContentScaleMode(CONTENT_SCALE_MODE_FIT)
+    val isPlayPause = action == PlayerAction.PAUSE || action == PlayerAction.PLAY
+    return Box.Builder()
+        .setHeight(dp(52f))
+        .setWidth(dp(52f))
         .setModifiers(
             Modifiers.Builder()
-                .setPadding(
-                    Padding.Builder()
-                        .setAll(dp(8f))
+                .setBackground(
+                    Background.Builder()
+                        .setColor(
+                            ColorProp.Builder(
+                                if (isPlayPause) {
+                                    0x19FFFFFF
+                                } else {
+                                    Color.TRANSPARENT
+                                }
+                            ).build()
+                        )
+                        .setCorner(
+                            Corner.Builder()
+                                .setRadius(dp(52f))
+                                .build()
+                        )
                         .build()
                 )
                 .setClickable(
@@ -306,18 +359,38 @@ private fun PlayerButton(
                 )
                 .build()
         )
+        .setHorizontalAlignment(HORIZONTAL_ALIGN_CENTER)
+        .setVerticalAlignment(VERTICAL_ALIGN_CENTER)
+        .addContent(
+            Image.Builder()
+                .setWidth(dp(32f))
+                .setHeight(dp(32f))
+                .setResourceId(getResourceIdForPlayerAction(action))
+                .setContentScaleMode(CONTENT_SCALE_MODE_FIT)
+                .build()
+        )
         .build()
 }
 
 private fun VolumeButton(
     action: PlayerAction
-): LayoutElement = Image.Builder()
-    .setWidth(ICON_SIZE)
-    .setHeight(ICON_SIZE)
-    .setResourceId(getResourceIdForPlayerAction(action))
-    .setContentScaleMode(CONTENT_SCALE_MODE_FIT)
+): LayoutElement = Box.Builder()
+    .setHeight(dp(26f))
+    .setWidth(dp(26f))
     .setModifiers(
         Modifiers.Builder()
+            .setBackground(
+                Background.Builder()
+                    .setColor(
+                        ColorProp.Builder(Color.TRANSPARENT).build()
+                    )
+                    .setCorner(
+                        Corner.Builder()
+                            .setRadius(dp(26f))
+                            .build()
+                    )
+                    .build()
+            )
             .setClickable(
                 Clickable.Builder()
                     .setId(action.name)
@@ -327,6 +400,16 @@ private fun VolumeButton(
                     )
                     .build()
             )
+            .build()
+    )
+    .setHorizontalAlignment(HORIZONTAL_ALIGN_CENTER)
+    .setVerticalAlignment(VERTICAL_ALIGN_CENTER)
+    .addContent(
+        Image.Builder()
+            .setWidth(dp(26f))
+            .setHeight(dp(26f))
+            .setResourceId(getResourceIdForPlayerAction(action))
+            .setContentScaleMode(CONTENT_SCALE_MODE_FIT)
             .build()
     )
     .build()

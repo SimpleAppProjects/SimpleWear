@@ -12,8 +12,9 @@ android {
         minSdk rootProject.minSdkVersion
         //noinspection ExpiredTargetSdkVersion
         targetSdk 28
-        versionCode 1010000
-        versionName "1.1.0"
+        // NOTE: update SUPPORTED_VERSION_CODE
+        versionCode 1010001
+        versionName "1.1.1"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -38,6 +39,8 @@ android {
     }
 
     compileOptions {
+        // Flag to enable support for the new language APIs
+        coreLibraryDesugaringEnabled true
         // Sets Java compatibility to Java 8
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
@@ -52,6 +55,8 @@ android {
 dependencies {
     implementation project(":shared_resources")
     compileOnly project(':hidden-api')
+
+    coreLibraryDesugaring "com.android.tools:desugar_jdk_libs:$desugar_version"
 
     // Unit Testing
     androidTestImplementation "androidx.test:core:$test_core_version"

@@ -36,11 +36,15 @@ fun CompanionDeviceManager.disassociateAll() {
 }
 
 fun CompanionDeviceManager.hasAssociations(): Boolean {
-    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        myAssociations.isNotEmpty()
-    } else {
-        associations.isNotEmpty()
-    }
+    return runCatching {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            myAssociations.isNotEmpty()
+        } else {
+            associations.isNotEmpty()
+        }
+    }.onFailure {
+        Logger.writeLine(Log.ERROR, it)
+    }.getOrDefault(false)
 }
 
 fun CompanionDeviceManager.associate(

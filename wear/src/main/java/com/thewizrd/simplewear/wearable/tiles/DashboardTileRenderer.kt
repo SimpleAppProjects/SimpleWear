@@ -1,5 +1,6 @@
 package com.thewizrd.simplewear.wearable.tiles
 
+import android.content.ComponentName
 import android.content.Context
 import androidx.core.content.ContextCompat
 import androidx.wear.protolayout.ActionBuilders
@@ -11,6 +12,9 @@ import androidx.wear.protolayout.LayoutElementBuilders.Box
 import androidx.wear.protolayout.ModifiersBuilders
 import androidx.wear.protolayout.ModifiersBuilders.Clickable
 import androidx.wear.protolayout.ResourceBuilders
+import androidx.wear.protolayout.StateBuilders
+import androidx.wear.protolayout.expression.AppDataKey
+import androidx.wear.protolayout.expression.DynamicDataBuilders
 import androidx.wear.protolayout.material.CompactChip
 import androidx.wear.protolayout.material.Text
 import androidx.wear.protolayout.material.Typography
@@ -18,10 +22,13 @@ import androidx.wear.protolayout.material.layouts.PrimaryLayout
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
 import com.google.android.horologist.tiles.images.drawableResToImageResource
 import com.google.android.horologist.tiles.render.SingleTileLayoutRenderer
+import com.thewizrd.shared_resources.actions.Actions
 import com.thewizrd.simplewear.PhoneSyncActivity
 import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.wearable.tiles.layouts.DashboardTileLayout
+import com.thewizrd.simplewear.wearable.tiles.layouts.isActionEnabled
 import timber.log.Timber
+import kotlin.time.Duration.Companion.minutes
 
 @OptIn(ExperimentalHorologistApi::class)
 class DashboardTileRenderer(context: Context, debugResourceMode: Boolean = false) :
@@ -61,6 +68,39 @@ class DashboardTileRenderer(context: Context, debugResourceMode: Boolean = false
     }
 
     private var state: DashboardTileState? = null
+
+    override val freshnessIntervalMillis: Long
+        get() = if (DashboardTileProviderService.isInFocus) {
+            1.minutes.inWholeMilliseconds
+        } else {
+            5.minutes.inWholeMilliseconds
+        }
+
+    override fun createState(): StateBuilders.State {
+        return StateBuilders.State.Builder()
+            .apply {
+                state?.let {
+                    it.actions.forEach { (actionType, _) ->
+                        addKeyToValueMapping(
+                            AppDataKey(actionType.name),
+                            DynamicDataBuilders.DynamicDataValue.fromBool(
+                                it.isActionEnabled(
+                                    actionType
+                                )
+                            )
+                        )
+                    }
+                } ?: run {
+                    Actions.entries.forEach {
+                        addKeyToValueMapping(
+                            AppDataKey(it.name),
+                            DynamicDataBuilders.DynamicDataValue.fromBool(true)
+                        )
+                    }
+                }
+            }
+            .build()
+    }
 
     override fun renderTile(
         state: DashboardTileState,
@@ -173,13 +213,8 @@ class DashboardTileRenderer(context: Context, debugResourceMode: Boolean = false
     }
 
     private fun getTapAction(context: Context): ActionBuilders.Action {
-        return ActionBuilders.LaunchAction.Builder()
-            .setAndroidActivity(
-                ActionBuilders.AndroidActivity.Builder()
-                    .setPackageName(context.packageName)
-                    .setClassName(PhoneSyncActivity::class.java.name)
-                    .build()
-            )
-            .build()
+        return ActionBuilders.launchAction(
+            ComponentName(context, PhoneSyncActivity::class.java)
+        )
     }
 }

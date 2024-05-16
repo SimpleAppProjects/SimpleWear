@@ -34,6 +34,7 @@ import com.thewizrd.shared_resources.helpers.AppState
 import com.thewizrd.shared_resources.utils.CrashlyticsLoggingTree
 import com.thewizrd.shared_resources.utils.JSONParser
 import com.thewizrd.shared_resources.utils.Logger
+import com.thewizrd.simplewear.camera.TorchListener
 import com.thewizrd.simplewear.media.MediaControllerService
 import com.thewizrd.simplewear.services.CallControllerService
 import com.thewizrd.simplewear.telephony.SubscriptionListener
@@ -183,6 +184,13 @@ class App : Application(), ApplicationLib, ActivityLifecycleCallbacks, Configura
             }
         }
 
+        runCatching {
+            if (appContext.packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA_FLASH)) {
+                // Register listener for camera flash
+                TorchListener.registerListener(appContext)
+            }
+        }
+
         val oldHandler = Thread.getDefaultUncaughtExceptionHandler()
         Thread.setDefaultUncaughtExceptionHandler { t, e ->
             Logger.writeLine(Log.ERROR, e, "Uncaught exception!")
@@ -214,6 +222,8 @@ class App : Application(), ApplicationLib, ActivityLifecycleCallbacks, Configura
     }
 
     override fun onTerminate() {
+        SubscriptionListener.unregisterListener(appContext)
+        TorchListener.unregisterListener(appContext)
         contentResolver.unregisterContentObserver(mContentObserver)
         appContext.unregisterReceiver(mActionsReceiver)
         // Shutdown logger
@@ -245,9 +255,8 @@ class App : Application(), ApplicationLib, ActivityLifecycleCallbacks, Configura
         }
     }
 
-    override fun getWorkManagerConfiguration(): Configuration {
-        return Configuration.Builder()
+    override val workManagerConfiguration: Configuration
+        get() = Configuration.Builder()
             .setMinimumLoggingLevel(if (BuildConfig.DEBUG) Log.DEBUG else Log.INFO)
             .build()
-    }
 }

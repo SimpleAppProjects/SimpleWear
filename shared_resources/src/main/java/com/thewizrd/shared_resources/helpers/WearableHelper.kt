@@ -2,7 +2,9 @@ package com.thewizrd.shared_resources.helpers
 
 import android.content.ComponentName
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.os.ParcelUuid
 import android.util.Log
 import com.google.android.gms.common.ConnectionResult
@@ -21,6 +23,8 @@ object WearableHelper {
 
     // Link to Play Store listing
     private const val PLAY_STORE_APP_URI = "market://details?id=com.thewizrd.simplewear"
+
+    private const val VERSION_CODE: Long = 331914030
 
     fun getPlayStoreURI(): Uri = Uri.parse(PLAY_STORE_APP_URI)
 
@@ -43,6 +47,7 @@ object WearableHelper {
     const val ValueStatusPath = "/status/valueaction"
     const val ValueStatusSetPath = "/status/valueaction/setvalue"
     const val BrightnessModePath = "/status/brightness/mode"
+    const val VersionPath = "/version"
 
     // For Apps DataMap
     const val KEY_APPS = "key_apps"
@@ -149,4 +154,25 @@ object WearableHelper {
 
     fun getBLEServiceUUID(): ParcelUuid =
         ParcelUuid.fromString("0000DA28-0000-1000-8000-00805F9B34FB")
+
+    fun isAppUpToDate(versionCode: Long): Boolean {
+        return versionCode >= VERSION_CODE
+    }
+
+    fun getAppVersionCode(): Long = try {
+        val context = SimpleLibrary.instance.app.appContext
+        val packageInfo = context.run {
+            packageManager.getPackageInfo(packageName, 0)
+        }
+
+        val versionCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            packageInfo.longVersionCode
+        } else {
+            packageInfo.versionCode.toLong()
+        }
+
+        versionCode
+    } catch (e: PackageManager.NameNotFoundException) {
+        0
+    }
 }

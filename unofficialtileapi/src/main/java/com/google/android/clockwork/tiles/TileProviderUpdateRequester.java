@@ -26,7 +26,7 @@ public class TileProviderUpdateRequester {
         Intent intent = new Intent("android.support.wearable.tiles.ACTION_REQUEST_UPDATE_ALL");
         intent.setPackage("com.google.android.wearable.app");
         intent.putExtra("android.support.wearable.tiles.EXTRA_PROVIDER_COMPONENT", this.mProviderComponent);
-        intent.putExtra("android.support.wearable.tiles.EXTRA_PENDING_INTENT", PendingIntent.getActivity(this.mContext, 0, new Intent(""), 0));
+        intent.putExtra("android.support.wearable.tiles.EXTRA_PENDING_INTENT", PendingIntent.getActivity(this.mContext, 0, new Intent(""), PendingIntent.FLAG_IMMUTABLE));
         return intent;
 
     }

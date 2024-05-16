@@ -5,6 +5,7 @@ import com.thewizrd.shared_resources.actions.Actions
 import com.thewizrd.shared_resources.actions.BatteryStatus
 import com.thewizrd.shared_resources.actions.NormalAction
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
+import com.thewizrd.simplewear.preferences.Settings
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -21,7 +22,14 @@ class DashboardTileModel {
     }
 
     private val _tileState =
-        MutableStateFlow(DashboardTileState(mConnectionStatus, battStatus, getActionMapping()))
+        MutableStateFlow(
+            DashboardTileState(
+                mConnectionStatus,
+                battStatus,
+                getActionMapping(),
+                Settings.isShowTileBatStatus()
+            )
+        )
 
     val tileState: StateFlow<DashboardTileState>
         get() = _tileState.asStateFlow()
@@ -37,6 +45,12 @@ class DashboardTileModel {
         battStatus = status
         _tileState.update {
             it.copy(batteryStatus = status)
+        }
+    }
+
+    fun setShowBatteryStatus(show: Boolean) {
+        _tileState.update {
+            it.copy(showBatteryStatus = show)
         }
     }
 
@@ -67,6 +81,7 @@ data class DashboardTileState(
     val connectionStatus: WearConnectionStatus,
     val batteryStatus: BatteryStatus? = null,
     val actions: Map<Actions, Action?> = emptyMap(),
+    val showBatteryStatus: Boolean = true
 ) {
     fun getAction(actionType: Actions): Action? = actions[actionType]
 

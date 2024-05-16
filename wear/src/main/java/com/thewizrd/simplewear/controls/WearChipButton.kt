@@ -11,6 +11,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
+import androidx.annotation.ColorInt
 import androidx.annotation.ColorRes
 import androidx.annotation.DrawableRes
 import androidx.annotation.IntDef
@@ -280,6 +281,11 @@ class WearChipButton @JvmOverloads constructor(
 
     fun setBackgroundColor(tint: ColorStateList?) {
         buttonBackgroundTint = tint
+        updateBackgroundTint()
+    }
+
+    override fun setBackgroundColor(@ColorInt color: Int) {
+        buttonBackgroundTint = ColorStateList.valueOf(color)
         updateBackgroundTint()
     }
 

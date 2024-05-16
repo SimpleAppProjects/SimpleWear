@@ -23,9 +23,12 @@
 # Application classes that will be serialized/deserialized over Gson
 -keep class com.thewizrd.shared_resources.actions.* { *; }
 -keep class * extends com.thewizrd.shared_resources.actions.Action { *; }
+-keep class com.thewizrd.shared_resources.media.* { *; }
 -keep public enum com.thewizrd.shared_resources.actions.* { <fields>; }
 -keep public enum com.thewizrd.shared_resources.helpers.* { <fields>; }
+-keep public enum com.thewizrd.shared_resources.media.* { <fields>; }
 -keep class androidx.core.util.Pair { *; }
+-keep class com.thewizrd.shared_resources.updates.UpdateInfo { *; }
 
 ##---------------Begin: proguard configuration for Gson  ----------
 # Gson uses generic type information stored in a class file when working with fields. Proguard

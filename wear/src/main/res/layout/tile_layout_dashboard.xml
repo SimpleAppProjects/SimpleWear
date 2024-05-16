@@ -9,13 +9,23 @@
     tools:deviceIds="wear"
     tools:theme="@android:style/Theme.DeviceDefault">
 
+    <TextView
+        android:id="@+id/spacer"
+        android:layout_width="wrap_content"
+        android:layout_height="@dimen/dashboard_top_margin"
+        android:visibility="gone"
+        tools:visibility="visible" />
+
     <LinearLayout
+        android:id="@+id/batt_stat_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginStart="@dimen/tile_horizontal_padding"
         android:layout_marginTop="@dimen/tile_top_padding"
         android:layout_marginEnd="@dimen/tile_horizontal_padding"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:visibility="visible"
+        tools:visibility="gone">
 
         <ImageView
             android:id="@+id/batt_stat_icon"

@@ -41,7 +41,7 @@ class TileActionAdapter : ListAdapter<ActionButtonViewModel, TileActionAdapter.V
                 )
                 itemView.requestFocus()
             } else {
-                binding.button.setImageResource(model.drawableID)
+                binding.button.setImageResource(model.drawableResId)
                 ImageViewCompat.setImageTintList(
                     binding.button,
                     itemView.context.getAttrColorStateList(R.attr.colorOnSurface)
@@ -121,7 +121,9 @@ class TileActionAdapter : ListAdapter<ActionButtonViewModel, TileActionAdapter.V
 
     private fun removeAction(position: Int) {
         val items = currentList.toMutableList()
-        items.removeAt(position)
+        if (position != RecyclerView.NO_POSITION) {
+            items.removeAt(position)
+        }
         submitList(items)
     }
 

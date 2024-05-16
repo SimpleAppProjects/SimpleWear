@@ -21,8 +21,8 @@ android {
         minSdkVersion rootProject.minSdkVersion
         targetSdkVersion rootProject.targetSdkVersion
         // NOTE: Version Code Format [TargetSDK, Version Name, Build Number, Variant Code (Android: 00, WearOS: 01)]
-        versionCode 331913100
-        versionName "1.13.1"
+        versionCode 331914040
+        versionName "1.14.0"
 
         vectorDrawables.useSupportLibrary = true
     }
@@ -90,14 +90,16 @@ dependencies {
     implementation "androidx.core:core-splashscreen:$coresplash_version"
 
     implementation 'com.google.android.gms:play-services-wearable:18.1.0'
+    implementation 'com.google.android.play:app-update-ktx:2.1.0'
 
     implementation platform("com.google.firebase:firebase-bom:$firebase_version")
     implementation 'com.google.firebase:firebase-analytics'
     implementation 'com.google.firebase:firebase-crashlytics'
+    implementation 'com.google.firebase:firebase-config'
 
     implementation "androidx.appcompat:appcompat:$appcompat_version"
     implementation "androidx.constraintlayout:constraintlayout:$constraintlayout_version"
-    implementation 'androidx.media:media:1.6.0'
+    implementation 'androidx.media:media:1.7.0'
 
     implementation "com.google.android.material:material:$material_version"
 

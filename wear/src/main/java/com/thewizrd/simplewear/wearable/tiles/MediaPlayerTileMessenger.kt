@@ -35,9 +35,9 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withTimeoutOrNull
 import timber.log.Timber
 import kotlin.coroutines.resume
 
@@ -46,7 +46,7 @@ class MediaPlayerTileMessenger(private val context: Context) :
     CapabilityClient.OnCapabilityChangedListener {
     companion object {
         private const val TAG = "MediaPlayerTileMessenger"
-        internal val tileModel = MediaPlayerTileModel()
+        internal val tileModel by lazy { MediaPlayerTileModel() }
     }
 
     enum class PlayerAction {
@@ -64,6 +64,7 @@ class MediaPlayerTileMessenger(private val context: Context) :
     private var mPhoneNodeWithApp: Node? = null
 
     private var deleteJob: Job? = null
+    private var updateJob: Job? = null
 
     fun register() {
         Wearable.getCapabilityClient(context)
@@ -129,7 +130,8 @@ class MediaPlayerTileMessenger(private val context: Context) :
 
             deleteJob?.cancel()
             val dataMap = DataMapItem.fromDataItem(item).dataMap
-            runBlocking {
+            updateJob?.cancel()
+            updateJob = scope.launch {
                 updatePlayerState(dataMap)
             }
         } else if (event.type == DataEvent.TYPE_DELETED) {
@@ -151,7 +153,22 @@ class MediaPlayerTileMessenger(private val context: Context) :
             val connectedNodes = getConnectedNodes()
             mPhoneNodeWithApp = pickBestNodeId(capabilityInfo.nodes)
 
-            if (mPhoneNodeWithApp == null) {
+            mPhoneNodeWithApp?.let { node ->
+                if (node.isNearby && connectedNodes.any { it.id == node.id }) {
+                    tileModel.setConnectionStatus(WearConnectionStatus.CONNECTED)
+                } else {
+                    try {
+                        sendPing(node.id)
+                        tileModel.setConnectionStatus(WearConnectionStatus.CONNECTED)
+                    } catch (e: ApiException) {
+                        if (e.statusCode == WearableStatusCodes.TARGET_NODE_NOT_CONNECTED) {
+                            tileModel.setConnectionStatus(WearConnectionStatus.DISCONNECTED)
+                        } else {
+                            Logger.writeLine(Log.ERROR, e)
+                        }
+                    }
+                }
+            } ?: run {
                 /*
                  * If a device is disconnected from the wear network, capable nodes are empty
                  *
@@ -167,21 +184,6 @@ class MediaPlayerTileMessenger(private val context: Context) :
                         WearConnectionStatus.APPNOTINSTALLED
                     }
                 )
-            } else {
-                if (mPhoneNodeWithApp!!.isNearby && connectedNodes.any { it.id == mPhoneNodeWithApp!!.id }) {
-                    tileModel.setConnectionStatus(WearConnectionStatus.CONNECTED)
-                } else {
-                    try {
-                        sendPing(mPhoneNodeWithApp!!.id)
-                        tileModel.setConnectionStatus(WearConnectionStatus.CONNECTED)
-                    } catch (e: ApiException) {
-                        if (e.statusCode == WearableStatusCodes.TARGET_NODE_NOT_CONNECTED) {
-                            tileModel.setConnectionStatus(WearConnectionStatus.DISCONNECTED)
-                        } else {
-                            Logger.writeLine(Log.ERROR, e)
-                        }
-                    }
-                }
             }
 
             requestTileUpdate(context)
@@ -247,10 +249,9 @@ class MediaPlayerTileMessenger(private val context: Context) :
         val artist = dataMap.getString(MediaHelper.KEY_MEDIA_METADATA_ARTIST)
         val artBitmap = dataMap.getAsset(MediaHelper.KEY_MEDIA_METADATA_ART)?.let {
             try {
-                ImageUtils.bitmapFromAssetStream(
-                    Wearable.getDataClient(context),
-                    it
-                )
+                withTimeoutOrNull(5000) {
+                    ImageUtils.bitmapFromAssetStream(Wearable.getDataClient(context), it)
+                }
             } catch (e: Exception) {
                 null
             }
@@ -342,11 +343,19 @@ class MediaPlayerTileMessenger(private val context: Context) :
             scope.launch {
                 if (listener is MessageClient.OnMessageReceivedListener) {
                     Wearable.getMessageClient(context)
-                        .addListener(listener)
+                        .addListener(
+                            listener,
+                            WearableHelper.getWearDataUri("*", MediaHelper.MediaVolumeStatusPath),
+                            DataClient.FILTER_LITERAL
+                        )
                         .await()
                 } else if (listener is DataClient.OnDataChangedListener) {
                     Wearable.getDataClient(context)
-                        .addListener(listener)
+                        .addListener(
+                            listener,
+                            WearableHelper.getWearDataUri("*", MediaHelper.MediaPlayerStatePath),
+                            DataClient.FILTER_LITERAL
+                        )
                         .await()
                 }
 

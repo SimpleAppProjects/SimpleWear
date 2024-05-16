@@ -1,5 +1,6 @@
 package com.thewizrd.simplewear.wearable.tiles
 
+import android.content.ComponentName
 import android.content.Context
 import android.graphics.Bitmap
 import android.os.Build
@@ -23,7 +24,7 @@ import androidx.wear.protolayout.material.layouts.PrimaryLayout
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
 import com.google.android.horologist.tiles.images.drawableResToImageResource
 import com.google.android.horologist.tiles.render.SingleTileLayoutRenderer
-import com.thewizrd.simplewear.MediaPlayerListActivity
+import com.thewizrd.simplewear.BuildConfig
 import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.wearable.tiles.layouts.MediaPlayerTileLayout
 import timber.log.Timber
@@ -169,13 +170,10 @@ class MediaPlayerTileRenderer(context: Context, debugResourceMode: Boolean = fal
     }
 
     private fun getTapAction(context: Context): ActionBuilders.Action {
-        return ActionBuilders.LaunchAction.Builder()
-            .setAndroidActivity(
-                ActionBuilders.AndroidActivity.Builder()
-                    .setPackageName(context.packageName)
-                    .setClassName(MediaPlayerListActivity::class.java.name)
-                    .build()
-            )
-            .build()
+        return ActionBuilders.launchAction(
+            ComponentName(context.packageName, context.packageName.run {
+                if (BuildConfig.DEBUG) removeSuffix(".debug") else this
+            } + ".MediaControllerActivity")
+        )
     }
 }

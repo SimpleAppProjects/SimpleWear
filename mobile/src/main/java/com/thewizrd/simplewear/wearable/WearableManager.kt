@@ -16,29 +16,67 @@ import android.util.TypedValue
 import android.view.KeyEvent
 import androidx.annotation.RestrictTo
 import androidx.media.MediaBrowserServiceCompat
-import com.google.android.gms.wearable.*
+import com.google.android.gms.wearable.CapabilityClient
 import com.google.android.gms.wearable.CapabilityClient.OnCapabilityChangedListener
+import com.google.android.gms.wearable.CapabilityInfo
+import com.google.android.gms.wearable.DataMap
+import com.google.android.gms.wearable.Node
+import com.google.android.gms.wearable.PutDataMapRequest
+import com.google.android.gms.wearable.Wearable
 import com.google.gson.stream.JsonWriter
-import com.thewizrd.shared_resources.actions.*
+import com.thewizrd.shared_resources.actions.ACTION_PERFORMACTION
+import com.thewizrd.shared_resources.actions.Action
+import com.thewizrd.shared_resources.actions.ActionStatus
+import com.thewizrd.shared_resources.actions.Actions
+import com.thewizrd.shared_resources.actions.AudioStreamState
+import com.thewizrd.shared_resources.actions.AudioStreamType
+import com.thewizrd.shared_resources.actions.BatteryStatus
+import com.thewizrd.shared_resources.actions.DNDChoice
+import com.thewizrd.shared_resources.actions.EXTRA_ACTION_CALLINGPKG
+import com.thewizrd.shared_resources.actions.EXTRA_ACTION_DATA
+import com.thewizrd.shared_resources.actions.EXTRA_ACTION_ERROR
+import com.thewizrd.shared_resources.actions.MultiChoiceAction
+import com.thewizrd.shared_resources.actions.NormalAction
+import com.thewizrd.shared_resources.actions.RemoteActionReceiver
+import com.thewizrd.shared_resources.actions.RingerChoice
+import com.thewizrd.shared_resources.actions.ToggleAction
+import com.thewizrd.shared_resources.actions.ValueAction
+import com.thewizrd.shared_resources.actions.ValueActionState
+import com.thewizrd.shared_resources.actions.VolumeAction
+import com.thewizrd.shared_resources.actions.toRemoteAction
 import com.thewizrd.shared_resources.helpers.AppItemData
 import com.thewizrd.shared_resources.helpers.AppItemSerializer.serialize
 import com.thewizrd.shared_resources.helpers.MediaHelper
 import com.thewizrd.shared_resources.helpers.WearSettingsHelper
 import com.thewizrd.shared_resources.helpers.WearableHelper
-import com.thewizrd.shared_resources.utils.*
+import com.thewizrd.shared_resources.utils.ImageUtils
 import com.thewizrd.shared_resources.utils.ImageUtils.toAsset
 import com.thewizrd.shared_resources.utils.ImageUtils.toByteArray
+import com.thewizrd.shared_resources.utils.JSONParser
+import com.thewizrd.shared_resources.utils.Logger
+import com.thewizrd.shared_resources.utils.booleanToBytes
+import com.thewizrd.shared_resources.utils.stringToBytes
 import com.thewizrd.shared_resources.wearsettings.PackageValidator
 import com.thewizrd.simplewear.helpers.PhoneStatusHelper
 import com.thewizrd.simplewear.helpers.ResolveInfoActivityInfoComparator
 import com.thewizrd.simplewear.media.MediaAppControllerUtils
 import com.thewizrd.simplewear.preferences.Settings
 import com.thewizrd.simplewear.services.NotificationListener
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
 import java.io.BufferedWriter
 import java.io.OutputStreamWriter
-import java.util.*
+import java.util.Collections
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 class WearableManager(private val mContext: Context) : OnCapabilityChangedListener,
@@ -681,7 +719,7 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
 
     fun sendActionsUpdate(nodeID: String?) {
         scope.launch {
-            for (act in Actions.values()) {
+            for (act in Actions.entries) {
                 async { sendActionsUpdate(nodeID, act) }
             }
         }
@@ -944,7 +982,26 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
 
             Actions.HOTSPOT -> {
                 tA = action as ToggleAction
-                tA.setActionSuccessful(PhoneStatusHelper.setWifiApEnabled(mContext, tA.isEnabled))
+                if (WearSettingsHelper.isWearSettingsInstalled() && Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+                    val status = performRemoteAction(action)
+                    if (status == ActionStatus.REMOTE_FAILURE ||
+                        status == ActionStatus.REMOTE_PERMISSION_DENIED
+                    ) {
+                        tA.setActionSuccessful(
+                            PhoneStatusHelper.setWifiApEnabled(
+                                mContext,
+                                tA.isEnabled
+                            )
+                        )
+                    }
+                } else {
+                    tA.setActionSuccessful(
+                        PhoneStatusHelper.setWifiApEnabled(
+                            mContext,
+                            tA.isEnabled
+                        )
+                    )
+                }
                 sendMessage(
                     nodeID,
                     WearableHelper.ActionsPath,

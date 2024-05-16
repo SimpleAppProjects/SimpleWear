@@ -4,7 +4,7 @@ import com.thewizrd.shared_resources.actions.ActionStatus
 import com.topjohnwu.superuser.Shell
 
 object SecureSettingsAction {
-    fun putSetting(key: String, value: String): ActionStatus {
+    fun putSettingRoot(key: String, value: String): ActionStatus {
         if (!Shell.rootAccess()) {
             return ActionStatus.REMOTE_PERMISSION_DENIED
         }
@@ -20,7 +20,7 @@ object SecureSettingsAction {
 }
 
 object GlobalSettingsAction {
-    fun putSetting(key: String, value: String): ActionStatus {
+    fun putSettingRoot(key: String, value: String): ActionStatus {
         if (!Shell.rootAccess()) {
             return ActionStatus.REMOTE_PERMISSION_DENIED
         }

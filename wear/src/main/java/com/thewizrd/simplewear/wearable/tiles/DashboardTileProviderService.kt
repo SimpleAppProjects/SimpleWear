@@ -2,6 +2,7 @@ package com.thewizrd.simplewear.wearable.tiles
 
 import android.content.Context
 import android.content.Intent
+import android.os.Bundle
 import androidx.lifecycle.lifecycleScope
 import androidx.wear.protolayout.ResourceBuilders
 import androidx.wear.tiles.EventBuilders
@@ -10,6 +11,7 @@ import androidx.wear.tiles.TileBuilders
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
 import com.google.android.horologist.tiles.SuspendingTileService
 import com.thewizrd.shared_resources.actions.Actions
+import com.thewizrd.shared_resources.utils.AnalyticsLogger
 import com.thewizrd.simplewear.PhoneSyncActivity
 import com.thewizrd.simplewear.preferences.DashboardTileUtils.DEFAULT_TILES
 import com.thewizrd.simplewear.preferences.Settings
@@ -21,9 +23,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import timber.log.Timber
+import kotlin.coroutines.cancellation.CancellationException
+import kotlin.coroutines.coroutineContext
 
 @OptIn(ExperimentalHorologistApi::class)
 class DashboardTileProviderService : SuspendingTileService() {
@@ -31,12 +36,18 @@ class DashboardTileProviderService : SuspendingTileService() {
         private const val TAG = "DashTileProviderService"
 
         fun requestTileUpdate(context: Context) {
+            Timber.tag(TAG).d("$TAG: requesting tile update")
             getUpdater(context).requestUpdate(DashboardTileProviderService::class.java)
         }
+
+        var isInFocus: Boolean = false
+            private set
     }
 
     private val tileMessenger = DashboardTileMessenger(this)
     private lateinit var tileStateFlow: StateFlow<DashboardTileState?>
+
+    private var isUpdating: Boolean = false
 
     override fun onCreate() {
         super.onCreate()
@@ -46,7 +57,7 @@ class DashboardTileProviderService : SuspendingTileService() {
         tileStateFlow = tileModel.tileState
             .stateIn(
                 lifecycleScope,
-                started = SharingStarted.WhileSubscribed(5000),
+                started = SharingStarted.WhileSubscribed(2000),
                 null
             )
     }
@@ -61,27 +72,38 @@ class DashboardTileProviderService : SuspendingTileService() {
         super.onTileEnterEvent(requestParams)
 
         Timber.tag(TAG).d("$TAG: onTileEnterEvent called with: tileId = ${requestParams.tileId}")
+        AnalyticsLogger.logEvent("on_tile_enter", Bundle().apply {
+            putString("tile", TAG)
+        })
+        isInFocus = true
 
         // Update tile actions
         tileModel.updateTileActions(Settings.getDashboardTileConfig() ?: DEFAULT_TILES)
 
-        requestTileUpdate(this)
-
         lifecycleScope.launch {
             tileMessenger.checkConnectionStatus()
             tileMessenger.requestUpdate()
+        }.invokeOnCompletion {
+            if (it is CancellationException || !isUpdating) {
+                // If update timed out
+                requestTileUpdate(this)
+            }
         }
     }
 
     override fun onTileLeaveEvent(requestParams: EventBuilders.TileLeaveEvent) {
         super.onTileLeaveEvent(requestParams)
         Timber.tag(TAG).d("$TAG: onTileLeaveEvent called with: tileId = ${requestParams.tileId}")
+        isInFocus = false
     }
 
     private val tileRenderer = DashboardTileRenderer(this)
 
     override suspend fun tileRequest(requestParams: RequestBuilders.TileRequest): TileBuilders.Tile {
-        Timber.tag(TAG).d("tileRequest")
+        Timber.tag(TAG).d("tileRequest: ${requestParams.currentState}")
+        isUpdating = true
+
+        tileMessenger.checkConnectionStatus()
 
         if (requestParams.currentState.lastClickableId.isNotEmpty()) {
             if (ID_OPENONPHONE == requestParams.currentState.lastClickableId || ID_PHONEDISCONNECTED == requestParams.currentState.lastClickableId) {
@@ -95,16 +117,29 @@ class DashboardTileProviderService : SuspendingTileService() {
                         .d("lastClickableId = ${requestParams.currentState.lastClickableId}")
                     val action = Actions.valueOf(requestParams.currentState.lastClickableId)
                     withTimeoutOrNull(5000) {
+                        AnalyticsLogger.logEvent("dashtile_action_clicked", Bundle().apply {
+                            putString("action", action.name)
+                        })
+
                         tileMessenger.processActionAsync(action)
                     }
                 }
             }
+        } else {
+            tileMessenger.requestUpdate()
         }
-
-        tileMessenger.checkConnectionStatus()
 
         if (tileModel.actionCount == 0) {
             tileModel.updateTileActions(Settings.getDashboardTileConfig() ?: DEFAULT_TILES)
+        }
+
+        tileModel.setShowBatteryStatus(Settings.isShowTileBatStatus())
+        isUpdating = false
+
+        if (tileModel.tileState.value.isEmpty) {
+            AnalyticsLogger.logEvent("dashtile_state_empty", Bundle().apply {
+                putBoolean("isCoroutineActive", coroutineContext.isActive)
+            })
         }
 
         return tileRenderer.renderTimeline(tileModel.tileState.value, requestParams)

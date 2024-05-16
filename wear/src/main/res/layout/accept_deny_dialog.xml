@@ -59,7 +59,7 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal"
                 android:layout_marginTop="0dp"
-                android:layout_marginBottom="8dp"
+                android:layout_marginBottom="4dp"
                 android:adjustViewBounds="true"
                 android:maxWidth="24dp"
                 android:maxHeight="24dp"
@@ -81,7 +81,7 @@
             android:gravity="center"
             android:paddingStart="8dp"
             android:paddingEnd="8dp"
-            android:textAppearance="?textAppearanceButton"
+            android:textAppearance="?textAppearanceTitle3"
             app:layout_constraintBottom_toTopOf="@android:id/message"
             app:layout_constraintEnd_toStartOf="@id/right"
             app:layout_constraintStart_toEndOf="@id/left"
@@ -96,7 +96,7 @@
             android:gravity="center"
             android:paddingStart="8dp"
             android:paddingEnd="8dp"
-            android:textAppearance="?textAppearanceCaption2"
+            android:textAppearance="?textAppearanceBody1"
             android:visibility="gone"
             app:layout_constraintBottom_toTopOf="@id/buttonPanel"
             app:layout_constraintEnd_toStartOf="@id/right"
@@ -129,7 +129,7 @@
                 android:layout_height="wrap_content"
                 android:contentDescription="@android:string/no"
                 android:visibility="gone"
-                app:backgroundTint="?android:colorButtonNormal"
+                app:backgroundTint="?colorSurface"
                 app:collapsedSize="@dimen/diag_button_size"
                 app:icon="@drawable/ic_close_white_24dp"
                 app:iconTint="?colorOnSurface"
@@ -137,9 +137,8 @@
 
             <Space
                 android:id="@+id/spacer"
-                android:layout_width="0dp"
-                android:layout_height="0dp"
-                android:layout_weight="1"
+                android:layout_width="8dp"
+                android:layout_height="wrap_content"
                 android:visibility="gone"
                 tools:visibility="visible" />
 

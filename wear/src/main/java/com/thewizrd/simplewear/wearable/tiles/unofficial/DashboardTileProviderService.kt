@@ -5,6 +5,7 @@ import android.bluetooth.BluetoothAdapter
 import android.content.Context
 import android.content.Intent
 import android.net.wifi.WifiManager
+import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.widget.RemoteViews
@@ -27,6 +28,7 @@ import com.thewizrd.shared_resources.actions.ToggleAction
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
 import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.shared_resources.helpers.toImmutableCompatFlag
+import com.thewizrd.shared_resources.utils.AnalyticsLogger
 import com.thewizrd.shared_resources.utils.JSONParser
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.shared_resources.utils.bytesToString
@@ -79,6 +81,10 @@ class DashboardTileProviderService : TileProviderService(), MessageClient.OnMess
         if (!isIdForDummyData(tileId)) {
             id = tileId
             mInFocus = true
+            AnalyticsLogger.logEvent("on_tile_enter", Bundle().apply {
+                putString("tile", TAG)
+                putBoolean("isUnofficial", true)
+            })
 
             // Update tile actions
             tileActions.clear()
@@ -173,6 +179,14 @@ class DashboardTileProviderService : TileProviderService(), MessageClient.OnMess
             views.setTextViewText(R.id.batt_stat_text, battValue)
         }
 
+        if (Settings.isShowTileBatStatus()) {
+            views.setViewVisibility(R.id.batt_stat_layout, View.VISIBLE)
+            views.setViewVisibility(R.id.spacer, View.GONE)
+        } else {
+            views.setViewVisibility(R.id.batt_stat_layout, View.GONE)
+            views.setViewVisibility(R.id.spacer, View.VISIBLE)
+        }
+
         for (i in 0 until MAX_BUTTONS) {
             val action = tileActions.getOrNull(i)
             updateButton(views, i + 1, action)
@@ -205,7 +219,7 @@ class DashboardTileProviderService : TileProviderService(), MessageClient.OnMess
         if (action != null) {
             actionMap[action]?.let {
                 val model = ActionButtonViewModel(it)
-                views.setImageViewResource(buttonId, model.drawableID)
+                views.setImageViewResource(buttonId, model.drawableResId)
                 views.setInt(
                     buttonId,
                     "setBackgroundResource",
@@ -215,7 +229,12 @@ class DashboardTileProviderService : TileProviderService(), MessageClient.OnMess
                     buttonId,
                     getActionClickIntent(applicationContext, it.actionType)
                 )
-                views.setContentDescription(buttonId, model.actionLabel)
+                views.setContentDescription(
+                    buttonId,
+                    model.actionLabelResId.takeIf { it != 0 }?.let {
+                        applicationContext.getString(it)
+                    }
+                )
             }
             views.setViewVisibility(layoutId, View.VISIBLE)
         } else {
@@ -550,6 +569,10 @@ class DashboardTileProviderService : TileProviderService(), MessageClient.OnMess
     }
 
     private fun requestAction(action: Action) {
+        AnalyticsLogger.logEvent("dashtile_action_clicked", Bundle().apply {
+            putString("action", action.actionType.name)
+        })
+
         requestAction(JSONParser.serializer(action, Action::class.java))
     }
 

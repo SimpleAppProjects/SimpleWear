@@ -1,18 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <dimen name="inner_layout_padding">32dp</dimen>
-    <dimen name="dialer_text_padding">48dp</dimen>
     <dimen name="conf_overlay_image_size">36dp</dimen>
-
-    <dimen name="timer_top_margin">16dp</dimen>
-    <dimen name="clock_top_margin">8dp</dimen>
 
     <dimen name="diag_button_size">48dp</dimen>
 
-    <dimen name="dashboard_item_horizontal_margin">12dp</dimen>
     <dimen name="dashboard_top_margin">36dp</dimen>
-    <dimen name="dashboard_bottom_margin">48dp</dimen>
-    <dimen name="dashboard_horizontal_margin">14dp</dimen>
 
     <!-- Dash Tile -->
     <dimen name="tile_horizontal_padding">24dp</dimen>

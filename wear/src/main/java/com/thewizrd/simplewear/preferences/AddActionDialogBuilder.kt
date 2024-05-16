@@ -5,7 +5,11 @@ import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.recyclerview.widget.*
+import androidx.recyclerview.widget.AsyncDifferConfig
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.ListAdapter
+import androidx.recyclerview.widget.RecyclerView
 import com.thewizrd.shared_resources.actions.Actions
 import com.thewizrd.shared_resources.helpers.ListAdapterOnClickInterface
 import com.thewizrd.shared_resources.utils.ContextUtils.dpToPx
@@ -78,8 +82,8 @@ class AddActionDialogBuilder(private val context: Context, private val actionsLi
         inner class ViewHolder(private val button: WearChipButton) :
             RecyclerView.ViewHolder(button) {
             fun bind(model: ActionButtonViewModel) {
-                button.setPrimaryText(model.actionLabel)
-                button.setIconResource(model.drawableID)
+                button.setPrimaryText(model.actionLabelResId)
+                button.setIconResource(model.drawableResId)
                 itemView.setOnClickListener {
                     onClickListener?.onClick(it, model)
                 }

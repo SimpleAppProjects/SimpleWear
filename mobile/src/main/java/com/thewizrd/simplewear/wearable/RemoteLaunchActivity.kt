@@ -1,6 +1,7 @@
 package com.thewizrd.simplewear.wearable
 
 import android.annotation.SuppressLint
+import android.content.ActivityNotFoundException
 import android.util.Log
 import androidx.activity.ComponentActivity
 import com.thewizrd.shared_resources.helpers.WearableHelper
@@ -17,12 +18,13 @@ class RemoteLaunchActivity : ComponentActivity() {
                 runCatching {
                     this.startActivity(uri.toLaunchIntent())
                 }.onFailure { e ->
-                    Logger.writeLine(
-                        Log.ERROR,
-                        e,
-                        "%s: Unable to launch intent remotely - $uri",
-                        this::class.java.simpleName
-                    )
+                    if (e !is ActivityNotFoundException) {
+                        Logger.writeLine(
+                            Log.ERROR,
+                            e,
+                            "RemoteLaunchActivity: Unable to launch intent remotely - $uri"
+                        )
+                    }
                 }
             }
         }

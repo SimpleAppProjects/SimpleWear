@@ -34,6 +34,10 @@ object ActionHelper {
                 BluetoothAction.executeAction(context, action)
             }
 
+            Actions.HOTSPOT -> {
+                WifiHotspotAction.executeAction(context, action)
+            }
+
             else -> ActionStatus.FAILURE
         }
     }

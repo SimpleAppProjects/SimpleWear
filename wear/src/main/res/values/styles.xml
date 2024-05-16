@@ -30,15 +30,18 @@
         <item name="wearActionButtonStyle">@style/Widget.Wear.ActionButton</item>
     </style>
 
-    <style name="WearAppTheme.Launcher" parent="Theme.SplashScreen">
-        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher_round</item>
-        <item name="windowSplashScreenBackground">@android:color/black</item>
+    <style name="WearAppTheme.Launcher" parent="Theme.SplashScreen.IconBackground">
         <item name="postSplashScreenTheme">@style/WearAppTheme</item>
-        <item name="splashScreenIconSize">48dp</item>
+        <item name="windowSplashScreenBackground">@android:color/black</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="windowSplashScreenIconBackgroundColor">@color/ic_launcher_background</item>
     </style>
 
-    <style name="WearSettingsTheme" parent="Base.AppTheme">
-        <item name="colorAccent">@color/colorPrimaryLight</item>
+    <style name="WearAppTheme.MediaLauncher" parent="Theme.SplashScreen.IconBackground">
+        <item name="postSplashScreenTheme">@style/WearAppTheme</item>
+        <item name="windowSplashScreenBackground">@android:color/black</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_play_circle_simpleblue</item>
+        <item name="windowSplashScreenIconBackgroundColor">@color/ic_launcher_background</item>
     </style>
 
     <style name="Base.AppTheme" parent="Theme.MaterialComponents.NoActionBar.Bridge">
@@ -103,30 +106,6 @@
         <item name="textAppearanceButton">@style/TextAppearance.Roboto.Button</item>
         <item name="textAppearanceCaption1">@style/TextAppearance.Roboto.Caption1</item>
         <item name="textAppearanceCaption2">@style/TextAppearance.Roboto.Caption2</item>
-    </style>
-
-    <style name="SettingPrefLayoutStyle">
-        <item name="android:background">@drawable/button_noborder</item>
-        <item name="android:paddingBottom">8dp</item>
-        <item name="android:paddingTop">8dp</item>
-        <item name="android:paddingEnd">@dimen/inner_layout_padding</item>
-        <item name="android:paddingStart">@dimen/inner_layout_padding</item>
-        <item name="android:clipChildren">false</item>
-        <item name="android:clipToPadding">false</item>
-    </style>
-
-    <style name="WearDialogTheme" parent="@android:style/Theme.DeviceDefault.Dialog">
-        <item name="android:windowBackground">?colorSurface</item>
-    </style>
-
-    <style name="Widget.MaterialButton.OutlinedButton.IconOnly" parent="@style/Widget.MaterialComponents.Button.OutlinedButton">
-        <item name="iconPadding">0dp</item>
-        <item name="android:insetTop">0dp</item>
-        <item name="android:insetBottom">0dp</item>
-        <item name="android:paddingLeft">12dp</item>
-        <item name="android:paddingRight">12dp</item>
-        <item name="android:minWidth">48dp</item>
-        <item name="android:minHeight">48dp</item>
     </style>
 
     <style name="TextAppearance.Roboto" parent="@android:style/TextAppearance.DeviceDefault">

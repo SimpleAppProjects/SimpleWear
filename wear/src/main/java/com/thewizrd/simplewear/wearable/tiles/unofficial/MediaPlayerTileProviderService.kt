@@ -4,6 +4,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
+import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.widget.RemoteViews
@@ -18,8 +19,8 @@ import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.shared_resources.helpers.toImmutableCompatFlag
 import com.thewizrd.shared_resources.media.PlaybackState
 import com.thewizrd.shared_resources.utils.*
-import com.thewizrd.simplewear.MediaPlayerListActivity
 import com.thewizrd.simplewear.R
+import com.thewizrd.simplewear.media.MediaPlayerActivity
 import kotlinx.coroutines.*
 import kotlinx.coroutines.tasks.await
 import timber.log.Timber
@@ -74,6 +75,11 @@ class MediaPlayerTileProviderService : TileProviderService(),
         if (!isIdForDummyData(tileId)) {
             id = tileId
             mInFocus = true
+            AnalyticsLogger.logEvent("on_tile_enter", Bundle().apply {
+                putString("tile", TAG)
+                putBoolean("isUnofficial", true)
+            })
+
             sendRemoteViews()
 
             Wearable.getCapabilityClient(this)
@@ -216,7 +222,7 @@ class MediaPlayerTileProviderService : TileProviderService(),
     }
 
     private fun getTapIntent(context: Context): PendingIntent {
-        val onClickIntent = Intent(context.applicationContext, MediaPlayerListActivity::class.java)
+        val onClickIntent = Intent(context.applicationContext, MediaPlayerActivity::class.java)
         return PendingIntent.getActivity(context, 0, onClickIntent, PendingIntent.FLAG_IMMUTABLE)
     }
 
