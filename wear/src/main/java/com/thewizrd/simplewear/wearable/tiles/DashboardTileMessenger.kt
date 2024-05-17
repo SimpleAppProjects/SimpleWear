@@ -147,7 +147,22 @@ class DashboardTileMessenger(private val context: Context) :
             val connectedNodes = getConnectedNodes()
             mPhoneNodeWithApp = WearableHelper.pickBestNodeId(capabilityInfo.nodes)
 
-            if (mPhoneNodeWithApp == null) {
+            mPhoneNodeWithApp?.let { node ->
+                if (node.isNearby && connectedNodes.any { it.id == node.id }) {
+                    tileModel.setConnectionStatus(WearConnectionStatus.CONNECTED)
+                } else {
+                    try {
+                        sendPing(node.id)
+                        tileModel.setConnectionStatus(WearConnectionStatus.CONNECTED)
+                    } catch (e: ApiException) {
+                        if (e.statusCode == WearableStatusCodes.TARGET_NODE_NOT_CONNECTED) {
+                            tileModel.setConnectionStatus(WearConnectionStatus.DISCONNECTED)
+                        } else {
+                            Logger.writeLine(Log.ERROR, e)
+                        }
+                    }
+                }
+            } ?: run {
                 /*
                  * If a device is disconnected from the wear network, capable nodes are empty
                  *
@@ -163,21 +178,6 @@ class DashboardTileMessenger(private val context: Context) :
                         WearConnectionStatus.APPNOTINSTALLED
                     }
                 )
-            } else {
-                if (mPhoneNodeWithApp!!.isNearby && connectedNodes.any { it.id == mPhoneNodeWithApp!!.id }) {
-                    tileModel.setConnectionStatus(WearConnectionStatus.CONNECTED)
-                } else {
-                    try {
-                        sendPing(mPhoneNodeWithApp!!.id)
-                        tileModel.setConnectionStatus(WearConnectionStatus.CONNECTED)
-                    } catch (e: ApiException) {
-                        if (e.statusCode == WearableStatusCodes.TARGET_NODE_NOT_CONNECTED) {
-                            tileModel.setConnectionStatus(WearConnectionStatus.DISCONNECTED)
-                        } else {
-                            Logger.writeLine(Log.ERROR, e)
-                        }
-                    }
-                }
             }
 
             requestTileUpdate(context)
@@ -188,7 +188,26 @@ class DashboardTileMessenger(private val context: Context) :
         val connectedNodes = getConnectedNodes()
         mPhoneNodeWithApp = checkIfPhoneHasApp()
 
-        if (mPhoneNodeWithApp == null) {
+        mPhoneNodeWithApp?.let { node ->
+            if (node.isNearby && connectedNodes.any { it.id == node.id }) {
+                tileModel.setConnectionStatus(WearConnectionStatus.CONNECTED)
+            } else {
+                try {
+                    sendPing(node.id)
+                    tileModel.setConnectionStatus(
+                        WearConnectionStatus.CONNECTED
+                    )
+                } catch (e: ApiException) {
+                    if (e.statusCode == WearableStatusCodes.TARGET_NODE_NOT_CONNECTED) {
+                        tileModel.setConnectionStatus(
+                            WearConnectionStatus.DISCONNECTED
+                        )
+                    } else {
+                        Logger.writeLine(Log.ERROR, e)
+                    }
+                }
+            }
+        } ?: run {
             /*
              * If a device is disconnected from the wear network, capable nodes are empty
              *
@@ -204,25 +223,6 @@ class DashboardTileMessenger(private val context: Context) :
                     WearConnectionStatus.APPNOTINSTALLED
                 }
             )
-        } else {
-            if (mPhoneNodeWithApp!!.isNearby && connectedNodes.any { it.id == mPhoneNodeWithApp!!.id }) {
-                tileModel.setConnectionStatus(WearConnectionStatus.CONNECTED)
-            } else {
-                try {
-                    sendPing(mPhoneNodeWithApp!!.id)
-                    tileModel.setConnectionStatus(
-                        WearConnectionStatus.CONNECTED
-                    )
-                } catch (e: ApiException) {
-                    if (e.statusCode == WearableStatusCodes.TARGET_NODE_NOT_CONNECTED) {
-                        tileModel.setConnectionStatus(
-                            WearConnectionStatus.DISCONNECTED
-                        )
-                    } else {
-                        Logger.writeLine(Log.ERROR, e)
-                    }
-                }
-            }
         }
 
         if (refreshTile) {

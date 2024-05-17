@@ -55,7 +55,7 @@ class MainActivity : AppCompatActivity() {
                         .runOnCommit {
                             isReadyToView = true
                         }
-                        .commit()
+                        .commitAllowingStateLoss()
                 }
             }
         }
