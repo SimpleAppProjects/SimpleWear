@@ -765,8 +765,8 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
                         JSONParser.serializer(
                             PositionState(
                                 durationMs,
-                                it.playbackState.position,
-                                it.playbackState.playbackSpeed
+                                it.playbackState?.position ?: 0,
+                                it.playbackState?.playbackSpeed ?: 1f
                             ),
                             PositionState::class.java
                         )
