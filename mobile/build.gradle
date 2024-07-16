@@ -89,7 +89,7 @@ dependencies {
     implementation "androidx.work:work-runtime-ktx:$work_version"
     implementation "androidx.core:core-splashscreen:$coresplash_version"
 
-    implementation 'com.google.android.gms:play-services-wearable:18.1.0'
+    implementation 'com.google.android.gms:play-services-wearable:18.2.0'
     implementation 'com.google.android.play:app-update-ktx:2.1.0'
 
     implementation platform("com.google.firebase:firebase-bom:$firebase_version")
