@@ -487,8 +487,10 @@ fun Dashboard(
                     }
 
                     phoneVersionCode?.let {
-                        dashboardViewModel.openPlayStore(activity, false)
                         showAppUpdateConfirmation = !WearableHelper.isAppUpToDate(it)
+                        if (showAppUpdateConfirmation) {
+                            dashboardViewModel.openPlayStore(activity, false)
+                        }
                     }
                 }
             }
