@@ -105,7 +105,7 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
                                 }
                             }
 
-                            updateManageCallsText(granted)
+                            updatePermissions()
                         }
 
                         Manifest.permission.BLUETOOTH_CONNECT -> {
@@ -360,16 +360,18 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
                 permissionRequestLauncher.launch(arrayOf(Manifest.permission.POST_NOTIFICATIONS))
             }
         }
-        binding.notifPref.visibility =
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) View.VISIBLE else View.GONE
+        binding.notifPref.isVisible = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
 
         binding.btPref.setOnClickListener {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !isBluetoothConnectPermGranted()) {
+            val ctx = it.context.applicationContext
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !PhoneStatusHelper.isBluetoothConnectPermGranted(
+                    ctx
+                )
+            ) {
                 permissionRequestLauncher.launch(arrayOf(Manifest.permission.BLUETOOTH_CONNECT))
             }
         }
-        binding.btPref.isVisible =
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU
+        binding.btPref.isVisible = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
 
         return binding.root
     }
@@ -378,20 +380,9 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
         super.onPause()
     }
 
-    private fun isBluetoothConnectPermGranted(): Boolean {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            ContextCompat.checkSelfPermission(
-                requireContext(),
-                Manifest.permission.BLUETOOTH_CONNECT
-            ) == PackageManager.PERMISSION_GRANTED
-        } else {
-            true
-        }
-    }
-
     private fun startDevicePairing() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            if (!isBluetoothConnectPermGranted()) {
+            if (!PhoneStatusHelper.isBluetoothConnectPermGranted(requireContext())) {
                 companionBTPermRequestLauncher.launch(Manifest.permission.BLUETOOTH_CONNECT)
                 return
             }
@@ -443,7 +434,10 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
                 .build()
 
             // Verify bluetooth permissions
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !isBluetoothConnectPermGranted()) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !PhoneStatusHelper.isBluetoothConnectPermGranted(
+                    requireContext()
+                )
+            ) {
                 companionBTPermRequestLauncher.launch(Manifest.permission.BLUETOOTH_CONNECT)
                 return@runWithView
             }
@@ -520,9 +514,11 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
             Build.VERSION.SDK_INT < Build.VERSION_CODES.S || InCallManagerService.hasPermission(
                 requireContext()
             )
+        val hasBTConnectPerm = PhoneStatusHelper.isBluetoothConnectPermGranted(requireContext())
 
         updateNotifListenerText(notListenerEnabled)
         updateManageCallsText(notListenerEnabled && phoneStatePermGranted && hasManageCallsPerm)
+        updateBTPref(hasBTConnectPerm)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             val deviceManager =
@@ -531,11 +527,15 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
         }
 
         binding.bridgeMediaPref.isEnabled = notListenerEnabled
+        binding.bridgeMediaToggle.isEnabled = notListenerEnabled
         if (!notListenerEnabled && com.thewizrd.simplewear.preferences.Settings.isBridgeMediaEnabled()) {
             com.thewizrd.simplewear.preferences.Settings.setBridgeMediaEnabled(false)
         }
-        binding.bridgeCallsPref.isEnabled = notListenerEnabled && phoneStatePermGranted
-        if ((!notListenerEnabled || !phoneStatePermGranted) && com.thewizrd.simplewear.preferences.Settings.isBridgeCallsEnabled()) {
+        binding.bridgeCallsPref.isEnabled =
+            notListenerEnabled && phoneStatePermGranted && hasBTConnectPerm
+        binding.bridgeCallsToggle.isEnabled =
+            notListenerEnabled && phoneStatePermGranted && hasBTConnectPerm
+        if ((!notListenerEnabled || !phoneStatePermGranted || !hasBTConnectPerm) && com.thewizrd.simplewear.preferences.Settings.isBridgeCallsEnabled()) {
             com.thewizrd.simplewear.preferences.Settings.setBridgeCallsEnabled(false)
         }
 

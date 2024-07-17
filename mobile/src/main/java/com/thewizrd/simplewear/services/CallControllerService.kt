@@ -99,7 +99,8 @@ class CallControllerService : LifecycleService(), MessageClient.OnMessageReceive
         }
 
         fun hasPermissions(context: Context): Boolean {
-            return PhoneStatusHelper.callStatePermissionEnabled(context) &&
+            return PhoneStatusHelper.isBluetoothConnectPermGranted(context) &&
+                    PhoneStatusHelper.callStatePermissionEnabled(context) &&
                     NotificationListener.isEnabled(context)
         }
     }
