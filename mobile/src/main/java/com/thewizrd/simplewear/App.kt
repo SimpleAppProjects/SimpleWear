@@ -23,6 +23,7 @@ import android.os.Looper
 import android.provider.Settings
 import android.telephony.TelephonyManager
 import android.util.Log
+import androidx.core.content.ContextCompat
 import androidx.work.Configuration
 import com.google.android.material.color.DynamicColors
 import com.google.firebase.crashlytics.FirebaseCrashlytics
@@ -152,7 +153,13 @@ class App : Application(), ApplicationLib, ActivityLifecycleCallbacks, Configura
             addAction(WifiManager.WIFI_STATE_CHANGED_ACTION)
             addAction(BluetoothAdapter.ACTION_STATE_CHANGED)
         }
-        appContext.registerReceiver(mActionsReceiver, actionsFilter)
+        // Receiver exported for system broadcasts
+        ContextCompat.registerReceiver(
+            appContext,
+            mActionsReceiver,
+            actionsFilter,
+            ContextCompat.RECEIVER_EXPORTED
+        )
 
         runCatching {
             if (appContext.packageManager.hasSystemFeature(PackageManager.FEATURE_TELEPHONY)) {

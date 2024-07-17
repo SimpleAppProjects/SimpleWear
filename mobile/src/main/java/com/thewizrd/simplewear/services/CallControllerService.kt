@@ -7,6 +7,7 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ServiceInfo
 import android.media.AudioManager
 import android.media.session.MediaController
 import android.media.session.MediaSessionManager
@@ -102,6 +103,18 @@ class CallControllerService : LifecycleService(), MessageClient.OnMessageReceive
             return PhoneStatusHelper.isBluetoothConnectPermGranted(context) &&
                     PhoneStatusHelper.callStatePermissionEnabled(context) &&
                     NotificationListener.isEnabled(context)
+        }
+    }
+
+    private fun startForeground(notification: Notification) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            startForeground(
+                JOB_ID,
+                notification,
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE
+            )
+        } else {
+            startForeground(JOB_ID, notification)
         }
     }
 
@@ -239,7 +252,7 @@ class CallControllerService : LifecycleService(), MessageClient.OnMessageReceive
             initChannel()
         }
 
-        startForeground(JOB_ID, getForegroundNotification())
+        startForeground(getForegroundNotification())
 
         registerMediaControllerListener()
         registerPhoneStateListener()
@@ -269,7 +282,7 @@ class CallControllerService : LifecycleService(), MessageClient.OnMessageReceive
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         super.onStartCommand(intent, flags, startId)
         disconnectJob?.cancel()
-        startForeground(JOB_ID, getForegroundNotification())
+        startForeground(getForegroundNotification())
 
         Logger.writeLine(Log.INFO, "${TAG}: Intent action = ${intent?.action}")
 
