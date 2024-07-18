@@ -48,6 +48,7 @@ import com.thewizrd.simplewear.media.MediaControllerService
 import com.thewizrd.simplewear.services.CallControllerService
 import com.thewizrd.simplewear.services.InCallManagerService
 import com.thewizrd.simplewear.services.NotificationListener
+import com.thewizrd.simplewear.services.ScreenLockAccessibilityService
 import com.thewizrd.simplewear.telephony.SubscriptionListener
 import com.thewizrd.simplewear.utils.associate
 import com.thewizrd.simplewear.utils.disassociateAll
@@ -187,36 +188,82 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
                 permissionRequestLauncher.launch(arrayOf(Manifest.permission.CAMERA))
             }
         }
-        binding.deviceadminPref.setOnClickListener {
-            if (!isDeviceAdminEnabled(requireContext())) {
-                MaterialAlertDialogBuilder(it.context)
-                    .setTitle(android.R.string.dialog_alert_title)
-                    .setMessage(R.string.prompt_alert_message_device_admin)
-                    .setPositiveButton(android.R.string.ok) { d, which ->
-                        if (which == DialogInterface.BUTTON_POSITIVE) {
-                            val mScreenLockAdmin =
-                                ComponentName(it.context, ScreenLockAdminReceiver::class.java)
+        binding.lockscreenPref.setOnClickListener {
+            if (isDeviceAdminEnabled(requireContext()) || ScreenLockAccessibilityService.isServiceBound()) {
+                if (isDeviceAdminEnabled(requireContext())) {
+                    deActivateDeviceAdmin(requireContext())
+                }
+                if (ScreenLockAccessibilityService.isServiceBound()) {
+                    ScreenLockAccessibilityService.getInstance()?.disableSelf()
+                }
 
-                            runCatching {
-                                // Launch the activity to have the user enable our admin.
-                                val intent = Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN)
-                                intent.putExtra(
-                                    DevicePolicyManager.EXTRA_DEVICE_ADMIN,
-                                    mScreenLockAdmin
-                                )
-                                devAdminResultLauncher.launch(intent)
-                            }
-                        }
-
-                        d.dismiss()
-                    }
-                    .setCancelable(true)
-                    .setNegativeButton(android.R.string.cancel, null)
-                    .show()
-            } else {
-                deActivateDeviceAdmin(requireContext())
                 lifecycleScope.delayLaunch(timeMillis = 1000) {
                     updatePermissions()
+                }
+            } else {
+                fun showDeviceAdminDialog() {
+                    MaterialAlertDialogBuilder(it.context)
+                        .setTitle(android.R.string.dialog_alert_title)
+                        .setMessage(R.string.prompt_alert_message_device_admin)
+                        .setPositiveButton(android.R.string.ok) { d, which ->
+                            if (which == DialogInterface.BUTTON_POSITIVE) {
+                                val mScreenLockAdmin =
+                                    ComponentName(it.context, ScreenLockAdminReceiver::class.java)
+
+                                runCatching {
+                                    // Launch the activity to have the user enable our admin.
+                                    val intent = Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN)
+                                    intent.putExtra(
+                                        DevicePolicyManager.EXTRA_DEVICE_ADMIN,
+                                        mScreenLockAdmin
+                                    )
+                                    devAdminResultLauncher.launch(intent)
+                                }
+                            }
+
+                            d.dismiss()
+                        }
+                        .setCancelable(true)
+                        .setNegativeButton(android.R.string.cancel, null)
+                        .show()
+                }
+
+                fun showAccessibilityServiceDialog() {
+                    MaterialAlertDialogBuilder(it.context)
+                        .setTitle(android.R.string.dialog_alert_title)
+                        .setMessage(R.string.prompt_alert_message_lockscreen_accessible)
+                        .setPositiveButton(android.R.string.ok) { d, which ->
+                            if (which == DialogInterface.BUTTON_POSITIVE) {
+                                runCatching {
+                                    // Launch the activity to have the user enable our service.
+                                    val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+                                    it.context.startActivity(intent)
+                                }
+                            }
+
+                            d.dismiss()
+                        }
+                        .setCancelable(true)
+                        .setNegativeButton(android.R.string.cancel, null)
+                        .show()
+                }
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    MaterialAlertDialogBuilder(it.context)
+                        .setTitle(R.string.title_lockscreen_choice)
+                        .setItems(R.array.items_choice_lockscreen) { d, which ->
+                            if (which == 0) {
+                                showAccessibilityServiceDialog()
+                            } else {
+                                showDeviceAdminDialog()
+                            }
+
+                            d.dismiss()
+                        }
+                        .setCancelable(true)
+                        .show()
+                } else {
+                    showDeviceAdminDialog()
                 }
             }
         }
@@ -501,7 +548,13 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
         val mDPM =
             requireContext().getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
         val mScreenLockAdmin = ComponentName(requireContext(), ScreenLockAdminReceiver::class.java)
-        updateDeviceAdminText(mDPM.isAdminActive(mScreenLockAdmin))
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && ScreenLockAccessibilityService.isServiceBound()) {
+            updateLockScreenText(true)
+        } else if (mDPM.isAdminActive(mScreenLockAdmin)) {
+            updateDeviceAdminText(true)
+        } else {
+            updateLockScreenText(false)
+        }
         updateDNDAccessText(isNotificationAccessAllowed(requireContext()))
         updateUninstallText(mDPM.isAdminActive(mScreenLockAdmin))
 
@@ -564,8 +617,13 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
     }
 
     private fun updateDeviceAdminText(enabled: Boolean) {
-        binding.deviceadminSummary.setText(if (enabled) R.string.permission_admin_enabled else R.string.permission_admin_disabled)
-        binding.deviceadminSummary.setTextColor(if (enabled) Color.GREEN else Color.RED)
+        binding.lockscreenSummary.setText(if (enabled) R.string.permission_admin_enabled else R.string.permission_lockscreen_disabled)
+        binding.lockscreenSummary.setTextColor(if (enabled) Color.GREEN else Color.RED)
+    }
+
+    private fun updateLockScreenText(enabled: Boolean) {
+        binding.lockscreenSummary.setText(if (enabled) R.string.permission_lockscreen_enabled else R.string.permission_lockscreen_disabled)
+        binding.lockscreenSummary.setTextColor(if (enabled) Color.GREEN else Color.RED)
     }
 
     private fun updateDNDAccessText(enabled: Boolean) {

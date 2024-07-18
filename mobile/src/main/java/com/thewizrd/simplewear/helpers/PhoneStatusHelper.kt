@@ -1,6 +1,7 @@
 package com.thewizrd.simplewear.helpers
 
 import android.Manifest
+import android.accessibilityservice.AccessibilityService
 import android.annotation.SuppressLint
 import android.app.ActivityManager
 import android.app.NotificationManager
@@ -46,6 +47,7 @@ import com.thewizrd.shared_resources.actions.ValueDirection
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.simplewear.ScreenLockAdminReceiver
 import com.thewizrd.simplewear.camera.TorchListener
+import com.thewizrd.simplewear.services.ScreenLockAccessibilityService
 import com.thewizrd.simplewear.services.TorchService
 import com.thewizrd.simplewear.services.TorchService.Companion.enqueueWork
 import com.thewizrd.simplewear.utils.hasAssociations
@@ -329,16 +331,24 @@ object PhoneStatusHelper {
     }
 
     fun lockScreen(context: Context): ActionStatus {
-        if (!isDeviceAdminEnabled(context)) return ActionStatus.PERMISSION_DENIED
-        return try {
-            val mDPM =
-                context.applicationContext.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
-            mDPM.lockNow()
-            ActionStatus.SUCCESS
-        } catch (e: Exception) {
-            Logger.writeLine(Log.ERROR, e)
-            ActionStatus.FAILURE
+        if (isDeviceAdminEnabled(context)) {
+            return try {
+                val mDPM =
+                    context.applicationContext.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
+                mDPM.lockNow()
+                ActionStatus.SUCCESS
+            } catch (e: Exception) {
+                Logger.writeLine(Log.ERROR, e)
+                ActionStatus.FAILURE
+            }
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && ScreenLockAccessibilityService.isServiceBound()) {
+            val success = ScreenLockAccessibilityService.getInstance()
+                ?.performGlobalAction(AccessibilityService.GLOBAL_ACTION_LOCK_SCREEN)
+
+            return if (success == true) ActionStatus.SUCCESS else ActionStatus.FAILURE
         }
+
+        return ActionStatus.PERMISSION_DENIED
     }
 
     fun getStreamVolume(context: Context, streamType: AudioStreamType): AudioStreamState? {

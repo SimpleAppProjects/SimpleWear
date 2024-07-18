@@ -36,6 +36,7 @@ import com.thewizrd.shared_resources.utils.CrashlyticsLoggingTree
 import com.thewizrd.shared_resources.utils.JSONParser
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.simplewear.camera.TorchListener
+import com.thewizrd.simplewear.helpers.PhoneStatusHelper
 import com.thewizrd.simplewear.media.MediaControllerService
 import com.thewizrd.simplewear.services.CallControllerService
 import com.thewizrd.simplewear.telephony.SubscriptionListener
@@ -226,6 +227,8 @@ class App : Application(), ApplicationLib, ActivityLifecycleCallbacks, Configura
         }
 
         DynamicColors.applyToActivitiesIfAvailable(this)
+
+        startMigration()
     }
 
     override fun onTerminate() {
@@ -237,6 +240,29 @@ class App : Application(), ApplicationLib, ActivityLifecycleCallbacks, Configura
         Logger.shutdown()
         SimpleLibrary.unregister()
         super.onTerminate()
+    }
+
+    private fun startMigration() {
+        val versionCode = runCatching {
+            val packageInfo = applicationContext.packageManager.getPackageInfo(packageName, 0)
+            packageInfo.versionCode.toLong()
+        }.getOrDefault(0)
+
+        if (com.thewizrd.simplewear.preferences.Settings.getVersionCode() < versionCode) {
+            // Deactivate device admin to give option for accessibility service
+            if (com.thewizrd.simplewear.preferences.Settings.getVersionCode() < 341914050) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && PhoneStatusHelper.isDeviceAdminEnabled(
+                        applicationContext
+                    )
+                ) {
+                    PhoneStatusHelper.deActivateDeviceAdmin(applicationContext)
+                }
+            }
+        }
+
+        if (versionCode > 0) {
+            com.thewizrd.simplewear.preferences.Settings.setVersionCode(versionCode)
+        }
     }
 
     override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {

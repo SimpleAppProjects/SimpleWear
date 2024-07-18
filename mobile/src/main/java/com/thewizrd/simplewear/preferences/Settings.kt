@@ -8,6 +8,7 @@ object Settings {
     private const val KEY_LOADAPPICONS = "key_loadappicons"
     private const val KEY_BRIDGEMEDIA = "key_bridgemedia"
     private const val KEY_BRIDGECALLS = "key_bridgecalls"
+    private const val KEY_VERSIONCODE = "key_versioncode"
 
     fun isLoadAppIcons(): Boolean {
         val preferences = PreferenceManager.getDefaultSharedPreferences(App.instance.appContext)
@@ -42,6 +43,18 @@ object Settings {
         val preferences = PreferenceManager.getDefaultSharedPreferences(App.instance.appContext)
         preferences.edit {
             putBoolean(KEY_BRIDGECALLS, value)
+        }
+    }
+
+    fun getVersionCode(): Long {
+        val preferences = PreferenceManager.getDefaultSharedPreferences(App.instance.appContext)
+        return preferences.getLong(KEY_VERSIONCODE, 0)
+    }
+
+    fun setVersionCode(value: Long) {
+        val preferences = PreferenceManager.getDefaultSharedPreferences(App.instance.appContext)
+        preferences.edit {
+            putLong(KEY_VERSIONCODE, value)
         }
     }
 }
