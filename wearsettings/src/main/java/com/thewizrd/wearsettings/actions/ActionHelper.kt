@@ -38,6 +38,10 @@ object ActionHelper {
                 WifiHotspotAction.executeAction(context, action)
             }
 
+            Actions.LOCKSCREEN -> {
+                LockScreenAction.executeAction(context, action)
+            }
+
             else -> ActionStatus.FAILURE
         }
     }

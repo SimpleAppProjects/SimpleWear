@@ -921,7 +921,18 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
             }
             Actions.LOCKSCREEN -> {
                 nA = action as NormalAction
-                nA.setActionSuccessful(PhoneStatusHelper.lockScreen(mContext))
+                var status = PhoneStatusHelper.lockScreen(mContext)
+                if ((status == ActionStatus.FAILURE || status == ActionStatus.PERMISSION_DENIED) && WearSettingsHelper.isWearSettingsInstalled()) {
+                    status = performRemoteAction(action)
+
+                    if (status == ActionStatus.REMOTE_FAILURE ||
+                        status == ActionStatus.REMOTE_PERMISSION_DENIED
+                    ) {
+                        nA.setActionSuccessful(status)
+                    }
+                } else {
+                    nA.setActionSuccessful(status)
+                }
                 sendMessage(nodeID, WearableHelper.ActionsPath, JSONParser.serializer(nA, Action::class.java).stringToBytes())
             }
             Actions.VOLUME -> {
