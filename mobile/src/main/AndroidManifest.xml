@@ -147,7 +147,7 @@
             android:name=".media.MediaControllerService"
             android:enabled="true"
             android:exported="false"
-            android:foregroundServiceType="mediaPlayback" />
+            android:foregroundServiceType="connectedDevice" />
         <service
             android:name=".services.CallControllerService"
             android:enabled="true"

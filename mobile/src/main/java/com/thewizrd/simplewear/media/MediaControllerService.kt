@@ -134,7 +134,7 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
             startForeground(
                 JOB_ID,
                 notification,
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE
             )
         } else {
             startForeground(JOB_ID, notification)
