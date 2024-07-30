@@ -69,4 +69,6 @@
     <string name="action_add_batt_state">Add Battery State</string>
     <string name="action_remove_batt_state">Remove Battery State</string>
 
+    <string name="message_accessibility_svc_disabled">Accessibility service disabled</string>
+
 </resources>

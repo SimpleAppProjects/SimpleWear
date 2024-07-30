@@ -1,5 +1,6 @@
 package com.thewizrd.simplewear.wearable
 
+import android.accessibilityservice.AccessibilityService
 import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.ComponentName
@@ -14,6 +15,7 @@ import android.os.Bundle
 import android.util.Log
 import android.util.TypedValue
 import android.view.KeyEvent
+import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
 import androidx.media.MediaBrowserServiceCompat
 import com.google.android.gms.wearable.CapabilityClient
@@ -35,6 +37,7 @@ import com.thewizrd.shared_resources.actions.DNDChoice
 import com.thewizrd.shared_resources.actions.EXTRA_ACTION_CALLINGPKG
 import com.thewizrd.shared_resources.actions.EXTRA_ACTION_DATA
 import com.thewizrd.shared_resources.actions.EXTRA_ACTION_ERROR
+import com.thewizrd.shared_resources.actions.GestureActionState
 import com.thewizrd.shared_resources.actions.MultiChoiceAction
 import com.thewizrd.shared_resources.actions.NormalAction
 import com.thewizrd.shared_resources.actions.RemoteActionReceiver
@@ -46,6 +49,7 @@ import com.thewizrd.shared_resources.actions.VolumeAction
 import com.thewizrd.shared_resources.actions.toRemoteAction
 import com.thewizrd.shared_resources.helpers.AppItemData
 import com.thewizrd.shared_resources.helpers.AppItemSerializer.serialize
+import com.thewizrd.shared_resources.helpers.GestureUIHelper
 import com.thewizrd.shared_resources.helpers.MediaHelper
 import com.thewizrd.shared_resources.helpers.WearSettingsHelper
 import com.thewizrd.shared_resources.helpers.WearableHelper
@@ -59,9 +63,14 @@ import com.thewizrd.shared_resources.utils.stringToBytes
 import com.thewizrd.shared_resources.wearsettings.PackageValidator
 import com.thewizrd.simplewear.helpers.PhoneStatusHelper
 import com.thewizrd.simplewear.helpers.ResolveInfoActivityInfoComparator
+import com.thewizrd.simplewear.helpers.dispatchScrollDown
+import com.thewizrd.simplewear.helpers.dispatchScrollLeft
+import com.thewizrd.simplewear.helpers.dispatchScrollRight
+import com.thewizrd.simplewear.helpers.dispatchScrollUp
 import com.thewizrd.simplewear.media.MediaAppControllerUtils
 import com.thewizrd.simplewear.preferences.Settings
 import com.thewizrd.simplewear.services.NotificationListener
+import com.thewizrd.simplewear.services.WearAccessibilityService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -76,6 +85,7 @@ import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import java.io.BufferedWriter
 import java.io.OutputStreamWriter
+import java.nio.ByteBuffer
 import java.util.Collections
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -792,6 +802,15 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
         }
     }
 
+    suspend fun sendGestureActionStatus(nodeID: String?) {
+        val state = GestureActionState(
+            accessibilityEnabled = WearAccessibilityService.isServiceBound(),
+            dpadSupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+        )
+        val data = JSONParser.serializer(state, GestureActionState::class.java)
+        sendMessage(nodeID, GestureUIHelper.GestureStatusPath, data.stringToBytes())
+    }
+
     suspend fun performAction(nodeID: String?, action: Action) {
         val tA: ToggleAction
         val nA: NormalAction
@@ -1021,6 +1040,75 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
             }
 
             else -> {}
+        }
+    }
+
+    suspend fun performScroll(nodeID: String?, scrollData: ByteArray) {
+        val buf = ByteBuffer.wrap(scrollData)
+        val dX = buf.getFloat()
+        val dY = buf.getFloat()
+        val width = if (buf.hasRemaining()) buf.getFloat() else null
+        val height = if (buf.hasRemaining()) buf.getFloat() else null
+
+        WearAccessibilityService.getInstance()?.let { svc ->
+            when {
+                dX > 0 -> {
+                    svc.dispatchScrollLeft(width?.let { dX / it })
+                }
+
+                dX < 0 -> {
+                    svc.dispatchScrollRight(width?.let { dX / it })
+                }
+
+                dY > 0 -> {
+                    svc.dispatchScrollUp(height?.let { dY / it })
+                }
+
+                dY < 0 -> {
+                    svc.dispatchScrollDown(height?.let { dY / it })
+                }
+            }
+        } ?: run {
+            val state = GestureActionState(
+                accessibilityEnabled = false,
+                dpadSupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+            )
+            val data = JSONParser.serializer(state, GestureActionState::class.java)
+            sendMessage(nodeID, GestureUIHelper.GestureStatusPath, data.stringToBytes())
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    suspend fun performDPadAction(nodeID: String?, dPadIndex: Int) {
+        WearAccessibilityService.getInstance()?.let { svc ->
+            when (dPadIndex) {
+                0 -> svc.performGlobalAction(AccessibilityService.GLOBAL_ACTION_DPAD_LEFT)
+                1 -> svc.performGlobalAction(AccessibilityService.GLOBAL_ACTION_DPAD_UP)
+                2 -> svc.performGlobalAction(AccessibilityService.GLOBAL_ACTION_DPAD_RIGHT)
+                3 -> svc.performGlobalAction(AccessibilityService.GLOBAL_ACTION_DPAD_DOWN)
+                else -> {}
+            }
+        } ?: run {
+            val state = GestureActionState(
+                accessibilityEnabled = false,
+                dpadSupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+            )
+            val data = JSONParser.serializer(state, GestureActionState::class.java)
+            sendMessage(nodeID, GestureUIHelper.GestureStatusPath, data.stringToBytes())
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    suspend fun performDPadClick(nodeID: String?) {
+        WearAccessibilityService.getInstance()?.let { svc ->
+            svc.performGlobalAction(AccessibilityService.GLOBAL_ACTION_DPAD_CENTER)
+        } ?: run {
+            val state = GestureActionState(
+                accessibilityEnabled = false,
+                dpadSupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+            )
+            val data = JSONParser.serializer(state, GestureActionState::class.java)
+            sendMessage(nodeID, GestureUIHelper.GestureStatusPath, data.stringToBytes())
         }
     }
 

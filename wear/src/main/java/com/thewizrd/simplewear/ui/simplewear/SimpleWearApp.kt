@@ -117,6 +117,16 @@ fun SimpleWearApp(
                 }
             }
 
+            composable(Screen.GesturesAction.route) {
+                GesturesUi(navController = navController)
+
+                LaunchedEffect(navController) {
+                    AnalyticsLogger.logEvent("nav_route", Bundle().apply {
+                        putString("screen", Screen.GesturesAction.route)
+                    })
+                }
+            }
+
             activity(route = Screen.DashboardConfig.route) {
                 targetPackage = context.packageName
                 activityClass = DashboardConfigActivity::class

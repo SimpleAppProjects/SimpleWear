@@ -778,7 +778,8 @@ private fun ActionButtonViewModel.getItemViewType(): Int {
         }
 
         Actions.LOCATION -> ActionItemType.TOGGLE_ACTION
-        Actions.LOCKSCREEN, Actions.MUSICPLAYBACK, Actions.SLEEPTIMER, Actions.APPS, Actions.PHONE -> {
+        Actions.LOCKSCREEN, Actions.MUSICPLAYBACK, Actions.SLEEPTIMER, Actions.APPS, Actions.PHONE,
+        Actions.GESTURES -> {
             ActionItemType.ACTION
         }
 

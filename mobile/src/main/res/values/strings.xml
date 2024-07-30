@@ -11,7 +11,6 @@
     <string name="lockscreen_choice_accessible">Lock Screen Accessibility Service</string>
     <string name="lockscreen_choice_device_admin">Lock Screen Device Admin Service</string>
     <string name="title_lockscreen_choice">Choose a lock service</string>
-    <string name="prompt_alert_message_lockscreen_accessible">Please enable the accessibility service to use this feature. This service is only used to perform the lock screen action; no user data is collected. Please note that if the app is force-closed, the accessibility service will need to be re-enabled.</string>
 
     <string name="permission_dnd_enabled">Do not Disturb access enabled</string>
     <string name="permission_dnd_disabled">Do not Disturb access disabled. Please click to enable changing Do not Disturb setting from your WearOS device</string>
@@ -69,5 +68,10 @@
     <string name="permission_title_bt">Bluetooth</string>
     <string name="permission_bt_enabled">Bluetooth permission enabled</string>
     <string name="permission_bt_disabled">Bluetooth permission disabled</string>
+
+    <string name="accessibility_svc_description">Allows you to perform gestures, turn off your screen and lock your device from your WearOS device</string>
+    <string name="prompt_alert_message_accessibility_svc">Please enable the accessibility service to use this feature. This service is only used to perform actions like lock screen and gestures; no user data is collected. Please note that if the app is force-closed, the accessibility service will need to be re-enabled.</string>
+    <string name="permission_gestures_enabled">Accessibility service enabled</string>
+    <string name="permission_gestures_disabled">Accessibility service disabled</string>
 
 </resources>

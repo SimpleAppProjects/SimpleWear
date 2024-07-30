@@ -21,6 +21,7 @@ sealed class Screen(
 
         }
     }
+    data object GesturesAction : Screen("gestures")
 
     data object MediaPlayerList : Screen("mediaPlayerList")
     data object MediaPlayer : Screen("mediaPlayer") {

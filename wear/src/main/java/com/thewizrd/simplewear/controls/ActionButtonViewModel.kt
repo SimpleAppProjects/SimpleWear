@@ -77,7 +77,8 @@ class ActionButtonViewModel(val action: Action) {
                 Actions.MUSICPLAYBACK,
                 Actions.SLEEPTIMER,
                 Actions.APPS,
-                Actions.PHONE ->
+                Actions.PHONE,
+                Actions.GESTURES ->
                     ActionButtonViewModel(NormalAction(action))
                 Actions.VOLUME, Actions.BRIGHTNESS ->
                     ActionButtonViewModel(ValueAction(action, ValueDirection.UP))
@@ -154,6 +155,8 @@ class ActionButtonViewModel(val action: Action) {
             navController.navigate(Screen.AppLauncher.route)
         } else if (action is NormalAction && action.actionType == Actions.PHONE) {
             navController.navigate(Screen.CallManager.route)
+        } else if (action is NormalAction && action.actionType == Actions.GESTURES) {
+            navController.navigate(Screen.GesturesAction.route)
         } else {
             if (action is ToggleAction) {
                 val tA = action
@@ -328,6 +331,11 @@ class ActionButtonViewModel(val action: Action) {
                 actionLabelResId = R.string.action_hotspot
                 stateLabelResId =
                     if (tA.isEnabled) R.string.state_on else R.string.state_off
+            }
+            Actions.GESTURES -> {
+                drawableResId = R.drawable.ic_touch_app
+                actionLabelResId = R.string.action_gestures
+                stateLabelResId = 0
             }
         }
     }

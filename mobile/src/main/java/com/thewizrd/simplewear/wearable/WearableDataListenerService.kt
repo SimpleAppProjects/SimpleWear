@@ -16,6 +16,7 @@ import com.thewizrd.shared_resources.actions.AudioStreamState
 import com.thewizrd.shared_resources.actions.AudioStreamType
 import com.thewizrd.shared_resources.actions.ValueActionState
 import com.thewizrd.shared_resources.helpers.AppState
+import com.thewizrd.shared_resources.helpers.GestureUIHelper
 import com.thewizrd.shared_resources.helpers.InCallUIHelper
 import com.thewizrd.shared_resources.helpers.MediaHelper
 import com.thewizrd.shared_resources.helpers.WearableHelper
@@ -130,6 +131,8 @@ class WearableDataListenerService : WearableListenerService() {
                 }
             } else if (messageEvent.path == WearableHelper.BrightnessModePath) {
                 mWearMgr.toggleBrightnessMode(messageEvent.sourceNodeId)
+            } else if (messageEvent.path == GestureUIHelper.GestureStatusPath) {
+                mWearMgr.sendGestureActionStatus(messageEvent.sourceNodeId)
             } else if (messageEvent.path.startsWith(WearableHelper.StatusPath)) {
                 mWearMgr.sendStatusUpdate(messageEvent.sourceNodeId, messageEvent.path)
             } else if (messageEvent.path == WearableHelper.AppsPath) {
@@ -241,6 +244,15 @@ class WearableDataListenerService : WearableListenerService() {
                     messageEvent.sourceNodeId, messageEvent.path,
                     WearableHelper.getAppVersionCode().longToBytes()
                 )
+            } else if (messageEvent.path == GestureUIHelper.ScrollPath) {
+                mWearMgr.performScroll(messageEvent.sourceNodeId, messageEvent.data)
+            } else if (messageEvent.path == GestureUIHelper.DPadPath && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                val byteArr = messageEvent.data
+                val idx = byteArr.indexOfFirst { it > 0 }
+
+                mWearMgr.performDPadAction(messageEvent.sourceNodeId, idx)
+            } else if (messageEvent.path == GestureUIHelper.DPadClickPath && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                mWearMgr.performDPadClick(messageEvent.sourceNodeId)
             }
             return@runBlocking
         }

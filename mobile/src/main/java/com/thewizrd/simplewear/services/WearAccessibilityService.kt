@@ -4,7 +4,7 @@ import android.accessibilityservice.AccessibilityService
 import android.annotation.SuppressLint
 import android.view.accessibility.AccessibilityEvent
 
-class ScreenLockAccessibilityService : AccessibilityService() {
+class WearAccessibilityService : AccessibilityService() {
     override fun onCreate() {
         super.onCreate()
     }

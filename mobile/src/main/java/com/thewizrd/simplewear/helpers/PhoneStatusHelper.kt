@@ -47,9 +47,9 @@ import com.thewizrd.shared_resources.actions.ValueDirection
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.simplewear.ScreenLockAdminReceiver
 import com.thewizrd.simplewear.camera.TorchListener
-import com.thewizrd.simplewear.services.ScreenLockAccessibilityService
 import com.thewizrd.simplewear.services.TorchService
 import com.thewizrd.simplewear.services.TorchService.Companion.enqueueWork
+import com.thewizrd.simplewear.services.WearAccessibilityService
 import com.thewizrd.simplewear.utils.hasAssociations
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -341,8 +341,8 @@ object PhoneStatusHelper {
                 Logger.writeLine(Log.ERROR, e)
                 ActionStatus.FAILURE
             }
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && ScreenLockAccessibilityService.isServiceBound()) {
-            val success = ScreenLockAccessibilityService.getInstance()
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && WearAccessibilityService.isServiceBound()) {
+            val success = WearAccessibilityService.getInstance()
                 ?.performGlobalAction(AccessibilityService.GLOBAL_ACTION_LOCK_SCREEN)
 
             return if (success == true) ActionStatus.SUCCESS else ActionStatus.FAILURE

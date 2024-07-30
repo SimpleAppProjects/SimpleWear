@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
-    android:description="@string/device_admin_description"
-    android:summary="@string/device_admin_description"
+    android:description="@string/accessibility_svc_description"
+    android:summary="@string/accessibility_svc_description"
     android:accessibilityFlags="flagDefault"
     android:accessibilityFeedbackType="feedbackGeneric"
     android:canPerformGestures="true"
