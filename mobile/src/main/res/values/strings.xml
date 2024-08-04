@@ -74,4 +74,7 @@
     <string name="permission_gestures_enabled">Accessibility service enabled</string>
     <string name="permission_gestures_disabled">Accessibility service disabled</string>
 
+    <string name="permission_exact_alarms_enabled">Schedule action permission enabled</string>
+    <string name="permission_exact_alarms_disabled">Schedule action permission disabled</string>
+
 </resources>

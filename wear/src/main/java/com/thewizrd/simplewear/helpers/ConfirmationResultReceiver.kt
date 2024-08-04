@@ -21,5 +21,17 @@ fun Fragment.showConfirmationOverlay(success: Boolean) {
     } else {
         overlay.setType(ConfirmationOverlay.OPEN_ON_PHONE_ANIMATION)
     }
-    overlay.showAbove(view!!)
+    overlay.showAbove(requireView())
+}
+
+fun Activity.showConfirmationOverlay(@ConfirmationOverlay.OverlayType type: Int) {
+    val overlay = ConfirmationOverlay()
+    overlay.setType(type)
+    overlay.showOn(this)
+}
+
+fun Fragment.showConfirmationOverlay(@ConfirmationOverlay.OverlayType type: Int) {
+    val overlay = ConfirmationOverlay()
+    overlay.setType(type)
+    overlay.showAbove(requireView())
 }

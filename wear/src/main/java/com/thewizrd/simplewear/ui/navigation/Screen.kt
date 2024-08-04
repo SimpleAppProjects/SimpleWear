@@ -2,6 +2,7 @@ package com.thewizrd.simplewear.ui.navigation
 
 import com.thewizrd.shared_resources.actions.Actions
 import com.thewizrd.shared_resources.actions.AudioStreamType
+import com.thewizrd.shared_resources.actions.TimedAction
 import com.thewizrd.shared_resources.utils.JSONParser
 import com.thewizrd.simplewear.controls.AppItemViewModel
 
@@ -22,6 +23,14 @@ sealed class Screen(
         }
     }
     data object GesturesAction : Screen("gestures")
+    data object TimedActions : Screen("timedActions")
+    data object TimedActionDetail : Screen("timedActionDetail") {
+        fun getRoute(action: TimedAction): String {
+            return "$route?action=${JSONParser.serializer(action, TimedAction::class.java)}"
+        }
+    }
+
+    data object TimedActionSetup : Screen("timedActionSetup")
 
     data object MediaPlayerList : Screen("mediaPlayerList")
     data object MediaPlayer : Screen("mediaPlayer") {

@@ -8,8 +8,20 @@ import com.google.gson.stream.JsonReader
 import com.google.gson.stream.JsonWriter
 import com.google.gson.typeadapters.LowercaseEnumTypeAdapterFactory
 import com.google.gson.typeadapters.RuntimeTypeAdapterFactory
-import com.thewizrd.shared_resources.actions.*
-import java.io.*
+import com.thewizrd.shared_resources.actions.Action
+import com.thewizrd.shared_resources.actions.MultiChoiceAction
+import com.thewizrd.shared_resources.actions.NormalAction
+import com.thewizrd.shared_resources.actions.TimedAction
+import com.thewizrd.shared_resources.actions.ToggleAction
+import com.thewizrd.shared_resources.actions.ValueAction
+import com.thewizrd.shared_resources.actions.VolumeAction
+import java.io.File
+import java.io.FileInputStream
+import java.io.FileOutputStream
+import java.io.IOException
+import java.io.InputStream
+import java.io.InputStreamReader
+import java.io.OutputStreamWriter
 import java.lang.reflect.Type
 
 object JSONParser {
@@ -21,6 +33,7 @@ object JSONParser {
                             .registerSubtype(NormalAction::class.java)
                             .registerSubtype(MultiChoiceAction::class.java)
                             .registerSubtype(VolumeAction::class.java)
+                        .registerSubtype(TimedAction::class.java)
             )
             .registerTypeAdapterFactory(LowercaseEnumTypeAdapterFactory())
             .setDateFormat("dd.MM.yyyy HH:mm:ss ZZZZZ")

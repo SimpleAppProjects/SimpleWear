@@ -4,7 +4,9 @@ import android.Manifest
 import android.accessibilityservice.AccessibilityService
 import android.annotation.SuppressLint
 import android.app.ActivityManager
+import android.app.AlarmManager
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.app.admin.DevicePolicyManager
 import android.bluetooth.BluetoothManager
 import android.companion.CompanionDeviceManager
@@ -31,22 +33,28 @@ import android.util.Log
 import android.view.KeyEvent
 import androidx.annotation.DeprecatedSinceApi
 import androidx.annotation.RequiresApi
+import androidx.core.app.PendingIntentCompat
 import androidx.core.content.ContextCompat
 import androidx.core.location.LocationManagerCompat
 import com.android.dx.stock.ProxyBuilder
+import com.thewizrd.shared_resources.actions.Action
 import com.thewizrd.shared_resources.actions.ActionStatus
 import com.thewizrd.shared_resources.actions.Actions
 import com.thewizrd.shared_resources.actions.AudioStreamState
 import com.thewizrd.shared_resources.actions.AudioStreamType
 import com.thewizrd.shared_resources.actions.BatteryStatus
 import com.thewizrd.shared_resources.actions.DNDChoice
+import com.thewizrd.shared_resources.actions.EXTRA_ACTION_DATA
 import com.thewizrd.shared_resources.actions.LocationState
 import com.thewizrd.shared_resources.actions.RingerChoice
+import com.thewizrd.shared_resources.actions.TimedAction
 import com.thewizrd.shared_resources.actions.ValueActionState
 import com.thewizrd.shared_resources.actions.ValueDirection
+import com.thewizrd.shared_resources.utils.JSONParser
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.simplewear.ScreenLockAdminReceiver
 import com.thewizrd.simplewear.camera.TorchListener
+import com.thewizrd.simplewear.receivers.PhoneBroadcastReceiver
 import com.thewizrd.simplewear.services.TorchService
 import com.thewizrd.simplewear.services.TorchService.Companion.enqueueWork
 import com.thewizrd.simplewear.services.WearAccessibilityService
@@ -787,6 +795,136 @@ object PhoneStatusHelper {
             ) == PackageManager.PERMISSION_GRANTED
         } else {
             true
+        }
+    }
+
+    fun canScheduleExactAlarms(context: Context): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val alarmMgr =
+                context.applicationContext.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+            alarmMgr.canScheduleExactAlarms()
+        } else {
+            true
+        }
+    }
+
+    fun scheduleTimedAction(context: Context, action: TimedAction): ActionStatus {
+        if (!canScheduleExactAlarms(context))
+            return ActionStatus.PERMISSION_DENIED
+
+        try {
+            // Check permissions
+            when (action.action.actionType) {
+                Actions.WIFI -> {
+                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+                        if (ContextCompat.checkSelfPermission(
+                                context,
+                                Manifest.permission.CHANGE_WIFI_STATE
+                            ) != PackageManager.PERMISSION_GRANTED
+                        ) {
+                            return ActionStatus.PERMISSION_DENIED
+                        }
+                    }
+                }
+
+                Actions.BLUETOOTH -> {
+                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+                        if (ContextCompat.checkSelfPermission(
+                                context,
+                                Manifest.permission.BLUETOOTH_CONNECT
+                            ) != PackageManager.PERMISSION_GRANTED
+                        ) {
+                            return ActionStatus.PERMISSION_DENIED
+                        }
+                    }
+                }
+
+                Actions.TORCH -> {
+                    if (!isCameraPermissionEnabled(context)) {
+                        return ActionStatus.PERMISSION_DENIED
+                    }
+                }
+
+                Actions.DONOTDISTURB -> {
+                    if (!isNotificationAccessAllowed(context)) {
+                        return ActionStatus.PERMISSION_DENIED
+                    }
+                }
+
+                else -> {}
+            }
+
+            // Schedule action
+            return scheduleAction(context, action.timeInMillis, action.action)
+        } catch (e: Exception) {
+            Logger.writeLine(Log.ERROR, e)
+            return ActionStatus.FAILURE
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun scheduleAction(context: Context, timeInMillis: Long, action: Action): ActionStatus {
+        return try {
+            if (canScheduleExactAlarms(context)) {
+                val alarmMgr =
+                    context.applicationContext.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+
+                val actionData = JSONParser.serializer(action, Action::class.java)
+                val intent =
+                    Intent(context.applicationContext, PhoneBroadcastReceiver::class.java).apply {
+                        setAction(PhoneBroadcastReceiver.ACTION_PERFORM_TIMED_ACTION)
+                        putExtra(EXTRA_ACTION_DATA, actionData)
+                    }
+                val piFlags = PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_UPDATE_CURRENT
+                val pi = PendingIntentCompat.getBroadcast(
+                    context,
+                    action.actionType.value,
+                    intent,
+                    piFlags,
+                    false
+                )!!
+
+                alarmMgr.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, timeInMillis, pi)
+
+                // Save alarm
+                AlarmStateManager(context.applicationContext).run {
+                    saveAlarm(action.actionType, TimedAction(timeInMillis, action))
+                }
+
+                ActionStatus.SUCCESS
+            } else {
+                ActionStatus.PERMISSION_DENIED
+            }
+        } catch (e: Exception) {
+            Logger.writeLine(Log.ERROR, e)
+            ActionStatus.FAILURE
+        }
+    }
+
+    fun removedScheduledTimedAction(context: Context, action: Actions): ActionStatus {
+        return try {
+            val alarmMgr =
+                context.applicationContext.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+
+            val intent =
+                Intent(context.applicationContext, PhoneBroadcastReceiver::class.java).apply {
+                    setAction(PhoneBroadcastReceiver.ACTION_PERFORM_TIMED_ACTION)
+                }
+            val piFlags = PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_UPDATE_CURRENT
+            val pi =
+                PendingIntentCompat.getBroadcast(context, action.value, intent, piFlags, false)!!
+
+            alarmMgr.cancel(pi)
+
+            // Remove alarm state
+            AlarmStateManager(context.applicationContext).run {
+                clearAlarm(action)
+            }
+
+            ActionStatus.SUCCESS
+        } catch (e: Exception) {
+            Logger.writeLine(Log.ERROR, e)
+            ActionStatus.FAILURE
         }
     }
 

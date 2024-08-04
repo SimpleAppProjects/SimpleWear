@@ -40,6 +40,7 @@ import com.thewizrd.shared_resources.tasks.delayLaunch
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.simplewear.databinding.FragmentPermcheckBinding
 import com.thewizrd.simplewear.helpers.PhoneStatusHelper
+import com.thewizrd.simplewear.helpers.PhoneStatusHelper.canScheduleExactAlarms
 import com.thewizrd.simplewear.helpers.PhoneStatusHelper.deActivateDeviceAdmin
 import com.thewizrd.simplewear.helpers.PhoneStatusHelper.isCameraPermissionEnabled
 import com.thewizrd.simplewear.helpers.PhoneStatusHelper.isDeviceAdminEnabled
@@ -381,6 +382,19 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
             }
         }
 
+        binding.alarmsPref.setOnClickListener {
+            val ctx = it.context.applicationContext
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !canScheduleExactAlarms(ctx)) {
+                runCatching {
+                    startActivity(Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
+                        data = Uri.parse("package:${ctx.packageName}")
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                    })
+                }
+            }
+        }
+        binding.alarmsPref.isVisible = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+
         return binding.root
     }
 
@@ -572,6 +586,7 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
         }
 
         updateGesturesPref(WearAccessibilityService.isServiceBound())
+        updateExactAlarmsPref(canScheduleExactAlarms(requireContext()))
     }
 
     private fun updateCamPermText(enabled: Boolean) {
@@ -653,6 +668,11 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
     private fun updateGesturesPref(enabled: Boolean) {
         binding.gesturesSummary.setText(if (enabled) R.string.permission_gestures_enabled else R.string.permission_gestures_disabled)
         binding.gesturesSummary.setTextColor(if (enabled) Color.GREEN else Color.RED)
+    }
+
+    private fun updateExactAlarmsPref(enabled: Boolean) {
+        binding.alarmsSummary.setText(if (enabled) R.string.permission_exact_alarms_enabled else R.string.permission_exact_alarms_disabled)
+        binding.alarmsSummary.setTextColor(if (enabled) Color.GREEN else Color.RED)
     }
 
     @Suppress("DEPRECATION")

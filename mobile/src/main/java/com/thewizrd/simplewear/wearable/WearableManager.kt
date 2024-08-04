@@ -25,6 +25,7 @@ import com.google.android.gms.wearable.DataMap
 import com.google.android.gms.wearable.Node
 import com.google.android.gms.wearable.PutDataMapRequest
 import com.google.android.gms.wearable.Wearable
+import com.google.gson.reflect.TypeToken
 import com.google.gson.stream.JsonWriter
 import com.thewizrd.shared_resources.actions.ACTION_PERFORMACTION
 import com.thewizrd.shared_resources.actions.Action
@@ -42,6 +43,7 @@ import com.thewizrd.shared_resources.actions.MultiChoiceAction
 import com.thewizrd.shared_resources.actions.NormalAction
 import com.thewizrd.shared_resources.actions.RemoteActionReceiver
 import com.thewizrd.shared_resources.actions.RingerChoice
+import com.thewizrd.shared_resources.actions.TimedAction
 import com.thewizrd.shared_resources.actions.ToggleAction
 import com.thewizrd.shared_resources.actions.ValueAction
 import com.thewizrd.shared_resources.actions.ValueActionState
@@ -61,6 +63,7 @@ import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.shared_resources.utils.booleanToBytes
 import com.thewizrd.shared_resources.utils.stringToBytes
 import com.thewizrd.shared_resources.wearsettings.PackageValidator
+import com.thewizrd.simplewear.helpers.AlarmStateManager
 import com.thewizrd.simplewear.helpers.PhoneStatusHelper
 import com.thewizrd.simplewear.helpers.ResolveInfoActivityInfoComparator
 import com.thewizrd.simplewear.helpers.dispatchScrollDown
@@ -811,6 +814,14 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
         sendMessage(nodeID, GestureUIHelper.GestureStatusPath, data.stringToBytes())
     }
 
+    suspend fun sendTimedActionsStatus(nodeID: String?) {
+        val alarmStateMgr = AlarmStateManager(mContext)
+        val actions = alarmStateMgr.getAlarms()
+        val data =
+            JSONParser.serializer(actions, object : TypeToken<Map<Actions, TimedAction>>() {}.type)
+        sendMessage(nodeID, WearableHelper.TimedActionsStatusPath, data.stringToBytes())
+    }
+
     suspend fun performAction(nodeID: String?, action: Action) {
         val tA: ToggleAction
         val nA: NormalAction
@@ -1039,7 +1050,33 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
                 )
             }
 
-            else -> {}
+            Actions.TIMEDACTION -> {
+                val timedAction = action as TimedAction
+
+                if (timedAction.timeInMillis <= System.currentTimeMillis()) {
+                    performAction(nodeID, timedAction.action)
+                    timedAction.setActionSuccessful(ActionStatus.SUCCESS)
+                } else {
+                    timedAction.setActionSuccessful(
+                        PhoneStatusHelper.scheduleTimedAction(
+                            mContext,
+                            timedAction
+                        )
+                    )
+                }
+                sendMessage(
+                    nodeID,
+                    WearableHelper.ActionsPath,
+                    JSONParser.serializer(timedAction, Action::class.java).stringToBytes()
+                )
+            }
+
+            else -> {
+                Logger.writeLine(
+                    Log.WARN,
+                    "Unable to perform action. Unsupported - ${action.actionType}"
+                )
+            }
         }
     }
 

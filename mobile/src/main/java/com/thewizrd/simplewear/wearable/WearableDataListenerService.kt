@@ -14,6 +14,7 @@ import com.thewizrd.shared_resources.actions.ActionStatus
 import com.thewizrd.shared_resources.actions.Actions
 import com.thewizrd.shared_resources.actions.AudioStreamState
 import com.thewizrd.shared_resources.actions.AudioStreamType
+import com.thewizrd.shared_resources.actions.TimedAction
 import com.thewizrd.shared_resources.actions.ValueActionState
 import com.thewizrd.shared_resources.helpers.AppState
 import com.thewizrd.shared_resources.helpers.GestureUIHelper
@@ -133,6 +134,8 @@ class WearableDataListenerService : WearableListenerService() {
                 mWearMgr.toggleBrightnessMode(messageEvent.sourceNodeId)
             } else if (messageEvent.path == GestureUIHelper.GestureStatusPath) {
                 mWearMgr.sendGestureActionStatus(messageEvent.sourceNodeId)
+            } else if (messageEvent.path == WearableHelper.TimedActionsStatusPath) {
+                mWearMgr.sendTimedActionsStatus(messageEvent.sourceNodeId)
             } else if (messageEvent.path.startsWith(WearableHelper.StatusPath)) {
                 mWearMgr.sendStatusUpdate(messageEvent.sourceNodeId, messageEvent.path)
             } else if (messageEvent.path == WearableHelper.AppsPath) {
@@ -253,6 +256,45 @@ class WearableDataListenerService : WearableListenerService() {
                 mWearMgr.performDPadAction(messageEvent.sourceNodeId, idx)
             } else if (messageEvent.path == GestureUIHelper.DPadClickPath && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 mWearMgr.performDPadClick(messageEvent.sourceNodeId)
+            } else if (messageEvent.path == WearableHelper.TimedActionDeletePath) {
+                val action = Actions.valueOf(messageEvent.data.bytesToString())
+
+                val status = PhoneStatusHelper.removedScheduledTimedAction(ctx, action)
+
+                mWearMgr.sendMessage(
+                    messageEvent.sourceNodeId,
+                    messageEvent.path,
+                    status.name.stringToBytes()
+                )
+                mWearMgr.sendTimedActionsStatus(messageEvent.sourceNodeId)
+            } else if (messageEvent.path == WearableHelper.TimedActionAddPath) {
+                val jsonData = messageEvent.data.bytesToString()
+                val action = JSONParser.deserializer(jsonData, TimedAction::class.java)
+
+                val status = action?.let {
+                    PhoneStatusHelper.scheduleTimedAction(ctx, it)
+                } ?: ActionStatus.FAILURE
+
+                mWearMgr.sendMessage(
+                    messageEvent.sourceNodeId,
+                    messageEvent.path,
+                    status.name.stringToBytes()
+                )
+                mWearMgr.sendTimedActionsStatus(messageEvent.sourceNodeId)
+            } else if (messageEvent.path == WearableHelper.TimedActionUpdatePath) {
+                val jsonData = messageEvent.data.bytesToString()
+                val action = JSONParser.deserializer(jsonData, TimedAction::class.java)
+
+                val status = action?.let {
+                    PhoneStatusHelper.scheduleTimedAction(ctx, it)
+                } ?: ActionStatus.FAILURE
+
+                mWearMgr.sendMessage(
+                    messageEvent.sourceNodeId,
+                    messageEvent.path,
+                    status.name.stringToBytes()
+                )
+                mWearMgr.sendTimedActionsStatus(messageEvent.sourceNodeId)
             }
             return@runBlocking
         }

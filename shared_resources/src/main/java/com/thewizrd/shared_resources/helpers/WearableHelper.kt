@@ -48,6 +48,10 @@ object WearableHelper {
     const val ValueStatusSetPath = "/status/valueaction/setvalue"
     const val BrightnessModePath = "/status/brightness/mode"
     const val VersionPath = "/version"
+    const val TimedActionsStatusPath = "/status/timedActions"
+    const val TimedActionAddPath = "/timedActions/add"
+    const val TimedActionDeletePath = "/timedActions/delete"
+    const val TimedActionUpdatePath = "/timedActions/update"
 
     // For Apps DataMap
     const val KEY_APPS = "key_apps"

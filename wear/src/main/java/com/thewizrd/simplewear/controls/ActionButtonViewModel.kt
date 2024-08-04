@@ -15,7 +15,6 @@ import com.thewizrd.shared_resources.actions.NormalAction
 import com.thewizrd.shared_resources.actions.RingerChoice
 import com.thewizrd.shared_resources.actions.ToggleAction
 import com.thewizrd.shared_resources.actions.ValueAction
-import com.thewizrd.shared_resources.actions.ValueDirection
 import com.thewizrd.shared_resources.sleeptimer.SleepTimerHelper
 import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.ui.navigation.Screen
@@ -59,39 +58,7 @@ class ActionButtonViewModel(val action: Action) {
         }
 
         fun getViewModelFromAction(action: Actions): ActionButtonViewModel {
-            return when (action) {
-                Actions.WIFI,
-                Actions.BLUETOOTH,
-                Actions.MOBILEDATA,
-                Actions.TORCH,
-                Actions.HOTSPOT ->
-                    ActionButtonViewModel(ToggleAction(action, true))
-                Actions.LOCATION ->
-                    ActionButtonViewModel(
-                        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P)
-                            MultiChoiceAction(action)
-                        else
-                            ToggleAction(action, true)
-                    )
-                Actions.LOCKSCREEN,
-                Actions.MUSICPLAYBACK,
-                Actions.SLEEPTIMER,
-                Actions.APPS,
-                Actions.PHONE,
-                Actions.GESTURES ->
-                    ActionButtonViewModel(NormalAction(action))
-                Actions.VOLUME, Actions.BRIGHTNESS ->
-                    ActionButtonViewModel(ValueAction(action, ValueDirection.UP))
-                Actions.DONOTDISTURB ->
-                    ActionButtonViewModel(
-                        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P)
-                            MultiChoiceAction(action)
-                        else
-                            ToggleAction(action, true)
-                    )
-                Actions.RINGER ->
-                    ActionButtonViewModel(MultiChoiceAction(action))
-            }
+            return ActionButtonViewModel(Action.getDefaultAction(action))
         }
     }
 
@@ -157,6 +124,8 @@ class ActionButtonViewModel(val action: Action) {
             navController.navigate(Screen.CallManager.route)
         } else if (action is NormalAction && action.actionType == Actions.GESTURES) {
             navController.navigate(Screen.GesturesAction.route)
+        } else if (action is NormalAction && action.actionType == Actions.TIMEDACTION) {
+            navController.navigate(Screen.TimedActions.route)
         } else {
             if (action is ToggleAction) {
                 val tA = action
@@ -335,6 +304,12 @@ class ActionButtonViewModel(val action: Action) {
             Actions.GESTURES -> {
                 drawableResId = R.drawable.ic_touch_app
                 actionLabelResId = R.string.action_gestures
+                stateLabelResId = 0
+            }
+
+            Actions.TIMEDACTION -> {
+                drawableResId = R.drawable.ic_timelapse
+                actionLabelResId = R.string.action_timedaction
                 stateLabelResId = 0
             }
         }

@@ -20,7 +20,8 @@ object DashboardTileUtils {
             Actions.APPS,
             Actions.PHONE,
             Actions.BRIGHTNESS,
-            Actions.GESTURES -> false
+            Actions.GESTURES,
+            Actions.TIMEDACTION -> false
             else -> true
         }
     }
