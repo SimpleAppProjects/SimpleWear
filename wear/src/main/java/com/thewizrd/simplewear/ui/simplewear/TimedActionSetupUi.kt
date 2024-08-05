@@ -1,11 +1,10 @@
 @file:OptIn(
     ExperimentalFoundationApi::class, ExperimentalHorologistApi::class,
-    ExperimentalAnimationGraphicsApi::class
+    ExperimentalWearFoundationApi::class
 )
 
 package com.thewizrd.simplewear.ui.simplewear
 
-import androidx.compose.animation.graphics.ExperimentalAnimationGraphicsApi
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,6 +26,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
+import androidx.wear.compose.foundation.ExperimentalWearFoundationApi
 import androidx.wear.compose.foundation.lazy.items
 import androidx.wear.compose.material.ButtonDefaults
 import androidx.wear.compose.material.ChipDefaults
@@ -47,7 +48,6 @@ import androidx.wear.compose.ui.tooling.preview.WearPreviewFontScales
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
 import com.google.android.horologist.composables.TimePicker
 import com.google.android.horologist.compose.layout.PagerScaffold
-import com.google.android.horologist.compose.layout.ScalingLazyColumn
 import com.google.android.horologist.compose.layout.ScalingLazyColumnDefaults
 import com.google.android.horologist.compose.layout.rememberResponsiveColumnState
 import com.google.android.horologist.compose.layout.scrollAway
@@ -67,6 +67,7 @@ import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.controls.CustomConfirmationOverlay
 import com.thewizrd.simplewear.helpers.showConfirmationOverlay
+import com.thewizrd.simplewear.ui.components.ScalingLazyColumn
 import com.thewizrd.simplewear.ui.theme.activityViewModel
 import com.thewizrd.simplewear.ui.theme.findActivity
 import com.thewizrd.simplewear.ui.tools.WearPreviewDevices
@@ -183,6 +184,8 @@ private fun TimedActionSetupUi(
     var shouldSetInitialAction by remember { mutableStateOf(false) }
     var initialAction: Action? by remember { mutableStateOf(null) }
 
+    val focusRequester = remember { FocusRequester() }
+
     PagerScaffold(modifier = modifier) {
         HorizontalPager(
             state = pagerState,
@@ -216,7 +219,10 @@ private fun TimedActionSetupUi(
                     Box {
                         TimeText(modifier = Modifier.scrollAway { scrollState })
 
-                        ScalingLazyColumn(columnState = scrollState) {
+                        ScalingLazyColumn(
+                            scrollState = scrollState,
+                            focusRequester = focusRequester
+                        ) {
                             item {
                                 ResponsiveListHeader {
                                     Text(text = stringResource(id = R.string.title_actions))
@@ -248,6 +254,12 @@ private fun TimedActionSetupUi(
                                 )
                             }
                         }
+
+                        LaunchedEffect(pagerState, pagerState.targetPage) {
+                            if (pagerState.targetPage == index) {
+                                focusRequester.requestFocus()
+                            }
+                        }
                     }
                 }
                 // State
@@ -269,7 +281,10 @@ private fun TimedActionSetupUi(
                     Box {
                         TimeText(modifier = Modifier.scrollAway { scrollState })
 
-                        ScalingLazyColumn(columnState = scrollState) {
+                        ScalingLazyColumn(
+                            scrollState = scrollState,
+                            focusRequester = focusRequester
+                        ) {
                             item {
                                 ResponsiveListHeader {
                                     Text(text = stringResource(id = R.string.title_confirm_action))
@@ -544,6 +559,12 @@ private fun TimedActionSetupUi(
                                         colors = ButtonDefaults.secondaryButtonColors()
                                     )
                                 }
+                            }
+                        }
+
+                        LaunchedEffect(pagerState, pagerState.targetPage) {
+                            if (pagerState.targetPage == index) {
+                                focusRequester.requestFocus()
                             }
                         }
                     }
