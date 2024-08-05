@@ -86,9 +86,9 @@ import com.thewizrd.shared_resources.actions.MultiChoiceAction
 import com.thewizrd.shared_resources.actions.RingerChoice
 import com.thewizrd.shared_resources.actions.TimedAction
 import com.thewizrd.shared_resources.actions.ToggleAction
+import com.thewizrd.shared_resources.controls.ActionButtonViewModel
 import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.simplewear.R
-import com.thewizrd.simplewear.controls.ActionButtonViewModel
 import com.thewizrd.simplewear.controls.CustomConfirmationOverlay
 import com.thewizrd.simplewear.ui.components.LoadingContent
 import com.thewizrd.simplewear.ui.navigation.Screen

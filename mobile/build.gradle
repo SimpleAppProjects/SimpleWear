@@ -99,6 +99,7 @@ dependencies {
 
     implementation "androidx.appcompat:appcompat:$appcompat_version"
     implementation "androidx.constraintlayout:constraintlayout:$constraintlayout_version"
+    implementation "androidx.recyclerview:recyclerview-selection:1.1.0"
     implementation 'androidx.media:media:1.7.0'
 
     implementation "com.google.android.material:material:$material_version"

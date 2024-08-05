@@ -11,9 +11,9 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.thewizrd.shared_resources.actions.Actions
+import com.thewizrd.shared_resources.controls.ActionButtonViewModel
 import com.thewizrd.shared_resources.helpers.ListAdapterOnClickInterface
 import com.thewizrd.shared_resources.utils.ContextUtils.dpToPx
-import com.thewizrd.simplewear.controls.ActionButtonViewModel
 import com.thewizrd.simplewear.controls.WearChipButton
 import com.thewizrd.simplewear.databinding.DialogAddactionBinding
 import com.thewizrd.simplewear.helpers.SpacerItemDecoration

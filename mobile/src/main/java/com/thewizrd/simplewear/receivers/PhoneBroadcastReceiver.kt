@@ -76,6 +76,13 @@ class PhoneBroadcastReceiver : BroadcastReceiver() {
                         Action::class.java
                     )
                     if (action != null) {
+                        Logger.writeLine(
+                            Log.INFO,
+                            "%s: Performing timed action: %s",
+                            TAG,
+                            action.actionType.name
+                        )
+
                         GlobalScope.launch(Dispatchers.Default) {
                             WearableManager(context.applicationContext).run {
                                 performAction(null, action)
@@ -86,6 +93,12 @@ class PhoneBroadcastReceiver : BroadcastReceiver() {
                         AlarmStateManager(context.applicationContext).run {
                             clearAlarm(action.actionType)
                         }
+
+                        // Send status update
+                        WearableWorker.enqueueAction(
+                            context.applicationContext,
+                            WearableWorker.ACTION_SENDTIMEDACTIONSUPDATE
+                        )
                     }
                 }
             }

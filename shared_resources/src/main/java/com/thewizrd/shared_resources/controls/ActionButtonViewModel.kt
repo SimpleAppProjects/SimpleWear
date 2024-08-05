@@ -1,23 +1,18 @@
-package com.thewizrd.simplewear.controls
+package com.thewizrd.shared_resources.controls
 
 import android.os.Build
 import androidx.annotation.DrawableRes
+import androidx.annotation.RestrictTo
 import androidx.annotation.StringRes
-import androidx.navigation.NavController
 import androidx.recyclerview.widget.DiffUtil
+import com.thewizrd.shared_resources.R
 import com.thewizrd.shared_resources.actions.Action
-import com.thewizrd.shared_resources.actions.ActionStatus
 import com.thewizrd.shared_resources.actions.Actions
 import com.thewizrd.shared_resources.actions.DNDChoice
 import com.thewizrd.shared_resources.actions.LocationState
 import com.thewizrd.shared_resources.actions.MultiChoiceAction
-import com.thewizrd.shared_resources.actions.NormalAction
 import com.thewizrd.shared_resources.actions.RingerChoice
 import com.thewizrd.shared_resources.actions.ToggleAction
-import com.thewizrd.shared_resources.actions.ValueAction
-import com.thewizrd.shared_resources.sleeptimer.SleepTimerHelper
-import com.thewizrd.simplewear.R
-import com.thewizrd.simplewear.ui.navigation.Screen
 import java.util.Objects
 
 class ActionButtonViewModel(val action: Action) {
@@ -37,8 +32,8 @@ class ActionButtonViewModel(val action: Action) {
     var stateLabelResId: Int = 0
         private set
 
+    @set:RestrictTo(RestrictTo.Scope.LIBRARY)
     var buttonState: Boolean? = null
-        private set
 
     companion object {
         val DIFF_CALLBACK = object : DiffUtil.ItemCallback<ActionButtonViewModel>() {
@@ -99,51 +94,8 @@ class ActionButtonViewModel(val action: Action) {
         }
     }
 
-    fun onClick(
-        navController: NavController,
-        onActionChanged: (Action) -> Unit,
-        onActionStatus: (Action) -> Unit
-    ) {
-        action.isActionSuccessful = true
-
-        if (action is ValueAction) {
-            navController.navigate("${Screen.ValueAction.route}/${actionType.value}")
-        } else if (action is NormalAction && action.actionType == Actions.MUSICPLAYBACK) {
-            navController.navigate(Screen.MediaPlayerList.route)
-        } else if (action is NormalAction && action.actionType == Actions.SLEEPTIMER) {
-            if (SleepTimerHelper.isSleepTimerInstalled()) {
-                SleepTimerHelper.launchSleepTimer()
-            } else {
-                action.setActionSuccessful(ActionStatus.PERMISSION_DENIED)
-
-                onActionStatus.invoke(action)
-            }
-        } else if (action is NormalAction && action.actionType == Actions.APPS) {
-            navController.navigate(Screen.AppLauncher.route)
-        } else if (action is NormalAction && action.actionType == Actions.PHONE) {
-            navController.navigate(Screen.CallManager.route)
-        } else if (action is NormalAction && action.actionType == Actions.GESTURES) {
-            navController.navigate(Screen.GesturesAction.route)
-        } else if (action is NormalAction && action.actionType == Actions.TIMEDACTION) {
-            navController.navigate(Screen.TimedActions.route)
-        } else {
-            if (action is ToggleAction) {
-                val tA = action
-                tA.isEnabled = !tA.isEnabled
-                buttonState = null
-            } else if (action is MultiChoiceAction) {
-                val mA = action
-                val currentChoice = mA.choice
-                val newChoice = currentChoice + 1
-                mA.choice = newChoice
-                updateIconAndLabel()
-            }
-
-            onActionChanged.invoke(action)
-        }
-    }
-
-    private fun updateIconAndLabel() {
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    fun updateIconAndLabel() {
         val tA: ToggleAction
         val mA: MultiChoiceAction
 
@@ -155,6 +107,7 @@ class ActionButtonViewModel(val action: Action) {
                 actionLabelResId = R.string.action_wifi
                 stateLabelResId = if (tA.isEnabled) R.string.state_on else R.string.state_off
             }
+
             Actions.BLUETOOTH -> {
                 tA = action as ToggleAction
                 drawableResId =
@@ -162,6 +115,7 @@ class ActionButtonViewModel(val action: Action) {
                 actionLabelResId = R.string.action_bt
                 stateLabelResId = if (tA.isEnabled) R.string.state_on else R.string.state_off
             }
+
             Actions.MOBILEDATA -> {
                 tA = action as ToggleAction
                 drawableResId =
@@ -169,6 +123,7 @@ class ActionButtonViewModel(val action: Action) {
                 actionLabelResId = R.string.action_mobiledata
                 stateLabelResId = if (tA.isEnabled) R.string.state_on else R.string.state_off
             }
+
             Actions.LOCATION -> {
                 actionLabelResId = R.string.action_location
 
@@ -180,17 +135,24 @@ class ActionButtonViewModel(val action: Action) {
                 }
                 when (locationState) {
                     LocationState.OFF -> {
-                        drawableResId = R.drawable.ic_location_off_white_24dp
+                        drawableResId =
+                            R.drawable.ic_location_off_white_24dp
                         stateLabelResId = R.string.state_off
                     }
+
                     LocationState.SENSORS_ONLY -> {
-                        drawableResId = R.drawable.ic_baseline_gps_fixed_24dp
+                        drawableResId =
+                            R.drawable.ic_baseline_gps_fixed_24dp
                         stateLabelResId = R.string.locationstate_sensorsonly
                     }
+
                     LocationState.BATTERY_SAVING -> {
-                        drawableResId = R.drawable.ic_outline_location_on_24dp
-                        stateLabelResId = R.string.locationstate_batterysaving
+                        drawableResId =
+                            R.drawable.ic_outline_location_on_24dp
+                        stateLabelResId =
+                            R.string.locationstate_batterysaving
                     }
+
                     LocationState.HIGH_ACCURACY -> {
                         drawableResId = R.drawable.ic_location_on_white_24dp
                         stateLabelResId = if (action is ToggleAction) {
@@ -201,22 +163,26 @@ class ActionButtonViewModel(val action: Action) {
                     }
                 }
             }
+
             Actions.TORCH -> {
                 tA = action as ToggleAction
                 drawableResId = R.drawable.ic_lightbulb_outline_white_24dp
                 actionLabelResId = R.string.action_torch
                 stateLabelResId = if (tA.isEnabled) R.string.state_on else R.string.state_off
             }
+
             Actions.LOCKSCREEN -> {
                 drawableResId = R.drawable.ic_lock_outline_white_24dp
                 actionLabelResId = R.string.action_lockscreen
                 stateLabelResId = 0
             }
+
             Actions.VOLUME -> {
                 drawableResId = R.drawable.ic_volume_up_white_24dp
                 actionLabelResId = R.string.action_volume
                 stateLabelResId = 0
             }
+
             Actions.DONOTDISTURB -> {
                 actionLabelResId = R.string.action_dnd
 
@@ -228,9 +194,11 @@ class ActionButtonViewModel(val action: Action) {
                 }
                 when (dndChoice) {
                     DNDChoice.OFF -> {
-                        drawableResId = R.drawable.ic_do_not_disturb_off_white_24dp
+                        drawableResId =
+                            R.drawable.ic_do_not_disturb_off_white_24dp
                         stateLabelResId = R.string.state_off
                     }
+
                     DNDChoice.PRIORITY -> {
                         drawableResId = R.drawable.ic_error_white_24dp
                         stateLabelResId = if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
@@ -239,16 +207,20 @@ class ActionButtonViewModel(val action: Action) {
                             R.string.state_on
                         }
                     }
+
                     DNDChoice.ALARMS -> {
                         drawableResId = R.drawable.ic_alarm_white_24dp
                         stateLabelResId = R.string.dndstate_alarms
                     }
+
                     DNDChoice.SILENCE -> {
-                        drawableResId = R.drawable.ic_notifications_off_white_24dp
+                        drawableResId =
+                            R.drawable.ic_notifications_off_white_24dp
                         stateLabelResId = R.string.dndstate_silence
                     }
                 }
             }
+
             Actions.RINGER -> {
                 mA = action as MultiChoiceAction
 
@@ -259,41 +231,50 @@ class ActionButtonViewModel(val action: Action) {
                         drawableResId = R.drawable.ic_vibration_white_24dp
                         stateLabelResId = R.string.ringerstate_vib
                     }
+
                     RingerChoice.SOUND -> {
-                        drawableResId = R.drawable.ic_notifications_active_white_24dp
+                        drawableResId =
+                            R.drawable.ic_notifications_active_white_24dp
                         stateLabelResId = R.string.ringerstate_sound
                     }
+
                     RingerChoice.SILENT -> {
                         drawableResId = R.drawable.ic_volume_off_white_24dp
                         stateLabelResId = R.string.ringerstate_silent
                     }
                 }
             }
+
             Actions.MUSICPLAYBACK -> {
                 drawableResId = R.drawable.ic_play_circle_filled_white_24dp
                 actionLabelResId = R.string.action_musicplayback
                 stateLabelResId = 0
             }
+
             Actions.SLEEPTIMER -> {
                 drawableResId = R.drawable.ic_sleep_timer
                 actionLabelResId = R.string.action_sleeptimer
                 stateLabelResId = 0
             }
+
             Actions.APPS -> {
                 drawableResId = R.drawable.ic_apps_white_24dp
                 actionLabelResId = R.string.action_apps
                 stateLabelResId = 0
             }
+
             Actions.PHONE -> {
                 drawableResId = R.drawable.ic_phone_24dp
                 actionLabelResId = R.string.action_phone
                 stateLabelResId = 0
             }
+
             Actions.BRIGHTNESS -> {
                 drawableResId = R.drawable.ic_brightness_medium
                 actionLabelResId = R.string.action_brightness
                 stateLabelResId = 0
             }
+
             Actions.HOTSPOT -> {
                 tA = action as ToggleAction
                 drawableResId = R.drawable.ic_wifi_tethering
@@ -301,6 +282,7 @@ class ActionButtonViewModel(val action: Action) {
                 stateLabelResId =
                     if (tA.isEnabled) R.string.state_on else R.string.state_off
             }
+
             Actions.GESTURES -> {
                 drawableResId = R.drawable.ic_touch_app
                 actionLabelResId = R.string.action_gestures

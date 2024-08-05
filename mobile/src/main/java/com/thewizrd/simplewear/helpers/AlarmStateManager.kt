@@ -12,7 +12,7 @@ class AlarmStateManager(private val context: Context) {
         private const val KEY_ALARMS = "alarms"
     }
 
-    private val preferences = context.getSharedPreferences(KEY_ALARMS, Context.MODE_PRIVATE)
+    internal val preferences = context.getSharedPreferences(KEY_ALARMS, Context.MODE_PRIVATE)
 
     fun saveAlarm(actionType: Actions, action: TimedAction) {
         saveAlarm(actionType, JSONParser.serializer(action, Action::class.java))

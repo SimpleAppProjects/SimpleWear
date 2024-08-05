@@ -26,19 +26,20 @@ import java.lang.reflect.Type
 
 object JSONParser {
     private val gson: Gson = GsonBuilder()
-            .registerTypeAdapterFactory(
-                    RuntimeTypeAdapterFactory.of(Action::class.java)
-                            .registerSubtype(ToggleAction::class.java)
-                            .registerSubtype(ValueAction::class.java)
-                            .registerSubtype(NormalAction::class.java)
-                            .registerSubtype(MultiChoiceAction::class.java)
-                            .registerSubtype(VolumeAction::class.java)
-                        .registerSubtype(TimedAction::class.java)
-            )
-            .registerTypeAdapterFactory(LowercaseEnumTypeAdapterFactory())
-            .setDateFormat("dd.MM.yyyy HH:mm:ss ZZZZZ")
-            .serializeNulls()
-            .create()
+        .registerTypeAdapterFactory(
+            RuntimeTypeAdapterFactory.of(Action::class.java)
+                .registerSubtype(ToggleAction::class.java)
+                .registerSubtype(ValueAction::class.java)
+                .registerSubtype(NormalAction::class.java)
+                .registerSubtype(MultiChoiceAction::class.java)
+                .registerSubtype(VolumeAction::class.java)
+                .registerSubtype(TimedAction::class.java)
+        )
+        .registerTypeAdapterFactory(LowercaseEnumTypeAdapterFactory())
+        .setDateFormat("dd.MM.yyyy HH:mm:ss ZZZZZ")
+        .serializeNulls()
+        .enableComplexMapKeySerialization()
+        .create()
 
     fun <T> deserializer(response: String?, type: Type?): T? {
         var `object`: T? = null

@@ -78,12 +78,13 @@ import com.google.android.horologist.annotations.ExperimentalHorologistApi
 import com.google.android.horologist.compose.rotaryinput.rotaryWithScroll
 import com.thewizrd.shared_resources.actions.Actions
 import com.thewizrd.shared_resources.actions.BatteryStatus
+import com.thewizrd.shared_resources.controls.ActionButtonViewModel
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
 import com.thewizrd.shared_resources.utils.AnalyticsLogger
 import com.thewizrd.shared_resources.utils.ContextUtils.dpToPx
 import com.thewizrd.shared_resources.utils.ContextUtils.isSmallestWidth
 import com.thewizrd.simplewear.R
-import com.thewizrd.simplewear.controls.ActionButtonViewModel
+import com.thewizrd.simplewear.controls.onClick
 import com.thewizrd.simplewear.preferences.Settings
 import com.thewizrd.simplewear.ui.components.PullRefresh
 import com.thewizrd.simplewear.ui.components.WearDivider

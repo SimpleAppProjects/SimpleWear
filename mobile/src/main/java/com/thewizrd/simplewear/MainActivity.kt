@@ -2,10 +2,14 @@ package com.thewizrd.simplewear
 
 import android.content.Intent
 import android.os.Bundle
+import android.view.Menu
+import android.view.MenuInflater
+import android.view.MenuItem
 import android.view.View
 import android.view.ViewTreeObserver
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.core.view.MenuProvider
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.color.DynamicColors
@@ -63,6 +67,50 @@ class MainActivity : AppCompatActivity() {
         val appBarLayout = findViewById<AppBarLayout>(R.id.app_bar)
         appBarLayout.liftOnScrollTargetViewId = R.id.scrollView
         appBarLayout.isLiftOnScroll = true
+
+        setSupportActionBar(findViewById(R.id.toolbar))
+        addMenuProvider(object : MenuProvider {
+            override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
+                menuInflater.inflate(R.menu.actions, menu)
+            }
+
+            override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
+                when (menuItem.itemId) {
+                    R.id.timed_actions -> {
+                        supportFragmentManager.beginTransaction()
+                            .replace(R.id.fragment_container, TimedActionsFragment())
+                            .addToBackStack("timedActions")
+                            .commit()
+                        return true
+                    }
+                }
+
+                return false
+            }
+
+            override fun onPrepareMenu(menu: Menu) {
+                menu.setGroupVisible(
+                    R.id.action_group,
+                    supportFragmentManager.backStackEntryCount == 0
+                )
+            }
+        })
+        supportActionBar?.setDefaultDisplayHomeAsUpEnabled(true)
+
+        supportFragmentManager.addOnBackStackChangedListener {
+            supportActionBar?.setDisplayHomeAsUpEnabled(supportFragmentManager.backStackEntryCount > 0)
+            invalidateMenu()
+        }
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when (item.itemId) {
+            android.R.id.home -> {
+                supportFragmentManager.popBackStack()
+            }
+        }
+
+        return super.onOptionsItemSelected(item)
     }
 
     override fun onResume() {

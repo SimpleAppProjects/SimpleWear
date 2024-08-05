@@ -32,6 +32,12 @@
 
         <item name="android:windowTranslucentStatus">true</item>
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+
+        <!-- Action Mode -->
+        <item name="windowActionModeOverlay">true</item>
+        <item name="actionModeCloseButtonStyle">@style/CloseButton</item>
+        <item name="actionModeCloseDrawable">@drawable/ic_close_white_24dp</item>
+        <item name="actionModeStyle">@style/ActionModeStyle</item>
     </style>
 
 </resources>

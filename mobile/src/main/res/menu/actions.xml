@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <group android:id="@+id/action_group">
+        <item
+            android:id="@+id/timed_actions"
+            android:title="@string/action_timedaction"
+            android:contentDescription="@string/action_timedaction"
+            android:icon="@drawable/ic_access_time"
+            app:showAsAction="ifRoom"
+            app:iconTint="?colorOnSurface" />
+    </group>
+</menu>
