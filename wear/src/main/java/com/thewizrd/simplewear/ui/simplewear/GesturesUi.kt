@@ -102,7 +102,7 @@ fun GesturesUi(
             val maxSquareEdge = (sqrt(((screenHeightDp * screenWidthDp) / 2).toDouble()))
             Dp(((screenHeightDp - maxSquareEdge) / 2).toFloat())
         } else {
-            0.dp
+            12.dp
         }
     }
 

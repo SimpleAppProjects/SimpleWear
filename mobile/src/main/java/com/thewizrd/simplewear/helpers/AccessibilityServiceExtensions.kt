@@ -4,8 +4,6 @@ import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.GestureDescription
 import android.accessibilityservice.GestureDescription.StrokeDescription
 import android.graphics.Path
-import kotlin.math.max
-import kotlin.math.min
 
 fun AccessibilityService.dispatchScrollUp(ratio: Float? = null) {
     val displayMetrics = this.applicationContext.resources.displayMetrics
@@ -17,7 +15,7 @@ fun AccessibilityService.dispatchScrollUp(ratio: Float? = null) {
 
     val path = Path().apply {
         moveTo(centerX, centerY)
-        lineTo(centerX, centerY + (ratio?.let { min(it * height, centerY) } ?: distance))
+        lineTo(centerX, centerY + centerY)
     }
 
     dispatchGesture(path)
@@ -33,9 +31,7 @@ fun AccessibilityService.dispatchScrollDown(ratio: Float? = null) {
 
     val path = Path().apply {
         moveTo(centerX, centerY)
-        lineTo(
-            centerX,
-            centerY + (ratio?.let { max(min(it * height, centerY), -centerY) } ?: -distance))
+        lineTo(centerX, 0f)
     }
 
     dispatchGesture(path)
@@ -51,7 +47,7 @@ fun AccessibilityService.dispatchScrollLeft(ratio: Float? = null) {
 
     val path = Path().apply {
         moveTo(centerX, centerY)
-        lineTo(centerX + (ratio?.let { min(it * width, centerX) } ?: distance), centerY)
+        lineTo(centerX + centerX, centerY)
     }
 
     dispatchGesture(path)
@@ -67,8 +63,7 @@ fun AccessibilityService.dispatchScrollRight(ratio: Float? = null) {
 
     val path = Path().apply {
         moveTo(centerX, centerY)
-        lineTo(centerX + (ratio?.let { max(min(it * width, centerX), -centerX) } ?: -distance),
-            centerY)
+        lineTo(centerX + -centerX, centerY)
     }
 
     dispatchGesture(path)
