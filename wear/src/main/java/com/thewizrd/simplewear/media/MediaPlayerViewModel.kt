@@ -582,19 +582,19 @@ class MediaPlayerViewModel(app: Application) : WearableListenerViewModel(app),
         requestMediaAction(MediaHelper.MediaNextPath)
     }
 
-    private fun requestVolumeUp() {
+    fun requestVolumeUp() {
         requestMediaAction(MediaHelper.MediaVolumeUpPath)
     }
 
-    private fun requestVolumeDown() {
+    fun requestVolumeDown() {
         requestMediaAction(MediaHelper.MediaVolumeDownPath)
     }
 
-    private fun requestVolumeStatus() {
+    fun requestVolumeStatus() {
         requestMediaAction(MediaHelper.MediaVolumeStatusPath)
     }
 
-    private fun requestSetVolume(value: Int) {
+    fun requestSetVolume(value: Int) {
         requestMediaAction(MediaHelper.MediaSetVolumePath, value.intToBytes())
     }
 
