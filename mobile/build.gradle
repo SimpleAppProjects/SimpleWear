@@ -106,5 +106,5 @@ dependencies {
 
     implementation "com.jakewharton.timber:timber:$timber_version"
     implementation "com.google.code.gson:gson:$gson_version"
-    implementation 'com.linkedin.dexmaker:dexmaker:2.28.3'
+    implementation 'com.linkedin.dexmaker:dexmaker:2.28.4'
 }
