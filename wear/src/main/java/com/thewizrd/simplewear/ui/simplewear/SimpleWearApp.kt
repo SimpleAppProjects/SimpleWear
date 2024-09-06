@@ -4,6 +4,7 @@ import android.os.Build
 import android.os.Bundle
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavType
 import androidx.navigation.activity
@@ -15,7 +16,9 @@ import androidx.wear.compose.navigation.rememberSwipeDismissableNavController
 import androidx.wear.compose.navigation.rememberSwipeDismissableNavHostState
 import com.thewizrd.shared_resources.actions.Actions
 import com.thewizrd.shared_resources.actions.AudioStreamType
+import com.thewizrd.shared_resources.actions.TimedAction
 import com.thewizrd.shared_resources.utils.AnalyticsLogger
+import com.thewizrd.shared_resources.utils.JSONParser
 import com.thewizrd.simplewear.media.MediaPlayerActivity
 import com.thewizrd.simplewear.preferences.DashboardConfigActivity
 import com.thewizrd.simplewear.preferences.DashboardTileConfigActivity
@@ -113,6 +116,65 @@ fun SimpleWearApp(
                 LaunchedEffect(navController) {
                     AnalyticsLogger.logEvent("nav_route", Bundle().apply {
                         putString("screen", Screen.CallManager.route)
+                    })
+                }
+            }
+
+            composable(Screen.GesturesAction.route) {
+                GesturesUi(navController = navController)
+
+                LaunchedEffect(navController) {
+                    AnalyticsLogger.logEvent("nav_route", Bundle().apply {
+                        putString("screen", Screen.GesturesAction.route)
+                    })
+                }
+            }
+
+            composable(Screen.TimedActions.route) {
+                TimedActionUi(navController = navController)
+
+                LaunchedEffect(navController) {
+                    AnalyticsLogger.logEvent("nav_route", Bundle().apply {
+                        putString("screen", Screen.TimedActions.route)
+                    })
+                }
+            }
+
+            composable(
+                route = Screen.TimedActionDetail.route + "?action={action}",
+                arguments = listOf(
+                    navArgument("action") {
+                        type = NavType.StringType
+                        nullable = false
+                    }
+                )
+            ) { backstackEntry ->
+                val action = remember(backstackEntry) {
+                    JSONParser.deserializer(
+                        backstackEntry.arguments?.getString("action"),
+                        TimedAction::class.java
+                    )!!
+                }
+
+                TimedActionDetailUi(
+                    action = action,
+                    navController = navController
+                )
+
+                LaunchedEffect(navController) {
+                    AnalyticsLogger.logEvent("nav_route", Bundle().apply {
+                        putString("screen", Screen.TimedActionDetail.route)
+                        putString("actionType", action.action.actionType.name)
+                    })
+                }
+            }
+
+            composable(Screen.TimedActionSetup.route) {
+                TimedActionSetupUi(navController = navController)
+
+                LaunchedEffect(navController) {
+                    AnalyticsLogger.logEvent("nav_route", Bundle().apply {
+                        putString("screen", Screen.TimedActionSetup.route)
                     })
                 }
             }

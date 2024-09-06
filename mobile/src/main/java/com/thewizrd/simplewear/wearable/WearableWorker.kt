@@ -3,7 +3,11 @@ package com.thewizrd.simplewear.wearable
 import android.content.Context
 import android.util.Log
 import androidx.annotation.StringDef
-import androidx.work.*
+import androidx.work.CoroutineWorker
+import androidx.work.Data
+import androidx.work.OneTimeWorkRequest
+import androidx.work.WorkManager
+import androidx.work.WorkerParameters
 import com.thewizrd.shared_resources.actions.Actions
 import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.shared_resources.utils.Logger
@@ -20,6 +24,7 @@ class WearableWorker(context: Context, workerParams: WorkerParameters) : Corouti
         const val ACTION_SENDWIFIUPDATE = "SimpleWear.Droid.action.SEND_WIFI_UPDATE"
         const val ACTION_SENDBTUPDATE = "SimpleWear.Droid.action.SEND_BT_UPDATE"
         const val ACTION_SENDACTIONUPDATE = "SimpleWear.Droid.action.SEND_ACTION_UPDATE"
+        const val ACTION_SENDTIMEDACTIONSUPDATE = "SimpleWear.Droid.action.SEND_TIMEDACTIONS_UPDATE"
         const val ACTION_REQUESTBTDISCOVERABLE = "SimpleWear.Droid.action.REQUEST_BT_DISCOVERABLE"
 
         // Extras
@@ -29,7 +34,8 @@ class WearableWorker(context: Context, workerParams: WorkerParameters) : Corouti
         fun enqueueAction(context: Context, intentAction: String) {
             when (intentAction) {
                 ACTION_SENDSTATUSUPDATE,
-                ACTION_REQUESTBTDISCOVERABLE -> {
+                ACTION_REQUESTBTDISCOVERABLE,
+                ACTION_SENDTIMEDACTIONSUPDATE -> {
                     startWork(context.applicationContext, intentAction)
                 }
             }
@@ -128,6 +134,9 @@ class WearableWorker(context: Context, workerParams: WorkerParameters) : Corouti
                 ACTION_REQUESTBTDISCOVERABLE -> {
                     mWearMgr.sendMessage(null, WearableHelper.PingPath, null)
                     mWearMgr.sendMessage(null, WearableHelper.BtDiscoverPath, null)
+                }
+                ACTION_SENDTIMEDACTIONSUPDATE -> {
+                    mWearMgr.sendTimedActionsStatus(null)
                 }
             }
         }

@@ -19,7 +19,9 @@ object DashboardTileUtils {
             Actions.SLEEPTIMER,
             Actions.APPS,
             Actions.PHONE,
-            Actions.BRIGHTNESS -> false
+            Actions.BRIGHTNESS,
+            Actions.GESTURES,
+            Actions.TIMEDACTION -> false
             else -> true
         }
     }

@@ -125,8 +125,6 @@ class DashboardTileProviderService : SuspendingTileService() {
                     }
                 }
             }
-        } else {
-            tileMessenger.requestUpdate()
         }
 
         if (tileModel.actionCount == 0) {

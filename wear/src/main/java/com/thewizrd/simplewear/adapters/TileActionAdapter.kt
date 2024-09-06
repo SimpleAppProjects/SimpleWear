@@ -10,10 +10,10 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.thewizrd.shared_resources.actions.Actions
+import com.thewizrd.shared_resources.controls.ActionButtonViewModel
 import com.thewizrd.shared_resources.utils.ContextUtils.dpToPx
 import com.thewizrd.shared_resources.utils.ContextUtils.getAttrColorStateList
 import com.thewizrd.simplewear.R
-import com.thewizrd.simplewear.controls.ActionButtonViewModel
 import com.thewizrd.simplewear.databinding.LayoutDashButtonBinding
 
 class TileActionAdapter : ListAdapter<ActionButtonViewModel, TileActionAdapter.ViewHolder>(

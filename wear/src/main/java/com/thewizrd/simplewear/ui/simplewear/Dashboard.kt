@@ -60,6 +60,7 @@ import com.google.android.horologist.compose.material.Chip
 import com.thewizrd.shared_resources.actions.Action
 import com.thewizrd.shared_resources.actions.ActionStatus
 import com.thewizrd.shared_resources.actions.Actions
+import com.thewizrd.shared_resources.controls.ActionButtonViewModel
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
 import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.shared_resources.sleeptimer.SleepTimerHelper
@@ -67,7 +68,6 @@ import com.thewizrd.shared_resources.utils.JSONParser
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.simplewear.PhoneSyncActivity
 import com.thewizrd.simplewear.R
-import com.thewizrd.simplewear.controls.ActionButtonViewModel
 import com.thewizrd.simplewear.controls.CustomConfirmationOverlay
 import com.thewizrd.simplewear.preferences.Settings
 import com.thewizrd.simplewear.ui.theme.findActivity
@@ -487,8 +487,10 @@ fun Dashboard(
                     }
 
                     phoneVersionCode?.let {
-                        dashboardViewModel.openPlayStore(activity, false)
                         showAppUpdateConfirmation = !WearableHelper.isAppUpToDate(it)
+                        if (showAppUpdateConfirmation) {
+                            dashboardViewModel.openPlayStore(activity, false)
+                        }
                     }
                 }
             }

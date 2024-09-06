@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    style="@style/Widget.Material3.CardView.Filled"
+    app:cardBackgroundColor="?attr/colorSurfaceContainer"
+    android:minHeight="72dp"
+    app:contentPaddingTop="8dp"
+    app:contentPaddingBottom="8dp"
+    app:cardCornerRadius="0dp"
+    tools:theme="@style/Theme.Material3.DayNight">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="horizontal"
+        android:layout_gravity="center_vertical">
+
+        <com.google.android.material.imageview.ShapeableImageView
+            android:id="@+id/action_icon"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginHorizontal="16dp"
+            android:background="?colorPrimary"
+            app:contentPadding="8dp"
+            app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.Material3.Button"
+            app:tint="?colorOnPrimary"
+            tools:src="@drawable/ic_lightbulb_outline_white_24dp" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_gravity="center_vertical"
+            android:gravity="center_vertical"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/action_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:maxLines="1"
+                android:ellipsize="end"
+                style="?textAppearanceBodyMedium"
+                tools:text="@string/action_torch" />
+
+            <TextView
+                android:id="@+id/action_state"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:maxLines="2"
+                android:ellipsize="end"
+                android:alpha="0.75"
+                style="?textAppearanceBodySmall"
+                tools:text="@string/state_off" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/action_time"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:maxLines="1"
+            android:layout_gravity="center_vertical"
+            android:paddingHorizontal="16dp"
+            style="?textAppearanceLabelSmall"
+            tools:text="12:10 AM" />
+
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>

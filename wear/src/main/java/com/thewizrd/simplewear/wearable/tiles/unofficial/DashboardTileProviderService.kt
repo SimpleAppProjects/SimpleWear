@@ -25,6 +25,7 @@ import com.thewizrd.shared_resources.actions.BatteryStatus
 import com.thewizrd.shared_resources.actions.MultiChoiceAction
 import com.thewizrd.shared_resources.actions.NormalAction
 import com.thewizrd.shared_resources.actions.ToggleAction
+import com.thewizrd.shared_resources.controls.ActionButtonViewModel
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
 import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.shared_resources.helpers.toImmutableCompatFlag
@@ -35,7 +36,6 @@ import com.thewizrd.shared_resources.utils.bytesToString
 import com.thewizrd.shared_resources.utils.stringToBytes
 import com.thewizrd.simplewear.PhoneSyncActivity
 import com.thewizrd.simplewear.R
-import com.thewizrd.simplewear.controls.ActionButtonViewModel
 import com.thewizrd.simplewear.preferences.DashboardTileUtils.DEFAULT_TILES
 import com.thewizrd.simplewear.preferences.DashboardTileUtils.MAX_BUTTONS
 import com.thewizrd.simplewear.preferences.Settings

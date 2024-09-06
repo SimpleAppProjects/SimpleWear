@@ -50,9 +50,18 @@
     <string name="action_brightness">Brightness</string>
     <string name="action_hotspot">WiFi Hotspot</string>
 
+    <string name="action_gestures">Gestures</string>
+
     <!-- In-App Updates -->
     <string name="message_wearappupdate_available">App update available on watch. Please update to continue…</string>
     <string name="message_phoneappupdate_available">App update available on phone. Please update to continue…</string>
     <string name="action_update">Update</string>
+
+    <string name="action_timedaction">Timed Actions</string>
+    <string name="action_delete">Delete</string>
+    <string name="label_state">State</string>
+    <string name="label_action">Action</string>
+    <string name="label_time">Time</string>
+    <string name="label_action_not_supported">Action not supported</string>
 
 </resources>

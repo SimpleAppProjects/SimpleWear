@@ -10,6 +10,7 @@ import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.pm.ServiceInfo
 import android.content.res.Resources
 import android.media.AudioManager
 import android.media.session.MediaController
@@ -128,6 +129,18 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
         }
     }
 
+    private fun startForeground(notification: Notification) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            startForeground(
+                JOB_ID,
+                notification,
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE
+            )
+        } else {
+            startForeground(JOB_ID, notification)
+        }
+    }
+
     override fun onBind(intent: Intent?): IBinder? {
         return null
     }
@@ -217,7 +230,7 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
             initChannel()
         }
 
-        startForeground(JOB_ID, createForegroundNotification(applicationContext))
+        startForeground(createForegroundNotification(applicationContext))
 
         mAvailableMediaApps = mutableSetOf()
         getMediaAppControllers()
@@ -225,7 +238,7 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         disconnectJob?.cancel()
-        startForeground(JOB_ID, createForegroundNotification(applicationContext))
+        startForeground(createForegroundNotification(applicationContext))
 
         Logger.writeLine(Log.INFO, "$TAG: Intent action = ${intent?.action}")
 

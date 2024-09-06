@@ -17,7 +17,9 @@ enum class Actions(val value: Int) {
     APPS(11),
     PHONE(12),
     BRIGHTNESS(13),
-    HOTSPOT(14);
+    HOTSPOT(14),
+    GESTURES(15),
+    TIMEDACTION(16);
 
     companion object {
         private val map = SparseArray<Actions>()
@@ -27,7 +29,7 @@ enum class Actions(val value: Int) {
         }
 
         init {
-            for (action in values()) {
+            for (action in entries) {
                 map.put(action.value, action)
             }
         }

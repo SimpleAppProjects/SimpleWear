@@ -5,8 +5,10 @@ package com.thewizrd.simplewear.ui.simplewear
 import android.content.Intent
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -14,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.LinearProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
@@ -27,15 +30,19 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
@@ -46,6 +53,7 @@ import androidx.wear.ambient.AmbientLifecycleObserver
 import androidx.wear.compose.foundation.SwipeToDismissBoxState
 import androidx.wear.compose.foundation.lazy.items
 import androidx.wear.compose.foundation.rememberSwipeToDismissBoxState
+import androidx.wear.compose.material.ButtonDefaults
 import androidx.wear.compose.material.ChipDefaults
 import androidx.wear.compose.material.CompactChip
 import androidx.wear.compose.material.Icon
@@ -57,7 +65,8 @@ import androidx.wear.compose.ui.tooling.preview.WearPreviewFontScales
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
 import com.google.android.horologist.audio.ui.VolumeUiState
 import com.google.android.horologist.audio.ui.components.actions.SetVolumeButton
-import com.google.android.horologist.audio.ui.components.animated.AnimatedSetVolumeButton
+import com.google.android.horologist.audio.ui.components.actions.SettingsButton
+import com.google.android.horologist.audio.ui.rotaryVolumeControlsWithFocus
 import com.google.android.horologist.compose.ambient.AmbientAware
 import com.google.android.horologist.compose.ambient.AmbientState
 import com.google.android.horologist.compose.layout.ScalingLazyColumn
@@ -65,6 +74,7 @@ import com.google.android.horologist.compose.layout.ScalingLazyColumnDefaults
 import com.google.android.horologist.compose.layout.rememberResponsiveColumnState
 import com.google.android.horologist.compose.layout.scrollAway
 import com.google.android.horologist.compose.material.Chip
+import com.google.android.horologist.compose.rotaryinput.RotaryDefaults
 import com.google.android.horologist.media.model.PlaybackStateEvent
 import com.google.android.horologist.media.model.TimestampProvider
 import com.google.android.horologist.media.ui.components.ControlButtonLayout
@@ -78,6 +88,7 @@ import com.google.android.horologist.media.ui.state.LocalTimestampProvider
 import com.google.android.horologist.media.ui.state.mapper.TrackPositionUiModelMapper
 import com.thewizrd.shared_resources.actions.ActionStatus
 import com.thewizrd.shared_resources.actions.Actions
+import com.thewizrd.shared_resources.actions.AudioStreamState
 import com.thewizrd.shared_resources.actions.AudioStreamType
 import com.thewizrd.shared_resources.helpers.MediaHelper
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
@@ -100,6 +111,7 @@ import com.thewizrd.simplewear.ui.theme.findActivity
 import com.thewizrd.simplewear.viewmodels.WearableListenerViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.math.sqrt
 
 @Composable
 fun MediaPlayerUi(
@@ -346,6 +358,15 @@ private fun MediaPlayerControlsPage(
             navController.navigate(
                 Screen.ValueAction.getRoute(Actions.VOLUME, AudioStreamType.MUSIC)
             )
+        },
+        onVolumeUp = {
+            mediaPlayerViewModel.requestVolumeUp()
+        },
+        onVolumeDown = {
+            mediaPlayerViewModel.requestVolumeDown()
+        },
+        onVolumeChange = {
+            mediaPlayerViewModel.requestSetVolume(it)
         }
     )
 
@@ -366,6 +387,9 @@ private fun MediaPlayerControlsPage(
     onSkipBack: () -> Unit = {},
     onSkipForward: () -> Unit = {},
     onVolume: () -> Unit = {},
+    onVolumeUp: () -> Unit = {},
+    onVolumeDown: () -> Unit = {},
+    onVolumeChange: (Int) -> Unit = {},
 ) {
     val volumeUiState = remember(uiState) {
         uiState.audioStreamState?.let {
@@ -413,7 +437,20 @@ private fun MediaPlayerControlsPage(
         loading = uiState.isLoading && !isAmbient
     ) {
         PlayerScreen(
-            modifier = Modifier.ambientMode(ambientState),
+            modifier = Modifier
+                .ambientMode(ambientState)
+                .run {
+                    if (!isAmbient && volumeUiState != null) {
+                        this.rotaryVolumeControlsWithFocus(
+                            volumeUiStateProvider = { volumeUiState },
+                            onRotaryVolumeInput = onVolumeChange,
+                            localView = LocalView.current,
+                            isLowRes = RotaryDefaults.isLowResInput()
+                        )
+                    } else {
+                        this
+                    }
+                },
             mediaDisplay = {
                 if (uiState.isPlaybackLoading && !isAmbient) {
                     LoadingMediaDisplay()
@@ -502,10 +539,48 @@ private fun MediaPlayerControlsPage(
             buttons = {
                 if (!isAmbient) {
                     if (volumeUiState != null) {
-                        AnimatedSetVolumeButton(
-                            onVolumeClick = onVolume,
-                            volumeUiState = volumeUiState
-                        )
+                        val config = LocalConfiguration.current
+                        val inset = remember(config) {
+                            val isRound = config.isScreenRound
+                            val screenHeightDp = config.screenHeightDp
+                            var bottomInset = Dp(screenHeightDp - (screenHeightDp * 0.8733032f))
+
+                            if (isRound) {
+                                val screenWidthDp = config.smallestScreenWidthDp
+                                val maxSquareEdge =
+                                    (sqrt(((screenHeightDp * screenWidthDp) / 2).toFloat()))
+                                bottomInset =
+                                    Dp((screenHeightDp - (maxSquareEdge * 0.8733032f)) / 2)
+                            }
+
+                            bottomInset
+                        }
+
+                        Row(
+                            modifier = Modifier.padding(horizontal = inset)
+                        ) {
+                            SettingsButton(
+                                onClick = onVolumeDown,
+                                imageVector = ImageVector.vectorResource(id = R.drawable.ic_baseline_volume_down_24),
+                                contentDescription = stringResource(R.string.horologist_volume_screen_volume_down_content_description),
+                                tapTargetSize = ButtonDefaults.ExtraSmallButtonSize
+                            )
+                            LinearProgressIndicator(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .align(Alignment.CenterVertically)
+                                    .clickable(onClick = onVolume),
+                                progress = volumeUiState.current.toFloat() / volumeUiState.max,
+                                color = MaterialTheme.colors.primary,
+                                strokeCap = StrokeCap.Round
+                            )
+                            SettingsButton(
+                                onClick = onVolumeUp,
+                                imageVector = ImageVector.vectorResource(id = R.drawable.ic_volume_up_white_24dp),
+                                contentDescription = stringResource(R.string.horologist_volume_screen_volume_up_content_description),
+                                tapTargetSize = ButtonDefaults.ExtraSmallButtonSize
+                            )
+                        }
                     } else {
                         SetVolumeButton(onVolumeClick = onVolume)
                     }
@@ -807,7 +882,8 @@ private fun PreviewMediaControls() {
                 title = "Title",
                 artist = "Artist",
                 artworkBitmap = background
-            )
+            ),
+            audioStreamState = AudioStreamState(5, 0, 10, AudioStreamType.MUSIC)
         )
     }
 

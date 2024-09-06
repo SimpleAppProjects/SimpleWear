@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="items_choice_lockscreen">
+        <item>@string/lockscreen_choice_accessible</item>
+        <item>@string/lockscreen_choice_device_admin</item>
+    </string-array>
+</resources>

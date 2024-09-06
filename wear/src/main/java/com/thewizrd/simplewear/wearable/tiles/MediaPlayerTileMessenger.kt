@@ -258,8 +258,6 @@ class MediaPlayerTileMessenger(private val context: Context) :
         }
 
         tileModel.setPlayerState(title, artist, artBitmap, playbackState)
-
-        requestTileUpdate(context)
     }
 
     fun updatePlayerState() {

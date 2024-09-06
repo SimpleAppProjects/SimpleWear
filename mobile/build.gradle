@@ -21,8 +21,8 @@ android {
         minSdkVersion rootProject.minSdkVersion
         targetSdkVersion rootProject.targetSdkVersion
         // NOTE: Version Code Format [TargetSDK, Version Name, Build Number, Variant Code (Android: 00, WearOS: 01)]
-        versionCode 331914050
-        versionName "1.14.0"
+        versionCode 341915050
+        versionName "1.15.2"
 
         vectorDrawables.useSupportLibrary = true
     }
@@ -89,7 +89,7 @@ dependencies {
     implementation "androidx.work:work-runtime-ktx:$work_version"
     implementation "androidx.core:core-splashscreen:$coresplash_version"
 
-    implementation 'com.google.android.gms:play-services-wearable:18.1.0'
+    implementation 'com.google.android.gms:play-services-wearable:18.2.0'
     implementation 'com.google.android.play:app-update-ktx:2.1.0'
 
     implementation platform("com.google.firebase:firebase-bom:$firebase_version")
@@ -99,11 +99,12 @@ dependencies {
 
     implementation "androidx.appcompat:appcompat:$appcompat_version"
     implementation "androidx.constraintlayout:constraintlayout:$constraintlayout_version"
+    implementation "androidx.recyclerview:recyclerview-selection:1.1.0"
     implementation 'androidx.media:media:1.7.0'
 
     implementation "com.google.android.material:material:$material_version"
 
     implementation "com.jakewharton.timber:timber:$timber_version"
     implementation "com.google.code.gson:gson:$gson_version"
-    implementation 'com.linkedin.dexmaker:dexmaker:2.28.3'
+    implementation 'com.linkedin.dexmaker:dexmaker:2.28.4'
 }

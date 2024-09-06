@@ -32,6 +32,12 @@
 
         <item name="android:windowTranslucentStatus">true</item>
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+
+        <!-- Action Mode -->
+        <item name="windowActionModeOverlay">true</item>
+        <item name="actionModeCloseButtonStyle">@style/CloseButton</item>
+        <item name="actionModeCloseDrawable">@drawable/ic_close_white_24dp</item>
+        <item name="actionModeStyle">@style/ActionModeStyle</item>
     </style>
 
     <style name="AppTheme.Launcher" parent="Theme.SplashScreen.IconBackground">
@@ -39,5 +45,11 @@
         <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
         <item name="windowSplashScreenIconBackgroundColor">@color/ic_launcher_background</item>
     </style>
+
+    <style name="CloseButton" parent="Widget.AppCompat.ActionButton.CloseMode">
+        <item name="android:tint">?attr/colorOnSurface</item>
+    </style>
+
+    <style name="ActionModeStyle" parent="Widget.Material3.ActionMode" />
 
 </resources>

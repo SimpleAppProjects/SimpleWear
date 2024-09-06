@@ -40,6 +40,7 @@ import com.thewizrd.shared_resources.tasks.delayLaunch
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.simplewear.databinding.FragmentPermcheckBinding
 import com.thewizrd.simplewear.helpers.PhoneStatusHelper
+import com.thewizrd.simplewear.helpers.PhoneStatusHelper.canScheduleExactAlarms
 import com.thewizrd.simplewear.helpers.PhoneStatusHelper.deActivateDeviceAdmin
 import com.thewizrd.simplewear.helpers.PhoneStatusHelper.isCameraPermissionEnabled
 import com.thewizrd.simplewear.helpers.PhoneStatusHelper.isDeviceAdminEnabled
@@ -48,6 +49,7 @@ import com.thewizrd.simplewear.media.MediaControllerService
 import com.thewizrd.simplewear.services.CallControllerService
 import com.thewizrd.simplewear.services.InCallManagerService
 import com.thewizrd.simplewear.services.NotificationListener
+import com.thewizrd.simplewear.services.WearAccessibilityService
 import com.thewizrd.simplewear.telephony.SubscriptionListener
 import com.thewizrd.simplewear.utils.associate
 import com.thewizrd.simplewear.utils.disassociateAll
@@ -105,7 +107,7 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
                                 }
                             }
 
-                            updateManageCallsText(granted)
+                            updatePermissions()
                         }
 
                         Manifest.permission.BLUETOOTH_CONNECT -> {
@@ -187,36 +189,35 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
                 permissionRequestLauncher.launch(arrayOf(Manifest.permission.CAMERA))
             }
         }
-        binding.deviceadminPref.setOnClickListener {
-            if (!isDeviceAdminEnabled(requireContext())) {
-                MaterialAlertDialogBuilder(it.context)
-                    .setTitle(android.R.string.dialog_alert_title)
-                    .setMessage(R.string.prompt_alert_message_device_admin)
-                    .setPositiveButton(android.R.string.ok) { d, which ->
-                        if (which == DialogInterface.BUTTON_POSITIVE) {
-                            val mScreenLockAdmin =
-                                ComponentName(it.context, ScreenLockAdminReceiver::class.java)
+        binding.lockscreenPref.setOnClickListener {
+            if (isDeviceAdminEnabled(requireContext()) || WearAccessibilityService.isServiceBound()) {
+                if (isDeviceAdminEnabled(requireContext())) {
+                    deActivateDeviceAdmin(requireContext())
+                }
+                if (WearAccessibilityService.isServiceBound()) {
+                    WearAccessibilityService.getInstance()?.disableSelf()
+                }
 
-                            runCatching {
-                                // Launch the activity to have the user enable our admin.
-                                val intent = Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN)
-                                intent.putExtra(
-                                    DevicePolicyManager.EXTRA_DEVICE_ADMIN,
-                                    mScreenLockAdmin
-                                )
-                                devAdminResultLauncher.launch(intent)
-                            }
-                        }
-
-                        d.dismiss()
-                    }
-                    .setCancelable(true)
-                    .setNegativeButton(android.R.string.cancel, null)
-                    .show()
-            } else {
-                deActivateDeviceAdmin(requireContext())
                 lifecycleScope.delayLaunch(timeMillis = 1000) {
                     updatePermissions()
+                }
+            } else {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    MaterialAlertDialogBuilder(it.context)
+                        .setTitle(R.string.title_lockscreen_choice)
+                        .setItems(R.array.items_choice_lockscreen) { d, which ->
+                            if (which == 0) {
+                                showAccessibilityServiceDialog()
+                            } else {
+                                showDeviceAdminDialog()
+                            }
+
+                            d.dismiss()
+                        }
+                        .setCancelable(true)
+                        .show()
+                } else {
+                    showDeviceAdminDialog()
                 }
             }
         }
@@ -360,16 +361,39 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
                 permissionRequestLauncher.launch(arrayOf(Manifest.permission.POST_NOTIFICATIONS))
             }
         }
-        binding.notifPref.visibility =
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) View.VISIBLE else View.GONE
+        binding.notifPref.isVisible = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
 
         binding.btPref.setOnClickListener {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !isBluetoothConnectPermGranted()) {
+            val ctx = it.context.applicationContext
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !PhoneStatusHelper.isBluetoothConnectPermGranted(
+                    ctx
+                )
+            ) {
                 permissionRequestLauncher.launch(arrayOf(Manifest.permission.BLUETOOTH_CONNECT))
             }
         }
-        binding.btPref.isVisible =
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU
+        binding.btPref.isVisible = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+
+        binding.gesturesPref.setOnClickListener {
+            if (WearAccessibilityService.isServiceBound()) {
+                WearAccessibilityService.getInstance()?.disableSelf()
+            } else {
+                showAccessibilityServiceDialog()
+            }
+        }
+
+        binding.alarmsPref.setOnClickListener {
+            val ctx = it.context.applicationContext
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !canScheduleExactAlarms(ctx)) {
+                runCatching {
+                    startActivity(Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
+                        data = Uri.parse("package:${ctx.packageName}")
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                    })
+                }
+            }
+        }
+        binding.alarmsPref.isVisible = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
 
         return binding.root
     }
@@ -378,20 +402,9 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
         super.onPause()
     }
 
-    private fun isBluetoothConnectPermGranted(): Boolean {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            ContextCompat.checkSelfPermission(
-                requireContext(),
-                Manifest.permission.BLUETOOTH_CONNECT
-            ) == PackageManager.PERMISSION_GRANTED
-        } else {
-            true
-        }
-    }
-
     private fun startDevicePairing() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            if (!isBluetoothConnectPermGranted()) {
+            if (!PhoneStatusHelper.isBluetoothConnectPermGranted(requireContext())) {
                 companionBTPermRequestLauncher.launch(Manifest.permission.BLUETOOTH_CONNECT)
                 return
             }
@@ -443,7 +456,10 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
                 .build()
 
             // Verify bluetooth permissions
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !isBluetoothConnectPermGranted()) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !PhoneStatusHelper.isBluetoothConnectPermGranted(
+                    requireContext()
+                )
+            ) {
                 companionBTPermRequestLauncher.launch(Manifest.permission.BLUETOOTH_CONNECT)
                 return@runWithView
             }
@@ -507,7 +523,13 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
         val mDPM =
             requireContext().getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
         val mScreenLockAdmin = ComponentName(requireContext(), ScreenLockAdminReceiver::class.java)
-        updateDeviceAdminText(mDPM.isAdminActive(mScreenLockAdmin))
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && WearAccessibilityService.isServiceBound()) {
+            updateLockScreenText(true)
+        } else if (mDPM.isAdminActive(mScreenLockAdmin)) {
+            updateDeviceAdminText(true)
+        } else {
+            updateLockScreenText(false)
+        }
         updateDNDAccessText(isNotificationAccessAllowed(requireContext()))
         updateUninstallText(mDPM.isAdminActive(mScreenLockAdmin))
 
@@ -520,9 +542,11 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
             Build.VERSION.SDK_INT < Build.VERSION_CODES.S || InCallManagerService.hasPermission(
                 requireContext()
             )
+        val hasBTConnectPerm = PhoneStatusHelper.isBluetoothConnectPermGranted(requireContext())
 
         updateNotifListenerText(notListenerEnabled)
         updateManageCallsText(notListenerEnabled && phoneStatePermGranted && hasManageCallsPerm)
+        updateBTPref(hasBTConnectPerm)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             val deviceManager =
@@ -531,11 +555,15 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
         }
 
         binding.bridgeMediaPref.isEnabled = notListenerEnabled
+        binding.bridgeMediaToggle.isEnabled = notListenerEnabled
         if (!notListenerEnabled && com.thewizrd.simplewear.preferences.Settings.isBridgeMediaEnabled()) {
             com.thewizrd.simplewear.preferences.Settings.setBridgeMediaEnabled(false)
         }
-        binding.bridgeCallsPref.isEnabled = notListenerEnabled && phoneStatePermGranted
-        if ((!notListenerEnabled || !phoneStatePermGranted) && com.thewizrd.simplewear.preferences.Settings.isBridgeCallsEnabled()) {
+        binding.bridgeCallsPref.isEnabled =
+            notListenerEnabled && phoneStatePermGranted && hasBTConnectPerm
+        binding.bridgeCallsToggle.isEnabled =
+            notListenerEnabled && phoneStatePermGranted && hasBTConnectPerm
+        if ((!notListenerEnabled || !phoneStatePermGranted || !hasBTConnectPerm) && com.thewizrd.simplewear.preferences.Settings.isBridgeCallsEnabled()) {
             com.thewizrd.simplewear.preferences.Settings.setBridgeCallsEnabled(false)
         }
 
@@ -556,6 +584,9 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
             ) == PackageManager.PERMISSION_GRANTED
             updateNotificationPref(notifPermGranted)
         }
+
+        updateGesturesPref(WearAccessibilityService.isServiceBound())
+        updateExactAlarmsPref(canScheduleExactAlarms(requireContext()))
     }
 
     private fun updateCamPermText(enabled: Boolean) {
@@ -564,8 +595,13 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
     }
 
     private fun updateDeviceAdminText(enabled: Boolean) {
-        binding.deviceadminSummary.setText(if (enabled) R.string.permission_admin_enabled else R.string.permission_admin_disabled)
-        binding.deviceadminSummary.setTextColor(if (enabled) Color.GREEN else Color.RED)
+        binding.lockscreenSummary.setText(if (enabled) R.string.permission_admin_enabled else R.string.permission_lockscreen_disabled)
+        binding.lockscreenSummary.setTextColor(if (enabled) Color.GREEN else Color.RED)
+    }
+
+    private fun updateLockScreenText(enabled: Boolean) {
+        binding.lockscreenSummary.setText(if (enabled) R.string.permission_lockscreen_enabled else R.string.permission_lockscreen_disabled)
+        binding.lockscreenSummary.setTextColor(if (enabled) Color.GREEN else Color.RED)
     }
 
     private fun updateDNDAccessText(enabled: Boolean) {
@@ -629,6 +665,16 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
         binding.btPrefSummary.setTextColor(if (enabled) Color.GREEN else Color.RED)
     }
 
+    private fun updateGesturesPref(enabled: Boolean) {
+        binding.gesturesSummary.setText(if (enabled) R.string.permission_gestures_enabled else R.string.permission_gestures_disabled)
+        binding.gesturesSummary.setTextColor(if (enabled) Color.GREEN else Color.RED)
+    }
+
+    private fun updateExactAlarmsPref(enabled: Boolean) {
+        binding.alarmsSummary.setText(if (enabled) R.string.permission_exact_alarms_enabled else R.string.permission_exact_alarms_disabled)
+        binding.alarmsSummary.setTextColor(if (enabled) Color.GREEN else Color.RED)
+    }
+
     @Suppress("DEPRECATION")
     private fun requestUninstall() {
         val ctx = requireContext()
@@ -646,5 +692,52 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
                 })
             }
         }
+    }
+
+    private fun showDeviceAdminDialog() {
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(android.R.string.dialog_alert_title)
+            .setMessage(R.string.prompt_alert_message_device_admin)
+            .setPositiveButton(android.R.string.ok) { d, which ->
+                if (which == DialogInterface.BUTTON_POSITIVE) {
+                    val mScreenLockAdmin =
+                        ComponentName(requireContext(), ScreenLockAdminReceiver::class.java)
+
+                    runCatching {
+                        // Launch the activity to have the user enable our admin.
+                        val intent = Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN)
+                        intent.putExtra(
+                            DevicePolicyManager.EXTRA_DEVICE_ADMIN,
+                            mScreenLockAdmin
+                        )
+                        devAdminResultLauncher.launch(intent)
+                    }
+                }
+
+                d.dismiss()
+            }
+            .setCancelable(true)
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun showAccessibilityServiceDialog() {
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(android.R.string.dialog_alert_title)
+            .setMessage(R.string.prompt_alert_message_accessibility_svc)
+            .setPositiveButton(android.R.string.ok) { d, which ->
+                if (which == DialogInterface.BUTTON_POSITIVE) {
+                    runCatching {
+                        // Launch the activity to have the user enable our service.
+                        val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+                        startActivity(intent)
+                    }
+                }
+
+                d.dismiss()
+            }
+            .setCancelable(true)
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
     }
 }

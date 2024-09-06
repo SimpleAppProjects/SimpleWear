@@ -69,4 +69,14 @@
     <string name="action_add_batt_state">Add Battery State</string>
     <string name="action_remove_batt_state">Remove Battery State</string>
 
+    <string name="message_accessibility_svc_disabled">Accessibility service disabled</string>
+
+    <!-- Timed Actions -->
+    <string name="title_schedule_action">Schedule new action</string>
+    <string name="title_confirm_action">Confirm Action</string>
+    <string name="title_edit_action">Edit Action</string>
+    <string name="title_set_initial_state">Set Initial State</string>
+    <string name="title_initial_state">Initial State</string>
+    <string name="title_scheduled_state">Scheduled State</string>
+
 </resources>

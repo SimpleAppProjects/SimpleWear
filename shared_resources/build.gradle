@@ -63,10 +63,11 @@ dependencies {
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-play-services:$kotlinx_version"
     implementation "androidx.core:core-ktx:$core_version"
     implementation "androidx.lifecycle:lifecycle-runtime-ktx:$lifecycle_version"
+    implementation "androidx.recyclerview:recyclerview:$recyclerview_version"
 
     implementation "androidx.appcompat:appcompat:$appcompat_version"
 
-    implementation 'com.google.android.gms:play-services-wearable:18.1.0'
+    implementation 'com.google.android.gms:play-services-wearable:18.2.0'
 
     implementation platform("com.google.firebase:firebase-bom:$firebase_version")
     implementation 'com.google.firebase:firebase-analytics'

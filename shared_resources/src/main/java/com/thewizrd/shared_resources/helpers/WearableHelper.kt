@@ -24,7 +24,7 @@ object WearableHelper {
     // Link to Play Store listing
     private const val PLAY_STORE_APP_URI = "market://details?id=com.thewizrd.simplewear"
 
-    private const val VERSION_CODE: Long = 331914030
+    private const val VERSION_CODE: Long = 341915030
 
     fun getPlayStoreURI(): Uri = Uri.parse(PLAY_STORE_APP_URI)
 
@@ -48,6 +48,10 @@ object WearableHelper {
     const val ValueStatusSetPath = "/status/valueaction/setvalue"
     const val BrightnessModePath = "/status/brightness/mode"
     const val VersionPath = "/version"
+    const val TimedActionsStatusPath = "/status/timedActions"
+    const val TimedActionAddPath = "/timedActions/add"
+    const val TimedActionDeletePath = "/timedActions/delete"
+    const val TimedActionUpdatePath = "/timedActions/update"
 
     // For Apps DataMap
     const val KEY_APPS = "key_apps"
