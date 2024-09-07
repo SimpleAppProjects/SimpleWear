@@ -1,8 +1,4 @@
-@file:OptIn(
-    ExperimentalHorologistApi::class,
-    ExperimentalFoundationApi::class,
-    ExperimentalWearFoundationApi::class
-)
+@file:OptIn(ExperimentalHorologistApi::class, ExperimentalFoundationApi::class)
 
 package com.thewizrd.simplewear.ui.simplewear
 
@@ -13,10 +9,12 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
@@ -56,7 +54,6 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.wear.ambient.AmbientLifecycleObserver
-import androidx.wear.compose.foundation.ExperimentalWearFoundationApi
 import androidx.wear.compose.foundation.SwipeToDismissBoxState
 import androidx.wear.compose.foundation.lazy.items
 import androidx.wear.compose.foundation.rememberSwipeToDismissBoxState
@@ -568,21 +565,27 @@ private fun MediaPlayerControlsPage(
                         Row(
                             modifier = Modifier.padding(horizontal = inset)
                         ) {
+                            val progress = volumeUiState.current.toFloat() / volumeUiState.max
+
                             SettingsButton(
                                 onClick = onVolumeDown,
                                 imageVector = ImageVector.vectorResource(id = R.drawable.ic_baseline_volume_down_24),
                                 contentDescription = stringResource(R.string.horologist_volume_screen_volume_down_content_description),
                                 tapTargetSize = ButtonDefaults.ExtraSmallButtonSize
                             )
-                            LinearProgressIndicator(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .align(Alignment.CenterVertically)
-                                    .clickable(onClick = onVolume),
-                                progress = volumeUiState.current.toFloat() / volumeUiState.max,
-                                color = MaterialTheme.colors.primary,
-                                strokeCap = StrokeCap.Round
-                            )
+                            if (!progress.isNaN()) {
+                                LinearProgressIndicator(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .align(Alignment.CenterVertically)
+                                        .clickable(onClick = onVolume),
+                                    progress = progress,
+                                    color = MaterialTheme.colors.secondary,
+                                    strokeCap = StrokeCap.Round
+                                )
+                            } else {
+                                Spacer(modifier = Modifier.width(8.dp))
+                            }
                             SettingsButton(
                                 onClick = onVolumeUp,
                                 imageVector = ImageVector.vectorResource(id = R.drawable.ic_volume_up_white_24dp),
