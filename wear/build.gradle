@@ -11,9 +11,9 @@ android {
         applicationId "com.thewizrd.simplewear"
         minSdkVersion 26
         targetSdkVersion rootProject.targetSdkVersion
-        // NOTE: Version Code Format (TargetSDK, Version Name, Build Number, Variant Code (Android: 00, WearOS: 01)
-        versionCode 341915051
-        versionName "1.15.2"
+        // NOTE: Version Code Format (TargetSDK, Version Name, Build Number, Variant Code (Android: 0, WearOS: 1)
+        versionCode 341915061
+        versionName "1.15.3"
 
         vectorDrawables.useSupportLibrary = true
     }
