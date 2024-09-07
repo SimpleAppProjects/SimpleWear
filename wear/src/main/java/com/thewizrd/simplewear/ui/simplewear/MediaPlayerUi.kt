@@ -1,4 +1,8 @@
-@file:OptIn(ExperimentalHorologistApi::class, ExperimentalFoundationApi::class)
+@file:OptIn(
+    ExperimentalHorologistApi::class,
+    ExperimentalFoundationApi::class,
+    ExperimentalWearFoundationApi::class
+)
 
 package com.thewizrd.simplewear.ui.simplewear
 
@@ -27,6 +31,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
@@ -46,10 +51,12 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.wear.ambient.AmbientLifecycleObserver
+import androidx.wear.compose.foundation.ExperimentalWearFoundationApi
 import androidx.wear.compose.foundation.SwipeToDismissBoxState
 import androidx.wear.compose.foundation.lazy.items
 import androidx.wear.compose.foundation.rememberSwipeToDismissBoxState
@@ -391,12 +398,15 @@ private fun MediaPlayerControlsPage(
     onVolumeDown: () -> Unit = {},
     onVolumeChange: (Int) -> Unit = {},
 ) {
+    val lifecycleOwner = LocalLifecycleOwner.current
+
     val volumeUiState = remember(uiState) {
         uiState.audioStreamState?.let {
             VolumeUiState(it.currentVolume, it.maxVolume, it.minVolume)
         }
     }
-    val isAmbient = ambientState != AmbientState.Interactive
+    val isAmbient = remember(ambientState) { ambientState != AmbientState.Interactive }
+    val focusRequester = remember { FocusRequester() }
 
     // Progress
     val timestampProvider = remember { TimestampProvider { System.currentTimeMillis() } }
@@ -439,18 +449,17 @@ private fun MediaPlayerControlsPage(
         PlayerScreen(
             modifier = Modifier
                 .ambientMode(ambientState)
-                .run {
-                    if (!isAmbient && volumeUiState != null) {
-                        this.rotaryVolumeControlsWithFocus(
-                            volumeUiStateProvider = { volumeUiState },
-                            onRotaryVolumeInput = onVolumeChange,
-                            localView = LocalView.current,
-                            isLowRes = RotaryDefaults.isLowResInput()
-                        )
-                    } else {
-                        this
-                    }
-                },
+                .rotaryVolumeControlsWithFocus(
+                    focusRequester = focusRequester,
+                    volumeUiStateProvider = { volumeUiState ?: VolumeUiState() },
+                    onRotaryVolumeInput = { volume ->
+                        if (!isAmbient && volumeUiState != null) {
+                            onVolumeChange.invoke(volume)
+                        }
+                    },
+                    localView = LocalView.current,
+                    isLowRes = RotaryDefaults.isLowResInput()
+                ),
             mediaDisplay = {
                 if (uiState.isPlaybackLoading && !isAmbient) {
                     LoadingMediaDisplay()
@@ -600,6 +609,12 @@ private fun MediaPlayerControlsPage(
                 }
             }
         )
+
+        LaunchedEffect(uiState) {
+            if (lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
+                focusRequester.requestFocus()
+            }
+        }
     }
 }
 
