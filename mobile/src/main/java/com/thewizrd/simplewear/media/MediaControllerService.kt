@@ -21,6 +21,7 @@ import android.os.CountDownTimer
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import android.os.PowerManager
 import android.os.SystemClock
 import android.provider.MediaStore
 import android.support.v4.media.MediaBrowserCompat
@@ -35,6 +36,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import androidx.media.MediaBrowserServiceCompat
+import androidx.media.VolumeProviderCompat
 import com.google.android.gms.wearable.DataClient
 import com.google.android.gms.wearable.DataMap
 import com.google.android.gms.wearable.MessageClient
@@ -79,6 +81,7 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
     private lateinit var mAudioManager: AudioManager
     private lateinit var mNotificationManager: NotificationManager
     private lateinit var mMediaSessionManager: MediaSessionManager
+    private lateinit var mPowerManager: PowerManager
 
     private var mSelectedMediaApp: MediaAppDetails? = null
     private var mSelectedPackageName: String? = null
@@ -194,6 +197,7 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
         mAudioManager = getSystemService(AudioManager::class.java)
         mNotificationManager = getSystemService(NotificationManager::class.java)
         mMediaSessionManager = getSystemService(MediaSessionManager::class.java)
+        mPowerManager = getSystemService(PowerManager::class.java)
 
         mMediaSessionManager.addOnActiveSessionsChangedListener(
             this,
@@ -896,20 +900,30 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
             }
             MediaHelper.MediaVolumeUpPath -> {
                 if (!isNotificationListenerEnabled(messageEvent)) return
-                if (mController != null) {
-                    mController!!.adjustVolume(AudioManager.ADJUST_RAISE, 0)
-                } else {
+
+                var flags = AudioManager.FLAG_PLAY_SOUND
+                if (mPowerManager.isInteractive) flags = flags or AudioManager.FLAG_SHOW_UI
+
+                mController?.takeIf {
+                    it.playbackInfo?.volumeControl == VolumeProviderCompat.VOLUME_CONTROL_RELATIVE || it.playbackInfo?.volumeControl == VolumeProviderCompat.VOLUME_CONTROL_ABSOLUTE
+                }?.adjustVolume(AudioManager.ADJUST_RAISE, flags) ?: run {
                     PhoneStatusHelper.setVolume(this, ValueDirection.UP, AudioStreamType.MUSIC)
                 }
+
                 sendVolumeStatus(messageEvent.sourceNodeId)
             }
             MediaHelper.MediaVolumeDownPath -> {
                 if (!isNotificationListenerEnabled(messageEvent)) return
-                if (mController != null) {
-                    mController!!.adjustVolume(AudioManager.ADJUST_LOWER, 0)
-                } else {
+
+                var flags = AudioManager.FLAG_PLAY_SOUND
+                if (mPowerManager.isInteractive) flags = flags or AudioManager.FLAG_SHOW_UI
+
+                mController?.takeIf {
+                    it.playbackInfo?.volumeControl == VolumeProviderCompat.VOLUME_CONTROL_RELATIVE || it.playbackInfo?.volumeControl == VolumeProviderCompat.VOLUME_CONTROL_ABSOLUTE
+                }?.adjustVolume(AudioManager.ADJUST_LOWER, flags) ?: run {
                     PhoneStatusHelper.setVolume(this, ValueDirection.DOWN, AudioStreamType.MUSIC)
                 }
+
                 sendVolumeStatus(messageEvent.sourceNodeId)
             }
             MediaHelper.MediaVolumeStatusPath -> {
@@ -924,11 +938,15 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
 
                     if (!isActive) return@launch
 
-                    if (mController != null) {
-                        mController!!.setVolumeTo(value, 0)
-                    } else {
-                        mAudioManager.setStreamVolume(AudioManager.STREAM_MUSIC, value, 0)
+                    var flags = AudioManager.FLAG_PLAY_SOUND
+                    if (mPowerManager.isInteractive) flags = flags or AudioManager.FLAG_SHOW_UI
+
+                    mController?.takeIf {
+                        it.playbackInfo?.volumeControl == VolumeProviderCompat.VOLUME_CONTROL_ABSOLUTE
+                    }?.setVolumeTo(value, flags) ?: run {
+                        mAudioManager.setStreamVolume(AudioManager.STREAM_MUSIC, value, flags)
                     }
+
                     sendVolumeStatus(messageEvent.sourceNodeId)
                 }
             }
