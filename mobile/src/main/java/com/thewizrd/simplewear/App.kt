@@ -255,7 +255,9 @@ class App : Application(), ApplicationLib, ActivityLifecycleCallbacks, Configura
                         applicationContext
                     )
                 ) {
-                    PhoneStatusHelper.deActivateDeviceAdmin(applicationContext)
+                    runCatching {
+                        PhoneStatusHelper.deActivateDeviceAdmin(applicationContext)
+                    }
                 }
             }
         }

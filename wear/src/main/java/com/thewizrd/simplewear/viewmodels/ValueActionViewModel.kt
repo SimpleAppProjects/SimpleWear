@@ -133,29 +133,33 @@ class ValueActionViewModel(app: Application) : WearableListenerViewModel(app) {
     fun increaseValue() {
         val state = uiState.value
 
-        val actionData = if (state.action == Actions.VOLUME && state.streamType != null) {
-            VolumeAction(ValueDirection.UP, state.streamType)
-        } else {
-            ValueAction(state.action!!, ValueDirection.UP)
-        }
+        if (state.action != null) {
+            val actionData = if (state.action == Actions.VOLUME && state.streamType != null) {
+                VolumeAction(ValueDirection.UP, state.streamType)
+            } else {
+                ValueAction(state.action, ValueDirection.UP)
+            }
 
-        _eventsFlow.tryEmit(WearableEvent(ACTION_CHANGED, Bundle().apply {
-            putString(EXTRA_ACTIONDATA, JSONParser.serializer(actionData, Action::class.java))
-        }))
+            _eventsFlow.tryEmit(WearableEvent(ACTION_CHANGED, Bundle().apply {
+                putString(EXTRA_ACTIONDATA, JSONParser.serializer(actionData, Action::class.java))
+            }))
+        }
     }
 
     fun decreaseValue() {
         val state = uiState.value
 
-        val actionData = if (state.action == Actions.VOLUME && state.streamType != null) {
-            VolumeAction(ValueDirection.DOWN, state.streamType)
-        } else {
-            ValueAction(state.action!!, ValueDirection.DOWN)
-        }
+        if (state.action != null) {
+            val actionData = if (state.action == Actions.VOLUME && state.streamType != null) {
+                VolumeAction(ValueDirection.DOWN, state.streamType)
+            } else {
+                ValueAction(state.action, ValueDirection.DOWN)
+            }
 
-        _eventsFlow.tryEmit(WearableEvent(ACTION_CHANGED, Bundle().apply {
-            putString(EXTRA_ACTIONDATA, JSONParser.serializer(actionData, Action::class.java))
-        }))
+            _eventsFlow.tryEmit(WearableEvent(ACTION_CHANGED, Bundle().apply {
+                putString(EXTRA_ACTIONDATA, JSONParser.serializer(actionData, Action::class.java))
+            }))
+        }
     }
 
     fun requestActionChange() {
