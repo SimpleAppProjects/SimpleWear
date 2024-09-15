@@ -1,11 +1,17 @@
-@file:OptIn(ExperimentalHorologistApi::class, ExperimentalFoundationApi::class)
+@file:OptIn(
+    ExperimentalHorologistApi::class, ExperimentalFoundationApi::class,
+    ExperimentalWearFoundationApi::class
+)
 
 package com.thewizrd.simplewear.ui.simplewear
 
 import android.content.Intent
+import android.view.HapticFeedbackConstants
+import android.view.View
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -28,8 +34,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
@@ -54,8 +62,11 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.wear.ambient.AmbientLifecycleObserver
+import androidx.wear.compose.foundation.ExperimentalWearFoundationApi
+import androidx.wear.compose.foundation.RequestFocusWhenActive
 import androidx.wear.compose.foundation.SwipeToDismissBoxState
 import androidx.wear.compose.foundation.lazy.items
+import androidx.wear.compose.foundation.rememberActiveFocusRequester
 import androidx.wear.compose.foundation.rememberSwipeToDismissBoxState
 import androidx.wear.compose.material.ButtonDefaults
 import androidx.wear.compose.material.ChipDefaults
@@ -70,7 +81,7 @@ import com.google.android.horologist.annotations.ExperimentalHorologistApi
 import com.google.android.horologist.audio.ui.VolumeUiState
 import com.google.android.horologist.audio.ui.components.actions.SetVolumeButton
 import com.google.android.horologist.audio.ui.components.actions.SettingsButton
-import com.google.android.horologist.audio.ui.rotaryVolumeControlsWithFocus
+import com.google.android.horologist.audio.ui.highResRotaryVolumeControls
 import com.google.android.horologist.compose.ambient.AmbientAware
 import com.google.android.horologist.compose.ambient.AmbientState
 import com.google.android.horologist.compose.layout.ScalingLazyColumn
@@ -79,6 +90,8 @@ import com.google.android.horologist.compose.layout.rememberResponsiveColumnStat
 import com.google.android.horologist.compose.layout.scrollAway
 import com.google.android.horologist.compose.material.Chip
 import com.google.android.horologist.compose.rotaryinput.RotaryDefaults
+import com.google.android.horologist.compose.rotaryinput.RotaryInputConfigDefaults
+import com.google.android.horologist.compose.rotaryinput.onRotaryInputAccumulated
 import com.google.android.horologist.media.model.PlaybackStateEvent
 import com.google.android.horologist.media.model.TimestampProvider
 import com.google.android.horologist.media.ui.components.ControlButtonLayout
@@ -443,6 +456,8 @@ private fun MediaPlayerControlsPage(
         },
         loading = uiState.isLoading && !isAmbient
     ) {
+        val isLowRes = RotaryDefaults.isLowResInput()
+
         PlayerScreen(
             modifier = Modifier
                 .ambientMode(ambientState)
@@ -455,7 +470,8 @@ private fun MediaPlayerControlsPage(
                         }
                     },
                     localView = LocalView.current,
-                    isLowRes = RotaryDefaults.isLowResInput()
+                    isLowRes = isLowRes,
+                    lowResScaleFactor = 5
                 ),
             mediaDisplay = {
                 if (uiState.isPlaybackLoading && !isAmbient) {
@@ -964,4 +980,66 @@ private fun PreviewCustomControls() {
     MediaCustomControlsPage(
         uiState = uiState
     )
+}
+
+@ExperimentalHorologistApi
+private fun Modifier.rotaryVolumeControlsWithFocus(
+    focusRequester: FocusRequester? = null,
+    volumeUiStateProvider: () -> VolumeUiState,
+    onRotaryVolumeInput: (Int) -> Unit,
+    localView: View,
+    isLowRes: Boolean,
+    lowResScaleFactor: Int = 1
+): Modifier = composed {
+    val localFocusRequester = focusRequester ?: rememberActiveFocusRequester()
+    RequestFocusWhenActive(localFocusRequester)
+
+    if (isLowRes) {
+        onRotaryInputAccumulated(
+            rateLimitCoolDownMs = RotaryInputConfigDefaults.RATE_LIMITING_DISABLED,
+            isLowRes = true
+        ) { change ->
+            val targetVolume =
+                (volumeUiStateProvider().current + (change.toInt() * lowResScaleFactor)).coerceIn(
+                    0,
+                    volumeUiStateProvider().max
+                )
+
+            performHapticFeedback(
+                targetVolume = targetVolume,
+                volumeUiStateProvider = volumeUiStateProvider,
+                localView = localView,
+            )
+
+            onRotaryVolumeInput(targetVolume)
+        }
+    } else {
+        highResRotaryVolumeControls(
+            volumeUiStateProvider = volumeUiStateProvider,
+            onRotaryVolumeInput = onRotaryVolumeInput,
+            localView = localView,
+        )
+    }
+        .focusRequester(localFocusRequester)
+        .focusable()
+}
+
+/**
+ * Performs haptic feedback on the view. If there is a change in the volume, returns a strong
+ * feedback [HapticFeedbackConstants.LONG_PRESS] if reaching the limit (either max or min) of the
+ * volume range, otherwise returns [HapticFeedbackConstants.KEYBOARD_TAP]
+ */
+private fun performHapticFeedback(
+    targetVolume: Int,
+    volumeUiStateProvider: () -> VolumeUiState,
+    localView: View,
+) {
+    if (targetVolume != volumeUiStateProvider().current) {
+        if (targetVolume == volumeUiStateProvider().min || targetVolume == volumeUiStateProvider().max) {
+            // Use stronger haptic feedback when reaching max or min
+            localView.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+        } else {
+            localView.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+        }
+    }
 }
