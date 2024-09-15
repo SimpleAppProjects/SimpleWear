@@ -92,7 +92,7 @@ class BatteryStatusComplicationService : SuspendingComplicationDataSourceService
 
                 ComplicationType.SHORT_TEXT -> {
                     ShortTextComplicationData.Builder(
-                        PlainComplicationText.Builder("70%").build(),
+                        PlainComplicationText.Builder("${batteryLvl}%").build(),
                         PlainComplicationText.Builder("${getString(R.string.pref_title_phone_batt_state)}: ${batteryLvl}%, $statusText")
                             .build()
                     ).setMonochromaticImage(
@@ -106,7 +106,7 @@ class BatteryStatusComplicationService : SuspendingComplicationDataSourceService
 
                 ComplicationType.LONG_TEXT -> {
                     LongTextComplicationData.Builder(
-                        PlainComplicationText.Builder("70%, $statusText").build(),
+                        PlainComplicationText.Builder("${batteryLvl}%, $statusText").build(),
                         PlainComplicationText.Builder("${getString(R.string.pref_title_phone_batt_state)}: ${batteryLvl}%, $statusText")
                             .build()
                     ).setTitle(
