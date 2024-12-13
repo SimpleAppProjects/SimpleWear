@@ -50,11 +50,13 @@ private fun rememberBurnInTranslation(
     remember(ambientState) {
         when (ambientState) {
             AmbientState.Interactive -> 0f
-            is AmbientState.Ambient -> if (ambientState.ambientDetails?.burnInProtectionRequired == true) {
+            is AmbientState.Ambient -> if (ambientState.burnInProtectionRequired) {
                 Random.nextInt(-BURN_IN_OFFSET_PX, BURN_IN_OFFSET_PX + 1).toFloat()
             } else {
                 0f
             }
+
+            AmbientState.Inactive -> 0f
         }
     }
 

@@ -161,7 +161,7 @@ class DashboardTileRenderer(context: Context, debugResourceMode: Boolean = false
     override fun ResourceBuilders.Resources.Builder.produceRequestedResources(
         resourceState: Unit,
         deviceParameters: DeviceParametersBuilders.DeviceParameters,
-        resourceIds: MutableList<String>
+        resourceIds: List<String>
     ) {
         Timber.tag(this::class.java.name).d("produceRequestedResources")
 

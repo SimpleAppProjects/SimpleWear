@@ -8,11 +8,11 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.wear.compose.foundation.ExperimentalWearFoundationApi
 import androidx.wear.compose.foundation.lazy.ScalingLazyListScope
 import androidx.wear.compose.foundation.rememberActiveFocusRequester
+import androidx.wear.compose.foundation.rotary.RotaryScrollableDefaults
+import androidx.wear.compose.foundation.rotary.rotaryScrollable
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
 import com.google.android.horologist.compose.layout.ScalingLazyColumnState
 import com.google.android.horologist.compose.layout.rememberResponsiveColumnState
-import com.google.android.horologist.compose.rotaryinput.rememberRotaryHapticHandler
-import com.google.android.horologist.compose.rotaryinput.rotaryWithScroll
 
 @ExperimentalWearFoundationApi
 @ExperimentalHorologistApi
@@ -26,19 +26,18 @@ fun ScalingLazyColumn(
     androidx.wear.compose.foundation.lazy.ScalingLazyColumn(
         modifier = modifier
             .fillMaxSize()
-            .rotaryWithScroll(
+            .rotaryScrollable(
+                behavior = RotaryScrollableDefaults.behavior(scrollState),
                 focusRequester = focusRequester,
-                scrollableState = scrollState.state,
-                reverseDirection = scrollState.reverseLayout,
-                rotaryHaptics = rememberRotaryHapticHandler(scrollState)
+                reverseDirection = scrollState.reverseLayout
             ),
         state = scrollState.state,
         contentPadding = scrollState.contentPadding,
         reverseLayout = scrollState.reverseLayout,
         verticalArrangement = scrollState.verticalArrangement,
         horizontalAlignment = scrollState.horizontalAlignment,
-        flingBehavior = scrollState.flingBehavior
-            ?: ScrollableDefaults.flingBehavior(),
+        flingBehavior = ScrollableDefaults.flingBehavior(),
+        rotaryScrollableBehavior = null,
         userScrollEnabled = scrollState.userScrollEnabled,
         scalingParams = scrollState.scalingParams,
         anchorType = scrollState.anchorType,

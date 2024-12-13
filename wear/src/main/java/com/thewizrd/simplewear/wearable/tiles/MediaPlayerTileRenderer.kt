@@ -111,7 +111,7 @@ class MediaPlayerTileRenderer(context: Context, debugResourceMode: Boolean = fal
     override fun ResourceBuilders.Resources.Builder.produceRequestedResources(
         resourceState: MediaPlayerTileState,
         deviceParameters: DeviceParametersBuilders.DeviceParameters,
-        resourceIds: MutableList<String>
+        resourceIds: List<String>
     ) {
         Timber.tag(this::class.java.name).d("produceRequestedResources")
 

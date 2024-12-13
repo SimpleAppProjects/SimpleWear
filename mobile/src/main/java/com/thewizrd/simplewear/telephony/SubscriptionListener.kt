@@ -78,7 +78,7 @@ object SubscriptionListener {
             }
 
             // Get active SIMs (subscriptions)
-            val subList = subMgr.activeSubscriptionInfoList
+            val subList = subMgr.activeSubscriptionInfoList ?: emptyList()
             val activeSubIds = subList.map { it.subscriptionId }
 
             // Remove any subs which are no longer active
@@ -92,7 +92,7 @@ object SubscriptionListener {
             }
 
             // Register any new subs
-            subMgr.activeSubscriptionInfoList.forEach {
+            subMgr.activeSubscriptionInfoList?.forEach {
                 if (it.subscriptionId != SubscriptionManager.INVALID_SUBSCRIPTION_ID) {
                     if (!subMap.containsKey(it.subscriptionId)) {
                         // Register listener for mobile data setting
