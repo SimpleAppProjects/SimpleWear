@@ -39,7 +39,6 @@ class BatteryStatusComplicationService : SuspendingComplicationDataSourceService
             ComplicationType.SHORT_TEXT,
             ComplicationType.LONG_TEXT
         )
-    private val complicationIconResId = R.drawable.ic_smartphone_white_24dp
 
     override fun onDestroy() {
         super.onDestroy()
@@ -71,6 +70,11 @@ class BatteryStatusComplicationService : SuspendingComplicationDataSourceService
                 getString(R.string.batt_state_charging)
             } else {
                 getString(R.string.batt_state_discharging)
+            }
+            val complicationIconResId = if (batteryStatus.isCharging) {
+                R.drawable.ic_charging_station_24dp
+            } else {
+                R.drawable.ic_smartphone_white_24dp
             }
 
             when (request.complicationType) {
@@ -130,6 +134,8 @@ class BatteryStatusComplicationService : SuspendingComplicationDataSourceService
         if (!supportedComplicationTypes.contains(type)) {
             return NoDataComplicationData()
         }
+
+        val complicationIconResId = R.drawable.ic_charging_station_24dp
 
         return when (type) {
             ComplicationType.RANGED_VALUE -> {
