@@ -3,8 +3,10 @@ package com.thewizrd.shared_resources.utils
 import android.annotation.SuppressLint
 import android.content.Context
 import android.util.Log
+import com.thewizrd.shared_resources.BuildConfig
+import com.thewizrd.shared_resources.appLib
+import com.thewizrd.shared_resources.utils.Logger.DEBUG_MODE_ENABLED
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.io.File
@@ -12,13 +14,21 @@ import java.io.FileOutputStream
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
-import java.util.*
+import java.util.Locale
 
 @SuppressLint("LogNotTimber")
 class FileLoggingTree(private val context: Context) : Timber.Tree() {
     companion object {
         private val TAG = FileLoggingTree::class.java.simpleName
         private var ranCleanup = false
+    }
+
+    override fun isLoggable(tag: String?, priority: Int): Boolean {
+        return if (BuildConfig.DEBUG || DEBUG_MODE_ENABLED) {
+            true
+        } else {
+            priority > Log.DEBUG
+        }
     }
 
     override fun log(priority: Int, tag: String?, message: String, t: Throwable?) {
@@ -47,11 +57,12 @@ class FileLoggingTree(private val context: Context) : Timber.Tree() {
                 val fileOutputStream = FileOutputStream(file, true)
 
                 val priorityTAG = when (priority) {
+                    Log.VERBOSE -> "VERBOSE"
                     Log.DEBUG -> "DEBUG"
                     Log.INFO -> "INFO"
-                    Log.VERBOSE -> "VERBOSE"
                     Log.WARN -> "WARN"
                     Log.ERROR -> "ERROR"
+                    Log.ASSERT -> "ASSERT"
                     else -> "DEBUG"
                 }
 
@@ -66,7 +77,7 @@ class FileLoggingTree(private val context: Context) : Timber.Tree() {
 
             // Cleanup old logs if they exist
             if (!ranCleanup) {
-                GlobalScope.launch(Dispatchers.IO) {
+                appLib.appScope.launch(Dispatchers.IO) {
                     try {
                         // Only keep a weeks worth of logs
                         val daysToKeep = 7

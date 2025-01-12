@@ -6,12 +6,12 @@ import android.util.Log
 import androidx.annotation.Size
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.thewizrd.shared_resources.BuildConfig
-import com.thewizrd.shared_resources.SimpleLibrary
+import com.thewizrd.shared_resources.sharedDeps
 import java.lang.System.lineSeparator
 
 @SuppressLint("MissingPermission")
 object AnalyticsLogger {
-    private val analytics by lazy { FirebaseAnalytics.getInstance(SimpleLibrary.instance.appContext) }
+    private val analytics by lazy { FirebaseAnalytics.getInstance(sharedDeps.context) }
 
     @JvmOverloads
     @JvmStatic
@@ -23,5 +23,29 @@ object AnalyticsLogger {
             // NOTE: Firebase Analytics only supports eventName with alphanumeric characters and underscores
             analytics.logEvent(eventName.replace("[^a-zA-Z0-9]".toRegex(), "_"), properties)
         }
+    }
+
+    @JvmStatic
+    fun setUserProperty(
+        @Size(min = 1L, max = 24L) property: String,
+        @Size(max = 36L) value: String?
+    ) {
+        analytics.setUserProperty(property, value)
+    }
+
+    @JvmStatic
+    fun setUserProperty(
+        @Size(min = 1L, max = 24L) property: String,
+        @Size(max = 36L) value: Boolean
+    ) {
+        analytics.setUserProperty(property, value.toString())
+    }
+
+    @JvmStatic
+    fun setUserProperty(
+        @Size(min = 1L, max = 24L) property: String,
+        @Size(max = 36L) value: Number
+    ) {
+        analytics.setUserProperty(property, value.toString())
     }
 }

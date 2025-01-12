@@ -9,6 +9,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.database.ContentObserver
 import android.location.LocationManager
@@ -24,15 +25,16 @@ import android.provider.Settings
 import android.telephony.TelephonyManager
 import android.util.Log
 import androidx.core.content.ContextCompat
+import androidx.preference.PreferenceManager
 import androidx.work.Configuration
 import com.google.android.material.color.DynamicColors
-import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.thewizrd.shared_resources.ApplicationLib
-import com.thewizrd.shared_resources.SimpleLibrary
+import com.thewizrd.shared_resources.SharedModule
 import com.thewizrd.shared_resources.actions.Actions
 import com.thewizrd.shared_resources.actions.BatteryStatus
+import com.thewizrd.shared_resources.appLib
 import com.thewizrd.shared_resources.helpers.AppState
-import com.thewizrd.shared_resources.utils.CrashlyticsLoggingTree
+import com.thewizrd.shared_resources.sharedDeps
 import com.thewizrd.shared_resources.utils.JSONParser
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.simplewear.camera.TorchListener
@@ -41,21 +43,11 @@ import com.thewizrd.simplewear.media.MediaControllerService
 import com.thewizrd.simplewear.services.CallControllerService
 import com.thewizrd.simplewear.telephony.SubscriptionListener
 import com.thewizrd.simplewear.wearable.WearableWorker
+import kotlinx.coroutines.cancel
 import kotlin.system.exitProcess
 
-class App : Application(), ApplicationLib, ActivityLifecycleCallbacks, Configuration.Provider {
-    companion object {
-        @JvmStatic
-        lateinit var instance: ApplicationLib
-            private set
-    }
-
-    override lateinit var appContext: Context
-        private set
-    override lateinit var applicationState: AppState
-        private set
-    override val isPhone: Boolean = true
-
+class App : Application(), ActivityLifecycleCallbacks, Configuration.Provider {
+    private lateinit var applicationState: AppState
     private var mActivitiesStarted = 0
 
     private lateinit var mActionsReceiver: BroadcastReceiver
@@ -63,22 +55,27 @@ class App : Application(), ApplicationLib, ActivityLifecycleCallbacks, Configura
 
     override fun onCreate() {
         super.onCreate()
-        appContext = applicationContext
-        instance = this
+
         registerActivityLifecycleCallbacks(this)
         applicationState = AppState.CLOSED
         mActivitiesStarted = 0
 
-        // Init shared library
-        SimpleLibrary.initialize(this)
-
-        // Start logger
-        Logger.init(appContext)
-        Logger.registerLogger(CrashlyticsLoggingTree())
-        FirebaseCrashlytics.getInstance().apply {
-            setCrashlyticsCollectionEnabled(true)
-            sendUnsentReports()
+        // Initialize app dependencies (library module chain)
+        // 1. ApplicationLib + SharedModule, 2. Firebase
+        appLib = object : ApplicationLib() {
+            override val context = applicationContext
+            override val preferences: SharedPreferences
+                get() = PreferenceManager.getDefaultSharedPreferences(context)
+            override val appState: AppState
+                get() = applicationState
+            override val isPhone = true
         }
+
+        sharedDeps = object : SharedModule() {
+            override val context = appLib.context // keep same context as applib
+        }
+
+        FirebaseConfigurator.initialize(applicationContext)
 
         // Init common action broadcast receiver
         mActionsReceiver = object : BroadcastReceiver() {
@@ -156,28 +153,29 @@ class App : Application(), ApplicationLib, ActivityLifecycleCallbacks, Configura
         }
         // Receiver exported for system broadcasts
         ContextCompat.registerReceiver(
-            appContext,
+            applicationContext,
             mActionsReceiver,
             actionsFilter,
             ContextCompat.RECEIVER_EXPORTED
         )
 
         runCatching {
-            if (appContext.packageManager.hasSystemFeature(PackageManager.FEATURE_TELEPHONY)) {
+            if (applicationContext.packageManager.hasSystemFeature(PackageManager.FEATURE_TELEPHONY)) {
                 // Register listener for mobile data setting (default sim)
                 val setting = Settings.Global.getUriFor("mobile_data")
                 mContentObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
                     override fun onChange(selfChange: Boolean, uri: Uri?) {
                         super.onChange(selfChange, uri)
                         if (uri.toString().contains("mobile_data")) {
-                            WearableWorker.sendActionUpdate(appContext, Actions.MOBILEDATA)
+                            WearableWorker.sendActionUpdate(applicationContext, Actions.MOBILEDATA)
                         }
                     }
                 }
                 contentResolver.registerContentObserver(setting, false, mContentObserver)
 
-                if (appContext.packageManager.hasSystemFeature(PackageManager.FEATURE_TELEPHONY_SUBSCRIPTION)) {
-                    val telephonyManager = appContext.getSystemService(TelephonyManager::class.java)
+                if (applicationContext.packageManager.hasSystemFeature(PackageManager.FEATURE_TELEPHONY_SUBSCRIPTION)) {
+                    val telephonyManager =
+                        applicationContext.getSystemService(TelephonyManager::class.java)
 
                     val modemCount = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                         telephonyManager.supportedModemCount
@@ -186,16 +184,16 @@ class App : Application(), ApplicationLib, ActivityLifecycleCallbacks, Configura
                     }
 
                     if (modemCount > 1) {
-                        SubscriptionListener.registerListener(appContext)
+                        SubscriptionListener.registerListener(applicationContext)
                     }
                 }
             }
         }
 
         runCatching {
-            if (appContext.packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA_FLASH)) {
+            if (applicationContext.packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA_FLASH)) {
                 // Register listener for camera flash
-                TorchListener.registerListener(appContext)
+                TorchListener.registerListener(applicationContext)
             }
         }
 
@@ -209,7 +207,7 @@ class App : Application(), ApplicationLib, ActivityLifecycleCallbacks, Configura
             }
         }
 
-        WearableWorker.sendStatusUpdate(appContext)
+        WearableWorker.sendStatusUpdate(applicationContext)
         if (com.thewizrd.simplewear.preferences.Settings.isBridgeMediaEnabled()) {
             MediaControllerService.enqueueWork(
                 this,
@@ -232,13 +230,13 @@ class App : Application(), ApplicationLib, ActivityLifecycleCallbacks, Configura
     }
 
     override fun onTerminate() {
-        SubscriptionListener.unregisterListener(appContext)
-        TorchListener.unregisterListener(appContext)
+        SubscriptionListener.unregisterListener(applicationContext)
+        TorchListener.unregisterListener(applicationContext)
         contentResolver.unregisterContentObserver(mContentObserver)
-        appContext.unregisterReceiver(mActionsReceiver)
+        applicationContext.unregisterReceiver(mActionsReceiver)
         // Shutdown logger
         Logger.shutdown()
-        SimpleLibrary.unregister()
+        appLib.appScope.cancel()
         super.onTerminate()
     }
 
@@ -285,7 +283,7 @@ class App : Application(), ApplicationLib, ActivityLifecycleCallbacks, Configura
 
     override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {}
     override fun onActivityDestroyed(activity: Activity) {
-        if (activity.localClassName.contains("MainActivity")) {
+        if (activity.localClassName.contains(MainActivity::class.java.simpleName)) {
             applicationState = AppState.CLOSED
         }
     }

@@ -12,11 +12,10 @@ import android.telephony.SubscriptionManager
 import android.util.Log
 import androidx.core.content.PermissionChecker
 import com.thewizrd.shared_resources.actions.Actions
+import com.thewizrd.shared_resources.appLib
 import com.thewizrd.shared_resources.utils.Logger
-import com.thewizrd.simplewear.App
 import com.thewizrd.simplewear.wearable.WearableWorker
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import java.util.concurrent.Executors
 
@@ -50,7 +49,7 @@ object SubscriptionListener {
                 subMgr.addOnSubscriptionsChangedListener(listener.value)
             }
 
-            GlobalScope.launch(Dispatchers.Default) {
+            appLib.appScope.launch(Dispatchers.Default) {
                 listener.value.onSubscriptionsChanged()
             }
 
@@ -65,7 +64,7 @@ object SubscriptionListener {
 
     private fun updateActiveSubscriptions() {
         runCatching {
-            val appContext = App.instance.appContext
+            val appContext = appLib.context
             val subMgr = appContext.getSystemService(SubscriptionManager::class.java)
 
             if (PermissionChecker.checkSelfPermission(
@@ -114,7 +113,7 @@ object SubscriptionListener {
     }
 
     private fun unregisterLister() {
-        unregisterListener(App.instance.appContext)
+        unregisterListener(appLib.context)
     }
 
     fun unregisterListener(context: Context) {

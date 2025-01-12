@@ -1,11 +1,10 @@
 package com.thewizrd.simplewear.preferences
 
 import androidx.core.content.edit
-import androidx.preference.PreferenceManager
 import com.google.gson.reflect.TypeToken
 import com.thewizrd.shared_resources.actions.Actions
+import com.thewizrd.shared_resources.appLib
 import com.thewizrd.shared_resources.utils.JSONParser
-import com.thewizrd.simplewear.App
 import java.time.Instant
 
 object Settings {
@@ -21,57 +20,48 @@ object Settings {
     private const val KEY_LASTUPDATECHECK = "key_lastupdatecheck"
 
     fun useGridLayout(): Boolean {
-        val preferences = PreferenceManager.getDefaultSharedPreferences(App.instance.appContext)
-        return preferences.getBoolean(KEY_LAYOUTMODE, true)
+        return appLib.preferences.getBoolean(KEY_LAYOUTMODE, true)
     }
 
     fun setGridLayout(value: Boolean) {
-        val preferences = PreferenceManager.getDefaultSharedPreferences(App.instance.appContext)
-        preferences.edit {
+        appLib.preferences.edit {
             putBoolean(KEY_LAYOUTMODE, value)
         }
     }
 
     val isAutoLaunchMediaCtrlsEnabled: Boolean
         get() {
-            val preferences = PreferenceManager.getDefaultSharedPreferences(App.instance.appContext)
-            return preferences.getBoolean(KEY_AUTOLAUNCH, true)
+            return appLib.preferences.getBoolean(KEY_AUTOLAUNCH, true)
         }
 
     fun setAutoLaunchMediaCtrls(enabled: Boolean) {
-        val preferences = PreferenceManager.getDefaultSharedPreferences(App.instance.appContext)
-        preferences.edit {
+        appLib.preferences.edit {
             putBoolean(KEY_AUTOLAUNCH, enabled)
         }
     }
 
     fun getMusicPlayersFilter(): Set<String> {
-        val preferences = PreferenceManager.getDefaultSharedPreferences(App.instance.appContext)
-        return preferences.getStringSet(KEY_MUSICFILTER, emptySet()) ?: emptySet()
+        return appLib.preferences.getStringSet(KEY_MUSICFILTER, emptySet()) ?: emptySet()
     }
 
     fun setMusicPlayersFilter(c: Set<String>) {
-        val preferences = PreferenceManager.getDefaultSharedPreferences(App.instance.appContext)
-        preferences.edit {
+        appLib.preferences.edit {
             putStringSet(KEY_MUSICFILTER, c)
         }
     }
 
     fun isLoadAppIcons(): Boolean {
-        val preferences = PreferenceManager.getDefaultSharedPreferences(App.instance.appContext)
-        return preferences.getBoolean(KEY_LOADAPPICONS, false)
+        return appLib.preferences.getBoolean(KEY_LOADAPPICONS, false)
     }
 
     fun setLoadAppIcons(value: Boolean) {
-        val preferences = PreferenceManager.getDefaultSharedPreferences(App.instance.appContext)
-        preferences.edit {
+        appLib.preferences.edit {
             putBoolean(KEY_LOADAPPICONS, value)
         }
     }
 
     fun getDashboardTileConfig(): List<Actions>? {
-        val preferences = PreferenceManager.getDefaultSharedPreferences(App.instance.appContext)
-        val configJSON = preferences.getString(KEY_DASHTILECONFIG, null)
+        val configJSON = appLib.preferences.getString(KEY_DASHTILECONFIG, null)
         return configJSON?.let {
             val arrListType = object : TypeToken<List<Actions>>() {}.type
             JSONParser.deserializer<List<Actions>>(it, arrListType)
@@ -79,8 +69,7 @@ object Settings {
     }
 
     fun setDashboardTileConfig(actions: List<Actions>?) {
-        val preferences = PreferenceManager.getDefaultSharedPreferences(App.instance.appContext)
-        preferences.edit {
+        appLib.preferences.edit {
             putString(KEY_DASHTILECONFIG, actions?.let {
                 val arrListType = object : TypeToken<List<Actions>>() {}.type
                 JSONParser.serializer(it, arrListType)
@@ -89,8 +78,7 @@ object Settings {
     }
 
     fun getDashboardConfig(): List<Actions>? {
-        val preferences = PreferenceManager.getDefaultSharedPreferences(App.instance.appContext)
-        val configJSON = preferences.getString(KEY_DASHCONFIG, null)
+        val configJSON = appLib.preferences.getString(KEY_DASHCONFIG, null)
         return configJSON?.let {
             val arrListType = object : TypeToken<List<Actions>>() {}.type
             JSONParser.deserializer<List<Actions>>(it, arrListType)
@@ -98,8 +86,7 @@ object Settings {
     }
 
     fun setDashboardConfig(actions: List<Actions>?) {
-        val preferences = PreferenceManager.getDefaultSharedPreferences(App.instance.appContext)
-        preferences.edit {
+        appLib.preferences.edit {
             putString(KEY_DASHCONFIG, actions?.let {
                 val arrListType = object : TypeToken<List<Actions>>() {}.type
                 JSONParser.serializer(it, arrListType)
@@ -108,38 +95,33 @@ object Settings {
     }
 
     fun isShowBatStatus(): Boolean {
-        val preferences = PreferenceManager.getDefaultSharedPreferences(App.instance.appContext)
-        return preferences.getBoolean(KEY_SHOWBATSTATUS, true)
+        return appLib.preferences.getBoolean(KEY_SHOWBATSTATUS, true)
     }
 
     fun setShowBatStatus(value: Boolean) {
-        val preferences = PreferenceManager.getDefaultSharedPreferences(App.instance.appContext)
-        preferences.edit {
+        appLib.preferences.edit {
             putBoolean(KEY_SHOWBATSTATUS, value)
         }
     }
 
     fun isShowTileBatStatus(): Boolean {
-        val preferences = PreferenceManager.getDefaultSharedPreferences(App.instance.appContext)
-        return preferences.getBoolean(KEY_SHOWTILEBATSTATUS, true)
+        return appLib.preferences.getBoolean(KEY_SHOWTILEBATSTATUS, true)
     }
 
     fun setShowTileBatStatus(value: Boolean) {
-        val preferences = PreferenceManager.getDefaultSharedPreferences(App.instance.appContext)
-        preferences.edit {
+        appLib.preferences.edit {
             putBoolean(KEY_SHOWTILEBATSTATUS, value)
         }
     }
 
     fun getLastUpdateCheckTime(): Instant {
-        val preferences = PreferenceManager.getDefaultSharedPreferences(App.instance.appContext)
-        val epochSeconds = preferences.getLong(KEY_LASTUPDATECHECK, Instant.EPOCH.epochSecond)
+        val epochSeconds =
+            appLib.preferences.getLong(KEY_LASTUPDATECHECK, Instant.EPOCH.epochSecond)
         return Instant.ofEpochSecond(epochSeconds)
     }
 
     fun setLastUpdateCheckTime(value: Instant) {
-        val preferences = PreferenceManager.getDefaultSharedPreferences(App.instance.appContext)
-        preferences.edit {
+        appLib.preferences.edit {
             putLong(KEY_LASTUPDATECHECK, value.epochSecond)
         }
     }

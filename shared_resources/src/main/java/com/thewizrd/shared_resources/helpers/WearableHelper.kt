@@ -11,7 +11,7 @@ import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.GoogleApiAvailability
 import com.google.android.gms.wearable.Node
 import com.google.android.gms.wearable.PutDataRequest
-import com.thewizrd.shared_resources.SimpleLibrary
+import com.thewizrd.shared_resources.sharedDeps
 import com.thewizrd.shared_resources.utils.Logger
 
 object WearableHelper {
@@ -68,7 +68,7 @@ object WearableHelper {
 
     fun isGooglePlayServicesInstalled(): Boolean {
         val queryResult = GoogleApiAvailability.getInstance()
-            .isGooglePlayServicesAvailable(SimpleLibrary.instance.app.appContext)
+            .isGooglePlayServicesAvailable(sharedDeps.context)
         if (queryResult == ConnectionResult.SUCCESS) {
             Logger.writeLine(Log.INFO, "App: Google Play Services is installed on this device.")
             return true
@@ -164,7 +164,7 @@ object WearableHelper {
     }
 
     fun getAppVersionCode(): Long = try {
-        val context = SimpleLibrary.instance.app.appContext
+        val context = sharedDeps.context
         val packageInfo = context.run {
             packageManager.getPackageInfo(packageName, 0)
         }

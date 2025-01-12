@@ -31,6 +31,7 @@ import com.google.android.gms.wearable.Node
 import com.google.android.gms.wearable.Wearable
 import com.google.android.gms.wearable.WearableListenerService
 import com.thewizrd.shared_resources.actions.Actions
+import com.thewizrd.shared_resources.appLib
 import com.thewizrd.shared_resources.helpers.InCallUIHelper
 import com.thewizrd.shared_resources.helpers.MediaHelper
 import com.thewizrd.shared_resources.helpers.WearableHelper
@@ -43,7 +44,6 @@ import com.thewizrd.simplewear.media.MediaPlayerActivity
 import com.thewizrd.simplewear.preferences.Settings
 import com.thewizrd.simplewear.viewmodels.WearableListenerViewModel
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
@@ -78,7 +78,7 @@ class WearableDataListenerService : WearableListenerService() {
         } else if (messageEvent.path == WearableHelper.BtDiscoverPath) {
             startBTDiscovery()
 
-            GlobalScope.launch(Dispatchers.Default) {
+            appLib.appScope.launch(Dispatchers.Default) {
                 sendMessage(
                     messageEvent.sourceNodeId,
                     messageEvent.path,
@@ -96,7 +96,7 @@ class WearableDataListenerService : WearableListenerService() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && adapter.isMultipleAdvertisementSupported) {
             val advertiser = adapter.bluetoothLeAdvertiser
 
-            GlobalScope.launch(Dispatchers.Default) {
+            appLib.appScope.launch(Dispatchers.Default) {
                 val params = AdvertisingSetParameters.Builder()
                     .setLegacyMode(true)
                     .setConnectable(false)

@@ -28,14 +28,13 @@ import com.thewizrd.shared_resources.actions.Action
 import com.thewizrd.shared_resources.actions.Actions
 import com.thewizrd.shared_resources.actions.BatteryStatus
 import com.thewizrd.shared_resources.actions.ToggleAction
-import com.thewizrd.shared_resources.helpers.AppState
+import com.thewizrd.shared_resources.appLib
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
 import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.shared_resources.utils.JSONParser
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.shared_resources.utils.bytesToString
 import com.thewizrd.shared_resources.utils.stringToBytes
-import com.thewizrd.simplewear.App
 import com.thewizrd.simplewear.helpers.showConfirmationOverlay
 import com.thewizrd.simplewear.utils.ErrorMessage
 import kotlinx.coroutines.channels.BufferOverflow
@@ -226,7 +225,7 @@ abstract class WearableListenerViewModel(private val app: Application) : Android
                 }
 
                 messageEvent.path == WearableHelper.AppStatePath -> {
-                    val appState: AppState = App.instance.applicationState
+                    val appState = appLib.appState
                     sendMessage(
                         messageEvent.sourceNodeId,
                         messageEvent.path,
