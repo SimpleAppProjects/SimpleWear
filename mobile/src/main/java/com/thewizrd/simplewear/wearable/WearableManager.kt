@@ -1023,7 +1023,7 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
 
             Actions.HOTSPOT -> {
                 tA = action as ToggleAction
-                if (WearSettingsHelper.isWearSettingsInstalled() && Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+                if (WearSettingsHelper.isWearSettingsInstalled()) {
                     val status = performRemoteAction(action)
                     if (status == ActionStatus.REMOTE_FAILURE ||
                         status == ActionStatus.REMOTE_PERMISSION_DENIED
