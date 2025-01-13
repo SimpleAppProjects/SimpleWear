@@ -55,8 +55,9 @@ import com.thewizrd.shared_resources.helpers.GestureUIHelper
 import com.thewizrd.shared_resources.helpers.MediaHelper
 import com.thewizrd.shared_resources.helpers.WearSettingsHelper
 import com.thewizrd.shared_resources.helpers.WearableHelper
+import com.thewizrd.shared_resources.media.MusicPlayersData
+import com.thewizrd.shared_resources.utils.ContextUtils.dpToPx
 import com.thewizrd.shared_resources.utils.ImageUtils
-import com.thewizrd.shared_resources.utils.ImageUtils.toAsset
 import com.thewizrd.shared_resources.utils.ImageUtils.toByteArray
 import com.thewizrd.shared_resources.utils.JSONParser
 import com.thewizrd.shared_resources.utils.Logger
@@ -71,6 +72,7 @@ import com.thewizrd.simplewear.helpers.dispatchScrollLeft
 import com.thewizrd.simplewear.helpers.dispatchScrollRight
 import com.thewizrd.simplewear.helpers.dispatchScrollUp
 import com.thewizrd.simplewear.media.MediaAppControllerUtils
+import com.thewizrd.simplewear.media.isPlaybackStateActive
 import com.thewizrd.simplewear.preferences.Settings
 import com.thewizrd.simplewear.services.NotificationListener
 import com.thewizrd.simplewear.services.WearAccessibilityService
@@ -271,23 +273,22 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
         }
     }
 
-    suspend fun sendSupportedMusicPlayers() {
-        val dataClient = Wearable.getDataClient(mContext)
-
+    suspend fun sendSupportedMusicPlayers(nodeID: String) {
         val mediaBrowserInfos = mContext.packageManager.queryIntentServices(
             Intent(MediaBrowserServiceCompat.SERVICE_INTERFACE),
             PackageManager.GET_RESOLVED_FILTER
         )
 
+        val activeSessions = MediaAppControllerUtils.getActiveMediaSessions(
+            mContext,
+            NotificationListener.getComponentName(mContext)
+        )
         val activeMediaInfos = MediaAppControllerUtils.getMediaAppsFromControllers(
             mContext,
-            MediaAppControllerUtils.getActiveMediaSessions(
-                mContext,
-                NotificationListener.getComponentName(mContext)
-            )
+            activeSessions
         )
-
-        val mapRequest = PutDataMapRequest.create(MediaHelper.MusicPlayersPath)
+        val activeController =
+            activeSessions.firstOrNull { it.playbackState?.isPlaybackStateActive() == true }
 
         // Sort result
         Collections.sort(
@@ -296,6 +297,8 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
         )
 
         val supportedPlayers = ArrayList<String>(mediaBrowserInfos.size)
+        val musicPlayers = mutableSetOf<AppItemData>()
+        var activePlayerKey: String? = null
 
         suspend fun addPlayerInfo(appInfo: ApplicationInfo) {
             val launchIntent =
@@ -315,23 +318,24 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
                     var iconBmp: Bitmap? = null
                     try {
                         val iconDrwble = mContext.packageManager.getActivityIcon(activityCmpName)
-                        val size = TypedValue.applyDimension(
-                            TypedValue.COMPLEX_UNIT_DIP,
-                            24f,
-                            mContext.resources.displayMetrics
-                        ).toInt()
+                        val size = mContext.dpToPx(24f).toInt()
                         iconBmp = ImageUtils.bitmapFromDrawable(iconDrwble, size, size)
                     } catch (ignored: PackageManager.NameNotFoundException) {
                     }
-                    val map = DataMap()
-                    map.putString(WearableHelper.KEY_LABEL, label)
-                    map.putString(WearableHelper.KEY_PKGNAME, appInfo.packageName)
-                    map.putString(WearableHelper.KEY_ACTIVITYNAME, activityInfo.activityInfo.name)
-                    iconBmp?.let {
-                        map.putAsset(WearableHelper.KEY_ICON, it.toAsset())
-                    }
-                    mapRequest.dataMap.putDataMap(key, map)
+
+                    musicPlayers.add(
+                        AppItemData(
+                            label = label,
+                            packageName = appInfo.packageName,
+                            activityName = activityInfo.activityInfo.name,
+                            iconBitmap = iconBmp?.toByteArray()
+                        )
+                    )
                     supportedPlayers.add(key)
+
+                    if (activePlayerKey == null && activeController != null && appInfo.packageName == activeController.packageName) {
+                        activePlayerKey = key
+                    }
                 }
             }
         }
@@ -345,13 +349,32 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
             addPlayerInfo(info)
         }
 
-        mapRequest.dataMap.putStringArrayList(MediaHelper.KEY_SUPPORTEDPLAYERS, supportedPlayers)
-        mapRequest.setUrgent()
+        val playersData = MusicPlayersData(
+            musicPlayers = musicPlayers,
+            activePlayerKey = activePlayerKey
+        )
+
         try {
-            dataClient.deleteDataItems(mapRequest.uri).await()
-            dataClient
-                .putDataItem(mapRequest.asPutDataRequest())
-                .await()
+            val channelClient = Wearable.getChannelClient(mContext)
+
+            withContext(Dispatchers.IO) {
+                val channel =
+                    channelClient.openChannel(nodeID, MediaHelper.MusicPlayersPath).await()
+                val outputStream = channelClient.getOutputStream(channel).await()
+                outputStream.bufferedWriter().use { writer ->
+                    writer.write(
+                        "data: ${
+                            JSONParser.serializer(
+                                playersData,
+                                MusicPlayersData::class.java
+                            )
+                        }"
+                    )
+                    writer.newLine()
+                    writer.flush()
+                }
+                channelClient.close(channel)
+            }
         } catch (e: Exception) {
             Logger.writeLine(Log.ERROR, e)
         }

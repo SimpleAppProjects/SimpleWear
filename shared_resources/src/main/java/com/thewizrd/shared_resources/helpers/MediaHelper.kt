@@ -10,7 +10,9 @@ object MediaHelper {
     // For MediaController
     const val MediaPlayerAutoLaunchPath = "/media/autolaunch"
     const val MediaPlayerConnectPath = "/media/connect"
+    const val MediaPlayerAppInfoPath = "/media/app/info"
     const val MediaPlayerStatePath = "/media/playback_state"
+    const val MediaPlayerArtPath = "/media/playback_state/art"
     const val MediaPlayerStateBridgePath = "/media/playback_state/bridge"
     const val MediaPlayerStateStoppedPath = "/media/playback_state/stopped"
     const val MediaPlayPath = "/media/action/play"

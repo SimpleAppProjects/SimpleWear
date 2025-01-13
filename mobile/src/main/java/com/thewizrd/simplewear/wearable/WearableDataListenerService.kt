@@ -80,7 +80,7 @@ class WearableDataListenerService : WearableListenerService() {
                 }
             } else if (messageEvent.path.startsWith(MediaHelper.MusicPlayersPath)) {
                 if (NotificationListener.isEnabled(ctx)) {
-                    mWearMgr.sendSupportedMusicPlayers()
+                    mWearMgr.sendSupportedMusicPlayers(messageEvent.sourceNodeId)
                     mWearMgr.sendMessage(
                         messageEvent.sourceNodeId, messageEvent.path,
                         ActionStatus.SUCCESS.name.stringToBytes()

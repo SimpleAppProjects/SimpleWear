@@ -12,6 +12,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
 import android.content.res.Resources
+import android.graphics.Bitmap
 import android.media.AudioManager
 import android.media.session.MediaController
 import android.media.session.MediaSessionManager
@@ -22,7 +23,6 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.os.PowerManager
-import android.os.SystemClock
 import android.provider.MediaStore
 import android.support.v4.media.MediaBrowserCompat
 import android.support.v4.media.MediaMetadataCompat
@@ -35,24 +35,32 @@ import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
+import androidx.core.graphics.scale
 import androidx.media.MediaBrowserServiceCompat
 import androidx.media.VolumeProviderCompat
-import com.google.android.gms.wearable.DataClient
-import com.google.android.gms.wearable.DataMap
 import com.google.android.gms.wearable.MessageClient
 import com.google.android.gms.wearable.MessageEvent
-import com.google.android.gms.wearable.PutDataMapRequest
 import com.google.android.gms.wearable.Wearable
 import com.thewizrd.shared_resources.actions.ActionStatus
 import com.thewizrd.shared_resources.actions.AudioStreamState
 import com.thewizrd.shared_resources.actions.AudioStreamType
 import com.thewizrd.shared_resources.actions.ValueDirection
+import com.thewizrd.shared_resources.helpers.AppItemData
 import com.thewizrd.shared_resources.helpers.MediaHelper
-import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.shared_resources.helpers.toImmutableCompatFlag
+import com.thewizrd.shared_resources.media.ActionItem
+import com.thewizrd.shared_resources.media.BrowseMediaItems
+import com.thewizrd.shared_resources.media.CustomControls
+import com.thewizrd.shared_resources.media.MediaItem
+import com.thewizrd.shared_resources.media.MediaMetaData
+import com.thewizrd.shared_resources.media.MediaPlayerState
 import com.thewizrd.shared_resources.media.PlaybackState
 import com.thewizrd.shared_resources.media.PositionState
+import com.thewizrd.shared_resources.media.QueueItem
+import com.thewizrd.shared_resources.media.QueueItems
+import com.thewizrd.shared_resources.utils.ContextUtils.dpToPx
 import com.thewizrd.shared_resources.utils.ImageUtils
+import com.thewizrd.shared_resources.utils.ImageUtils.toByteArray
 import com.thewizrd.shared_resources.utils.JSONParser
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.shared_resources.utils.bytesToInt
@@ -64,15 +72,19 @@ import com.thewizrd.simplewear.preferences.Settings
 import com.thewizrd.simplewear.services.NotificationListener
 import com.thewizrd.simplewear.wearable.WearableManager
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import timber.log.Timber
+import java.lang.reflect.Type
 import java.util.Stack
 import java.util.concurrent.Executors
 
@@ -96,8 +108,9 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
     private lateinit var mAvailableMediaApps: MutableSet<MediaAppDetails>
 
     private lateinit var mWearableManager: WearableManager
-    private lateinit var mDataClient: DataClient
     private lateinit var mMessageClient: MessageClient
+
+    private lateinit var connectedNodes: MutableSet<String>
 
     private var mController: MediaControllerCompat? = null
     private var mBrowser: MediaBrowserCompat? = null
@@ -124,6 +137,8 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
         const val EXTRA_AUTOLAUNCH = "SimpleWear.Droid.extra.AUTO_LAUNCH"
         const val EXTRA_FORCEDISCONNECT = "SimpleWear.Droid.extra.FORCE_DISCONNECT"
         const val EXTRA_SOFTLAUNCH = "SimpleWear.Droid.extra.SOFT_LAUNCH"
+
+        private const val UPDATE_DELAY_MS = 500L
 
         fun enqueueWork(context: Context, work: Intent) {
             if (NotificationListener.isEnabled(context)) {
@@ -205,9 +220,10 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
         )
 
         mWearableManager = WearableManager(this)
-        mDataClient = Wearable.getDataClient(this)
         mMessageClient = Wearable.getMessageClient(this)
         mMessageClient.addListener(this)
+
+        connectedNodes = mutableSetOf()
 
         mCustomControlsAdapter = CustomControlsAdapter()
         //mBrowseMediaItemsAdapter = BrowseMediaItemsAdapter(MediaHelper.MediaBrowserItemsPath)
@@ -248,19 +264,21 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
 
         when (intent?.action) {
             ACTION_CONNECTCONTROLLER -> {
-                mSelectedPackageName = intent.getStringExtra(EXTRA_PACKAGENAME)
+                val selectedPackageName = intent.getStringExtra(EXTRA_PACKAGENAME)
                 val isAutoLaunch = intent.getBooleanExtra(EXTRA_AUTOLAUNCH, false)
                 val isSoftLaunch = intent.getBooleanExtra(EXTRA_SOFTLAUNCH, false)
 
                 scope.launch {
-                    if ((isAutoLaunch || mSelectedPackageName == mSelectedMediaApp?.packageName) && mController != null) return@launch
+                    if ((isAutoLaunch || selectedPackageName == mSelectedMediaApp?.packageName) && mController != null) return@launch
 
-                    if (!mSelectedPackageName.isNullOrBlank()) {
+                    if (!selectedPackageName.isNullOrBlank()) {
                         mSelectedMediaApp = mAvailableMediaApps.find {
-                            it.packageName == mSelectedPackageName
+                            it.packageName == selectedPackageName
                         }
+                        mSelectedPackageName = mSelectedMediaApp?.packageName
                         connectMediaSession(isSoftLaunch)
                     } else {
+                        mSelectedPackageName = null
                         findActiveMediaSession()
                     }
                 }
@@ -283,12 +301,13 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
     override fun onDestroy() {
         removeMediaState()
 
+        connectedNodes.clear()
         mMessageClient.removeListener(this)
         mWearableManager.unregister()
 
         mMediaSessionManager.removeOnActiveSessionsChangedListener(this)
 
-        disconnectMedia()
+        disconnectMedia(invalidateData = true)
 
         stopForeground(true)
         scope.cancel()
@@ -297,49 +316,11 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
 
     private fun removeMediaState() {
         scope.launch {
-            Timber.tag(TAG).d("removeMediaState")
+            Logger.debug(TAG, "removeMediaState")
             runCatching {
-                mDataClient.deleteDataItems(
-                    WearableHelper.getWearDataUri(MediaHelper.MediaPlayerStateBridgePath)
-                ).await()
-                mDataClient.deleteDataItems(
-                    WearableHelper.getWearDataUri(MediaHelper.MediaPlayerStatePath)
-                ).await()
-                mDataClient.deleteDataItems(
-                    WearableHelper.getWearDataUri(MediaHelper.MediaBrowserItemsPath)
-                ).await()
-                mDataClient.deleteDataItems(
-                    WearableHelper.getWearDataUri(MediaHelper.MediaActionsPath)
-                ).await()
-                mDataClient.deleteDataItems(
-                    WearableHelper.getWearDataUri(MediaHelper.MediaQueueItemsPath)
-                ).await()
-            }.onFailure {
-                Logger.writeLine(Log.ERROR, it)
-            }
-        }
-    }
-
-    private fun removeBrowserItems() {
-        scope.launch {
-            Timber.tag(TAG).d("removeBrowserItems")
-            runCatching {
-                mDataClient.deleteDataItems(
-                    WearableHelper.getWearDataUri(MediaHelper.MediaBrowserItemsPath)
-                ).await()
-            }.onFailure {
-                Logger.writeLine(Log.ERROR, it)
-            }
-        }
-    }
-
-    private fun removeBrowserExtraItems() {
-        scope.launch {
-            Timber.tag(TAG).d("removeBrowserExtraItems")
-            runCatching {
-                mDataClient.deleteDataItems(
-                    WearableHelper.getWearDataUri(MediaHelper.MediaBrowserItemsExtraSuggestedPath)
-                ).await()
+                sendMediaPlayerState()
+                sendMediaArtwork(bitmap = null)
+                sendAppInfo(mediaAppDetails = null)
             }.onFailure {
                 Logger.writeLine(Log.ERROR, it)
             }
@@ -390,10 +371,9 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
             val firstActiveCtrlr = activeSessions.firstOrNull()
             if (firstActiveCtrlr != null) {
                 // Check if active session has changed
-                val isPlaybackActive = isPlaybackStateActive(firstActiveCtrlr.playbackState?.state)
-                if (firstActiveCtrlr.packageName != mSelectedPackageName || !isPlaybackActive) {
+                if (mSelectedPackageName == null) {
                     // If so reset
-                    disconnectMedia(invalidateData = !isPlaybackActive)
+                    disconnectMedia(invalidateData = true)
                     mSelectedPackageName = firstActiveCtrlr.packageName
                     mSelectedMediaApp = null
                 }
@@ -418,22 +398,6 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
                 // No active sessions available
                 sendControllerUnavailable()
             }
-        }
-    }
-
-    private fun isPlaybackStateActive(state: Int?): Boolean {
-        return when (state) {
-            PlaybackStateCompat.STATE_BUFFERING,
-            PlaybackStateCompat.STATE_CONNECTING,
-            PlaybackStateCompat.STATE_FAST_FORWARDING,
-            PlaybackStateCompat.STATE_PLAYING,
-            PlaybackStateCompat.STATE_REWINDING,
-            PlaybackStateCompat.STATE_SKIPPING_TO_NEXT,
-            PlaybackStateCompat.STATE_SKIPPING_TO_PREVIOUS,
-            PlaybackStateCompat.STATE_SKIPPING_TO_QUEUE_ITEM -> {
-                true
-            }
-            else -> false
         }
     }
 
@@ -560,7 +524,7 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
             setupMediaController()
         } else {
             // failed
-            Timber.tag(TAG).d("MediaBrowser connection failed")
+            Logger.debug(TAG, "MediaBrowser connection failed")
         }
     }
 
@@ -580,11 +544,13 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
             mCallback.onMetadataChanged(mController!!.metadata)
             mCallback.onAudioInfoChanged(mController!!.playbackInfo)
 
-            Timber.tag(TAG).d("MediaControllerCompat created")
+            sendAppInfo()
+
+            Logger.debug(TAG, "MediaControllerCompat created")
             return true
         } catch (e: Exception) {
             // Failed to create MediaController from session token
-            Timber.tag(TAG).d("MediaBrowser connection failed")
+            Logger.debug(TAG, "MediaBrowser connection failed")
             return false
         }
     }
@@ -593,34 +559,33 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
         private var updateJob: Job? = null
 
         override fun onPlaybackStateChanged(state: PlaybackStateCompat?) {
-            Timber.tag(TAG).d("Callback: onPlaybackStateChanged")
+            Logger.debug(TAG, "Callback: onPlaybackStateChanged")
             playFromSearchTimer.cancel()
             updateJob?.cancel()
             updateJob = scope.launch {
-                delay(250)
+                delay(UPDATE_DELAY_MS)
 
                 if (!isActive) return@launch
 
                 onUpdate()
                 onUpdateQueue()
             }
-            scope.launch {
-                if (state != null) {
-                    mController?.let {
-                        mCustomControlsAdapter.setActions(it, state.actions, state.customActions)
-                    }
-                } else {
-                    mCustomControlsAdapter.clearActions()
+
+            if (state != null) {
+                mController?.let {
+                    mCustomControlsAdapter.setActions(it, state.actions, state.customActions)
                 }
+            } else {
+                mCustomControlsAdapter.clearActions()
             }
         }
 
         override fun onMetadataChanged(metadata: MediaMetadataCompat?) {
-            Timber.tag(TAG).d("Callback: onMetadataChanged")
+            Logger.debug(TAG, "Callback: onMetadataChanged")
             playFromSearchTimer.cancel()
             updateJob?.cancel()
             updateJob = scope.launch {
-                delay(250)
+                delay(UPDATE_DELAY_MS)
 
                 if (!isActive) return@launch
 
@@ -630,7 +595,7 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
         }
 
         override fun onAudioInfoChanged(info: MediaControllerCompat.PlaybackInfo?) {
-            sendVolumeStatus()
+            scope.launch { sendVolumeStatus() }
         }
 
         override fun onSessionDestroyed() {
@@ -645,194 +610,118 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
             mController?.let {
                 mQueueItemsAdapter.setQueueItems(it, it.queue)
             } ?: run {
-                Timber.tag(TAG).e("Failed to update queue info, null MediaController.")
-                scope.launch {
-                    runCatching {
-                        mDataClient.deleteDataItems(
-                            WearableHelper.getWearDataUri(MediaHelper.MediaQueueItemsPath)
-                        ).await()
-                    }.onFailure {
-                        Logger.writeLine(Log.ERROR, it)
-                    }
-                }
+                Logger.error(TAG, "Failed to update queue info, null MediaController.")
+                mQueueItemsAdapter.clear()
             }
         }
     }
 
     private fun sendControllerUnavailable() {
-        val mapRequest = PutDataMapRequest.create(MediaHelper.MediaPlayerStatePath)
+        scope.launch {
+            sendMediaPlayerState()
+        }
+    }
 
-        mapRequest.dataMap.putString(
-            MediaHelper.KEY_MEDIA_PLAYBACKSTATE,
-            PlaybackState.NONE.name
-        )
+    private fun sendMediaInfo() {
+        if (mController == null) {
+            Logger.error(TAG, "Failed to update media info, null MediaController.")
+            scope.launch {
+                sendMediaPlayerState()
+            }
+            return
+        }
 
-        // Check if supports play from search
-        mapRequest.dataMap.putBoolean(
-            MediaHelper.KEY_MEDIA_SUPPORTS_PLAYFROMSEARCH,
-            supportsPlayFromSearch()
-        )
+        val playbackState = mController?.playbackState
+        val stateName = playbackState?.toPlaybackState() ?: PlaybackState.NONE
 
-        val request = mapRequest.asPutDataRequest()
-        request.setUrgent()
+        val mediaMetadata = mController?.metadata
+        val playerState: MediaPlayerState
+        var mediaMetaData: MediaMetaData? = null
+        var artBitmap: Bitmap? = null
+
+        if (mediaMetadata != null && !mediaMetadata.isNullOrEmpty()) {
+            artBitmap = mediaMetadata.getBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART)
+                ?: mediaMetadata.getBitmap(MediaMetadataCompat.METADATA_KEY_ART)
+
+            val positionState = mController?.let {
+                val durationMs = mediaMetadata.getLong(MediaMetadataCompat.METADATA_KEY_DURATION)
+                if (durationMs > 0) {
+                    PositionState(
+                        durationMs,
+                        it.playbackState?.position ?: 0,
+                        it.playbackState?.playbackSpeed ?: 1f
+                    )
+                } else {
+                    null
+                }
+            }
+
+            mediaMetaData = MediaMetaData(
+                title = mediaMetadata.getString(MediaMetadataCompat.METADATA_KEY_DISPLAY_TITLE)
+                    ?: mediaMetadata.getString(MediaMetadataCompat.METADATA_KEY_TITLE),
+                artist = mediaMetadata.getString(MediaMetadataCompat.METADATA_KEY_ARTIST)
+                    ?: mediaMetadata.getString(MediaMetadataCompat.METADATA_KEY_ALBUM_ARTIST),
+                positionState = positionState ?: PositionState()
+            )
+
+            playerState = MediaPlayerState(
+                playbackState = stateName,
+                mediaMetaData = mediaMetaData
+            )
+        } else {
+            playerState = MediaPlayerState()
+        }
 
         scope.launch {
             runCatching {
-                Timber.tag(TAG).d("Making request: %s", mapRequest.uri)
-                mDataClient.deleteDataItems(mapRequest.uri).await()
-                mDataClient.putDataItem(request).await()
-                Timber.tag(TAG).d("Removing media bridge")
-                mDataClient.deleteDataItems(WearableHelper.getWearDataUri(MediaHelper.MediaPlayerStateBridgePath))
-                    .await()
-                mDataClient.deleteDataItems(
-                    WearableHelper.getWearDataUri(MediaHelper.MediaBrowserItemsPath)
-                ).await()
-                mDataClient.deleteDataItems(
-                    WearableHelper.getWearDataUri(MediaHelper.MediaActionsPath)
-                ).await()
-                mDataClient.deleteDataItems(
-                    WearableHelper.getWearDataUri(MediaHelper.MediaQueueItemsPath)
-                ).await()
+                Logger.debug(TAG, "sending media info")
+
+                sendMediaPlayerState(playerState = playerState)
+                sendMediaArtwork(bitmap = artBitmap)
+
+                if (Settings.isBridgeMediaEnabled()) {
+                    if (playbackState?.isPlaybackStateActive() == true) {
+                        Logger.debug(TAG, "Create media bridge request")
+                        mWearableManager.sendMessage(
+                            null,
+                            MediaHelper.MediaPlayerStateBridgePath,
+                            JSONParser.serializer(mediaMetaData, MediaMetaData::class.java)
+                                ?.stringToBytes()
+                        )
+                    } else {
+                        Logger.debug(TAG, "Removing media bridge; playbackstate inactive")
+                        mWearableManager.sendMessage(
+                            null,
+                            MediaHelper.MediaPlayerStateBridgePath,
+                            null
+                        )
+                    }
+                }
             }.onFailure {
                 Logger.writeLine(Log.ERROR, it)
             }
         }
     }
 
-    private fun sendMediaInfo() {
-        val mapRequest = PutDataMapRequest.create(MediaHelper.MediaPlayerStatePath)
+    private fun sendAppInfo(mediaAppDetails: MediaAppDetails? = mSelectedMediaApp) {
+        scope.launch {
+            val appInfo = mediaAppDetails?.let {
+                val size = dpToPx(48f).toInt()
 
-        if (mController == null) {
-            Timber.tag(TAG).e("Failed to update media info, null MediaController.")
-            scope.launch {
-                runCatching {
-                    mDataClient.deleteDataItems(mapRequest.uri).await()
-                    mDataClient.deleteDataItems(WearableHelper.getWearDataUri(MediaHelper.MediaPlayerStateBridgePath))
-                        .await()
-                }.onFailure {
-                    Logger.writeLine(Log.ERROR, it)
-                }
-            }
-            return
-        }
-
-        val playbackState = runCatching {
-            mController?.playbackState?.state
-        }.onFailure {
-            Logger.writeLine(Log.ERROR, it)
-        }.getOrDefault(PlaybackStateCompat.STATE_NONE)
-
-        val stateName = when (playbackState) {
-            PlaybackStateCompat.STATE_NONE -> {
-                PlaybackState.NONE
-            }
-            PlaybackStateCompat.STATE_BUFFERING,
-            PlaybackStateCompat.STATE_CONNECTING -> {
-                PlaybackState.LOADING
-            }
-            PlaybackStateCompat.STATE_PLAYING,
-            PlaybackStateCompat.STATE_FAST_FORWARDING,
-            PlaybackStateCompat.STATE_REWINDING,
-            PlaybackStateCompat.STATE_SKIPPING_TO_NEXT,
-            PlaybackStateCompat.STATE_SKIPPING_TO_PREVIOUS,
-            PlaybackStateCompat.STATE_SKIPPING_TO_QUEUE_ITEM -> {
-                PlaybackState.PLAYING
-            }
-            PlaybackStateCompat.STATE_PAUSED,
-            PlaybackStateCompat.STATE_STOPPED -> {
-                PlaybackState.PAUSED
-            }
-            else -> {
-                PlaybackState.NONE
-            }
-        }
-
-        mapRequest.dataMap.putString(MediaHelper.KEY_MEDIA_PLAYBACKSTATE, stateName.name)
-
-        val mediaMetadata = mController?.metadata
-        var songTitle: String? = null
-        if (mediaMetadata != null && !mediaMetadata.isNullOrEmpty()) {
-            mapRequest.dataMap.putString(
-                MediaHelper.KEY_MEDIA_METADATA_TITLE,
-                (mediaMetadata.getString(MediaMetadataCompat.METADATA_KEY_DISPLAY_TITLE)
-                    ?: mediaMetadata.getString(MediaMetadataCompat.METADATA_KEY_TITLE)).also {
-                    songTitle = it
-                }
-            )
-            mapRequest.dataMap.putString(
-                MediaHelper.KEY_MEDIA_METADATA_ARTIST,
-                mediaMetadata.getString(MediaMetadataCompat.METADATA_KEY_ARTIST)
-                    ?: mediaMetadata.getString(MediaMetadataCompat.METADATA_KEY_ALBUM_ARTIST)
-            )
-
-            val art = mediaMetadata.getBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART)
-                ?: mediaMetadata.getBitmap(MediaMetadataCompat.METADATA_KEY_ART)
-            if (art != null) {
-                mapRequest.dataMap.putAsset(
-                    MediaHelper.KEY_MEDIA_METADATA_ART,
-                    ImageUtils.createAssetFromBitmap(art)
+                AppItemData(
+                    label = it.appName,
+                    packageName = it.packageName,
+                    activityName = runCatching {
+                        packageManager.getLaunchIntentForPackage(it.packageName)?.component?.className
+                    }.getOrNull(),
+                    iconBitmap = it.icon.scale(size, size).toByteArray()
                 )
             }
 
-            mController?.let {
-                val durationMs = mediaMetadata.getLong(MediaMetadataCompat.METADATA_KEY_DURATION)
-                if (durationMs > 0) {
-                    mapRequest.dataMap.putString(
-                        MediaHelper.KEY_MEDIA_POSITIONSTATE,
-                        JSONParser.serializer(
-                            PositionState(
-                                durationMs,
-                                it.playbackState?.position ?: 0,
-                                it.playbackState?.playbackSpeed ?: 1f
-                            ),
-                            PositionState::class.java
-                        )
-                    )
-                }
-            }
-        } else {
-            mapRequest.dataMap.putString(
-                MediaHelper.KEY_MEDIA_PLAYBACKSTATE,
-                PlaybackState.NONE.name
-            )
-        }
+            val jsonData = JSONParser.serializer(appInfo, AppItemData::class.java)?.stringToBytes()
 
-        val request = mapRequest.asPutDataRequest()
-        request.setUrgent()
-
-        scope.launch {
-            runCatching {
-                Timber.tag(TAG).d("Making request: %s", mapRequest.uri)
-
-                //mDataClient.deleteDataItems(mapRequest.uri).await()
-                mDataClient.putDataItem(request).await()
-
-                if (Settings.isBridgeMediaEnabled()) {
-                    if (isPlaybackStateActive(playbackState)) {
-                        Timber.tag(TAG).d("Create media bridge request")
-
-                        mDataClient.putDataItem(
-                            PutDataMapRequest.create(MediaHelper.MediaPlayerStateBridgePath).apply {
-                                dataMap.putString(
-                                    MediaHelper.KEY_MEDIA_METADATA_TITLE,
-                                    songTitle ?: ""
-                                )
-                                dataMap.putLong("time", SystemClock.uptimeMillis())
-                            }
-                                .setUrgent()
-                                .asPutDataRequest()
-                        ).await()
-                    } else {
-                        Timber.tag(TAG).d("Removing media bridge; playbackstate inactive")
-
-                        mDataClient.deleteDataItems(
-                            WearableHelper.getWearDataUri(MediaHelper.MediaPlayerStateBridgePath)
-                        ).await()
-                    }
-                }
-            }.onFailure {
-                Logger.writeLine(Log.ERROR, it)
-            }
+            Logger.debug(TAG, "sendAppInfo - bytes (${jsonData?.size ?: 0})")
+            mWearableManager.sendMessage(null, MediaHelper.MediaPlayerAppInfoPath, jsonData)
         }
     }
 
@@ -910,7 +799,7 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
                     PhoneStatusHelper.setVolume(this, ValueDirection.UP, AudioStreamType.MUSIC)
                 }
 
-                sendVolumeStatus(messageEvent.sourceNodeId)
+                scope.launch { sendVolumeStatus(messageEvent.sourceNodeId) }
             }
             MediaHelper.MediaVolumeDownPath -> {
                 if (!isNotificationListenerEnabled(messageEvent)) return
@@ -924,11 +813,11 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
                     PhoneStatusHelper.setVolume(this, ValueDirection.DOWN, AudioStreamType.MUSIC)
                 }
 
-                sendVolumeStatus(messageEvent.sourceNodeId)
+                scope.launch { sendVolumeStatus(messageEvent.sourceNodeId) }
             }
             MediaHelper.MediaVolumeStatusPath -> {
                 if (!isNotificationListenerEnabled(messageEvent)) return
-                sendVolumeStatus(messageEvent.sourceNodeId)
+                scope.launch { sendVolumeStatus(messageEvent.sourceNodeId) }
             }
             MediaHelper.MediaSetVolumePath -> {
                 if (!isNotificationListenerEnabled(messageEvent)) return
@@ -947,8 +836,47 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
                         mAudioManager.setStreamVolume(AudioManager.STREAM_MUSIC, value, flags)
                     }
 
+                    if (!isActive) return@launch
+
                     sendVolumeStatus(messageEvent.sourceNodeId)
                 }
+            }
+            MediaHelper.MediaActionsPath -> {
+                if (!isNotificationListenerEnabled(messageEvent)) return
+                mCustomControlsAdapter.onDatasetChanged()
+            }
+
+            MediaHelper.MediaBrowserItemsPath -> {
+                if (!isNotificationListenerEnabled(messageEvent)) return
+                //mBrowseMediaItemsAdapter.onDatasetChanged()
+            }
+
+            MediaHelper.MediaBrowserItemsExtraSuggestedPath -> {
+                if (!isNotificationListenerEnabled(messageEvent)) return
+                //mBrowseMediaItemsExtraSuggestedAdapter.onDatasetChanged()
+            }
+
+            MediaHelper.MediaQueueItemsPath -> {
+                if (!isNotificationListenerEnabled(messageEvent)) return
+                mQueueItemsAdapter.onDatasetChanged()
+            }
+
+            MediaHelper.MediaPlayerStatePath -> {
+                if (!isNotificationListenerEnabled(messageEvent)) return
+                sendMediaInfo()
+            }
+
+            MediaHelper.MediaPlayerConnectPath -> {
+                connectedNodes.add(messageEvent.sourceNodeId)
+            }
+
+            MediaHelper.MediaPlayerDisconnectPath -> {
+                connectedNodes.remove(messageEvent.sourceNodeId)
+            }
+
+            MediaHelper.MediaPlayerAppInfoPath -> {
+                if (!isNotificationListenerEnabled(messageEvent)) return
+                sendAppInfo()
             }
         }
     }
@@ -1026,28 +954,67 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
         }
     }
 
-    private fun sendVolumeStatus(nodeID: String? = null) {
-        scope.launch {
-            val volStatus = mController?.playbackInfo?.let {
-                AudioStreamState(
-                    it.currentVolume,
-                    0,
-                    it.maxVolume,
-                    AudioStreamType.MUSIC
-                )
-            } ?: PhoneStatusHelper.getStreamVolume(
-                this@MediaControllerService,
+    private suspend fun sendDataByChannel(path: String, data: Any?, type: Type) {
+        val jobs = connectedNodes.toList().map { node ->
+            scope.async(Dispatchers.IO) {
+                runCatching {
+                    Wearable.getChannelClient(this@MediaControllerService).run {
+                        val channel = openChannel(node, path).await()
+                        val outputStream = getOutputStream(channel).await()
+
+                        outputStream.bufferedWriter().use { writer ->
+                            writer.write("data: ${JSONParser.serializer(data, type)}")
+                            writer.newLine()
+                            writer.flush()
+                        }
+                        close(channel)
+                    }
+                }.onFailure {
+                    Logger.error(TAG, it, "error sending data to channel; path = $path")
+                }
+            }
+        }.toTypedArray()
+
+        awaitAll(*jobs)
+    }
+
+    private suspend fun sendMediaPlayerState(
+        nodeID: String? = null,
+        playerState: MediaPlayerState = MediaPlayerState()
+    ) {
+        mWearableManager.sendMessage(
+            nodeID,
+            MediaHelper.MediaPlayerStatePath,
+            JSONParser.serializer(playerState, MediaPlayerState::class.java).stringToBytes()
+        )
+    }
+
+    private suspend fun sendMediaArtwork(nodeID: String? = null, bitmap: Bitmap? = null) {
+        val artworkBytes = bitmap?.toByteArray(format = Bitmap.CompressFormat.JPEG, quality = 50)
+        Logger.debug(TAG, "sendArtwork - bytes (${artworkBytes?.size ?: 0})")
+        mWearableManager.sendMessage(nodeID, MediaHelper.MediaPlayerArtPath, artworkBytes)
+    }
+
+    private suspend fun sendVolumeStatus(nodeID: String? = null) {
+        val volStatus = mController?.playbackInfo?.let {
+            AudioStreamState(
+                it.currentVolume,
+                0,
+                it.maxVolume,
                 AudioStreamType.MUSIC
             )
+        } ?: PhoneStatusHelper.getStreamVolume(
+            this@MediaControllerService,
+            AudioStreamType.MUSIC
+        )
 
-            mWearableManager.sendMessage(
-                nodeID, MediaHelper.MediaVolumeStatusPath,
-                JSONParser.serializer(
-                    volStatus,
-                    AudioStreamState::class.java
-                )?.stringToBytes()
-            )
-        }
+        mWearableManager.sendMessage(
+            nodeID, MediaHelper.MediaVolumeStatusPath,
+            JSONParser.serializer(
+                volStatus,
+                AudioStreamState::class.java
+            )?.stringToBytes()
+        )
     }
 
     private inner class CustomControlsAdapter {
@@ -1060,107 +1027,83 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
 
         fun onDatasetChanged() {
             updateJob?.cancel()
-            updateJob = scope.launch {
-                delay(250)
+            updateJob = scope.launch(Dispatchers.Default) {
+                delay(UPDATE_DELAY_MS)
 
                 if (!isActive) return@launch
 
-                val mapRequest = PutDataMapRequest.create(MediaHelper.MediaActionsPath)
-
                 if (mActions.isEmpty() && !supportsPlayFromSearch) {
                     // Remove all items (datamap)
-                    scope.launch {
-                        runCatching {
-                            mDataClient.deleteDataItems(mapRequest.uri).await()
-                        }.onFailure {
-                            Logger.writeLine(Log.ERROR, it)
-                        }
-                    }
+                    sendDataByChannel(
+                        MediaHelper.MediaActionsPath,
+                        null,
+                        CustomControls::class.java
+                    )
                     return@launch
                 }
 
                 // Send action items to datamap
-                val dataMapList =
-                    ArrayList<DataMap>(mActions.size + if (supportsPlayFromSearch) 1 else 0)
+                val actions =
+                    ArrayList<ActionItem>(mActions.size + if (supportsPlayFromSearch) 1 else 0)
+
+                val iconSize = TypedValue.applyDimension(
+                    TypedValue.COMPLEX_UNIT_DIP,
+                    24f,
+                    resources.displayMetrics
+                ).toInt()
 
                 if (supportsPlayFromSearch) {
-                    val d = DataMap().apply {
-                        putString(
-                            MediaHelper.KEY_MEDIA_ACTIONITEM_ACTION,
-                            MediaHelper.ACTIONITEM_PLAY
-                        )
-                        putString(
-                            MediaHelper.KEY_MEDIA_ACTIONITEM_TITLE,
-                            getString(R.string.action_musicplayback)
-                        )
-
+                    runCatching {
                         val iconDrawable = ContextCompat.getDrawable(
                             applicationContext,
                             R.drawable.ic_baseline_play_circle_filled_24
                         )
-                        val size = TypedValue.applyDimension(
-                            TypedValue.COMPLEX_UNIT_DIP,
-                            24f,
-                            resources.displayMetrics
-                        ).toInt()
-
-                        putAsset(
-                            MediaHelper.KEY_MEDIA_ACTIONITEM_ICON,
-                            ImageUtils.createAssetFromBitmap(
-                                ImageUtils.bitmapFromDrawable(iconDrawable!!, size, size)
+                        actions.add(
+                            ActionItem(
+                                action = MediaHelper.ACTIONITEM_PLAY,
+                                title = getString(R.string.action_musicplayback),
+                                icon = ImageUtils.bitmapFromDrawable(
+                                    iconDrawable!!,
+                                    iconSize,
+                                    iconSize
+                                ).toByteArray()
                             )
                         )
                     }
-
-                    dataMapList.add(d)
                 }
 
-                mActions.forEach {
-                    val d = DataMap().apply {
-                        putString(MediaHelper.KEY_MEDIA_ACTIONITEM_ACTION, it.action)
-                        putString(MediaHelper.KEY_MEDIA_ACTIONITEM_TITLE, it.name.toString())
-                        mMediaAppResources?.let { mediaResources ->
-                            val iconDrawable = try {
-                                ResourcesCompat.getDrawable(
-                                    mediaResources, it.icon,  /* theme = */null
-                                )
-                            } catch (e: Exception) {
-                                Logger.writeLine(Log.ERROR, e)
-                                null
-                            }
-
-                            if (iconDrawable != null) {
-                                val size = TypedValue.applyDimension(
-                                    TypedValue.COMPLEX_UNIT_DIP,
-                                    24f,
-                                    resources.displayMetrics
-                                ).toInt()
-
-                                putAsset(
-                                    MediaHelper.KEY_MEDIA_ACTIONITEM_ICON,
-                                    ImageUtils.createAssetFromBitmap(
-                                        ImageUtils.bitmapFromDrawable(iconDrawable, size, size)
+                actions.addAll(
+                    mActions.map {
+                        ActionItem(
+                            action = it.action,
+                            title = it.name.toString(),
+                            icon = mMediaAppResources?.let { mediaResources ->
+                                val iconDrawable = try {
+                                    ResourcesCompat.getDrawable(
+                                        mediaResources, it.icon,  /* theme = */null
                                     )
-                                )
+                                } catch (e: Exception) {
+                                    Logger.writeLine(Log.ERROR, e)
+                                    null
+                                }
+
+                                iconDrawable?.let { drw ->
+                                    ImageUtils.bitmapFromDrawable(drw, iconSize, iconSize)
+                                        .toByteArray()
+                                }
                             }
-                        }
+                        )
                     }
+                )
 
-                    dataMapList.add(d)
-                }
+                Logger.debug(TAG, "Sending media custom actions")
 
-                mapRequest.dataMap.putDataMapArrayList(MediaHelper.KEY_MEDIAITEMS, dataMapList)
-
-                val request = mapRequest.asPutDataRequest()
-                request.setUrgent()
-
-                Timber.tag(TAG).d("Making request: %s", mapRequest.uri)
-                runCatching {
-                    mDataClient.deleteDataItems(mapRequest.uri).await()
-                    mDataClient.putDataItem(request).await()
-                }.onFailure {
-                    Logger.writeLine(Log.ERROR, it)
-                }
+                val customControls = CustomControls(actions)
+                sendDataByChannel(
+                    MediaHelper.MediaActionsPath,
+                    customControls,
+                    CustomControls::class.java
+                )
             }
         }
 
@@ -1236,58 +1179,33 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
 
         private fun onDatasetChanged() {
             updateJob?.cancel()
-            updateJob = scope.launch {
-                delay(250)
+            updateJob = scope.launch(Dispatchers.Default) {
+                delay(UPDATE_DELAY_MS)
 
                 if (!isActive) return@launch
 
-                val mapRequest = PutDataMapRequest.create(itemNodePath)
-
                 if (mNodes.size == 0 || mItems.isNullOrEmpty()) {
                     // Remove all items (datamap)
-                    scope.launch {
-                        runCatching {
-                            mDataClient.deleteDataItems(mapRequest.uri).await()
-                        }.onFailure {
-                            Logger.writeLine(Log.ERROR, it)
-                        }
-                    }
+                    sendDataByChannel(itemNodePath, null, BrowseMediaItems::class.java)
                     return@launch
                 }
 
                 // Send media items to datamap
-                val dataMapList = ArrayList<DataMap>(mItems!!.size)
-                mItems!!.forEach {
-                    val d = DataMap().apply {
-                        putString(MediaHelper.KEY_MEDIAITEM_ID, it.mediaId ?: "")
-                        putString(
-                            MediaHelper.KEY_MEDIAITEM_TITLE,
-                            it.description.title.toString()
-                        )
-                        if (it.description.iconBitmap != null) {
-                            putAsset(
-                                MediaHelper.KEY_MEDIAITEM_ICON,
-                                ImageUtils.createAssetFromBitmap(it.description.iconBitmap!!)
-                            )
-                        }
-                    }
-
-                    dataMapList.add(d)
+                val mediaItems = mItems?.map {
+                    MediaItem(
+                        mediaId = it.mediaId ?: "",
+                        title = it.description.title.toString(),
+                        icon = it.description.iconBitmap?.toByteArray()
+                    )
                 }
 
-                mapRequest.dataMap.putDataMapArrayList(MediaHelper.KEY_MEDIAITEMS, dataMapList)
-                mapRequest.dataMap.putBoolean(MediaHelper.KEY_MEDIAITEM_ISROOT, treeDepth() <= 1)
+                Logger.debug(TAG, "Sending media browser items for path = $itemNodePath")
 
-                val request = mapRequest.asPutDataRequest()
-                request.setUrgent()
-
-                Timber.tag(TAG).d("Making request: %s", mapRequest.uri)
-                runCatching {
-                    mDataClient.deleteDataItems(mapRequest.uri).await()
-                    mDataClient.putDataItem(request).await()
-                }.onFailure {
-                    Logger.writeLine(Log.ERROR, it)
-                }
+                val browserItems = BrowseMediaItems(
+                    isRoot = treeDepth() <= 1,
+                    mediaItems = mediaItems ?: emptyList()
+                )
+                sendDataByChannel(itemNodePath, browserItems, BrowseMediaItems::class.java)
             }
         }
 
@@ -1373,62 +1291,34 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
 
         fun onDatasetChanged() {
             updateJob?.cancel()
-            updateJob = scope.launch {
-                delay(250)
+            updateJob = scope.launch(Dispatchers.Default) {
+                delay(UPDATE_DELAY_MS)
 
                 if (!isActive) return@launch
 
-                val mapRequest = PutDataMapRequest.create(MediaHelper.MediaQueueItemsPath)
-
                 if (mQueueItems.isEmpty()) {
                     // Remove all items (datamap)
-                    scope.launch {
-                        runCatching {
-                            mDataClient.deleteDataItems(mapRequest.uri).await()
-                        }.onFailure {
-                            Logger.writeLine(Log.ERROR, it)
-                        }
-                    }
+                    sendDataByChannel(MediaHelper.MediaQueueItemsPath, null, QueueItems::class.java)
                     return@launch
                 }
 
                 // Send action items to datamap
-                val dataMapList = ArrayList<DataMap>(mQueueItems.size)
-
-                mQueueItems.forEach {
-                    val d = DataMap().apply {
-                        putLong(MediaHelper.KEY_MEDIAITEM_ID, it.queueId)
-                        putString(
-                            MediaHelper.KEY_MEDIAITEM_TITLE,
-                            it.description.title.toString()
-                        )
-                        if (it.description.iconBitmap != null) {
-                            putAsset(
-                                MediaHelper.KEY_MEDIAITEM_ICON,
-                                ImageUtils.createAssetFromBitmap(it.description.iconBitmap!!)
-                            )
-                        }
-                    }
-
-                    dataMapList.add(d)
+                val queueItems = mQueueItems.map {
+                    QueueItem(
+                        queueId = it.queueId,
+                        title = it.description.title.toString(),
+                        icon = it.description.iconBitmap?.toByteArray()
+                    )
                 }
 
-                mapRequest.dataMap.putDataMapArrayList(MediaHelper.KEY_MEDIAITEMS, dataMapList)
-                mapRequest.dataMap.putLong(
-                    MediaHelper.KEY_MEDIA_ACTIVEQUEUEITEM_ID,
-                    mActiveQueueItemId
+                Logger.debug(TAG, "Sending media queue items")
+
+                sendDataByChannel(
+                    MediaHelper.MediaQueueItemsPath, QueueItems(
+                        activeQueueItemId = mActiveQueueItemId,
+                        queueItems = queueItems
+                    ), QueueItems::class.java
                 )
-
-                val request = mapRequest.asPutDataRequest()
-                request.setUrgent()
-
-                Timber.tag(TAG).d("Making request: %s", mapRequest.uri)
-                runCatching {
-                    mDataClient.deleteDataItems(mapRequest.uri).await()
-                    mDataClient.putDataItem(request).await()
-                }.onFailure {
-                    Logger.writeLine(Log.ERROR, it)
-                }
             }
         }
 
@@ -1447,6 +1337,13 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
             }.onFailure {
                 Logger.writeLine(Log.ERROR, it)
             }.getOrNull() ?: MediaSessionCompat.QueueItem.UNKNOWN_ID.toLong()
+            onDatasetChanged()
+        }
+
+        fun clear() {
+            mControls = null
+            mQueueItems = emptyList()
+            mActiveQueueItemId = MediaSessionCompat.QueueItem.UNKNOWN_ID.toLong()
             onDatasetChanged()
         }
     }

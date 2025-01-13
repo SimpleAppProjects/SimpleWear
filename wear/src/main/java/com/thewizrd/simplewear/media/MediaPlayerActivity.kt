@@ -36,11 +36,7 @@ class MediaPlayerActivity : ComponentActivity() {
         installSplashScreen()
         super.onCreate(savedInstanceState)
 
-        var startDestination = Screen.MediaPlayerList.route
-
-        if (intent?.extras?.getBoolean(KEY_AUTOLAUNCH) == true) {
-            startDestination = Screen.MediaPlayer.autoLaunch()
-        }
+        var startDestination = Screen.MediaPlayer.autoLaunch()
 
         intent?.extras?.getString(KEY_APPDETAILS)?.let {
             val model = JSONParser.deserializer(it, AppItemViewModel::class.java)

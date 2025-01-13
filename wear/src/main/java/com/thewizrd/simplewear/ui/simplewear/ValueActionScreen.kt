@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalWearFoundationApi::class)
+
 package com.thewizrd.simplewear.ui.simplewear
 
 import android.content.Intent
@@ -11,7 +13,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -19,6 +20,9 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.wear.compose.foundation.ExperimentalWearFoundationApi
+import androidx.wear.compose.foundation.rememberActiveFocusRequester
+import androidx.wear.compose.foundation.rotary.rotaryScrollable
 import androidx.wear.compose.material.Chip
 import androidx.wear.compose.material.ChipDefaults
 import androidx.wear.compose.material.Icon
@@ -31,10 +35,7 @@ import androidx.wear.compose.material.TimeText
 import androidx.wear.compose.material.Vignette
 import androidx.wear.compose.material.VignettePosition
 import androidx.wear.compose.ui.tooling.preview.WearPreviewDevices
-import com.google.android.horologist.annotations.ExperimentalHorologistApi
-import com.google.android.horologist.audio.ui.VolumeUiState
-import com.google.android.horologist.audio.ui.rotaryVolumeControlsWithFocus
-import com.google.android.horologist.compose.rotaryinput.RotaryDefaults
+import com.google.android.horologist.audio.ui.volumeRotaryBehavior
 import com.thewizrd.shared_resources.actions.Action
 import com.thewizrd.shared_resources.actions.ActionStatus
 import com.thewizrd.shared_resources.actions.Actions
@@ -49,8 +50,8 @@ import com.thewizrd.simplewear.controls.CustomConfirmationOverlay
 import com.thewizrd.simplewear.ui.theme.findActivity
 import com.thewizrd.simplewear.viewmodels.ValueActionUiState
 import com.thewizrd.simplewear.viewmodels.ValueActionViewModel
+import com.thewizrd.simplewear.viewmodels.ValueActionVolumeViewModel
 import com.thewizrd.simplewear.viewmodels.WearableListenerViewModel
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 @Composable
@@ -64,6 +65,9 @@ fun ValueActionScreen(
 
     val lifecycleOwner = LocalLifecycleOwner.current
     val valueActionViewModel = viewModel<ValueActionViewModel>()
+    val volumeViewModel = remember(context, valueActionViewModel) {
+        ValueActionVolumeViewModel(context, valueActionViewModel)
+    }
 
     Scaffold(
         modifier = modifier.background(MaterialTheme.colors.background),
@@ -72,7 +76,7 @@ fun ValueActionScreen(
             TimeText()
         },
     ) {
-        ValueActionScreen(valueActionViewModel)
+        ValueActionScreen(valueActionViewModel, volumeViewModel)
     }
 
     LaunchedEffect(actionType, audioStreamType) {
@@ -234,46 +238,27 @@ fun ValueActionScreen(
     }
 }
 
-@OptIn(ExperimentalHorologistApi::class)
 @Composable
 fun ValueActionScreen(
-    valueActionViewModel: ValueActionViewModel
+    valueActionViewModel: ValueActionViewModel,
+    volumeViewModel: ValueActionVolumeViewModel
 ) {
     val lifecycleOwner = LocalLifecycleOwner.current
     val activityCtx = LocalContext.current.findActivity()
 
     val uiState by valueActionViewModel.uiState.collectAsState()
-    val progressUiState by valueActionViewModel.uiState.map {
-        VolumeUiState(
-            current = it.valueActionState?.currentValue ?: 0,
-            min = it.valueActionState?.minValue ?: 0,
-            max = it.valueActionState?.maxValue ?: 1
-        )
-    }.collectAsState(VolumeUiState())
+    val progressUiState by volumeViewModel.volumeUiState.collectAsState()
 
     ValueActionScreen(
-        modifier = Modifier.rotaryVolumeControlsWithFocus(
-            volumeUiStateProvider = {
-                progressUiState
-            },
-            onRotaryVolumeInput = {
-                if (it > (uiState.valueActionState?.currentValue ?: 0)) {
-                    valueActionViewModel.increaseValue()
-                } else {
-                    valueActionViewModel.decreaseValue()
-                }
-            },
-            localView = LocalView.current,
-            isLowRes = RotaryDefaults.isLowResInput()
+        modifier = Modifier.rotaryScrollable(
+            focusRequester = rememberActiveFocusRequester(),
+            behavior = volumeRotaryBehavior(
+                volumeUiStateProvider = { progressUiState },
+                onRotaryVolumeInput = { newValue -> volumeViewModel.setVolume(newValue) }
+            )
         ),
         uiState = uiState,
-        onValueChanged = {
-            if (it > (uiState.valueActionState?.currentValue ?: 0)) {
-                valueActionViewModel.increaseValue()
-            } else {
-                valueActionViewModel.decreaseValue()
-            }
-        },
+        onValueChanged = { newValue -> volumeViewModel.setVolume(newValue) },
         onActionChange = {
             valueActionViewModel.requestActionChange()
         }

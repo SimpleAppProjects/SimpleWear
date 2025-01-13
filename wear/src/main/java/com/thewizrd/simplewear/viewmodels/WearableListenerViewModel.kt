@@ -66,6 +66,13 @@ abstract class WearableListenerViewModel(private val app: Application) : Android
     )
     val eventFlow: SharedFlow<WearableEvent> = _eventsFlow
 
+    protected val _channelEventsFlow = MutableSharedFlow<WearableEvent>(
+        replay = 0,
+        extraBufferCapacity = 64,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST
+    )
+    val channelEventsFlow: SharedFlow<WearableEvent> = _channelEventsFlow
+
     protected val _errorMessagesFlow = MutableSharedFlow<ErrorMessage>(replay = 0)
     val errorMessagesFlow: SharedFlow<ErrorMessage> = _errorMessagesFlow
 

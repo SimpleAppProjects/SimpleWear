@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalWearFoundationApi::class, ExperimentalMaterialApi::class)
+
 package com.thewizrd.simplewear.ui.simplewear
 
 import android.content.ComponentName
@@ -60,6 +62,10 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
 import androidx.navigation.NavOptions
+import androidx.wear.compose.foundation.ExperimentalWearFoundationApi
+import androidx.wear.compose.foundation.rememberActiveFocusRequester
+import androidx.wear.compose.foundation.rotary.RotaryScrollableDefaults
+import androidx.wear.compose.foundation.rotary.rotaryScrollable
 import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.ButtonDefaults
 import androidx.wear.compose.material.Chip
@@ -74,8 +80,6 @@ import androidx.wear.compose.material.Text
 import androidx.wear.compose.material.TimeText
 import androidx.wear.compose.material.ToggleChip
 import androidx.wear.compose.ui.tooling.preview.WearPreviewDevices
-import com.google.android.horologist.annotations.ExperimentalHorologistApi
-import com.google.android.horologist.compose.rotaryinput.rotaryWithScroll
 import com.thewizrd.shared_resources.actions.Actions
 import com.thewizrd.shared_resources.actions.BatteryStatus
 import com.thewizrd.shared_resources.controls.ActionButtonViewModel
@@ -155,7 +159,6 @@ fun DashboardScreen(
     )
 }
 
-@OptIn(ExperimentalHorologistApi::class, ExperimentalMaterialApi::class)
 @Composable
 fun DashboardScreen(
     modifier: Modifier = Modifier,
@@ -199,7 +202,10 @@ fun DashboardScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(scrollState)
-                .rotaryWithScroll(scrollState)
+                .rotaryScrollable(
+                    focusRequester = rememberActiveFocusRequester(),
+                    behavior = RotaryScrollableDefaults.behavior(scrollState)
+                ),
         ) {
             if (isPreview) {
                 TimeText()

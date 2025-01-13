@@ -46,7 +46,10 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
 import androidx.wear.compose.foundation.ExperimentalWearFoundationApi
 import androidx.wear.compose.foundation.lazy.items
+import androidx.wear.compose.foundation.rememberActiveFocusRequester
 import androidx.wear.compose.foundation.rememberRevealState
+import androidx.wear.compose.foundation.rotary.RotaryScrollableDefaults
+import androidx.wear.compose.foundation.rotary.rotaryScrollable
 import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.ButtonDefaults
 import androidx.wear.compose.material.Chip
@@ -78,7 +81,6 @@ import com.google.android.horologist.compose.layout.scrollAway
 import com.google.android.horologist.compose.material.ResponsiveListHeader
 import com.google.android.horologist.compose.material.ToggleChip
 import com.google.android.horologist.compose.material.ToggleChipToggleControl
-import com.google.android.horologist.compose.rotaryinput.rotaryWithScroll
 import com.thewizrd.shared_resources.actions.ActionStatus
 import com.thewizrd.shared_resources.actions.Actions
 import com.thewizrd.shared_resources.actions.DNDChoice
@@ -222,7 +224,10 @@ private fun TimedActionUi(
         ScalingLazyColumn(
             modifier = modifier
                 .fillMaxSize()
-                .rotaryWithScroll(scrollableState = scrollState),
+                .rotaryScrollable(
+                    focusRequester = rememberActiveFocusRequester(),
+                    behavior = RotaryScrollableDefaults.behavior(scrollState)
+                ),
             columnState = scrollState
         ) {
             item {
