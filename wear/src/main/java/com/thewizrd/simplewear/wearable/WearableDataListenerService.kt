@@ -24,7 +24,6 @@ import androidx.wear.ongoing.Status
 import com.google.android.gms.wearable.CapabilityInfo
 import com.google.android.gms.wearable.DataEvent
 import com.google.android.gms.wearable.DataEventBuffer
-import com.google.android.gms.wearable.DataItem
 import com.google.android.gms.wearable.DataMapItem
 import com.google.android.gms.wearable.MessageEvent
 import com.google.android.gms.wearable.Node
@@ -35,7 +34,11 @@ import com.thewizrd.shared_resources.appLib
 import com.thewizrd.shared_resources.helpers.InCallUIHelper
 import com.thewizrd.shared_resources.helpers.MediaHelper
 import com.thewizrd.shared_resources.helpers.WearableHelper
+import com.thewizrd.shared_resources.media.MediaMetaData
+import com.thewizrd.shared_resources.utils.JSONParser
 import com.thewizrd.shared_resources.utils.Logger
+import com.thewizrd.shared_resources.utils.bytesToBool
+import com.thewizrd.shared_resources.utils.bytesToString
 import com.thewizrd.shared_resources.utils.stringToBytes
 import com.thewizrd.simplewear.DashboardActivity
 import com.thewizrd.simplewear.PhoneSyncActivity
@@ -72,18 +75,45 @@ class WearableDataListenerService : WearableListenerService() {
     }
 
     override fun onMessageReceived(messageEvent: MessageEvent) {
-        if (messageEvent.path == WearableHelper.StartActivityPath) {
-            val startIntent = Intent(this, PhoneSyncActivity::class.java)
-            this.startActivity(startIntent)
-        } else if (messageEvent.path == WearableHelper.BtDiscoverPath) {
-            startBTDiscovery()
+        when (messageEvent.path) {
+            WearableHelper.StartActivityPath -> {
+                val startIntent = Intent(this, PhoneSyncActivity::class.java)
+                this.startActivity(startIntent)
+            }
 
-            appLib.appScope.launch(Dispatchers.Default) {
-                sendMessage(
-                    messageEvent.sourceNodeId,
-                    messageEvent.path,
-                    Build.MODEL.stringToBytes()
-                )
+            WearableHelper.BtDiscoverPath -> {
+                startBTDiscovery()
+
+                appLib.appScope.launch(Dispatchers.Default) {
+                    sendMessage(
+                        messageEvent.sourceNodeId,
+                        messageEvent.path,
+                        Build.MODEL.stringToBytes()
+                    )
+                }
+            }
+
+            MediaHelper.MediaPlayerStateBridgePath -> {
+                val jsonData = messageEvent.data?.bytesToString()
+                val metadata = jsonData?.let {
+                    JSONParser.deserializer(it, MediaMetaData::class.java)
+                }
+
+                if (metadata != null) {
+                    createMediaOngoingActivity(metadata)
+                } else {
+                    dismissMediaOngoingActivity()
+                }
+            }
+
+            InCallUIHelper.CallStateBridgePath -> {
+                val enable = messageEvent.data.bytesToBool()
+
+                if (enable) {
+                    createCallOngoingActivity()
+                } else {
+                    dismissCallOngoingActivity()
+                }
             }
         }
     }
@@ -167,24 +197,12 @@ class WearableDataListenerService : WearableListenerService() {
                             Settings.setLoadAppIcons(loadIcons)
                         }
                     }
-                } else if (item.uri.path == MediaHelper.MediaPlayerStateBridgePath) {
-                    createMediaOngoingActivity(item)
-                } else if (item.uri.path == InCallUIHelper.CallStateBridgePath) {
-                    createCallOngoingActivity(item)
-                }
-            }
-            if (event.type == DataEvent.TYPE_DELETED) {
-                val item = event.dataItem
-                if (item.uri.path == MediaHelper.MediaPlayerStateBridgePath) {
-                    dismissMediaOngoingActivity()
-                } else if (item.uri.path == InCallUIHelper.CallStateBridgePath) {
-                    dismissCallOngoingActivity()
                 }
             }
         }
     }
 
-    private fun createCallOngoingActivity(item: DataItem) {
+    private fun createCallOngoingActivity() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             initCallControllerNotifChannel()
         }
@@ -229,13 +247,12 @@ class WearableDataListenerService : WearableListenerService() {
         mNotificationManager.notify(1000, notifBuilder.build())
     }
 
-    private fun createMediaOngoingActivity(item: DataItem) {
+    private fun createMediaOngoingActivity(mediaMetaData: MediaMetaData) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             initMediaControllerNotifChannel()
         }
 
-        val dataMap = DataMapItem.fromDataItem(item).dataMap
-        val songTitle = dataMap.getString(MediaHelper.KEY_MEDIA_METADATA_TITLE)
+        val songTitle = mediaMetaData.title
         val notifTitle = getString(R.string.title_nowplaying)
 
         val notifBuilder = NotificationCompat.Builder(this, MEDIA_NOT_CHANNEL_ID)
