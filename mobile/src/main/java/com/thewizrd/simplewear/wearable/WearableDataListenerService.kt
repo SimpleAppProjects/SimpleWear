@@ -212,7 +212,7 @@ class WearableDataListenerService : WearableListenerService() {
                 }
             }
             /* InCall Actions */
-            else if (messageEvent.path == InCallUIHelper.CallStatePath) {
+            else if (messageEvent.path == InCallUIHelper.ConnectPath) {
                 if (PhoneStatusHelper.callStatePermissionEnabled(ctx) &&
                     (Build.VERSION.SDK_INT < Build.VERSION_CODES.O ||
                             Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&

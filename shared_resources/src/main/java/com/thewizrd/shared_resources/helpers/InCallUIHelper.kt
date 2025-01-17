@@ -6,6 +6,7 @@ object InCallUIHelper {
     const val CallStatePath = "/incallui"
     const val CallStateBridgePath = "/incallui/bridge"
 
+    const val ConnectPath = "/incallui/connect"
     const val DisconnectPath = "/incallui/disconnect"
     const val EndCallPath = "/incallui/hangup"
     const val MuteMicPath = "/incallui/mute"

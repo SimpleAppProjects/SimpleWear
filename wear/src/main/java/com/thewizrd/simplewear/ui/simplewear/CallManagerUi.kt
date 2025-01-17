@@ -160,7 +160,7 @@ fun CallManagerUi(
                         }
                     }
 
-                    InCallUIHelper.CallStatePath -> {
+                    InCallUIHelper.ConnectPath -> {
                         val status =
                             event.data.getSerializable(WearableListenerViewModel.EXTRA_STATUS) as ActionStatus
 

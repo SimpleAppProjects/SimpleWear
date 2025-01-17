@@ -23,6 +23,7 @@
 # Application classes that will be serialized/deserialized over Gson
 -keep class com.thewizrd.shared_resources.actions.* { *; }
 -keep class * extends com.thewizrd.shared_resources.actions.Action { *; }
+-keep class com.thewizrd.shared_resources.data.* { *; }
 -keep class com.thewizrd.shared_resources.media.* { *; }
 -keep public enum com.thewizrd.shared_resources.actions.* { <fields>; }
 -keep public enum com.thewizrd.shared_resources.helpers.* { <fields>; }

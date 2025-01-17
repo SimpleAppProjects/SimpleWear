@@ -25,19 +25,18 @@ import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleService
-import com.google.android.gms.wearable.DataClient
 import com.google.android.gms.wearable.MessageClient
 import com.google.android.gms.wearable.MessageEvent
-import com.google.android.gms.wearable.PutDataMapRequest
-import com.google.android.gms.wearable.PutDataRequest
 import com.google.android.gms.wearable.Wearable
+import com.thewizrd.shared_resources.data.CallState
 import com.thewizrd.shared_resources.helpers.InCallUIHelper
-import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.shared_resources.helpers.toImmutableCompatFlag
+import com.thewizrd.shared_resources.utils.JSONParser
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.shared_resources.utils.booleanToBytes
 import com.thewizrd.shared_resources.utils.bytesToBool
 import com.thewizrd.shared_resources.utils.bytesToChar
+import com.thewizrd.shared_resources.utils.stringToBytes
 import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.helpers.PhoneStatusHelper
 import com.thewizrd.simplewear.preferences.Settings
@@ -48,9 +47,8 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
-import timber.log.Timber
 import java.util.concurrent.Executors
 
 class CallControllerService : LifecycleService(), MessageClient.OnMessageReceivedListener,
@@ -66,11 +64,11 @@ class CallControllerService : LifecycleService(), MessageClient.OnMessageReceive
     private val scope = CoroutineScope(
         SupervisorJob() + Executors.newSingleThreadExecutor().asCoroutineDispatcher()
     )
+    private var isConnected: Boolean = false
     private var disconnectJob: Job? = null
     private lateinit var mMainHandler: Handler
 
     private lateinit var mWearableManager: WearableManager
-    private lateinit var mDataClient: DataClient
     private lateinit var mMessageClient: MessageClient
 
     private var mPhoneStateListener: PhoneStateListener? = null
@@ -242,7 +240,6 @@ class CallControllerService : LifecycleService(), MessageClient.OnMessageReceive
         mTelecomManager = getSystemService(TelecomManager::class.java)
 
         mWearableManager = WearableManager(this)
-        mDataClient = Wearable.getDataClient(this)
         mMessageClient = Wearable.getMessageClient(this)
         mMessageClient.addListener(this)
 
@@ -284,29 +281,36 @@ class CallControllerService : LifecycleService(), MessageClient.OnMessageReceive
         disconnectJob?.cancel()
         startForeground(getForegroundNotification())
 
-        Logger.writeLine(Log.INFO, "${TAG}: Intent action = ${intent?.action}")
+        Logger.info(TAG, "Intent action = ${intent?.action}")
 
         when (intent?.action) {
             ACTION_CONNECTCONTROLLER -> {
                 scope.launch {
-                    mTelecomMediaCtrlr = mMediaSessionManager.getActiveSessions(
-                        NotificationListener.getComponentName(this@CallControllerService)
-                    ).firstOrNull {
-                        it.packageName == "com.android.server.telecom"
-                    }
-                    // Send call state
-                    sendCallState(mTelephonyManager.callState, "")
-                    mWearableManager.sendMessage(
-                        null,
-                        InCallUIHelper.MuteMicStatusPath,
-                        isMicrophoneMute().booleanToBytes()
-                    )
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    if (!isConnected) {
+                        isConnected = true
+
+                        if (mTelecomMediaCtrlr == null) {
+                            mTelecomMediaCtrlr = mMediaSessionManager.getActiveSessions(
+                                NotificationListener.getComponentName(this@CallControllerService)
+                            ).firstOrNull {
+                                it.packageName == "com.android.server.telecom"
+                            }
+                        }
+
+                        // Send call state
+                        sendCallState(mTelephonyManager.callState, "")
                         mWearableManager.sendMessage(
                             null,
-                            InCallUIHelper.SpeakerphoneStatusPath,
-                            isSpeakerPhoneEnabled().booleanToBytes()
+                            InCallUIHelper.MuteMicStatusPath,
+                            isMicrophoneMute().booleanToBytes()
                         )
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                            mWearableManager.sendMessage(
+                                null,
+                                InCallUIHelper.SpeakerphoneStatusPath,
+                                isSpeakerPhoneEnabled().booleanToBytes()
+                            )
+                        }
                     }
                 }
             }
@@ -316,7 +320,11 @@ class CallControllerService : LifecycleService(), MessageClient.OnMessageReceive
                     disconnectJob = scope.launch {
                         // Delay in case service was just started as foreground
                         delay(1500)
-                        stopSelf()
+
+                        if (isActive) {
+                            stopSelf()
+                            isConnected = false
+                        }
                     }
                 }
             }
@@ -357,11 +365,9 @@ class CallControllerService : LifecycleService(), MessageClient.OnMessageReceive
 
     private fun removeCallState() {
         scope.launch {
-            Timber.tag(TAG).d("removeCallState")
+            Logger.debug(TAG, "removeCallState")
             runCatching {
-                mDataClient.deleteDataItems(
-                    WearableHelper.getWearDataUri(InCallUIHelper.CallStatePath)
-                ).await()
+                sendCallState(nodeID = null)
             }.onFailure {
                 Logger.writeLine(Log.ERROR, it)
             }
@@ -385,12 +391,12 @@ class CallControllerService : LifecycleService(), MessageClient.OnMessageReceive
                     )
                 }.onFailure {
                     if (it is SecurityException) {
-                        Logger.writeLine(
-                            Log.WARN,
-                            "${TAG}: registerPhoneStateListener - missing read_call_state permission"
+                        Logger.warn(
+                            TAG,
+                            "registerPhoneStateListener - missing read_call_state permission"
                         )
                     } else {
-                        Logger.writeLine(Log.ERROR, it)
+                        Logger.error(TAG, it)
                     }
                 }
             } else {
@@ -414,12 +420,12 @@ class CallControllerService : LifecycleService(), MessageClient.OnMessageReceive
                     tm.listen(mPhoneStateListener!!, PhoneStateListener.LISTEN_CALL_STATE)
                 }.onFailure {
                     if (it is SecurityException) {
-                        Logger.writeLine(
-                            Log.WARN,
-                            "${TAG}: registerPhoneStateListener - missing read_call_state permission"
+                        Logger.warn(
+                            TAG,
+                            "registerPhoneStateListener - missing read_call_state permission"
                         )
                     } else {
-                        Logger.writeLine(Log.ERROR, it)
+                        Logger.error(TAG, it)
                     }
                 }
             }
@@ -448,12 +454,12 @@ class CallControllerService : LifecycleService(), MessageClient.OnMessageReceive
             )
         }.onFailure {
             if (it is SecurityException) {
-                Logger.writeLine(
-                    Log.WARN,
-                    "${TAG}: registerMediaControllerListener - missing notification permission"
+                Logger.warn(
+                    TAG,
+                    "registerMediaControllerListener - missing notification permission"
                 )
             } else {
-                Logger.writeLine(Log.ERROR, it)
+                Logger.error(TAG, it)
             }
         }
     }
@@ -481,16 +487,11 @@ class CallControllerService : LifecycleService(), MessageClient.OnMessageReceive
     }
 
     private suspend fun sendCallState(state: Int? = null, phoneNo: String? = null) {
-        val mapRequest = PutDataMapRequest.create(InCallUIHelper.CallStatePath)
-
-        mapRequest.dataMap.putString(
-            InCallUIHelper.KEY_CALLERNAME,
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                OngoingCall.call?.details?.contactDisplayName
-            } else {
-                null
-            } ?: OngoingCall.call?.details?.callerDisplayName ?: phoneNo ?: ""
-        )
+        val callerName = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            OngoingCall.call?.details?.contactDisplayName
+        } else {
+            null
+        } ?: OngoingCall.call?.details?.callerDisplayName ?: phoneNo ?: ""
 
         val callState = state ?: OngoingCall.call?.let {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -501,7 +502,6 @@ class CallControllerService : LifecycleService(), MessageClient.OnMessageReceive
         } ?: TelephonyManager.CALL_STATE_IDLE
 
         val callActive = callState != TelephonyManager.CALL_STATE_IDLE
-        mapRequest.dataMap.putBoolean(InCallUIHelper.KEY_CALLACTIVE, callActive)
 
         var supportedFeatures = 0
         if (supportsSpeakerToggle()) {
@@ -511,30 +511,37 @@ class CallControllerService : LifecycleService(), MessageClient.OnMessageReceive
             supportedFeatures += InCallUIHelper.INCALL_FEATURE_DTMF
         }
 
-        mapRequest.dataMap.putInt(InCallUIHelper.KEY_SUPPORTEDFEATURES, supportedFeatures)
+        val callStateData = CallState(
+            callerName = callerName,
+            callActive = callActive,
+            supportedFeatures = supportedFeatures
+        )
 
-        mapRequest.setUrgent()
-        try {
-            mDataClient.deleteDataItems(mapRequest.uri).await()
-            mDataClient.putDataItem(mapRequest.asPutDataRequest())
-                .await()
-            if (callActive) {
-                if (Settings.isBridgeCallsEnabled()) {
-                    mDataClient.putDataItem(
-                        PutDataRequest.create(InCallUIHelper.CallStateBridgePath).setUrgent()
-                    ).await()
-                }
-            } else {
-                mDataClient.deleteDataItems(WearableHelper.getWearDataUri(InCallUIHelper.CallStateBridgePath))
-                    .await()
-            }
-        } catch (e: Exception) {
-            Logger.writeLine(Log.ERROR, e)
+        sendCallState(nodeID = null, callStateData)
+        if (Settings.isBridgeCallsEnabled()) {
+            mWearableManager.sendMessage(
+                null,
+                InCallUIHelper.CallStateBridgePath,
+                callActive.booleanToBytes()
+            )
         }
+    }
+
+    private suspend fun sendCallState(nodeID: String? = null, callState: CallState = CallState()) {
+        mWearableManager.sendMessage(
+            nodeID,
+            InCallUIHelper.CallStatePath,
+            JSONParser.serializer(callState, CallState::class.java).stringToBytes()
+        )
     }
 
     override fun onMessageReceived(messageEvent: MessageEvent) {
         when (messageEvent.path) {
+            InCallUIHelper.CallStatePath -> {
+                scope.launch {
+                    sendCallState(mTelephonyManager.callState, "")
+                }
+            }
             InCallUIHelper.EndCallPath -> {
                 sendHangupEvent()
             }

@@ -14,7 +14,7 @@ import android.telephony.TelephonyManager
 import androidx.annotation.MainThread
 import androidx.annotation.RequiresApi
 import androidx.lifecycle.MutableLiveData
-import timber.log.Timber
+import com.thewizrd.shared_resources.utils.Logger
 
 @RequiresApi(Build.VERSION_CODES.S)
 class InCallManagerService : InCallService() {
@@ -105,7 +105,7 @@ class InCallManagerAdapter private constructor() {
             mInCallService?.setMuted(shouldMute)
             true
         } else {
-            Timber.tag(TAG).e("mute: mInCallService is null")
+            Logger.error(TAG, "mute: mInCallService is null")
             false
         }
     }
@@ -115,7 +115,7 @@ class InCallManagerAdapter private constructor() {
             mInCallService?.setSpeakerPhoneEnabled(enableSpeaker)
             true
         } else {
-            Timber.tag(TAG).e("setSpeakerPhoneEnabled: mInCallService is null")
+            Logger.error(TAG, "setSpeakerPhoneEnabled: mInCallService is null")
             false
         }
     }
