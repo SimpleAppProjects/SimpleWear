@@ -14,7 +14,7 @@ import com.google.android.horologist.annotations.ExperimentalHorologistApi
 import com.google.android.horologist.media.model.PlaybackStateEvent
 import com.thewizrd.shared_resources.actions.ActionStatus
 import com.thewizrd.shared_resources.actions.AudioStreamState
-import com.thewizrd.shared_resources.helpers.AppItemData
+import com.thewizrd.shared_resources.data.AppItemData
 import com.thewizrd.shared_resources.helpers.MediaHelper
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
 import com.thewizrd.shared_resources.helpers.WearableHelper

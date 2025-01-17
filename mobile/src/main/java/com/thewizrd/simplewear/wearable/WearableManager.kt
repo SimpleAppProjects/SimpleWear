@@ -13,7 +13,6 @@ import android.graphics.Bitmap
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
-import android.util.TypedValue
 import android.view.KeyEvent
 import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
@@ -21,9 +20,7 @@ import androidx.media.MediaBrowserServiceCompat
 import com.google.android.gms.wearable.CapabilityClient
 import com.google.android.gms.wearable.CapabilityClient.OnCapabilityChangedListener
 import com.google.android.gms.wearable.CapabilityInfo
-import com.google.android.gms.wearable.DataMap
 import com.google.android.gms.wearable.Node
-import com.google.android.gms.wearable.PutDataMapRequest
 import com.google.android.gms.wearable.Wearable
 import com.google.gson.reflect.TypeToken
 import com.google.gson.stream.JsonWriter
@@ -49,8 +46,8 @@ import com.thewizrd.shared_resources.actions.ValueAction
 import com.thewizrd.shared_resources.actions.ValueActionState
 import com.thewizrd.shared_resources.actions.VolumeAction
 import com.thewizrd.shared_resources.actions.toRemoteAction
-import com.thewizrd.shared_resources.helpers.AppItemData
-import com.thewizrd.shared_resources.helpers.AppItemSerializer.serialize
+import com.thewizrd.shared_resources.data.AppItemData
+import com.thewizrd.shared_resources.data.AppItemSerializer.serialize
 import com.thewizrd.shared_resources.helpers.GestureUIHelper
 import com.thewizrd.shared_resources.helpers.MediaHelper
 import com.thewizrd.shared_resources.helpers.WearSettingsHelper
@@ -81,7 +78,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -381,57 +377,11 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
     }
 
     suspend fun sendApps(nodeID: String) {
-        if (Settings.isLoadAppIcons()) {
-            sendAppsViaChannelWithData(nodeID)
-        } else {
-            sendAppsViaData()
-        }
-    }
-
-    private suspend fun sendAppsViaData() {
-        val dataClient = Wearable.getDataClient(mContext)
-        val mainIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
-
-        val infos = mContext.packageManager.queryIntentActivities(mainIntent, 0)
-        val mapRequest = PutDataMapRequest.create(WearableHelper.AppsPath)
-
-        // Sort result
-        infos.sortWith(ResolveInfoActivityInfoComparator(mContext.packageManager))
-
-        val availableApps = ArrayList<String>(infos.size)
-
-        for (info in infos) {
-            val key = String.format("%s/%s", info.activityInfo.packageName, info.activityInfo.name)
-            if (!availableApps.contains(key)) {
-                val label =
-                    mContext.packageManager.getApplicationLabel(info.activityInfo.applicationInfo)
-                        .toString()
-                val map = DataMap()
-                map.putString(WearableHelper.KEY_LABEL, label)
-                map.putString(WearableHelper.KEY_PKGNAME, info.activityInfo.packageName)
-                map.putString(WearableHelper.KEY_ACTIVITYNAME, info.activityInfo.name)
-                mapRequest.dataMap.putDataMap(key, map)
-                availableApps.add(key)
-            }
-        }
-        mapRequest.dataMap.putStringArrayList(WearableHelper.KEY_APPS, availableApps)
-        mapRequest.setUrgent()
-        try {
-            dataClient.deleteDataItems(mapRequest.uri).await()
-            dataClient
-                .putDataItem(mapRequest.asPutDataRequest())
-                .await()
-        } catch (e: Exception) {
-            Logger.writeLine(Log.ERROR, e)
-        }
-    }
-
-    private suspend fun sendAppsViaChannel(nodeID: String) {
         val channelClient = Wearable.getChannelClient(mContext)
         val mainIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
 
         val infos = mContext.packageManager.queryIntentActivities(mainIntent, 0)
-        val appItems = mutableListOf<AppItemData>()
+        val appItems = ArrayList<AppItemData>(infos.size)
 
         // Sort result
         infos.sortWith(ResolveInfoActivityInfoComparator(mContext.packageManager))
@@ -441,25 +391,20 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
         for (info in infos) {
             val key = String.format("%s/%s", info.activityInfo.packageName, info.activityInfo.name)
             if (!availableApps.contains(key)) {
-                val label =
-                    mContext.packageManager.getApplicationLabel(info.activityInfo.applicationInfo)
-                        .toString()
+                val label = info.activityInfo.loadLabel(mContext.packageManager)
                 var iconBmp: Bitmap? = null
-                try {
-                    val iconDrwble =
-                        info.activityInfo.applicationInfo.loadIcon(mContext.packageManager)
-                    val size = TypedValue.applyDimension(
-                        TypedValue.COMPLEX_UNIT_DIP,
-                        24f,
-                        mContext.resources.displayMetrics
-                    ).toInt()
-                    iconBmp = ImageUtils.bitmapFromDrawable(iconDrwble, size, size)
-                } catch (ignored: PackageManager.NameNotFoundException) {
+
+                if (Settings.isLoadAppIcons()) {
+                    runCatching {
+                        val iconDrwble = info.activityInfo.loadIcon(mContext.packageManager)
+                        val size = mContext.dpToPx(24f).toInt()
+                        iconBmp = ImageUtils.bitmapFromDrawable(iconDrwble, size, size)
+                    }
                 }
 
                 appItems.add(
                     AppItemData(
-                        label,
+                        label.toString(),
                         info.activityInfo.packageName,
                         info.activityInfo.name,
                         iconBmp?.toByteArray()
@@ -482,86 +427,6 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
         } catch (e: Exception) {
             Logger.writeLine(Log.ERROR, e)
         }
-    }
-
-    private suspend fun sendAppsViaChannelWithData(nodeID: String) {
-        val dataClient = Wearable.getDataClient(mContext)
-        val channelClient = Wearable.getChannelClient(mContext)
-        val mainIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
-
-        val infos = mContext.packageManager.queryIntentActivities(mainIntent, 0)
-        val mapRequest = PutDataMapRequest.create(WearableHelper.AppsPath)
-
-        // Sort result
-        infos.sortWith(ResolveInfoActivityInfoComparator(mContext.packageManager))
-
-        val availableApps = ArrayList<String>(infos.size)
-        val appItems = ArrayList<AppItemData>(infos.size)
-
-        for (info in infos) {
-            val key = String.format("%s/%s", info.activityInfo.packageName, info.activityInfo.name)
-            if (!availableApps.contains(key)) {
-                val label = info.activityInfo.loadLabel(mContext.packageManager)
-                var iconBmp: Bitmap? = null
-                try {
-                    val iconDrwble =
-                        info.activityInfo.loadIcon(mContext.packageManager)
-                    val size = TypedValue.applyDimension(
-                        TypedValue.COMPLEX_UNIT_DIP,
-                        24f,
-                        mContext.resources.displayMetrics
-                    ).toInt()
-                    iconBmp = ImageUtils.bitmapFromDrawable(iconDrwble, size, size)
-                } catch (ignored: PackageManager.NameNotFoundException) {
-                }
-
-                appItems.add(
-                    AppItemData(
-                        label.toString(),
-                        info.activityInfo.packageName,
-                        info.activityInfo.name,
-                        iconBmp?.toByteArray()
-                    )
-                )
-
-                val map = DataMap()
-                map.putString(WearableHelper.KEY_LABEL, label.toString())
-                map.putString(WearableHelper.KEY_PKGNAME, info.activityInfo.packageName)
-                map.putString(WearableHelper.KEY_ACTIVITYNAME, info.activityInfo.name)
-                mapRequest.dataMap.putDataMap(key, map)
-                availableApps.add(key)
-            }
-        }
-
-        val job1 = scope.async(Dispatchers.IO) {
-            mapRequest.dataMap.putStringArrayList(WearableHelper.KEY_APPS, availableApps)
-            mapRequest.setUrgent()
-            try {
-                dataClient.deleteDataItems(mapRequest.uri).await()
-                dataClient
-                    .putDataItem(mapRequest.asPutDataRequest())
-                    .await()
-            } catch (e: Exception) {
-                Logger.writeLine(Log.ERROR, e)
-            }
-        }
-
-        val job2 = scope.async(Dispatchers.IO) {
-            try {
-                val channel = channelClient.openChannel(nodeID, WearableHelper.AppsPath).await()
-                val outputStream = channelClient.getOutputStream(channel).await()
-                outputStream.use {
-                    val writer = JsonWriter(BufferedWriter(OutputStreamWriter(it)))
-                    appItems.serialize(writer)
-                    writer.flush()
-                }
-                channelClient.close(channel)
-            } catch (e: Exception) {
-                Logger.writeLine(Log.ERROR, e)
-            }
-        }
-
-        awaitAll(job1, job2)
     }
 
     suspend fun launchApp(nodeID: String?, pkgName: String, activityName: String?) {

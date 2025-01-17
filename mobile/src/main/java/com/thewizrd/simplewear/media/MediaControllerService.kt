@@ -45,7 +45,7 @@ import com.thewizrd.shared_resources.actions.ActionStatus
 import com.thewizrd.shared_resources.actions.AudioStreamState
 import com.thewizrd.shared_resources.actions.AudioStreamType
 import com.thewizrd.shared_resources.actions.ValueDirection
-import com.thewizrd.shared_resources.helpers.AppItemData
+import com.thewizrd.shared_resources.data.AppItemData
 import com.thewizrd.shared_resources.helpers.MediaHelper
 import com.thewizrd.shared_resources.helpers.toImmutableCompatFlag
 import com.thewizrd.shared_resources.media.ActionItem

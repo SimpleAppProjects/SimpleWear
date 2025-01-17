@@ -29,7 +29,7 @@
 -keep public enum com.thewizrd.shared_resources.helpers.* { <fields>; }
 -keep public enum com.thewizrd.shared_resources.media.* { <fields>; }
 -keep class androidx.core.util.Pair { *; }
--keep class com.thewizrd.shared_resources.helpers.AppItemData { *; }
+-keep class com.thewizrd.shared_resources.data.AppItemData { *; }
 -keep class com.thewizrd.shared_resources.updates.UpdateInfo { *; }
 
 ##---------------Begin: proguard configuration for Gson  ----------

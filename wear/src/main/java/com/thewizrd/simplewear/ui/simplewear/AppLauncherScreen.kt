@@ -217,7 +217,7 @@ fun AppLauncherScreen(
 
     LaunchedEffect(Unit) {
         // Update statuses
-        appLauncherViewModel.refreshApps(true)
+        appLauncherViewModel.refreshApps()
     }
 }
 

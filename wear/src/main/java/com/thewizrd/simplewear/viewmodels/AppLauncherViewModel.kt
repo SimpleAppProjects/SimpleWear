@@ -3,22 +3,16 @@ package com.thewizrd.simplewear.viewmodels
 import android.app.Activity
 import android.app.Application
 import android.os.Bundle
-import android.os.CountDownTimer
 import android.util.Log
 import androidx.lifecycle.viewModelScope
 import com.google.android.gms.wearable.ChannelClient
-import com.google.android.gms.wearable.DataClient.OnDataChangedListener
-import com.google.android.gms.wearable.DataEvent
-import com.google.android.gms.wearable.DataEventBuffer
-import com.google.android.gms.wearable.DataMap
-import com.google.android.gms.wearable.DataMapItem
 import com.google.android.gms.wearable.MessageEvent
 import com.google.android.gms.wearable.PutDataMapRequest
 import com.google.android.gms.wearable.Wearable
 import com.google.gson.stream.JsonReader
 import com.thewizrd.shared_resources.actions.ActionStatus
-import com.thewizrd.shared_resources.helpers.AppItemData
-import com.thewizrd.shared_resources.helpers.AppItemSerializer
+import com.thewizrd.shared_resources.data.AppItemData
+import com.thewizrd.shared_resources.data.AppItemSerializer
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
 import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.shared_resources.utils.ImageUtils.toBitmap
@@ -43,11 +37,8 @@ data class AppLauncherUiState(
     val loadAppIcons: Boolean = Settings.isLoadAppIcons()
 )
 
-class AppLauncherViewModel(app: Application) : WearableListenerViewModel(app),
-    OnDataChangedListener {
+class AppLauncherViewModel(app: Application) : WearableListenerViewModel(app) {
     private val viewModelState = MutableStateFlow(AppLauncherUiState(isLoading = true))
-
-    private val timer: CountDownTimer
 
     val uiState = viewModelState.stateIn(
         viewModelScope,
@@ -70,10 +61,13 @@ class AppLauncherViewModel(app: Application) : WearableListenerViewModel(app),
 
                             viewModelState.update { state ->
                                 state.copy(
-                                    appsList = createAppsList(items ?: emptyList())
+                                    appsList = createAppsList(items ?: emptyList()),
+                                    isLoading = false
                                 )
                             }
                         }
+                    }.onFailure {
+                        Logger.writeLine(Log.ERROR, it)
                     }
                 }
             }
@@ -81,50 +75,8 @@ class AppLauncherViewModel(app: Application) : WearableListenerViewModel(app),
     }
 
     init {
-        Wearable.getDataClient(appContext).addListener(this)
-        Wearable.getChannelClient(appContext).registerChannelCallback(channelCallback)
-
-        // Set timer for retrieving music player data
-        timer = object : CountDownTimer(3000, 1000) {
-            override fun onTick(millisUntilFinished: Long) {}
-            override fun onFinish() {
-                viewModelScope.launch(Dispatchers.IO) {
-                    try {
-                        val buff = Wearable.getDataClient(appContext)
-                            .getDataItems(
-                                WearableHelper.getWearDataUri(
-                                    "*",
-                                    WearableHelper.AppsPath
-                                )
-                            )
-                            .await()
-
-                        for (i in 0 until buff.count) {
-                            val item = buff[i]
-                            if (WearableHelper.AppsPath == item.uri.path) {
-                                val appsList = try {
-                                    val dataMap = DataMapItem.fromDataItem(item).dataMap
-                                    createAppsList(dataMap)
-                                } catch (e: Exception) {
-                                    Logger.writeLine(Log.ERROR, e)
-                                    null
-                                }
-
-                                viewModelState.update {
-                                    it.copy(
-                                        appsList = appsList ?: emptyList(),
-                                        isLoading = false
-                                    )
-                                }
-                            }
-                        }
-
-                        buff.release()
-                    } catch (e: Exception) {
-                        Logger.writeLine(Log.ERROR, e)
-                    }
-                }
-            }
+        Wearable.getChannelClient(appContext).run {
+            registerChannelCallback(channelCallback)
         }
 
         viewModelScope.launch {
@@ -161,54 +113,6 @@ class AppLauncherViewModel(app: Application) : WearableListenerViewModel(app),
         } else {
             super.onMessageReceived(messageEvent)
         }
-    }
-
-    override fun onDataChanged(dataEventBuffer: DataEventBuffer) {
-        viewModelScope.launch {
-            // Cancel timer
-            timer.cancel()
-
-            for (event in dataEventBuffer) {
-                if (event.type == DataEvent.TYPE_CHANGED) {
-                    val item = event.dataItem
-                    if (WearableHelper.AppsPath == item.uri.path) {
-                        val appsList = try {
-                            val dataMap = DataMapItem.fromDataItem(item).dataMap
-                            createAppsList(dataMap)
-                        } catch (e: Exception) {
-                            Logger.writeLine(Log.ERROR, e)
-                            null
-                        }
-
-                        viewModelState.update {
-                            it.copy(
-                                appsList = appsList ?: emptyList(),
-                                isLoading = false
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private fun createAppsList(dataMap: DataMap): List<AppItemViewModel> {
-        val availableApps =
-            dataMap.getStringArrayList(WearableHelper.KEY_APPS) ?: return emptyList()
-        val viewModels = ArrayList<AppItemViewModel>()
-        for (key in availableApps) {
-            val map = dataMap.getDataMap(key) ?: continue
-
-            val model = AppItemViewModel().apply {
-                appType = AppItemViewModel.AppType.APP
-                appLabel = map.getString(WearableHelper.KEY_LABEL)
-                packageName = map.getString(WearableHelper.KEY_PKGNAME)
-                activityName = map.getString(WearableHelper.KEY_ACTIVITYNAME)
-            }
-            viewModels.add(model)
-        }
-
-        return viewModels
     }
 
     private suspend fun createAppsList(items: List<AppItemData>): List<AppItemViewModel> {
@@ -252,15 +156,11 @@ class AppLauncherViewModel(app: Application) : WearableListenerViewModel(app),
         }
     }
 
-    fun refreshApps(startTimer: Boolean = false) {
+    fun refreshApps() {
         // Update statuses
         viewModelScope.launch {
             updateConnectionStatus()
             requestAppsUpdate()
-            if (startTimer) {
-                // Wait for apps update
-                timer.start()
-            }
         }
     }
 
@@ -287,8 +187,9 @@ class AppLauncherViewModel(app: Application) : WearableListenerViewModel(app),
     }
 
     override fun onCleared() {
-        Wearable.getChannelClient(appContext).unregisterChannelCallback(channelCallback)
-        Wearable.getDataClient(appContext).removeListener(this)
+        Wearable.getChannelClient(appContext).run {
+            unregisterChannelCallback(channelCallback)
+        }
         super.onCleared()
     }
 }
