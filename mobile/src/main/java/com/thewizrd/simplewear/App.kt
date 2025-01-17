@@ -82,7 +82,11 @@ class App : Application(), ActivityLifecycleCallbacks, Configuration.Provider {
             private var mBatteryPct: Int? = null
             private var mIsBatteryCharging: Boolean? = null
 
+            private var mStreamVolumeMap = mutableMapOf<Int, Int>()
+
             override fun onReceive(context: Context, intent: Intent) {
+                Logger.debug("ActionsReceiver", "received action - ${intent.action}")
+
                 when (intent.action) {
                     Intent.ACTION_BATTERY_CHANGED -> {
                         val level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
@@ -138,6 +142,45 @@ class App : Application(), ActivityLifecycleCallbacks, Configuration.Provider {
                             )
                         )
                     }
+                    "android.media.VOLUME_CHANGED_ACTION" -> {
+                        if (intent.hasExtra("android.media.EXTRA_VOLUME_STREAM_TYPE") && intent.hasExtra(
+                                "android.media.EXTRA_VOLUME_STREAM_VALUE"
+                            )
+                        ) {
+                            val streamType = intent.getIntExtra(
+                                "android.media.EXTRA_VOLUME_STREAM_TYPE",
+                                AudioManager.USE_DEFAULT_STREAM_TYPE
+                            )
+                            val streamVolume = intent.getIntExtra(
+                                "android.media.EXTRA_VOLUME_STREAM_VALUE",
+                                Int.MIN_VALUE
+                            )
+
+                            // Filter for supported streams
+                            when (streamType) {
+                                AudioManager.STREAM_MUSIC,
+                                AudioManager.STREAM_RING,
+                                AudioManager.STREAM_VOICE_CALL,
+                                AudioManager.STREAM_ALARM -> {
+                                    Logger.debug(
+                                        "ActionsReceiver",
+                                        "volume changed - streamType(${streamType}), volume(${streamVolume})"
+                                    )
+
+                                    if (mStreamVolumeMap.getOrDefault(
+                                            streamType,
+                                            Int.MIN_VALUE
+                                        ) != streamVolume
+                                    ) {
+                                        WearableWorker.sendStatusUpdate(
+                                            context, WearableWorker.ACTION_SENDAUDIOSTREAMUPDATE,
+                                            streamType
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -150,6 +193,7 @@ class App : Application(), ActivityLifecycleCallbacks, Configuration.Provider {
             addAction(NotificationManager.ACTION_INTERRUPTION_FILTER_CHANGED)
             addAction(WifiManager.WIFI_STATE_CHANGED_ACTION)
             addAction(BluetoothAdapter.ACTION_STATE_CHANGED)
+            addAction("android.media.VOLUME_CHANGED_ACTION")
         }
         // Receiver exported for system broadcasts
         ContextCompat.registerReceiver(
@@ -159,18 +203,36 @@ class App : Application(), ActivityLifecycleCallbacks, Configuration.Provider {
             ContextCompat.RECEIVER_EXPORTED
         )
 
+        mContentObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
+            override fun onChange(selfChange: Boolean, uri: Uri?) {
+                val uriPath = uri.toString()
+
+                if (uriPath.contains("mobile_data")) {
+                    WearableWorker.sendActionUpdate(applicationContext, Actions.MOBILEDATA)
+                } else if (uriPath.contains(Settings.System.SCREEN_BRIGHTNESS)) {
+                    WearableWorker.sendValueStatusUpdate(applicationContext, Actions.BRIGHTNESS)
+                }
+            }
+        }
+
+        runCatching {
+            // Register listener for brightness settings
+            contentResolver.registerContentObserver(
+                Settings.System.getUriFor(Settings.System.SCREEN_BRIGHTNESS),
+                false,
+                mContentObserver
+            )
+            contentResolver.registerContentObserver(
+                Settings.System.getUriFor(Settings.System.SCREEN_BRIGHTNESS_MODE),
+                false,
+                mContentObserver
+            )
+        }
+
         runCatching {
             if (applicationContext.packageManager.hasSystemFeature(PackageManager.FEATURE_TELEPHONY)) {
                 // Register listener for mobile data setting (default sim)
                 val setting = Settings.Global.getUriFor("mobile_data")
-                mContentObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
-                    override fun onChange(selfChange: Boolean, uri: Uri?) {
-                        super.onChange(selfChange, uri)
-                        if (uri.toString().contains("mobile_data")) {
-                            WearableWorker.sendActionUpdate(applicationContext, Actions.MOBILEDATA)
-                        }
-                    }
-                }
                 contentResolver.registerContentObserver(setting, false, mContentObserver)
 
                 if (applicationContext.packageManager.hasSystemFeature(PackageManager.FEATURE_TELEPHONY_SUBSCRIPTION)) {

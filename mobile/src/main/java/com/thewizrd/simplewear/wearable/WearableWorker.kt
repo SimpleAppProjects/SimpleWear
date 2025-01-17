@@ -1,6 +1,7 @@
 package com.thewizrd.simplewear.wearable
 
 import android.content.Context
+import android.media.AudioManager
 import android.util.Log
 import androidx.annotation.StringDef
 import androidx.work.CoroutineWorker
@@ -9,6 +10,7 @@ import androidx.work.OneTimeWorkRequest
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.thewizrd.shared_resources.actions.Actions
+import com.thewizrd.shared_resources.actions.AudioStreamType
 import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.shared_resources.utils.stringToBytes
@@ -26,6 +28,8 @@ class WearableWorker(context: Context, workerParams: WorkerParameters) : Corouti
         const val ACTION_SENDACTIONUPDATE = "SimpleWear.Droid.action.SEND_ACTION_UPDATE"
         const val ACTION_SENDTIMEDACTIONSUPDATE = "SimpleWear.Droid.action.SEND_TIMEDACTIONS_UPDATE"
         const val ACTION_REQUESTBTDISCOVERABLE = "SimpleWear.Droid.action.REQUEST_BT_DISCOVERABLE"
+        const val ACTION_SENDAUDIOSTREAMUPDATE = "SimpleWear.Droid.action.SEND_AUDIOSTREAM_UPDATE"
+        const val ACTION_SENDVALUESTATUSUPDATE = "SimpleWear.Droid.action.SEND_VALUESTATUS_UPDATE"
 
         // Extras
         const val EXTRA_STATUS = "SimpleWear.Droid.extra.STATUS"
@@ -72,6 +76,15 @@ class WearableWorker(context: Context, workerParams: WorkerParameters) : Corouti
             )
         }
 
+        fun sendValueStatusUpdate(context: Context, action: Actions) {
+            startWork(
+                context.applicationContext, Data.Builder()
+                    .putString(KEY_ACTION, ACTION_SENDVALUESTATUSUPDATE)
+                    .putInt(EXTRA_ACTION_CHANGED, action.value)
+                    .build()
+            )
+        }
+
         private fun startWork(context: Context, intentAction: String) {
             startWork(context, Data.Builder().putString(KEY_ACTION, intentAction).build())
         }
@@ -87,7 +100,12 @@ class WearableWorker(context: Context, workerParams: WorkerParameters) : Corouti
         }
     }
 
-    @StringDef(ACTION_SENDBATTERYUPDATE, ACTION_SENDWIFIUPDATE, ACTION_SENDBTUPDATE)
+    @StringDef(
+        ACTION_SENDBATTERYUPDATE,
+        ACTION_SENDWIFIUPDATE,
+        ACTION_SENDBTUPDATE,
+        ACTION_SENDAUDIOSTREAMUPDATE
+    )
     @Retention(AnnotationRetention.SOURCE)
     annotation class StatusAction
 
@@ -137,6 +155,27 @@ class WearableWorker(context: Context, workerParams: WorkerParameters) : Corouti
                 }
                 ACTION_SENDTIMEDACTIONSUPDATE -> {
                     mWearMgr.sendTimedActionsStatus(null)
+                }
+                ACTION_SENDAUDIOSTREAMUPDATE -> {
+                    val streamType = when (inputData.getInt(
+                        EXTRA_STATUS,
+                        AudioManager.USE_DEFAULT_STREAM_TYPE
+                    )) {
+                        AudioManager.STREAM_MUSIC -> AudioStreamType.MUSIC
+                        AudioManager.STREAM_RING -> AudioStreamType.RINGTONE
+                        AudioManager.STREAM_VOICE_CALL -> AudioStreamType.VOICE_CALL
+                        AudioManager.STREAM_ALARM -> AudioStreamType.ALARM
+                        else -> null
+                    }
+
+                    if (streamType != null) {
+                        mWearMgr.sendAudioModeStatus(null, streamType)
+                    }
+                }
+
+                ACTION_SENDVALUESTATUSUPDATE -> {
+                    val action = Actions.valueOf(inputData.getInt(EXTRA_ACTION_CHANGED, 0))
+                    mWearMgr.sendValueStatus(null, action)
                 }
             }
         }
