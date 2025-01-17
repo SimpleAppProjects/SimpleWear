@@ -73,12 +73,9 @@ private class ValueActionRepository(private val valueActionViewModel: ValueActio
     }
 
     override fun setVolume(volume: Int) {
-        val currentValue = localValueState.value.current
-
-        if (volume > currentValue) {
-            increaseVolume()
-        } else if (volume < currentValue) {
-            decreaseVolume()
+        localValueState.update {
+            it.copy(current = volume)
         }
+        valueActionViewModel.setValue(volume)
     }
 }

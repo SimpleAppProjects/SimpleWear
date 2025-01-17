@@ -162,6 +162,20 @@ class ValueActionViewModel(app: Application) : WearableListenerViewModel(app) {
         }
     }
 
+    fun setValue(value: Int) {
+        val state = uiState.value
+
+        if (state.action != null) {
+            viewModelScope.launch {
+                if (state.action == Actions.VOLUME) {
+                    requestSetVolume(value)
+                } else {
+                    requestSetValue(value)
+                }
+            }
+        }
+    }
+
     fun requestActionChange() {
         val state = uiState.value
 

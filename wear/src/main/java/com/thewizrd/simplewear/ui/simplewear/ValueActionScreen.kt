@@ -27,7 +27,6 @@ import androidx.wear.compose.material.Chip
 import androidx.wear.compose.material.ChipDefaults
 import androidx.wear.compose.material.Icon
 import androidx.wear.compose.material.MaterialTheme
-import androidx.wear.compose.material.PositionIndicator
 import androidx.wear.compose.material.Scaffold
 import androidx.wear.compose.material.Stepper
 import androidx.wear.compose.material.Text
@@ -35,6 +34,8 @@ import androidx.wear.compose.material.TimeText
 import androidx.wear.compose.material.Vignette
 import androidx.wear.compose.material.VignettePosition
 import androidx.wear.compose.ui.tooling.preview.WearPreviewDevices
+import com.google.android.horologist.audio.ui.VolumePositionIndicator
+import com.google.android.horologist.audio.ui.VolumeUiState
 import com.google.android.horologist.audio.ui.volumeRotaryBehavior
 import com.thewizrd.shared_resources.actions.Action
 import com.thewizrd.shared_resources.actions.ActionStatus
@@ -53,6 +54,7 @@ import com.thewizrd.simplewear.viewmodels.ValueActionViewModel
 import com.thewizrd.simplewear.viewmodels.ValueActionVolumeViewModel
 import com.thewizrd.simplewear.viewmodels.WearableListenerViewModel
 import kotlinx.coroutines.launch
+import kotlin.math.max
 
 @Composable
 fun ValueActionScreen(
@@ -258,6 +260,7 @@ fun ValueActionScreen(
             )
         ),
         uiState = uiState,
+        volumeUiState = progressUiState,
         onValueChanged = { newValue -> volumeViewModel.setVolume(newValue) },
         onActionChange = {
             valueActionViewModel.requestActionChange()
@@ -269,17 +272,22 @@ fun ValueActionScreen(
 fun ValueActionScreen(
     modifier: Modifier = Modifier,
     uiState: ValueActionUiState,
+    volumeUiState: VolumeUiState = VolumeUiState(),
     onValueChanged: (Int) -> Unit = {},
     onActionChange: () -> Unit = {}
 ) {
     Box(modifier = modifier.fillMaxSize())
     Stepper(
-        value = uiState.valueActionState?.currentValue ?: 0,
+        value = volumeUiState.current,
         onValueChange = onValueChanged,
         valueProgression = IntProgression.fromClosedRange(
-            rangeStart = uiState.valueActionState?.minValue ?: 0,
-            rangeEnd = uiState.valueActionState?.maxValue ?: 100,
-            step = 1
+            rangeStart = volumeUiState.min,
+            rangeEnd = volumeUiState.max,
+            step = if (uiState.action == Actions.VOLUME) {
+                1
+            } else {
+                max(1f, (volumeUiState.max - volumeUiState.min) * 0.05f).toInt()
+            }
         ),
         increaseIcon = {
             if (uiState.action == Actions.VOLUME) {
@@ -378,13 +386,8 @@ fun ValueActionScreen(
             onClick = onActionChange
         )
     }
-    PositionIndicator(
-        value = {
-            uiState.valueActionState?.currentValue?.toFloat() ?: 0f
-        },
-        range = (uiState.valueActionState?.minValue?.toFloat()
-            ?: 0f)..(uiState.valueActionState?.maxValue?.toFloat() ?: 1f),
-        color = MaterialTheme.colors.primary
+    VolumePositionIndicator(
+        volumeUiState = { volumeUiState }
     )
 }
 

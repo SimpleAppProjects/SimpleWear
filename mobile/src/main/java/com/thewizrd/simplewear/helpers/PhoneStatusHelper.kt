@@ -55,6 +55,7 @@ import com.thewizrd.simplewear.receivers.PhoneBroadcastReceiver
 import com.thewizrd.simplewear.services.TorchService
 import com.thewizrd.simplewear.services.TorchService.Companion.enqueueWork
 import com.thewizrd.simplewear.services.WearAccessibilityService
+import com.thewizrd.simplewear.utils.BrightnessUtils
 import com.thewizrd.simplewear.utils.hasAssociations
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -699,22 +700,87 @@ object PhoneStatusHelper {
         return Settings.System.canWrite(context)
     }
 
-    fun getBrightnessLevel(context: Context): ValueActionState {
+    @SuppressLint("DiscouragedPrivateApi")
+    private fun getSystemBrightnessLevel(context: Context): ValueActionState {
+        val powerMan = context.getSystemService(Context.POWER_SERVICE) as PowerManager
+
         val contentResolver = context.applicationContext.contentResolver
-        return ValueActionState(
-            Settings.System.getInt(contentResolver, Settings.System.SCREEN_BRIGHTNESS, 0),
-            0, 255, Actions.BRIGHTNESS
-        )
+        val brightnessLevel =
+            Settings.System.getInt(contentResolver, Settings.System.SCREEN_BRIGHTNESS, 0)
+        val brightnessState = ValueActionState(brightnessLevel, 0, 255, Actions.BRIGHTNESS)
+
+        runCatching {
+            val getMaxMethod =
+                powerMan.javaClass.getDeclaredMethod("getMaximumScreenBrightnessSetting")
+            //val getMinMethod = powerMan.javaClass.getDeclaredMethod("getMinimumScreenBrightnessSetting")
+
+            val max = getMaxMethod.invoke(powerMan) as Int
+            //val min = getMinMethod.invoke(powerMan) as Int
+
+            brightnessState.maxValue = max
+            //brightnessState.minValue = min
+        }
+
+        return brightnessState
+    }
+
+    fun getBrightnessLevel(context: Context): ValueActionState {
+        val systemBrightness = getSystemBrightnessLevel(context)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            val gammaValue = BrightnessUtils.convertLinearToGamma(
+                systemBrightness.currentValue,
+                systemBrightness.minValue,
+                systemBrightness.maxValue
+            )
+            return ValueActionState(
+                gammaValue,
+                BrightnessUtils.GAMMA_SPACE_MIN,
+                BrightnessUtils.GAMMA_SPACE_MAX,
+                Actions.BRIGHTNESS
+            )
+        } else {
+            return systemBrightness
+        }
     }
 
     fun setBrightnessLevel(context: Context, value: Int): ActionStatus {
+        if (isWriteSystemSettingsPermissionEnabled(context)) {
+            return try {
+                val brightnessLevel = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    val systemBrightness = getSystemBrightnessLevel(context)
+                    BrightnessUtils.convertGammaToLinear(
+                        value,
+                        systemBrightness.minValue,
+                        systemBrightness.maxValue
+                    )
+                } else {
+                    value
+                }
+
+                val contentResolver = context.applicationContext.contentResolver
+                val retVal = Settings.System.putInt(
+                    contentResolver,
+                    Settings.System.SCREEN_BRIGHTNESS,
+                    brightnessLevel
+                )
+                if (retVal) ActionStatus.SUCCESS else ActionStatus.FAILURE
+            } catch (e: Exception) {
+                Logger.writeLine(Log.ERROR, e)
+                ActionStatus.FAILURE
+            }
+        }
+        return ActionStatus.PERMISSION_DENIED
+    }
+
+    private fun setBrightnessLevel(context: Context, value: Float): ActionStatus {
         if (isWriteSystemSettingsPermissionEnabled(context)) {
             return try {
                 val contentResolver = context.applicationContext.contentResolver
                 val retVal = Settings.System.putInt(
                     contentResolver,
                     Settings.System.SCREEN_BRIGHTNESS,
-                    value
+                    value.roundToInt()
                 )
                 if (retVal) ActionStatus.SUCCESS else ActionStatus.FAILURE
             } catch (e: Exception) {
@@ -735,12 +801,12 @@ object PhoneStatusHelper {
                 // Increase/decrease by 5%
                 val value = when (direction) {
                     ValueDirection.UP -> min(
-                        255,
-                        max(0, (currentBrightness + (255 * 0.05f).roundToInt()))
+                        255f,
+                        max(0f, (currentBrightness + (255 * 0.05f)))
                     )
                     ValueDirection.DOWN -> min(
-                        255,
-                        max(0, (currentBrightness - (255 * 0.05f).roundToInt()))
+                        255f,
+                        max(0f, (currentBrightness - (255 * 0.05f)))
                     )
                 }
 
