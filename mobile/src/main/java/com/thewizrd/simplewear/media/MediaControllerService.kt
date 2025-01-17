@@ -65,6 +65,7 @@ import com.thewizrd.shared_resources.utils.JSONParser
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.shared_resources.utils.bytesToInt
 import com.thewizrd.shared_resources.utils.bytesToString
+import com.thewizrd.shared_resources.utils.sequenceEqual
 import com.thewizrd.shared_resources.utils.stringToBytes
 import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.helpers.PhoneStatusHelper
@@ -558,6 +559,15 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
     private val mCallback = object : MediaControllerCompat.Callback() {
         private var updateJob: Job? = null
 
+        override fun onSessionReady() {
+            sendMediaInfo()
+            sendAppInfo()
+        }
+
+        override fun onSessionDestroyed() {
+            disconnectMedia()
+        }
+
         override fun onPlaybackStateChanged(state: PlaybackStateCompat?) {
             Logger.debug(TAG, "Callback: onPlaybackStateChanged")
             playFromSearchTimer.cancel()
@@ -594,12 +604,14 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
             }
         }
 
-        override fun onAudioInfoChanged(info: MediaControllerCompat.PlaybackInfo?) {
-            scope.launch { sendVolumeStatus() }
+        override fun onQueueChanged(queue: MutableList<MediaSessionCompat.QueueItem>?) {
+            mController?.let {
+                mQueueItemsAdapter.setQueueItems(it, queue)
+            }
         }
 
-        override fun onSessionDestroyed() {
-            disconnectMedia()
+        override fun onAudioInfoChanged(info: MediaControllerCompat.PlaybackInfo?) {
+            scope.launch { sendVolumeStatus() }
         }
 
         private fun onUpdate() {
@@ -1330,14 +1342,16 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
             controller: MediaControllerCompat,
             queueItems: List<MediaSessionCompat.QueueItem>?
         ) {
-            mControls = controller.transportControls
-            mQueueItems = queueItems ?: emptyList()
-            mActiveQueueItemId = runCatching {
-                controller.playbackState?.activeQueueItemId
-            }.onFailure {
-                Logger.writeLine(Log.ERROR, it)
-            }.getOrNull() ?: MediaSessionCompat.QueueItem.UNKNOWN_ID.toLong()
-            onDatasetChanged()
+            if (queueItems == null || !sequenceEqual(mQueueItems, queueItems)) {
+                mControls = controller.transportControls
+                mQueueItems = queueItems ?: emptyList()
+                mActiveQueueItemId = runCatching {
+                    controller.playbackState?.activeQueueItemId
+                }.onFailure {
+                    Logger.writeLine(Log.ERROR, it)
+                }.getOrNull() ?: MediaSessionCompat.QueueItem.UNKNOWN_ID.toLong()
+                onDatasetChanged()
+            }
         }
 
         fun clear() {
