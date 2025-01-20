@@ -29,11 +29,16 @@ import androidx.wear.protolayout.ModifiersBuilders.Clickable
 import androidx.wear.protolayout.ModifiersBuilders.Corner
 import androidx.wear.protolayout.ModifiersBuilders.Modifiers
 import androidx.wear.protolayout.ModifiersBuilders.Padding
+import androidx.wear.protolayout.TypeBuilders.FloatProp
+import androidx.wear.protolayout.expression.DynamicBuilders.DynamicFloat
+import androidx.wear.protolayout.expression.DynamicBuilders.DynamicInstant
 import androidx.wear.protolayout.expression.ProtoLayoutExperimental
 import androidx.wear.protolayout.material.Button
 import androidx.wear.protolayout.material.ButtonColors
+import androidx.wear.protolayout.material.CircularProgressIndicator
 import androidx.wear.protolayout.material.Colors
 import androidx.wear.protolayout.material.CompactChip
+import androidx.wear.protolayout.material.ProgressIndicatorColors
 import androidx.wear.protolayout.material.Text
 import androidx.wear.protolayout.material.Typography
 import androidx.wear.protolayout.material.layouts.MultiSlotLayout
@@ -42,6 +47,7 @@ import com.thewizrd.shared_resources.helpers.WearConnectionStatus
 import com.thewizrd.shared_resources.media.PlaybackState
 import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.wearable.tiles.MediaPlayerTileMessenger.PlayerAction
+import com.thewizrd.simplewear.wearable.tiles.MediaPlayerTileRenderer.Companion.ID_APPICON
 import com.thewizrd.simplewear.wearable.tiles.MediaPlayerTileRenderer.Companion.ID_ARTWORK
 import com.thewizrd.simplewear.wearable.tiles.MediaPlayerTileRenderer.Companion.ID_OPENONPHONE
 import com.thewizrd.simplewear.wearable.tiles.MediaPlayerTileRenderer.Companion.ID_PAUSE
@@ -52,6 +58,7 @@ import com.thewizrd.simplewear.wearable.tiles.MediaPlayerTileRenderer.Companion.
 import com.thewizrd.simplewear.wearable.tiles.MediaPlayerTileRenderer.Companion.ID_VOL_DOWN
 import com.thewizrd.simplewear.wearable.tiles.MediaPlayerTileRenderer.Companion.ID_VOL_UP
 import com.thewizrd.simplewear.wearable.tiles.MediaPlayerTileState
+import java.time.Instant
 
 private val CIRCLE_SIZE = dp(48f)
 private val SMALL_CIRCLE_SIZE = dp(40f)
@@ -153,7 +160,7 @@ internal fun MediaPlayerTileLayout(
                     context,
                     context.getString(R.string.action_play),
                     Clickable.Builder()
-                        .setId(ID_PLAY)
+                        .setId(PlayerAction.PLAY.name)
                         .setOnClick(
                             ActionBuilders.LoadAction.Builder()
                                 .build()
@@ -168,18 +175,14 @@ internal fun MediaPlayerTileLayout(
         return Box.Builder()
             .setWidth(expand())
             .setHeight(expand())
-            .apply {
-                if (state.artwork != null) {
-                    addContent(
-                        Image.Builder()
-                            .setResourceId(ID_ARTWORK)
-                            .setWidth(expand())
-                            .setHeight(expand())
-                            .setContentScaleMode(CONTENT_SCALE_MODE_FIT)
-                            .build()
-                    )
-                }
-            }
+            .addContent(
+                Image.Builder()
+                    .setResourceId(ID_ARTWORK)
+                    .setWidth(expand())
+                    .setHeight(expand())
+                    .setContentScaleMode(CONTENT_SCALE_MODE_FIT)
+                    .build()
+            )
             .addContent(
                 Box.Builder()
                     .setWidth(expand())
@@ -282,13 +285,97 @@ internal fun MediaPlayerTileLayout(
                                     .addSlotContent(
                                         PlayerButton(deviceParameters, PlayerAction.PREVIOUS)
                                     )
-                                    .addSlotContent(
-                                        if (state.playbackState != PlaybackState.PLAYING) {
+                                    .apply {
+                                        val playerButtonContent =
+                                            if (state.playbackState != PlaybackState.PLAYING) {
                                             PlayerButton(deviceParameters, PlayerAction.PLAY)
                                         } else {
                                             PlayerButton(deviceParameters, PlayerAction.PAUSE)
                                         }
-                                    )
+
+                                        addSlotContent(
+                                            if (deviceParameters.supportsDynamicValue() && state.positionState != null) {
+                                                val actualPercent =
+                                                    state.positionState.currentPositionMs.toFloat() / state.positionState.durationMs.toFloat()
+
+                                                Box.Builder()
+                                                    .setWidth(dp(56f))
+                                                    .setHeight(dp(56f))
+                                                    .setHorizontalAlignment(HORIZONTAL_ALIGN_CENTER)
+                                                    .setVerticalAlignment(VERTICAL_ALIGN_CENTER)
+                                                    .addContent(playerButtonContent)
+                                                    .addContent(
+                                                        CircularProgressIndicator.Builder()
+                                                            .setStartAngle(0f)
+                                                            .setEndAngle(360f)
+                                                            .setCircularProgressIndicatorColors(
+                                                                ProgressIndicatorColors(
+                                                                    Colors.DEFAULT.primary,
+                                                                    0x25FFFFFF.toInt()
+                                                                )
+                                                            )
+                                                            .setStrokeWidth(dp(3f))
+                                                            .setOuterMarginApplied(false)
+                                                            .setProgress(
+                                                                FloatProp.Builder(actualPercent)
+                                                                    .apply {
+                                                                        if (state.playbackState == PlaybackState.PLAYING) {
+                                                                            val durationFloat =
+                                                                                state.positionState.durationMs.toFloat() / 1000f
+
+                                                                            val positionFractional =
+                                                                                DynamicInstant.withSecondsPrecision(
+                                                                                    Instant.ofEpochMilli(
+                                                                                        state.positionState.currentTimeMs
+                                                                                    )
+                                                                                ).durationUntil(
+                                                                                    DynamicInstant.platformTimeWithSecondsPrecision()
+                                                                                )
+                                                                                    .toIntSeconds()
+                                                                                    .asFloat()
+                                                                                    .times(state.positionState.playbackSpeed)
+                                                                                    .plus(state.positionState.currentPositionMs.toFloat() / 1000f)
+
+                                                                            val predictedPercent =
+                                                                                DynamicFloat.onCondition(
+                                                                                    positionFractional.gt(
+                                                                                        durationFloat
+                                                                                    )
+                                                                                )
+                                                                                    .use(
+                                                                                        durationFloat
+                                                                                    )
+                                                                                    .elseUse(
+                                                                                        positionFractional
+                                                                                    )
+                                                                                    .div(
+                                                                                        durationFloat
+                                                                                    )
+
+                                                                            setDynamicValue(
+                                                                                DynamicFloat.onCondition(
+                                                                                    predictedPercent.gt(
+                                                                                        0f
+                                                                                    )
+                                                                                )
+                                                                                    .use(
+                                                                                        predictedPercent
+                                                                                    )
+                                                                                    .elseUse(0f)
+                                                                                    .animate()
+                                                                            )
+                                                                        }
+                                                                    }
+                                                                    .build()
+                                                            )
+                                                            .build()
+                                                    )
+                                                    .build()
+                                            } else {
+                                                playerButtonContent
+                                            }
+                                        )
+                                    }
                                     .addSlotContent(
                                         PlayerButton(deviceParameters, PlayerAction.NEXT)
                                     )
@@ -302,11 +389,34 @@ internal fun MediaPlayerTileLayout(
                                     .addContent(
                                         VolumeButton(PlayerAction.VOL_DOWN)
                                     )
-                                    .addContent(
-                                        Spacer.Builder()
-                                            .setWidth(dp(24f))
-                                            .build()
-                                    )
+                                    .apply {
+                                        if (state.appIcon != null) {
+                                            addContent(
+                                                Spacer.Builder()
+                                                    .setWidth(dp(12f))
+                                                    .build()
+                                            )
+                                            addContent(
+                                                Image.Builder()
+                                                    .setResourceId(ID_APPICON)
+                                                    .setWidth(dp(24f))
+                                                    .setHeight(dp(24f))
+                                                    .setContentScaleMode(CONTENT_SCALE_MODE_FIT)
+                                                    .build()
+                                            )
+                                            addContent(
+                                                Spacer.Builder()
+                                                    .setWidth(dp(12f))
+                                                    .build()
+                                            )
+                                        } else {
+                                            addContent(
+                                                Spacer.Builder()
+                                                    .setWidth(dp(24f))
+                                                    .build()
+                                            )
+                                        }
+                                    }
                                     .addContent(
                                         VolumeButton(PlayerAction.VOL_UP)
                                     )
@@ -325,9 +435,10 @@ private fun PlayerButton(
     action: PlayerAction
 ): LayoutElement {
     val isPlayPause = action == PlayerAction.PAUSE || action == PlayerAction.PLAY
+    val size = if (isPlayPause) dp(50f) else dp(52f)
     return Box.Builder()
-        .setHeight(dp(52f))
-        .setWidth(dp(52f))
+        .setHeight(size)
+        .setWidth(size)
         .setModifiers(
             Modifiers.Builder()
                 .setBackground(
@@ -343,7 +454,7 @@ private fun PlayerButton(
                         )
                         .setCorner(
                             Corner.Builder()
-                                .setRadius(dp(52f))
+                                .setRadius(size)
                                 .build()
                         )
                         .build()

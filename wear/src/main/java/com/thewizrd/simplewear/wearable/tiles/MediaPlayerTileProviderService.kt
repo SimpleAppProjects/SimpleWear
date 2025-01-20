@@ -3,6 +3,7 @@ package com.thewizrd.simplewear.wearable.tiles
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.os.SystemClock
 import androidx.lifecycle.lifecycleScope
 import androidx.wear.protolayout.ResourceBuilders
 import androidx.wear.tiles.EventBuilders
@@ -10,22 +11,32 @@ import androidx.wear.tiles.RequestBuilders
 import androidx.wear.tiles.TileBuilders
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
 import com.google.android.horologist.tiles.SuspendingTileService
+import com.thewizrd.shared_resources.appLib
 import com.thewizrd.shared_resources.utils.AnalyticsLogger
+import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.simplewear.PhoneSyncActivity
-import com.thewizrd.simplewear.wearable.tiles.MediaPlayerTileMessenger.Companion.tileModel
+import com.thewizrd.simplewear.datastore.media.appInfoDataStore
+import com.thewizrd.simplewear.datastore.media.artworkDataStore
+import com.thewizrd.simplewear.datastore.media.mediaDataStore
 import com.thewizrd.simplewear.wearable.tiles.MediaPlayerTileMessenger.PlayerAction
 import com.thewizrd.simplewear.wearable.tiles.MediaPlayerTileRenderer.Companion.ID_OPENONPHONE
 import com.thewizrd.simplewear.wearable.tiles.MediaPlayerTileRenderer.Companion.ID_PHONEDISCONNECTED
-import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.withTimeoutOrNull
-import timber.log.Timber
+import java.time.Duration
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.coroutines.coroutineContext
 
 @OptIn(ExperimentalHorologistApi::class)
@@ -34,34 +45,70 @@ class MediaPlayerTileProviderService : SuspendingTileService() {
         private const val TAG = "MediaPlayerTileProviderService"
 
         fun requestTileUpdate(context: Context) {
-            Timber.tag(TAG).d("$TAG: requesting tile update")
-            getUpdater(context).requestUpdate(MediaPlayerTileProviderService::class.java)
+            updateJob?.cancel()
+
+            // Defer update to prevent spam
+            updateJob = appLib.appScope.launch {
+                delay(1000)
+                if (isActive) {
+                    Logger.debug(TAG, "requesting tile update")
+                    getUpdater(context).requestUpdate(MediaPlayerTileProviderService::class.java)
+                }
+            }
         }
 
+        @JvmStatic
+        @Volatile
         var isInFocus: Boolean = false
             private set
+
+        @JvmStatic
+        @Volatile
+        var isUpdating: Boolean = false
+            private set
+
+        private var updateJob: Job? = null
     }
 
-    private val tileMessenger = MediaPlayerTileMessenger(this)
+    private lateinit var tileMessenger: MediaPlayerTileMessenger
     private lateinit var tileStateFlow: StateFlow<MediaPlayerTileState?>
-
-    private var isUpdating = false
+    private lateinit var tileRenderer: MediaPlayerTileRenderer
 
     override fun onCreate() {
         super.onCreate()
-        Timber.tag(TAG).d("creating service...")
+        Logger.debug(TAG, "creating service...")
+
+        tileMessenger = MediaPlayerTileMessenger(this)
+        tileRenderer = MediaPlayerTileRenderer(this)
 
         tileMessenger.register()
-        tileStateFlow = tileModel.tileState
+        tileStateFlow = combine(
+            this.mediaDataStore.data,
+            this.artworkDataStore.data,
+            this.appInfoDataStore.data,
+            tileMessenger.connectionState
+        ) { mediaCache, artwork, appInfo, connectionStatus ->
+            MediaPlayerTileState(
+                connectionStatus = connectionStatus,
+                title = mediaCache.mediaPlayerState?.mediaMetaData?.title,
+                artist = mediaCache.mediaPlayerState?.mediaMetaData?.artist,
+                artwork = artwork,
+                playbackState = mediaCache.mediaPlayerState?.playbackState,
+                positionState = mediaCache.mediaPlayerState?.mediaMetaData?.positionState,
+                audioStreamState = mediaCache.audioStreamState,
+                appIcon = appInfo.iconBitmap
+            )
+        }
             .stateIn(
                 lifecycleScope,
                 started = SharingStarted.WhileSubscribed(2000),
-                null
+                initialValue = null
             )
     }
 
     override fun onDestroy() {
-        Timber.tag(TAG).d("destroying service...")
+        isUpdating = false
+        Logger.debug(TAG, "destroying service...")
         tileMessenger.unregister()
         super.onDestroy()
     }
@@ -69,17 +116,18 @@ class MediaPlayerTileProviderService : SuspendingTileService() {
     override fun onTileEnterEvent(requestParams: EventBuilders.TileEnterEvent) {
         super.onTileEnterEvent(requestParams)
 
-        Timber.tag(TAG).d("$TAG: onTileEnterEvent called with: tileId = ${requestParams.tileId}")
+        Logger.debug(TAG, "onTileEnterEvent called with: tileId = ${requestParams.tileId}")
         AnalyticsLogger.logEvent("on_tile_enter", Bundle().apply {
             putString("tile", TAG)
         })
         isInFocus = true
 
-        lifecycleScope.launch {
+        appLib.appScope.launch {
             tileMessenger.checkConnectionStatus()
             tileMessenger.requestPlayerConnect()
             tileMessenger.requestVolumeStatus()
-            tileMessenger.updatePlayerStateAsync()
+            tileMessenger.requestUpdatePlayerState()
+            tileMessenger.requestPlayerAppInfo()
         }.invokeOnCompletion {
             if (it is CancellationException || !isUpdating) {
                 // If update timed out
@@ -90,18 +138,17 @@ class MediaPlayerTileProviderService : SuspendingTileService() {
 
     override fun onTileLeaveEvent(requestParams: EventBuilders.TileLeaveEvent) {
         super.onTileLeaveEvent(requestParams)
-        Timber.tag(TAG).d("$TAG: onTileLeaveEvent called with: tileId = ${requestParams.tileId}")
+        Logger.debug(TAG, "onTileLeaveEvent called with: tileId = ${requestParams.tileId}")
         isInFocus = false
 
-        lifecycleScope.launch {
+        appLib.appScope.launch {
             tileMessenger.requestPlayerDisconnect()
         }
     }
 
-    private val tileRenderer = MediaPlayerTileRenderer(this)
-
     override suspend fun tileRequest(requestParams: RequestBuilders.TileRequest): TileBuilders.Tile {
-        Timber.tag(TAG).d("tileRequest: ${requestParams.currentState}")
+        Logger.debug(TAG, "tileRequest: ${requestParams.currentState}")
+        val startTime = SystemClock.elapsedRealtimeNanos()
         isUpdating = true
 
         tileMessenger.checkConnectionStatus()
@@ -114,25 +161,42 @@ class MediaPlayerTileProviderService : SuspendingTileService() {
             } else {
                 // Process action
                 runCatching {
-                    Timber.tag(TAG)
-                        .d("lastClickableId = ${requestParams.currentState.lastClickableId}")
+                    Logger.debug(
+                        TAG,
+                        "lastClickableId = ${requestParams.currentState.lastClickableId}"
+                    )
                     val action = PlayerAction.valueOf(requestParams.currentState.lastClickableId)
+
+                    val state = latestTileState()
+
                     withTimeoutOrNull(5000) {
                         val ret = tileMessenger.requestPlayerActionAsync(action)
-                        Timber.tag(TAG).d("requestPlayerActionAsync = $ret")
-                        tileMessenger.updatePlayerStateAsync()
+                        Logger.debug(TAG, "requestPlayerActionAsync = $ret")
+                    }
+
+                    // Try to await for full metadata change
+                    withTimeoutOrNull(5000) {
+                        supervisorScope {
+                            var songChanged = false
+                            tileStateFlow.collectLatest { newState ->
+                                if (!songChanged && newState?.title != state.title && newState?.artist != state.artist) {
+                                    // new song; wait for artwork
+                                    songChanged = true
+                                } else if (songChanged && !newState?.artwork.contentEquals(state.artwork)) {
+                                    coroutineContext.cancel()
+                                } else if (newState?.playbackState != state.playbackState) {
+                                    // only playstate change
+                                    coroutineContext.cancel()
+                                }
+                            }
+                        }
                     }
                 }
             }
-        } else {
-            withTimeoutOrNull(5000) {
-                tileMessenger.updatePlayerStateAsync()
-            }
         }
 
-        val tileState = tileModel.tileState.value
-        Timber.tag(TAG).d("State: ${tileState.title} - ${tileState.artist}")
         isUpdating = false
+        val tileState = latestTileState()
 
         if (tileState.isEmpty) {
             AnalyticsLogger.logEvent("mediatile_state_empty", Bundle().apply {
@@ -140,11 +204,42 @@ class MediaPlayerTileProviderService : SuspendingTileService() {
             })
         }
 
+        val endTime = SystemClock.elapsedRealtimeNanos()
+        Logger.debug(TAG, "Current State - ${tileState.title}:${tileState.artist}")
+        Logger.debug(TAG, "Duration - ${Duration.ofNanos(endTime - startTime)}")
+        Logger.debug(TAG, "Rendering timeline...")
         return tileRenderer.renderTimeline(tileState, requestParams)
     }
 
     private suspend fun latestTileState(): MediaPlayerTileState {
-        return tileStateFlow.filterNotNull().first()
+        var tileState = tileStateFlow.filterNotNull().first()
+
+        if (tileState.isEmpty) {
+            Logger.debug(TAG, "No tile state available. loading from remote...")
+            tileMessenger.updatePlayerStateFromRemote()
+
+            // Try to await for full metadata change
+            runCatching {
+                withTimeoutOrNull(5000) {
+                    supervisorScope {
+                        var songChanged = false
+
+                        tileStateFlow.filterNotNull().collectLatest { newState ->
+                            if (!songChanged && newState.title != tileState.title && newState.artist != tileState.artist) {
+                                // new song; wait for artwork
+                                tileState = newState
+                                songChanged = true
+                            } else if (songChanged && !newState.artwork.contentEquals(tileState.artwork)) {
+                                tileState = newState
+                                coroutineContext.cancel()
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return tileState
     }
 
     override suspend fun resourcesRequest(requestParams: RequestBuilders.ResourcesRequest): ResourceBuilders.Resources {

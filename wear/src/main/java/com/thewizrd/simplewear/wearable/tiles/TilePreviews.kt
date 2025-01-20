@@ -20,7 +20,9 @@ import com.thewizrd.shared_resources.actions.RingerChoice
 import com.thewizrd.shared_resources.actions.ToggleAction
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
 import com.thewizrd.shared_resources.media.PlaybackState
+import com.thewizrd.shared_resources.utils.ImageUtils.toByteArray
 import com.thewizrd.simplewear.R
+import kotlinx.coroutines.runBlocking
 
 @OptIn(ExperimentalHorologistApi::class)
 @WearPreviewDevices
@@ -159,7 +161,15 @@ fun MediaPlayerTilePreview() {
             artist = "Artist",
             playbackState = PlaybackState.PAUSED,
             audioStreamState = AudioStreamState(3, 0, 5, AudioStreamType.MUSIC),
-            artwork = ContextCompat.getDrawable(context, R.drawable.ws_full_sad)?.toBitmapOrNull()
+            artwork = runBlocking {
+                ContextCompat.getDrawable(context, R.drawable.ws_full_sad)?.toBitmapOrNull()
+                    ?.toByteArray()
+            },
+            appIcon = runBlocking {
+                ContextCompat.getDrawable(context, R.drawable.ic_play_circle_simpleblue)
+                    ?.toBitmapOrNull()
+                    ?.toByteArray()
+            }
         )
     }
     val renderer = remember {
@@ -211,7 +221,12 @@ fun MediaPlayerNotPlayingTilePreview() {
             artist = null,
             playbackState = PlaybackState.NONE,
             audioStreamState = AudioStreamState(3, 0, 5, AudioStreamType.MUSIC),
-            artwork = null
+            artwork = null,
+            appIcon = runBlocking {
+                ContextCompat.getDrawable(context, R.drawable.ic_play_circle_simpleblue)
+                    ?.toBitmapOrNull()
+                    ?.toByteArray()
+            }
         )
     }
     val renderer = remember {

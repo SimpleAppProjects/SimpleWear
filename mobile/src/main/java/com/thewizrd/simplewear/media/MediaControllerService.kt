@@ -1,5 +1,6 @@
 package com.thewizrd.simplewear.media
 
+import android.annotation.SuppressLint
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -634,6 +635,7 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
         }
     }
 
+    @SuppressLint("RestrictedApi")
     private fun sendMediaInfo() {
         if (mController == null) {
             Logger.error(TAG, "Failed to update media info, null MediaController.")
@@ -659,9 +661,9 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
                 val durationMs = mediaMetadata.getLong(MediaMetadataCompat.METADATA_KEY_DURATION)
                 if (durationMs > 0) {
                     PositionState(
-                        durationMs,
-                        it.playbackState?.position ?: 0,
-                        it.playbackState?.playbackSpeed ?: 1f
+                        durationMs = durationMs,
+                        currentPositionMs = it.playbackState?.getCurrentPosition(null) ?: 0,
+                        playbackSpeed = it.playbackState?.playbackSpeed ?: 1f
                     )
                 } else {
                     null

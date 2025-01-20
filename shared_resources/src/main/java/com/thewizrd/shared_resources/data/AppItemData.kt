@@ -9,6 +9,7 @@ data class AppItemData(
     @SerializedName(WearableHelper.KEY_ACTIVITYNAME) val activityName: String?,
     @SerializedName(WearableHelper.KEY_ICON) val iconBitmap: ByteArray?
 ) {
+    val key = "${packageName}|${activityName}"
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

@@ -24,6 +24,7 @@ buildscript {
         coresplash_version = '1.0.1'
         work_version = '2.10.0'
         navigation_version = '2.8.5'
+        datastore_version = '1.1.2'
 
         test_core_version = '1.6.1'
         test_runner_version = '1.6.2'

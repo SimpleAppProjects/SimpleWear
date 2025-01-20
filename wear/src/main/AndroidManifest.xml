@@ -139,6 +139,27 @@
                     android:host="*"
                     android:scheme="wear"
                     android:path="/media/playback_state/bridge" />
+
+                <data
+                    android:host="*"
+                    android:scheme="wear"
+                    android:path="/status/audio" />
+                <data
+                    android:host="*"
+                    android:scheme="wear"
+                    android:path="/media/volume/status" />
+                <data
+                    android:host="*"
+                    android:scheme="wear"
+                    android:path="/media/playback_state" />
+                <data
+                    android:host="*"
+                    android:scheme="wear"
+                    android:path="/media/playback_state/art" />
+                <data
+                    android:host="*"
+                    android:scheme="wear"
+                    android:path="/media/app/info" />
             </intent-filter>
         </service>
 

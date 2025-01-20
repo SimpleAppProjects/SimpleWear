@@ -30,11 +30,15 @@ import com.google.android.gms.wearable.Node
 import com.google.android.gms.wearable.Wearable
 import com.google.android.gms.wearable.WearableListenerService
 import com.thewizrd.shared_resources.actions.Actions
+import com.thewizrd.shared_resources.actions.AudioStreamState
 import com.thewizrd.shared_resources.appLib
+import com.thewizrd.shared_resources.data.AppItemData
 import com.thewizrd.shared_resources.helpers.InCallUIHelper
 import com.thewizrd.shared_resources.helpers.MediaHelper
 import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.shared_resources.media.MediaMetaData
+import com.thewizrd.shared_resources.media.MediaPlayerState
+import com.thewizrd.shared_resources.media.PlaybackState
 import com.thewizrd.shared_resources.utils.JSONParser
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.shared_resources.utils.bytesToBool
@@ -43,11 +47,16 @@ import com.thewizrd.shared_resources.utils.stringToBytes
 import com.thewizrd.simplewear.DashboardActivity
 import com.thewizrd.simplewear.PhoneSyncActivity
 import com.thewizrd.simplewear.R
+import com.thewizrd.simplewear.datastore.media.appInfoDataStore
+import com.thewizrd.simplewear.datastore.media.artworkDataStore
+import com.thewizrd.simplewear.datastore.media.mediaDataStore
 import com.thewizrd.simplewear.media.MediaPlayerActivity
 import com.thewizrd.simplewear.preferences.Settings
 import com.thewizrd.simplewear.viewmodels.WearableListenerViewModel
+import com.thewizrd.simplewear.wearable.tiles.MediaPlayerTileProviderService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.tasks.await
@@ -67,11 +76,13 @@ class WearableDataListenerService : WearableListenerService() {
     private var mPhoneNodeWithApp: Node? = null
 
     private lateinit var mNotificationManager: NotificationManager
+    private var mLegacyTilesEnabled: Boolean = false
 
     override fun onCreate() {
         super.onCreate()
 
         mNotificationManager = getSystemService(NotificationManager::class.java)
+        mLegacyTilesEnabled = resources.getBoolean(R.bool.enable_unofficial_tiles)
     }
 
     override fun onMessageReceived(messageEvent: MessageEvent) {
@@ -113,6 +124,100 @@ class WearableDataListenerService : WearableListenerService() {
                     createCallOngoingActivity()
                 } else {
                     dismissCallOngoingActivity()
+                }
+            }
+
+            WearableHelper.AudioStatusPath,
+            MediaHelper.MediaVolumeStatusPath -> {
+                val status = messageEvent.data?.let {
+                    JSONParser.deserializer(
+                        it.bytesToString(),
+                        AudioStreamState::class.java
+                    )
+                }
+
+                appLib.appScope.launch {
+                    runCatching {
+                        Logger.debug(TAG, "saving audio state...")
+                        applicationContext.mediaDataStore.updateData { cache ->
+                            cache.copy(audioStreamState = status)
+                        }
+                    }.onFailure {
+                        Logger.error(TAG, it)
+                    }
+                }
+            }
+
+            MediaHelper.MediaPlayerStatePath -> {
+                val playerState = messageEvent.data?.let {
+                    JSONParser.deserializer(it.bytesToString(), MediaPlayerState::class.java)
+                }
+
+                appLib.appScope.launch {
+                    runCatching {
+                        val mediaDataStore = appLib.context.mediaDataStore
+                        val currentState = mediaDataStore.data.firstOrNull()
+
+                        Logger.debug(TAG, "saving media state - ${playerState?.key}...")
+                        mediaDataStore.updateData { cache ->
+                            cache.copy(mediaPlayerState = playerState)
+                        }
+
+                        if (mLegacyTilesEnabled && (playerState?.key != currentState?.mediaPlayerState?.key || (playerState?.playbackState == PlaybackState.PLAYING && playerState.mediaMetaData?.positionState != currentState?.mediaPlayerState?.mediaMetaData?.positionState))) {
+                            MediaPlayerTileProviderService.requestTileUpdate(appLib.context)
+                        }
+                    }.onFailure {
+                        Logger.error(TAG, it)
+                    }
+                }
+            }
+
+            MediaHelper.MediaPlayerArtPath -> {
+                val artworkBytes = messageEvent.data
+
+                appLib.appScope.launch {
+                    runCatching {
+                        val artworkCache = appLib.context.artworkDataStore
+                        val currentState = artworkCache.data.firstOrNull()
+
+                        Logger.debug(TAG, "saving art - ${artworkBytes.size}bytes...")
+                        artworkCache.updateData { artworkBytes }
+
+                        if (mLegacyTilesEnabled && !artworkBytes.contentEquals(currentState)) {
+                            MediaPlayerTileProviderService.requestTileUpdate(appLib.context)
+                        }
+                    }.onFailure {
+                        Logger.error(TAG, it)
+                    }
+                }
+            }
+
+            MediaHelper.MediaPlayerAppInfoPath -> {
+                val appInfo = messageEvent.data?.let {
+                    JSONParser.deserializer(it.bytesToString(), AppItemData::class.java)
+                }
+
+                appLib.appScope.launch {
+                    runCatching {
+                        val appInfoDataStore = appLib.context.appInfoDataStore
+                        val currentState = appInfoDataStore.data.firstOrNull()
+
+                        Logger.debug(TAG, "saving app info - ${appInfo?.label}...")
+                        appInfoDataStore.updateData { cache ->
+                            cache.copy(
+                                label = appInfo?.label,
+                                packageName = appInfo?.packageName,
+                                activityName = appInfo?.activityName,
+                                iconBitmap = appInfo?.iconBitmap
+                            )
+                        }
+
+                        if (mLegacyTilesEnabled && appInfo?.key != currentState?.key) {
+                            MediaPlayerTileProviderService.requestTileUpdate(appLib.context)
+                        }
+                    }.onFailure {
+                        Logger.error(TAG, it)
+                    }
                 }
             }
         }
