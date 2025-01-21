@@ -58,6 +58,7 @@ import com.thewizrd.simplewear.datastore.media.mediaDataStore
 import com.thewizrd.simplewear.media.MediaPlayerActivity
 import com.thewizrd.simplewear.preferences.Settings
 import com.thewizrd.simplewear.viewmodels.WearableListenerViewModel
+import com.thewizrd.simplewear.wearable.complications.BatteryStatusComplicationService
 import com.thewizrd.simplewear.wearable.tiles.DashboardTileProviderService
 import com.thewizrd.simplewear.wearable.tiles.MediaPlayerTileProviderService
 import kotlinx.coroutines.Dispatchers
@@ -323,8 +324,13 @@ class WearableDataListenerService : WearableListenerService() {
                             cache.copy(batteryStatus = status)
                         }
 
-                        if (!mLegacyTilesEnabled && currentState?.batteryStatus != status) {
-                            DashboardTileProviderService.requestTileUpdate(appLib.context)
+                        if (currentState?.batteryStatus != status) {
+                            BatteryStatusComplicationService.requestComplicationUpdate(
+                                applicationContext
+                            )
+                            if (!mLegacyTilesEnabled) {
+                                DashboardTileProviderService.requestTileUpdate(appLib.context)
+                            }
                         }
                     }
                 }

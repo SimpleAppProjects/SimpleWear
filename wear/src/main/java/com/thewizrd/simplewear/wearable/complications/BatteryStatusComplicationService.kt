@@ -2,6 +2,7 @@ package com.thewizrd.simplewear.wearable.complications
 
 import android.app.PendingIntent
 import android.content.ComponentName
+import android.content.Context
 import android.content.Intent
 import android.graphics.drawable.Icon
 import androidx.wear.watchface.complications.data.ComplicationData
@@ -15,19 +16,53 @@ import androidx.wear.watchface.complications.data.ShortTextComplicationData
 import androidx.wear.watchface.complications.datasource.ComplicationDataSourceUpdateRequester
 import androidx.wear.watchface.complications.datasource.ComplicationRequest
 import androidx.wear.watchface.complications.datasource.SuspendingComplicationDataSourceService
+import com.thewizrd.shared_resources.actions.BatteryStatus
+import com.thewizrd.shared_resources.appLib
+import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.simplewear.DashboardActivity
 import com.thewizrd.simplewear.R
+import com.thewizrd.simplewear.datastore.dashboard.dashboardDataStore
 import com.thewizrd.simplewear.utils.asLauncherIntent
 import com.thewizrd.simplewear.wearable.tiles.DashboardTileMessenger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 
 class BatteryStatusComplicationService : SuspendingComplicationDataSourceService() {
     companion object {
         private const val TAG = "BatteryStatusComplicationService"
+
+        fun requestComplicationUpdate(context: Context, complicationInstanceId: Int? = null) {
+            updateJob?.cancel()
+
+            updateJob = appLib.appScope.launch {
+                delay(1000)
+                if (isActive) {
+                    Logger.debug(TAG, "requesting complication update")
+
+                    ComplicationDataSourceUpdateRequester.create(
+                        context,
+                        ComponentName(context, this::class.java)
+                    ).run {
+                        if (complicationInstanceId != null) {
+                            requestUpdate(complicationInstanceId)
+                        } else {
+                            requestUpdateAll()
+                        }
+                    }
+                }
+            }
+        }
+
+        private var updateJob: Job? = null
     }
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -47,13 +82,7 @@ class BatteryStatusComplicationService : SuspendingComplicationDataSourceService
 
     override fun onComplicationActivated(complicationInstanceId: Int, type: ComplicationType) {
         super.onComplicationActivated(complicationInstanceId, type)
-
-        ComplicationDataSourceUpdateRequester.create(
-            applicationContext,
-            ComponentName(applicationContext, this::class.java)
-        ).run {
-            requestUpdate(complicationInstanceId)
-        }
+        requestComplicationUpdate(applicationContext, complicationInstanceId)
     }
 
     override suspend fun onComplicationRequest(request: ComplicationRequest): ComplicationData {
@@ -62,8 +91,7 @@ class BatteryStatusComplicationService : SuspendingComplicationDataSourceService
         }
 
         return scope.async {
-            val batteryStatus = tileMessenger.requestBatteryStatusAsync()
-                ?: return@async NoDataComplicationData()
+            val batteryStatus = latestStatus() ?: return@async NoDataComplicationData()
 
             val batteryLvl = batteryStatus.batteryLevel
             val statusText = if (batteryStatus.isCharging) {
@@ -196,5 +224,16 @@ class BatteryStatusComplicationService : SuspendingComplicationDataSourceService
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
         }
+    }
+
+    private suspend fun latestStatus(): BatteryStatus? {
+        var status = this.dashboardDataStore.data.map { it.batteryStatus }.firstOrNull()
+
+        if (status == null) {
+            Logger.debug(TAG, "No battery status available. loading from remote...")
+            status = tileMessenger.requestBatteryStatusAsync()
+        }
+
+        return status
     }
 }

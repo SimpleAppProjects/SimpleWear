@@ -252,7 +252,7 @@
         </service>
 
         <service
-            android:icon="@drawable/ic_smartphone_white_24dp"
+            android:icon="@drawable/ic_charging_station_24dp"
             android:label="@string/pref_title_phone_batt_state"
             android:permission="com.google.android.wearable.permission.BIND_COMPLICATION_PROVIDER"
             android:name=".wearable.complications.BatteryStatusComplicationService"
