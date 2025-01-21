@@ -24,7 +24,7 @@ object WearableHelper {
     // Link to Play Store listing
     private const val PLAY_STORE_APP_URI = "market://details?id=com.thewizrd.simplewear"
 
-    private const val VERSION_CODE: Long = 341915030
+    private const val SUPPORTED_VERSION_CODE: Long = 341916000
 
     fun getPlayStoreURI(): Uri = Uri.parse(PLAY_STORE_APP_URI)
 
@@ -160,7 +160,7 @@ object WearableHelper {
         ParcelUuid.fromString("0000DA28-0000-1000-8000-00805F9B34FB")
 
     fun isAppUpToDate(versionCode: Long): Boolean {
-        return versionCode >= VERSION_CODE
+        return versionCode >= SUPPORTED_VERSION_CODE
     }
 
     fun getAppVersionCode(): Long = try {
