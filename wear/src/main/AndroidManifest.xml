@@ -140,6 +140,7 @@
                     android:scheme="wear"
                     android:path="/media/playback_state/bridge" />
 
+                <!-- Media Tile -->
                 <data
                     android:host="*"
                     android:scheme="wear"
@@ -160,6 +161,20 @@
                     android:host="*"
                     android:scheme="wear"
                     android:path="/media/app/info" />
+
+                <!-- Dashboard Tile -->
+                <data
+                    android:host="*"
+                    android:scheme="wear"
+                    android:path="/status/wifi" />
+                <data
+                    android:host="*"
+                    android:scheme="wear"
+                    android:path="/status/battery" />
+                <data
+                    android:host="*"
+                    android:scheme="wear"
+                    android:path="/actions" />
             </intent-filter>
         </service>
 

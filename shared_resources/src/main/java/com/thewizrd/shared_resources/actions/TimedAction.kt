@@ -19,4 +19,22 @@ class TimedAction(var timeInMillis: Long, val action: Action) : Action(Actions.T
             }
         }
     }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is TimedAction) return false
+        if (!super.equals(other)) return false
+
+        if (timeInMillis != other.timeInMillis) return false
+        if (action != other.action) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = super.hashCode()
+        result = 31 * result + timeInMillis.hashCode()
+        result = 31 * result + action.hashCode()
+        return result
+    }
 }

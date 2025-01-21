@@ -21,18 +21,15 @@ import androidx.wear.protolayout.material.Typography
 import androidx.wear.protolayout.material.layouts.PrimaryLayout
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
 import com.google.android.horologist.tiles.images.drawableResToImageResource
-import com.google.android.horologist.tiles.render.SingleTileLayoutRenderer
-import com.thewizrd.shared_resources.actions.Actions
+import com.google.android.horologist.tiles.render.SingleTileLayoutRendererWithState
+import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.simplewear.PhoneSyncActivity
 import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.wearable.tiles.layouts.DashboardTileLayout
-import com.thewizrd.simplewear.wearable.tiles.layouts.isActionEnabled
-import timber.log.Timber
-import kotlin.time.Duration.Companion.minutes
 
 @OptIn(ExperimentalHorologistApi::class)
 class DashboardTileRenderer(context: Context, debugResourceMode: Boolean = false) :
-    SingleTileLayoutRenderer<DashboardTileState, Unit>(context, debugResourceMode) {
+    SingleTileLayoutRendererWithState<DashboardTileState, Unit>(context, debugResourceMode) {
     companion object {
         // Resource identifiers for images
         internal const val ID_OPENONPHONE = "open_on_phone"
@@ -67,36 +64,16 @@ class DashboardTileRenderer(context: Context, debugResourceMode: Boolean = false
         internal const val ID_BUTTON_DISABLED = "round_button_disabled"
     }
 
-    private var state: DashboardTileState? = null
-
-    override val freshnessIntervalMillis: Long
-        get() = if (DashboardTileProviderService.isInFocus) {
-            1.minutes.inWholeMilliseconds
-        } else {
-            5.minutes.inWholeMilliseconds
-        }
-
-    override fun createState(): StateBuilders.State {
+    override fun createState(state: DashboardTileState): StateBuilders.State {
         return StateBuilders.State.Builder()
             .apply {
-                state?.let {
-                    it.actions.forEach { (actionType, _) ->
-                        addKeyToValueMapping(
-                            AppDataKey(actionType.name),
-                            DynamicDataBuilders.DynamicDataValue.fromBool(
-                                it.isActionEnabled(
-                                    actionType
-                                )
-                            )
+                state.actions.forEach { (actionType, _) ->
+                    addKeyToValueMapping(
+                        AppDataKey(actionType.name),
+                        DynamicDataBuilders.DynamicDataValue.fromBool(
+                            state.isActionEnabled(actionType)
                         )
-                    }
-                } ?: run {
-                    Actions.entries.forEach {
-                        addKeyToValueMapping(
-                            AppDataKey(it.name),
-                            DynamicDataBuilders.DynamicDataValue.fromBool(true)
-                        )
-                    }
+                    )
                 }
             }
             .build()
@@ -106,8 +83,6 @@ class DashboardTileRenderer(context: Context, debugResourceMode: Boolean = false
         state: DashboardTileState,
         deviceParameters: DeviceParametersBuilders.DeviceParameters
     ): LayoutElementBuilders.LayoutElement {
-        this.state = state
-
         return Box.Builder()
             .setWidth(expand())
             .setHeight(expand())
@@ -163,7 +138,7 @@ class DashboardTileRenderer(context: Context, debugResourceMode: Boolean = false
         deviceParameters: DeviceParametersBuilders.DeviceParameters,
         resourceIds: List<String>
     ) {
-        Timber.tag(this::class.java.name).d("produceRequestedResources")
+        Logger.debug(this::class.java.name, "produceRequestedResources: resIds = $resourceIds")
 
         val resources = mapOf(
             ID_OPENONPHONE to R.drawable.common_full_open_on_phone,
@@ -202,8 +177,6 @@ class DashboardTileRenderer(context: Context, debugResourceMode: Boolean = false
             ID_BUTTON_ENABLED to R.drawable.round_button_enabled,
             ID_BUTTON_DISABLED to R.drawable.round_button_disabled
         )
-
-        Timber.tag(this::class.java.name).e("res - resIds = $resourceIds")
 
         (resourceIds.takeIf { it.isNotEmpty() } ?: resources.keys).forEach { key ->
             resources[key]?.let { resId ->

@@ -34,6 +34,7 @@
 
 # Application classes that will be serialized/deserialized over Gson
 -keep class com.thewizrd.simplewear.datastore.media.MediaDataCache { *; }
+-keep class com.thewizrd.simplewear.datastore.dashboard.DashboardDataCache { *; }
 
 # Prevent proguard from stripping interface information from TypeAdapter, TypeAdapterFactory,
 # JsonSerializer, JsonDeserializer instances (so they can be used in @JsonAdapter)
