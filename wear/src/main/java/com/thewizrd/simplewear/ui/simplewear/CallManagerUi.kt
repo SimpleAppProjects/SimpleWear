@@ -12,9 +12,11 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.FlowRowOverflow
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -399,6 +401,7 @@ private fun NoCallActiveScreen() {
 
 @OptIn(ExperimentalLayoutApi::class)
 @WearPreviewDevices
+@WearPreviewFontScales
 @Composable
 private fun KeypadScreen(
     onKeyPressed: (Char) -> Unit = {}
@@ -442,36 +445,38 @@ private fun KeypadScreen(
                 overflow = TextOverflow.Visible
             )
         }
-        FlowRow(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f, fill = true)
-                .padding(
-                    start = if (isRound) 32.dp else 8.dp,
-                    end = if (isRound) 32.dp else 8.dp,
-                    bottom = if (isRound) 32.dp else 8.dp
-                ),
-            maxItemsInEachRow = 3,
-            horizontalArrangement = Arrangement.Center,
-            verticalArrangement = Arrangement.Center
-        ) {
-            digits.forEach {
-                Box(
-                    modifier = Modifier
-                        .weight(1f, fill = true)
-                        .fillMaxHeight(1f / 4f)
-                        .clickable {
-                            keypadText += it
-                            onKeyPressed.invoke(it)
-                        },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = it + "",
-                        maxLines = 1,
-                        textAlign = TextAlign.Center,
-                        fontSize = 16.sp
-                    )
+        BoxWithConstraints {
+            FlowRow(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(
+                        start = if (isRound) 32.dp else 8.dp,
+                        end = if (isRound) 32.dp else 8.dp,
+                        bottom = if (isRound) 32.dp else 8.dp
+                    ),
+                maxItemsInEachRow = 3,
+                horizontalArrangement = Arrangement.Center,
+                verticalArrangement = Arrangement.Center,
+                overflow = FlowRowOverflow.Visible
+            ) {
+                digits.forEach {
+                    Box(
+                        modifier = Modifier
+                            .weight(1f, fill = true)
+                            .height((this@BoxWithConstraints.maxHeight - if (isRound) 32.dp else 8.dp) / 4)
+                            .clickable {
+                                keypadText += it
+                                onKeyPressed.invoke(it)
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = it + "",
+                            maxLines = 1,
+                            textAlign = TextAlign.Center,
+                            fontSize = 16.sp
+                        )
+                    }
                 }
             }
         }
