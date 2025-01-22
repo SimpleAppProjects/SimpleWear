@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Color
 import androidx.annotation.OptIn
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.toBitmapOrNull
 import androidx.wear.protolayout.ActionBuilders
 import androidx.wear.protolayout.ColorBuilders
 import androidx.wear.protolayout.ColorBuilders.ColorProp
@@ -43,10 +44,16 @@ import androidx.wear.protolayout.material.Text
 import androidx.wear.protolayout.material.Typography
 import androidx.wear.protolayout.material.layouts.MultiSlotLayout
 import androidx.wear.protolayout.material.layouts.PrimaryLayout
+import androidx.wear.tiles.tooling.preview.TilePreviewData
+import com.thewizrd.shared_resources.actions.AudioStreamState
+import com.thewizrd.shared_resources.actions.AudioStreamType
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
 import com.thewizrd.shared_resources.media.PlaybackState
+import com.thewizrd.shared_resources.utils.ImageUtils.toByteArray
 import com.thewizrd.simplewear.R
+import com.thewizrd.simplewear.ui.tools.WearTilePreviewDevices
 import com.thewizrd.simplewear.wearable.tiles.MediaPlayerTileMessenger.PlayerAction
+import com.thewizrd.simplewear.wearable.tiles.MediaPlayerTileRenderer
 import com.thewizrd.simplewear.wearable.tiles.MediaPlayerTileRenderer.Companion.ID_APPICON
 import com.thewizrd.simplewear.wearable.tiles.MediaPlayerTileRenderer.Companion.ID_ARTWORK
 import com.thewizrd.simplewear.wearable.tiles.MediaPlayerTileRenderer.Companion.ID_OPENONPHONE
@@ -58,6 +65,7 @@ import com.thewizrd.simplewear.wearable.tiles.MediaPlayerTileRenderer.Companion.
 import com.thewizrd.simplewear.wearable.tiles.MediaPlayerTileRenderer.Companion.ID_VOL_DOWN
 import com.thewizrd.simplewear.wearable.tiles.MediaPlayerTileRenderer.Companion.ID_VOL_UP
 import com.thewizrd.simplewear.wearable.tiles.MediaPlayerTileState
+import kotlinx.coroutines.runBlocking
 import java.time.Instant
 
 private val CIRCLE_SIZE = dp(48f)
@@ -435,7 +443,7 @@ private fun PlayerButton(
     action: PlayerAction
 ): LayoutElement {
     val isPlayPause = action == PlayerAction.PAUSE || action == PlayerAction.PLAY
-    val size = if (isPlayPause) dp(50f) else dp(52f)
+    val size = dp(50f)
     return Box.Builder()
         .setHeight(size)
         .setWidth(size)
@@ -552,4 +560,30 @@ private fun getResourceIdForPlayerAction(action: PlayerAction): String {
         PlayerAction.VOL_UP -> ID_VOL_UP
         PlayerAction.VOL_DOWN -> ID_VOL_DOWN
     }
+}
+
+@WearTilePreviewDevices
+private fun MediaPlayerTilePreview(context: Context): TilePreviewData {
+    val state = MediaPlayerTileState(
+        connectionStatus = WearConnectionStatus.CONNECTED,
+        title = "Title",
+        artist = "Artist",
+        playbackState = PlaybackState.PAUSED,
+        audioStreamState = AudioStreamState(3, 0, 5, AudioStreamType.MUSIC),
+        artwork = runBlocking {
+            ContextCompat.getDrawable(context, R.drawable.ws_full_sad)?.toBitmapOrNull()
+                ?.toByteArray()
+        },
+        appIcon = runBlocking {
+            ContextCompat.getDrawable(context, R.drawable.ic_play_circle_simpleblue)
+                ?.toBitmapOrNull()
+                ?.toByteArray()
+        }
+    )
+    val renderer = MediaPlayerTileRenderer(context, debugResourceMode = true)
+
+    return TilePreviewData(
+        onTileRequest = { renderer.renderTimeline(state, it) },
+        onTileResourceRequest = { renderer.produceRequestedResources(state, it) }
+    )
 }
