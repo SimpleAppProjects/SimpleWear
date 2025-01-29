@@ -281,13 +281,13 @@ object TetherHelper {
 
             val resArr = getTetheredIfacesMethod.invoke(tetheringMgr) as? Array<*>
             return !resArr.isNullOrEmpty() && resArr.any {
-                it is String && (it.contains("wlan") || it.contains(
-                    "softap"
-                ))
+                it is String && (it.contains("wlan") || it.contains("softap"))
             }
-        }.onFailure {
+        }.getOrElse {
             Logger.error(TAG, it, "Error getting tethering state")
-        }.getOrDefault(false)
+            // Fallback to ConnectivityManager
+            isTetheringActivePreR(context)
+        }
     }
 
     @RequiresApi(Build.VERSION_CODES.R)
