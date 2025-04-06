@@ -3,6 +3,7 @@ apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-kapt'
 apply plugin: 'com.google.gms.google-services'
 apply plugin: 'com.google.firebase.crashlytics'
+apply plugin: 'org.jetbrains.kotlin.plugin.compose'
 
 android {
     compileSdk rootProject.compileSdkVersion
@@ -37,6 +38,7 @@ android {
         compose true
         dataBinding true
         viewBinding true
+        buildConfig true
     }
 
     compileOptions {
@@ -92,7 +94,7 @@ dependencies {
 
     implementation 'androidx.wear:wear:1.3.0'
     implementation 'androidx.wear:wear-ongoing:1.0.0'
-    implementation 'androidx.wear:wear-phone-interactions:1.0.1'
+    implementation 'androidx.wear:wear-phone-interactions:1.1.0'
     implementation 'androidx.wear:wear-remote-interactions:1.1.0'
     implementation "androidx.wear.watchface:watchface-complications-data:$wear_watchface_version"
     implementation "androidx.wear.watchface:watchface-complications-data-source-ktx:$wear_watchface_version"
