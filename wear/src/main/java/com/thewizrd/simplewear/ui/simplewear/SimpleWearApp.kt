@@ -121,7 +121,10 @@ fun SimpleWearApp(
             }
 
             composable(Screen.GesturesAction.route) {
-                GesturesUi(navController = navController)
+                GesturesUi(
+                    navController = navController,
+                    swipeToDismissBoxState = swipeToDismissBoxState
+                )
 
                 LaunchedEffect(navController) {
                     AnalyticsLogger.logEvent("nav_route", Bundle().apply {

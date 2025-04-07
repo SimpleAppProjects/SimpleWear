@@ -10,6 +10,7 @@ import com.thewizrd.shared_resources.helpers.GestureUIHelper
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
 import com.thewizrd.shared_resources.utils.JSONParser
 import com.thewizrd.shared_resources.utils.bytesToString
+import com.thewizrd.shared_resources.utils.intToBytes
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
@@ -146,6 +147,14 @@ class GestureUiViewModel(app: Application) : WearableListenerViewModel(app) {
         viewModelScope.launch {
             if (connect()) {
                 sendMessage(mPhoneNodeWithApp!!.id, GestureUIHelper.DPadClickPath, null)
+            }
+        }
+    }
+
+    fun requestKeyEvent(key: Int) {
+        viewModelScope.launch {
+            if (connect()) {
+                sendMessage(mPhoneNodeWithApp!!.id, GestureUIHelper.KeyEventPath, key.intToBytes())
             }
         }
     }

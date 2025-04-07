@@ -1,6 +1,7 @@
 package com.thewizrd.simplewear.wearable
 
 import android.accessibilityservice.AccessibilityService
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.ComponentName
@@ -696,7 +697,8 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
     suspend fun sendGestureActionStatus(nodeID: String?) {
         val state = GestureActionState(
             accessibilityEnabled = WearAccessibilityService.isServiceBound(),
-            dpadSupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+            dpadSupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU,
+            keyEventSupported = true
         )
         val data = JSONParser.serializer(state, GestureActionState::class.java)
         sendMessage(nodeID, GestureUIHelper.GestureStatusPath, data.stringToBytes())
@@ -996,7 +998,8 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
         } ?: run {
             val state = GestureActionState(
                 accessibilityEnabled = false,
-                dpadSupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+                dpadSupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU,
+                keyEventSupported = true
             )
             val data = JSONParser.serializer(state, GestureActionState::class.java)
             sendMessage(nodeID, GestureUIHelper.GestureStatusPath, data.stringToBytes())
@@ -1016,7 +1019,8 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
         } ?: run {
             val state = GestureActionState(
                 accessibilityEnabled = false,
-                dpadSupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+                dpadSupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU,
+                keyEventSupported = true
             )
             val data = JSONParser.serializer(state, GestureActionState::class.java)
             sendMessage(nodeID, GestureUIHelper.GestureStatusPath, data.stringToBytes())
@@ -1030,7 +1034,39 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
         } ?: run {
             val state = GestureActionState(
                 accessibilityEnabled = false,
-                dpadSupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+                dpadSupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU,
+                keyEventSupported = true
+            )
+            val data = JSONParser.serializer(state, GestureActionState::class.java)
+            sendMessage(nodeID, GestureUIHelper.GestureStatusPath, data.stringToBytes())
+        }
+    }
+
+    @SuppressLint("GestureBackNavigation")
+    suspend fun performKeyEvent(nodeID: String?, key: Int) {
+        WearAccessibilityService.getInstance()?.let { svc ->
+            when (key) {
+                KeyEvent.KEYCODE_BACK -> {
+                    svc.performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK)
+                }
+
+                KeyEvent.KEYCODE_HOME -> {
+                    svc.performGlobalAction(AccessibilityService.GLOBAL_ACTION_HOME)
+                }
+
+                KeyEvent.KEYCODE_RECENT_APPS, KeyEvent.KEYCODE_APP_SWITCH -> {
+                    svc.performGlobalAction(AccessibilityService.GLOBAL_ACTION_RECENTS)
+                }
+
+                else -> {
+                    // TODO: support more events with root?
+                }
+            }
+        } ?: run {
+            val state = GestureActionState(
+                accessibilityEnabled = false,
+                dpadSupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU,
+                keyEventSupported = true
             )
             val data = JSONParser.serializer(state, GestureActionState::class.java)
             sendMessage(nodeID, GestureUIHelper.GestureStatusPath, data.stringToBytes())

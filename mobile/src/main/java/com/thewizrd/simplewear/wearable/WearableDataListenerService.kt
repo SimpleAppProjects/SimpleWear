@@ -256,6 +256,8 @@ class WearableDataListenerService : WearableListenerService() {
                 mWearMgr.performDPadAction(messageEvent.sourceNodeId, idx)
             } else if (messageEvent.path == GestureUIHelper.DPadClickPath && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 mWearMgr.performDPadClick(messageEvent.sourceNodeId)
+            } else if (messageEvent.path == GestureUIHelper.KeyEventPath) {
+                mWearMgr.performKeyEvent(messageEvent.sourceNodeId, messageEvent.data.bytesToInt())
             } else if (messageEvent.path == WearableHelper.TimedActionDeletePath) {
                 val action = Actions.valueOf(messageEvent.data.bytesToString())
 
