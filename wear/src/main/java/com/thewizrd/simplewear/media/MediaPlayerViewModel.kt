@@ -91,7 +91,8 @@ data class PlayerState(
 data class MediaPagerState(
     val supportsBrowser: Boolean = false,
     val supportsCustomActions: Boolean = false,
-    val supportsQueue: Boolean = false
+    val supportsQueue: Boolean = false,
+    val currentPageKey: MediaPageType = MediaPageType.Player
 ) {
     val pageCount: Int
         get() {
@@ -662,6 +663,16 @@ class MediaPlayerViewModel(app: Application) : WearableListenerViewModel(app) {
 
     fun requestQueueActionItem(itemId: String) {
         requestMediaAction(MediaHelper.MediaQueueItemsClickPath, itemId.stringToBytes())
+    }
+
+    fun updateCurrentPage(pageType: MediaPageType) {
+        viewModelState.update {
+            it.copy(
+                pagerState = it.pagerState.copy(
+                    currentPageKey = pageType
+                )
+            )
+        }
     }
 
     override fun onCleared() {

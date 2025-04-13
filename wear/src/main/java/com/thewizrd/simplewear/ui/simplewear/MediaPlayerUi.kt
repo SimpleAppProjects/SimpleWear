@@ -1,7 +1,6 @@
 @file:OptIn(
     ExperimentalHorologistApi::class, ExperimentalFoundationApi::class,
-    ExperimentalWearFoundationApi::class, ExperimentalWearMaterialApi::class,
-    ExperimentalHorologistApi::class
+    ExperimentalWearFoundationApi::class, ExperimentalWearMaterialApi::class
 )
 
 package com.thewizrd.simplewear.ui.simplewear
@@ -48,7 +47,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
-import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -57,7 +55,6 @@ import androidx.navigation.NavOptions
 import androidx.wear.compose.foundation.ExperimentalWearFoundationApi
 import androidx.wear.compose.foundation.SwipeToDismissBoxState
 import androidx.wear.compose.foundation.lazy.items
-import androidx.wear.compose.foundation.rememberActiveFocusRequester
 import androidx.wear.compose.foundation.rememberSwipeToDismissBoxState
 import androidx.wear.compose.foundation.rotary.rotaryScrollable
 import androidx.wear.compose.material.ButtonDefaults
@@ -78,7 +75,6 @@ import com.google.android.horologist.audio.ui.components.actions.SettingsButton
 import com.google.android.horologist.audio.ui.volumeRotaryBehavior
 import com.google.android.horologist.compose.ambient.AmbientAware
 import com.google.android.horologist.compose.ambient.AmbientState
-import com.google.android.horologist.compose.layout.ScalingLazyColumn
 import com.google.android.horologist.compose.layout.ScalingLazyColumnDefaults
 import com.google.android.horologist.compose.layout.rememberResponsiveColumnState
 import com.google.android.horologist.compose.layout.scrollAway
@@ -116,9 +112,11 @@ import com.thewizrd.simplewear.media.PlayerUiController
 import com.thewizrd.simplewear.media.toPlaybackStateEvent
 import com.thewizrd.simplewear.ui.ambient.ambientMode
 import com.thewizrd.simplewear.ui.components.LoadingContent
+import com.thewizrd.simplewear.ui.components.ScalingLazyColumn
 import com.thewizrd.simplewear.ui.components.SwipeToDismissPagerScreen
 import com.thewizrd.simplewear.ui.navigation.Screen
 import com.thewizrd.simplewear.ui.theme.findActivity
+import com.thewizrd.simplewear.ui.utils.rememberFocusRequester
 import com.thewizrd.simplewear.viewmodels.WearableListenerViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -228,6 +226,13 @@ fun MediaPlayerUi(
                     MediaQueuePage(
                         mediaPlayerViewModel = mediaPlayerViewModel
                     )
+                }
+            }
+
+            LaunchedEffect(pagerState, pagerState.targetPage, pagerState.currentPage) {
+                val targetPageKey = keyFunc(pagerState.targetPage)
+                if (mediaPagerState.currentPageKey != targetPageKey) {
+                    mediaPlayerViewModel.updateCurrentPage(targetPageKey)
                 }
             }
         }
@@ -345,11 +350,10 @@ private fun MediaPlayerControlsPage(
     mediaPlayerViewModel: MediaPlayerViewModel,
     volumeViewModel: VolumeViewModel,
     navController: NavController,
-    ambientState: AmbientState
+    ambientState: AmbientState,
+    focusRequester: FocusRequester = rememberFocusRequester()
 ) {
     val context = LocalContext.current
-    val activity = context.findActivity()
-    val focusRequester = remember { FocusRequester() }
 
     val uiState by mediaPlayerViewModel.uiState.collectAsState()
     val playerState by mediaPlayerViewModel.playerState.collectAsState()
@@ -416,9 +420,8 @@ private fun MediaPlayerControlsPage(
     onVolumeDown: () -> Unit = {},
     playerUiController: PlayerUiController = NoopPlayerUiController(),
     displayVolumeIndicatorEvents: Flow<Unit> = emptyFlow(),
-    focusRequester: FocusRequester = rememberActiveFocusRequester()
+    focusRequester: FocusRequester = rememberFocusRequester()
 ) {
-    val lifecycleOwner = LocalLifecycleOwner.current
     val isAmbient = remember(ambientState) { ambientState.isAmbient }
 
     // Progress
@@ -625,8 +628,9 @@ private fun MediaPlayerControlsPage(
                 displayIndicatorEvents = displayVolumeIndicatorEvents
             )
 
-            LaunchedEffect(uiState) {
-                if (lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
+            LaunchedEffect(uiState, uiState.pagerState) {
+                if (uiState.pagerState.currentPageKey == MediaPageType.Player) {
+                    delay(500)
                     focusRequester.requestFocus()
                 }
             }
@@ -657,6 +661,7 @@ private fun MediaCustomControlsPage(
 @Composable
 private fun MediaCustomControlsPage(
     uiState: MediaPlayerUiState,
+    focusRequester: FocusRequester = rememberFocusRequester(),
     onItemClick: (MediaItemModel) -> Unit = {}
 ) {
     LoadingContent(
@@ -677,7 +682,8 @@ private fun MediaCustomControlsPage(
             TimeText(Modifier.scrollAway { scrollState })
 
             ScalingLazyColumn(
-                columnState = scrollState
+                scrollState = scrollState,
+                focusRequester = focusRequester
             ) {
                 items(uiState.mediaCustomItems) {
                     Chip(
@@ -703,6 +709,13 @@ private fun MediaCustomControlsPage(
             LaunchedEffect(Unit) {
                 scrollState.state.scrollToItem(0)
             }
+
+            LaunchedEffect(uiState, uiState.pagerState) {
+                if (uiState.pagerState.currentPageKey == MediaPageType.CustomControls) {
+                    delay(500)
+                    focusRequester.requestFocus()
+                }
+            }
         }
     }
 }
@@ -712,7 +725,6 @@ private fun MediaBrowserPage(
     mediaPlayerViewModel: MediaPlayerViewModel
 ) {
     val context = LocalContext.current
-
     val uiState by mediaPlayerViewModel.uiState.collectAsState()
 
     MediaBrowserPage(
@@ -730,6 +742,7 @@ private fun MediaBrowserPage(
 @Composable
 private fun MediaBrowserPage(
     uiState: MediaPlayerUiState,
+    focusRequester: FocusRequester = rememberFocusRequester(),
     onItemClick: (MediaItemModel) -> Unit = {}
 ) {
     LoadingContent(
@@ -750,7 +763,8 @@ private fun MediaBrowserPage(
             TimeText(Modifier.scrollAway { scrollState })
 
             ScalingLazyColumn(
-                columnState = scrollState
+                scrollState = scrollState,
+                focusRequester = focusRequester
             ) {
                 items(uiState.mediaBrowserItems) {
                     Chip(
@@ -789,6 +803,13 @@ private fun MediaBrowserPage(
             LaunchedEffect(Unit) {
                 scrollState.state.scrollToItem(0)
             }
+
+            LaunchedEffect(uiState, uiState.pagerState) {
+                if (uiState.pagerState.currentPageKey == MediaPageType.Browser) {
+                    delay(500)
+                    focusRequester.requestFocus()
+                }
+            }
         }
     }
 }
@@ -798,7 +819,6 @@ private fun MediaQueuePage(
     mediaPlayerViewModel: MediaPlayerViewModel
 ) {
     val context = LocalContext.current
-
     val uiState by mediaPlayerViewModel.uiState.collectAsState()
 
     MediaQueuePage(
@@ -816,6 +836,7 @@ private fun MediaQueuePage(
 @Composable
 private fun MediaQueuePage(
     uiState: MediaPlayerUiState,
+    focusRequester: FocusRequester = rememberFocusRequester(),
     onItemClick: (MediaItemModel) -> Unit = {}
 ) {
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -838,7 +859,8 @@ private fun MediaQueuePage(
             TimeText(Modifier.scrollAway { scrollState })
 
             ScalingLazyColumn(
-                columnState = scrollState
+                scrollState = scrollState,
+                focusRequester = focusRequester
             ) {
                 items(uiState.mediaQueueItems) {
                     Chip(
@@ -868,14 +890,21 @@ private fun MediaQueuePage(
                     )
                 }
             }
-        }
 
-        LaunchedEffect(Unit) {
-            if (uiState.activeQueueItemId != -1L) {
-                uiState.mediaQueueItems.indexOfFirst {
-                    it.id.toLong() == uiState.activeQueueItemId
-                }.takeIf { it > 0 }?.run {
-                    scrollState.state.scrollToItem(this)
+            LaunchedEffect(Unit) {
+                if (uiState.activeQueueItemId != -1L) {
+                    uiState.mediaQueueItems.indexOfFirst {
+                        it.id.toLong() == uiState.activeQueueItemId
+                    }.takeIf { it > 0 }?.run {
+                        scrollState.state.scrollToItem(this)
+                    }
+                }
+            }
+
+            LaunchedEffect(uiState, uiState.pagerState) {
+                if (uiState.pagerState.currentPageKey == MediaPageType.Queue) {
+                    delay(500)
+                    focusRequester.requestFocus()
                 }
             }
         }
