@@ -42,6 +42,7 @@ import com.thewizrd.shared_resources.actions.ActionStatus
 import com.thewizrd.shared_resources.actions.Actions
 import com.thewizrd.shared_resources.actions.AudioStreamType
 import com.thewizrd.shared_resources.actions.ValueActionState
+import com.thewizrd.shared_resources.controls.ActionButtonViewModel
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
 import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.shared_resources.utils.JSONParser
@@ -276,6 +277,8 @@ fun ValueActionScreen(
     onValueChanged: (Int) -> Unit = {},
     onActionChange: () -> Unit = {}
 ) {
+    val context = LocalContext.current
+
     Box(modifier = modifier.fillMaxSize())
     Stepper(
         value = volumeUiState.current,
@@ -377,7 +380,13 @@ fun ValueActionScreen(
                     else -> {
                         Icon(
                             painter = painterResource(id = R.drawable.ic_icon),
-                            contentDescription = null
+                            contentDescription = remember(uiState.action) {
+                                uiState.action?.let {
+                                    context.getString(
+                                        ActionButtonViewModel.getViewModelFromAction(it).actionLabelResId
+                                    )
+                                }
+                            }
                         )
                     }
                 }

@@ -258,7 +258,7 @@ private fun TimedActionUi(
                 Button(onClick = onAddAction) {
                     Icon(
                         painter = painterResource(id = R.drawable.ic_add_white_24dp),
-                        contentDescription = null
+                        contentDescription = stringResource(id = R.string.label_add_action)
                     )
                 }
             }
@@ -304,7 +304,7 @@ private fun EmptyTimedActionUi(
             ) {
                 Icon(
                     painter = painterResource(id = R.drawable.ic_add_white_24dp),
-                    contentDescription = null
+                    contentDescription = stringResource(R.string.label_add_action)
                 )
             }
         }
@@ -317,6 +317,8 @@ private fun TimedActionChip(
     onActionClicked: (TimedAction) -> Unit = {},
     onActionDelete: (TimedAction) -> Unit,
 ) {
+    val context = LocalContext.current
+
     val model = remember(timedAction) {
         ActionButtonViewModel(timedAction.action)
     }
@@ -342,7 +344,7 @@ private fun TimedActionChip(
                 icon = {
                     Icon(
                         imageVector = SwipeToRevealDefaults.Delete,
-                        contentDescription = null
+                        contentDescription = stringResource(id = R.string.action_delete)
                     )
                 },
                 label = {
@@ -373,7 +375,13 @@ private fun TimedActionChip(
                     Icon(
                         modifier = Modifier.size(24.dp),
                         painter = painterResource(id = model.drawableResId),
-                        contentDescription = null,
+                        contentDescription = remember(
+                            context,
+                            model.actionLabelResId,
+                            model.stateLabelResId
+                        ) {
+                            model.getDescription(context)
+                        },
                         tint = chipColors.iconColor(enabled = true).value
                     )
                 }
@@ -554,7 +562,13 @@ private fun TimedActionDetailUi(
                             Icon(
                                 modifier = Modifier.align(Alignment.Center),
                                 painter = painterResource(id = model.drawableResId),
-                                contentDescription = null,
+                                contentDescription = remember(
+                                    context,
+                                    model.actionLabelResId,
+                                    model.stateLabelResId
+                                ) {
+                                    model.getDescription(context)
+                                },
                                 tint = MaterialTheme.colors.onSurface
                             )
                         }
@@ -599,7 +613,7 @@ private fun TimedActionDetailUi(
                             Icon(
                                 modifier = Modifier.align(Alignment.Center),
                                 painter = painterResource(id = R.drawable.ic_alarm_white_24dp),
-                                contentDescription = null,
+                                contentDescription = stringResource(id = R.string.label_time),
                                 tint = MaterialTheme.colors.onSurface
                             )
                         }

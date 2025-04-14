@@ -298,7 +298,7 @@ private fun MediaPlayerListScreen(
                             icon = {
                                 Icon(
                                     painter = painterResource(id = R.drawable.ic_baseline_refresh_24),
-                                    contentDescription = null
+                                    contentDescription = stringResource(id = R.string.action_refresh)
                                 )
                             },
                             onClick = onRefresh
@@ -321,29 +321,29 @@ private fun MediaPlayerListScreen(
                 items(
                     items = uiState.mediaAppsSet.toList(),
                     key = { Pair(it.activityName, it.packageName) }
-                ) {
+                ) { mediaItem ->
                     Chip(
                         modifier = Modifier.fillMaxWidth(),
                         label = {
-                            Text(text = it.appLabel ?: "")
+                            Text(text = mediaItem.appLabel ?: "")
                         },
-                        icon = it.bitmapIcon?.let {
+                        icon = mediaItem.bitmapIcon?.let {
                             {
                                 Icon(
                                     modifier = Modifier.requiredSize(ChipDefaults.IconSize),
                                     bitmap = it.asImageBitmap(),
-                                    contentDescription = null,
+                                    contentDescription = mediaItem.appLabel,
                                     tint = Color.Unspecified
                                 )
                             }
                         },
-                        colors = if (it.key == uiState.activePlayerKey) {
+                        colors = if (mediaItem.key == uiState.activePlayerKey) {
                             ChipDefaults.gradientBackgroundChipColors()
                         } else {
                             ChipDefaults.secondaryChipColors()
                         },
                         onClick = {
-                            onItemClicked(it)
+                            onItemClicked(mediaItem)
                         }
                     )
                 }
@@ -410,7 +410,7 @@ private fun MediaPlayerListSettings(
                 icon = {
                     Icon(
                         painter = painterResource(id = R.drawable.ic_baseline_filter_list_24),
-                        contentDescription = null
+                        contentDescription = stringResource(id = R.string.title_filter_apps)
                     )
                 }
             )

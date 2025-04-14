@@ -241,7 +241,7 @@ private fun TimedActionSetupUi(
                                     icon = {
                                         Icon(
                                             painter = painterResource(id = model.drawableResId),
-                                            contentDescription = null
+                                            contentDescription = stringResource(id = model.actionLabelResId)
                                         )
                                     },
                                     colors = ChipDefaults.secondaryChipColors(),
@@ -308,7 +308,7 @@ private fun TimedActionSetupUi(
                                             Icon(
                                                 modifier = Modifier.align(Alignment.Center),
                                                 painter = painterResource(id = model.drawableResId),
-                                                contentDescription = null,
+                                                contentDescription = stringResource(id = model.actionLabelResId),
                                                 tint = MaterialTheme.colors.onSurface
                                             )
                                         }
@@ -363,7 +363,7 @@ private fun TimedActionSetupUi(
                                             Icon(
                                                 modifier = Modifier.align(Alignment.Center),
                                                 painter = painterResource(id = R.drawable.ic_alarm_white_24dp),
-                                                contentDescription = null,
+                                                contentDescription = stringResource(id = R.string.label_time),
                                                 tint = MaterialTheme.colors.onSurface
                                             )
                                         }

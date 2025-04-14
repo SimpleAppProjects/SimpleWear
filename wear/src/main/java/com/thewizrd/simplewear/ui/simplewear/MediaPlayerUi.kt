@@ -586,7 +586,7 @@ private fun MediaPlayerControlsPage(
                                             .size(32.dp)
                                             .clickable(onClick = onOpenPlayerList),
                                         bitmap = it.asImageBitmap(),
-                                        contentDescription = null
+                                        contentDescription = stringResource(R.string.desc_open_player_list)
                                     )
                                 } ?: run {
                                     Image(
@@ -594,7 +594,7 @@ private fun MediaPlayerControlsPage(
                                             .size(32.dp)
                                             .clickable(onClick = onOpenPlayerList),
                                         painter = painterResource(R.drawable.ic_play_circle_filled_white_24dp),
-                                        contentDescription = null
+                                        contentDescription = stringResource(R.string.desc_open_player_list)
                                     )
                                 }
                                 Spacer(modifier = Modifier.width(10.dp))
@@ -617,7 +617,7 @@ private fun MediaPlayerControlsPage(
                                 Color.Black.copy(alpha = 0.66f),
                                 BlendMode.SrcAtop
                             ),
-                            contentDescription = null
+                            contentDescription = stringResource(R.string.desc_artwork)
                         )
                     }
                 }
@@ -685,21 +685,21 @@ private fun MediaCustomControlsPage(
                 scrollState = scrollState,
                 focusRequester = focusRequester
             ) {
-                items(uiState.mediaCustomItems) {
+                items(uiState.mediaCustomItems) { item ->
                     Chip(
-                        label = it.title ?: "",
+                        label = item.title ?: "",
                         icon = {
-                            it.icon?.let { bmp ->
+                            item.icon?.let { bmp ->
                                 Icon(
                                     modifier = Modifier.size(ChipDefaults.IconSize),
                                     bitmap = bmp.asImageBitmap(),
                                     tint = Color.White,
-                                    contentDescription = null
+                                    contentDescription = item.title
                                 )
                             }
                         },
                         onClick = {
-                            onItemClick(it)
+                            onItemClick(item)
                         },
                         colors = ChipDefaults.secondaryChipColors()
                     )
@@ -766,34 +766,34 @@ private fun MediaBrowserPage(
                 scrollState = scrollState,
                 focusRequester = focusRequester
             ) {
-                items(uiState.mediaBrowserItems) {
+                items(uiState.mediaBrowserItems) { item ->
                     Chip(
-                        label = if (it.id == MediaHelper.ACTIONITEM_BACK) {
+                        label = if (item.id == MediaHelper.ACTIONITEM_BACK) {
                             stringResource(id = R.string.label_back)
                         } else {
-                            it.title ?: ""
+                            item.title ?: ""
                         },
                         icon = {
-                            if (it.id == MediaHelper.ACTIONITEM_BACK) {
+                            if (item.id == MediaHelper.ACTIONITEM_BACK) {
                                 Icon(
                                     modifier = Modifier.size(ChipDefaults.IconSize),
                                     painter = painterResource(id = R.drawable.ic_baseline_arrow_back_24),
                                     tint = Color.White,
-                                    contentDescription = null
+                                    contentDescription = stringResource(id = R.string.label_back)
                                 )
                             } else {
-                                it.icon?.let { bmp ->
+                                item.icon?.let { bmp ->
                                     Icon(
                                         modifier = Modifier.size(ChipDefaults.IconSize),
                                         bitmap = bmp.asImageBitmap(),
                                         tint = Color.White,
-                                        contentDescription = null
+                                        contentDescription = item.title
                                     )
                                 }
                             }
                         },
                         onClick = {
-                            onItemClick(it)
+                            onItemClick(item)
                         },
                         colors = ChipDefaults.secondaryChipColors()
                     )
@@ -862,27 +862,27 @@ private fun MediaQueuePage(
                 scrollState = scrollState,
                 focusRequester = focusRequester
             ) {
-                items(uiState.mediaQueueItems) {
+                items(uiState.mediaQueueItems) { item ->
                     Chip(
-                        label = it.title ?: "",
+                        label = item.title ?: "",
                         icon = {
-                            it.icon?.let { bmp ->
+                            item.icon?.let { bmp ->
                                 Icon(
                                     modifier = Modifier.size(ChipDefaults.IconSize),
                                     bitmap = bmp.asImageBitmap(),
-                                    contentDescription = null,
+                                    contentDescription = item.title,
                                     tint = Color.Unspecified
                                 )
                             }
                         },
                         onClick = {
-                            onItemClick(it)
+                            onItemClick(item)
                             lifecycleOwner.lifecycleScope.launch {
                                 delay(1000)
                                 scrollState.state.scrollToItem(0)
                             }
                         },
-                        colors = if (it.id.toLong() == uiState.activeQueueItemId) {
+                        colors = if (item.id.toLong() == uiState.activeQueueItemId) {
                             ChipDefaults.gradientBackgroundChipColors()
                         } else {
                             ChipDefaults.secondaryChipColors()

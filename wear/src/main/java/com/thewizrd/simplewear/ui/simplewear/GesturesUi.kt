@@ -367,7 +367,7 @@ private fun GestureScreen(
                 },
             imageVector = Icons.Filled.KeyboardArrowUp,
             tint = Color.White,
-            contentDescription = null
+            contentDescription = stringResource(R.string.label_arrow_up)
         )
         Icon(
             modifier = Modifier
@@ -379,7 +379,7 @@ private fun GestureScreen(
                 },
             imageVector = Icons.Filled.KeyboardArrowDown,
             tint = Color.White,
-            contentDescription = null
+            contentDescription = stringResource(R.string.label_arrow_down)
         )
         Icon(
             modifier = Modifier
@@ -391,7 +391,7 @@ private fun GestureScreen(
                 },
             imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
             tint = Color.White,
-            contentDescription = null
+            contentDescription = stringResource(R.string.label_arrow_left)
         )
         Icon(
             modifier = Modifier
@@ -403,14 +403,16 @@ private fun GestureScreen(
                 },
             imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
             tint = Color.White,
-            contentDescription = null
+            contentDescription = stringResource(R.string.label_arrow_right)
         )
         if (uiState.actionState.dpadSupported) {
             Box(
                 modifier = Modifier
                     .size(48.dp)
                     .align(Alignment.Center)
-                    .clickable {
+                    .clickable(
+                        onClickLabel = stringResource(R.string.label_dpad_center)
+                    ) {
                         onDPadClicked()
                     }
                     .background(Color.White, shape = RoundedCornerShape(50))
@@ -495,7 +497,7 @@ private fun NoAccessibilityScreen(
                 icon = {
                     Icon(
                         painter = painterResource(id = R.drawable.ic_baseline_refresh_24),
-                        contentDescription = null
+                        contentDescription = stringResource(id = R.string.action_refresh)
                     )
                 },
                 onClick = onRefresh

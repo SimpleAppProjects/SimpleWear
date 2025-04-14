@@ -280,7 +280,7 @@ private fun AppLauncherScreen(
                             icon = {
                                 Icon(
                                     painter = painterResource(id = R.drawable.ic_baseline_refresh_24),
-                                    contentDescription = null
+                                    contentDescription = stringResource(id = R.string.action_refresh)
                                 )
                             },
                             onClick = onRefresh
@@ -303,19 +303,19 @@ private fun AppLauncherScreen(
                 items(
                     items = uiState.appsList,
                     key = { Pair(it.activityName, it.packageName) }
-                ) {
+                ) { appItem ->
                     Chip(
                         modifier = Modifier.fillMaxWidth(),
                         label = {
-                            Text(text = it.appLabel ?: "")
+                            Text(text = appItem.appLabel ?: "")
                         },
                         icon = if (uiState.loadAppIcons) {
-                            it.bitmapIcon?.let {
+                            appItem.bitmapIcon?.let {
                                 {
                                     Icon(
                                         modifier = Modifier.requiredSize(ChipDefaults.IconSize),
                                         bitmap = it.asImageBitmap(),
-                                        contentDescription = null,
+                                        contentDescription = appItem.appLabel,
                                         tint = Color.Unspecified
                                     )
                                 }
@@ -325,7 +325,7 @@ private fun AppLauncherScreen(
                         },
                         colors = ChipDefaults.secondaryChipColors(),
                         onClick = {
-                            onItemClicked(it)
+                            onItemClicked(appItem)
                         }
                     )
                 }

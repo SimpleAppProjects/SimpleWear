@@ -262,7 +262,7 @@ private fun CallManagerUi(
             Image(
                 modifier = Modifier.fillMaxSize(),
                 bitmap = uiState.callerBitmap.asImageBitmap(),
-                contentDescription = null
+                contentDescription = stringResource(R.string.desc_contact_photo)
             )
         }
 
@@ -301,24 +301,36 @@ private fun CallManagerUi(
                 CallUiButton(
                     iconResourceId = R.drawable.ic_mic_off_24dp,
                     isChecked = uiState.isMuted,
-                    onClick = onMute
+                    onClick = onMute,
+                    contentDescription = if (uiState.isMuted) {
+                        stringResource(R.string.volstate_muted)
+                    } else {
+                        stringResource(R.string.label_mute)
+                    }
                 )
                 if (uiState.canSendDTMFKeys) {
                     CallUiButton(
                         iconResourceId = R.drawable.ic_dialpad_24dp,
-                        onClick = onShowKeypadUi
+                        onClick = onShowKeypadUi,
+                        contentDescription = stringResource(R.string.label_keypad)
                     )
                 }
                 if (uiState.supportsSpeaker) {
                     CallUiButton(
                         iconResourceId = R.drawable.ic_baseline_speaker_phone_24,
                         isChecked = uiState.isSpeakerPhoneOn,
-                        onClick = onSpeakerPhone
+                        onClick = onSpeakerPhone,
+                        contentDescription = if (uiState.isSpeakerPhoneOn) {
+                            stringResource(R.string.desc_speakerphone_on)
+                        } else {
+                            stringResource(R.string.desc_speakerphone_off)
+                        }
                     )
                 }
                 CallUiButton(
                     iconResourceId = R.drawable.ic_volume_up_white_24dp,
-                    onClick = onVolume
+                    onClick = onVolume,
+                    contentDescription = stringResource(R.string.action_volume)
                 )
             }
 
@@ -348,7 +360,7 @@ private fun CallUiButton(
     modifier: Modifier = Modifier,
     isChecked: Boolean = false,
     @DrawableRes iconResourceId: Int,
-    contentDescription: String? = null,
+    contentDescription: String?,
     onClick: () -> Unit = {}
 ) {
     Box(
