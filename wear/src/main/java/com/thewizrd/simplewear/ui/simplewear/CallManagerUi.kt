@@ -53,9 +53,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.ButtonDefaults
@@ -77,13 +77,15 @@ import com.thewizrd.shared_resources.helpers.InCallUIHelper
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
 import com.thewizrd.simplewear.PhoneSyncActivity
 import com.thewizrd.simplewear.R
-import com.thewizrd.simplewear.controls.CustomConfirmationOverlay
+import com.thewizrd.simplewear.ui.components.ConfirmationOverlay
 import com.thewizrd.simplewear.ui.components.LoadingContent
 import com.thewizrd.simplewear.ui.navigation.Screen
 import com.thewizrd.simplewear.ui.theme.activityViewModel
 import com.thewizrd.simplewear.ui.theme.findActivity
 import com.thewizrd.simplewear.viewmodels.CallManagerUiState
 import com.thewizrd.simplewear.viewmodels.CallManagerViewModel
+import com.thewizrd.simplewear.viewmodels.ConfirmationData
+import com.thewizrd.simplewear.viewmodels.ConfirmationViewModel
 import com.thewizrd.simplewear.viewmodels.WearableListenerViewModel
 import kotlinx.coroutines.launch
 
@@ -98,6 +100,9 @@ fun CallManagerUi(
     val lifecycleOwner = LocalLifecycleOwner.current
     val callManagerViewModel = activityViewModel<CallManagerViewModel>()
     val uiState by callManagerViewModel.uiState.collectAsState()
+
+    val confirmationViewModel = viewModel<ConfirmationViewModel>()
+    val confirmationData by confirmationViewModel.confirmationEventsFlow.collectAsState()
 
     Scaffold(
         modifier = modifier.background(MaterialTheme.colors.background),
@@ -119,6 +124,11 @@ fun CallManagerUi(
             )
         }
     }
+
+    ConfirmationOverlay(
+        confirmationData = confirmationData,
+        onTimeout = { confirmationViewModel.clearFlow() },
+    )
 
     LaunchedEffect(lifecycleOwner) {
         lifecycleOwner.lifecycleScope.launch {
@@ -167,16 +177,11 @@ fun CallManagerUi(
                             event.data.getSerializable(WearableListenerViewModel.EXTRA_STATUS) as ActionStatus
 
                         if (status == ActionStatus.PERMISSION_DENIED) {
-                            CustomConfirmationOverlay()
-                                .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
-                                .setCustomDrawable(
-                                    ContextCompat.getDrawable(
-                                        activity,
-                                        R.drawable.ws_full_sad
-                                    )
+                            confirmationViewModel.showConfirmation(
+                                ConfirmationData(
+                                    title = context.getString(R.string.error_permissiondenied)
                                 )
-                                .setMessage(activity.getString(R.string.error_permissiondenied))
-                                .showOn(activity)
+                            )
 
                             callManagerViewModel.openAppOnPhone(activity, false)
                         }

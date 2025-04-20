@@ -1,7 +1,6 @@
 package com.thewizrd.simplewear.ui.simplewear
 
 import android.content.Intent
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -57,17 +56,18 @@ import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.simplewear.PhoneSyncActivity
 import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.controls.AppItemViewModel
-import com.thewizrd.simplewear.controls.CustomConfirmationOverlay
+import com.thewizrd.simplewear.ui.components.ConfirmationOverlay
 import com.thewizrd.simplewear.ui.components.LoadingContent
 import com.thewizrd.simplewear.ui.components.SwipeToDismissPagerScreen
 import com.thewizrd.simplewear.ui.theme.findActivity
 import com.thewizrd.simplewear.viewmodels.AppLauncherUiState
 import com.thewizrd.simplewear.viewmodels.AppLauncherViewModel
+import com.thewizrd.simplewear.viewmodels.ConfirmationData
+import com.thewizrd.simplewear.viewmodels.ConfirmationViewModel
 import com.thewizrd.simplewear.viewmodels.WearableListenerViewModel
 import kotlinx.coroutines.launch
 
 @OptIn(
-    ExperimentalFoundationApi::class,
     ExperimentalHorologistApi::class
 )
 @Composable
@@ -82,6 +82,9 @@ fun AppLauncherScreen(
 
     val appLauncherViewModel = viewModel<AppLauncherViewModel>()
     val uiState by appLauncherViewModel.uiState.collectAsState()
+
+    val confirmationViewModel = viewModel<ConfirmationViewModel>()
+    val confirmationData by confirmationViewModel.confirmationEventsFlow.collectAsState()
 
     val scrollState = rememberResponsiveColumnState(
         contentPadding = ScalingLazyColumnDefaults.padding(
@@ -120,6 +123,11 @@ fun AppLauncherScreen(
             )
         }
     }
+
+    ConfirmationOverlay(
+        confirmationData = confirmationData,
+        onTimeout = { confirmationViewModel.clearFlow() },
+    )
 
     LaunchedEffect(context) {
         appLauncherViewModel.initActivityContext(activity)
@@ -174,37 +182,23 @@ fun AppLauncherScreen(
 
                         when (status) {
                             ActionStatus.SUCCESS -> {
-                                CustomConfirmationOverlay()
-                                    .setType(CustomConfirmationOverlay.SUCCESS_ANIMATION)
-                                    .showOn(activity)
+                                confirmationViewModel.showSuccess()
                             }
 
                             ActionStatus.PERMISSION_DENIED -> {
-                                CustomConfirmationOverlay()
-                                    .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
-                                    .setCustomDrawable(
-                                        ContextCompat.getDrawable(
-                                            activity,
-                                            R.drawable.ws_full_sad
-                                        )
+                                confirmationViewModel.showConfirmation(
+                                    ConfirmationData(
+                                        title = context.getString(R.string.error_permissiondenied)
                                     )
-                                    .setMessage(activity.getString(R.string.error_permissiondenied))
-                                    .showOn(activity)
+                                )
 
                                 appLauncherViewModel.openAppOnPhone(activity, false)
                             }
 
                             ActionStatus.FAILURE -> {
-                                CustomConfirmationOverlay()
-                                    .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
-                                    .setCustomDrawable(
-                                        ContextCompat.getDrawable(
-                                            activity,
-                                            R.drawable.ws_full_sad
-                                        )
-                                    )
-                                    .setMessage(activity.getString(R.string.error_actionfailed))
-                                    .showOn(activity)
+                                confirmationViewModel.showFailure(
+                                    message = context.getString(R.string.error_actionfailed)
+                                )
                             }
 
                             else -> {}

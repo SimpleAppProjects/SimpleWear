@@ -99,7 +99,6 @@ import com.thewizrd.shared_resources.media.PlaybackState
 import com.thewizrd.simplewear.PhoneSyncActivity
 import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.controls.AppItemViewModel
-import com.thewizrd.simplewear.controls.CustomConfirmationOverlay
 import com.thewizrd.simplewear.media.MediaItemModel
 import com.thewizrd.simplewear.media.MediaPageType
 import com.thewizrd.simplewear.media.MediaPlayerUiController
@@ -111,12 +110,15 @@ import com.thewizrd.simplewear.media.PlayerState
 import com.thewizrd.simplewear.media.PlayerUiController
 import com.thewizrd.simplewear.media.toPlaybackStateEvent
 import com.thewizrd.simplewear.ui.ambient.ambientMode
+import com.thewizrd.simplewear.ui.components.ConfirmationOverlay
 import com.thewizrd.simplewear.ui.components.LoadingContent
 import com.thewizrd.simplewear.ui.components.ScalingLazyColumn
 import com.thewizrd.simplewear.ui.components.SwipeToDismissPagerScreen
 import com.thewizrd.simplewear.ui.navigation.Screen
 import com.thewizrd.simplewear.ui.theme.findActivity
 import com.thewizrd.simplewear.ui.utils.rememberFocusRequester
+import com.thewizrd.simplewear.viewmodels.ConfirmationData
+import com.thewizrd.simplewear.viewmodels.ConfirmationViewModel
 import com.thewizrd.simplewear.viewmodels.WearableListenerViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -144,6 +146,9 @@ fun MediaPlayerUi(
     }
     val uiState by mediaPlayerViewModel.uiState.collectAsState()
     val mediaPagerState = remember(uiState) { uiState.pagerState }
+
+    val confirmationViewModel = viewModel<ConfirmationViewModel>()
+    val confirmationData by confirmationViewModel.confirmationEventsFlow.collectAsState()
 
     val isRoot = navController.previousBackStackEntry == null
 
@@ -236,6 +241,12 @@ fun MediaPlayerUi(
                 }
             }
         }
+
+        ConfirmationOverlay(
+            confirmationData = confirmationData,
+            onTimeout = { confirmationViewModel.clearFlow() },
+            showDialog = ambientState.isInteractive && confirmationData != null
+        )
     }
 
     LaunchedEffect(context) {
@@ -301,16 +312,11 @@ fun MediaPlayerUi(
                             event.data.getSerializable(WearableListenerViewModel.EXTRA_STATUS) as ActionStatus
 
                         if (actionStatus == ActionStatus.PERMISSION_DENIED) {
-                            CustomConfirmationOverlay()
-                                .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
-                                .setCustomDrawable(
-                                    ContextCompat.getDrawable(
-                                        activity,
-                                        R.drawable.ws_full_sad
-                                    )
+                            confirmationViewModel.showConfirmation(
+                                ConfirmationData(
+                                    title = context.getString(R.string.error_permissiondenied)
                                 )
-                                .setMessage(activity.getString(R.string.error_permissiondenied))
-                                .showOn(activity)
+                            )
 
                             mediaPlayerViewModel.openAppOnPhone(activity, false)
                         }
@@ -321,11 +327,11 @@ fun MediaPlayerUi(
                             event.data.getSerializable(WearableListenerViewModel.EXTRA_STATUS) as ActionStatus
 
                         if (actionStatus == ActionStatus.TIMEOUT) {
-                            CustomConfirmationOverlay()
-                                .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
-                                .setCustomDrawable(R.drawable.ws_full_sad)
-                                .setMessage(R.string.error_playback_failed)
-                                .showOn(activity)
+                            confirmationViewModel.showConfirmation(
+                                ConfirmationData(
+                                    title = context.getString(R.string.error_playback_failed)
+                                )
+                            )
                         }
                     }
                 }

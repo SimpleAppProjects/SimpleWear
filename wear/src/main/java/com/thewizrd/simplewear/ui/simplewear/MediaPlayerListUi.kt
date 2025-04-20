@@ -70,13 +70,15 @@ import com.thewizrd.shared_resources.helpers.WearConnectionStatus
 import com.thewizrd.simplewear.PhoneSyncActivity
 import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.controls.AppItemViewModel
-import com.thewizrd.simplewear.controls.CustomConfirmationOverlay
 import com.thewizrd.simplewear.helpers.showConfirmationOverlay
 import com.thewizrd.simplewear.preferences.Settings
+import com.thewizrd.simplewear.ui.components.ConfirmationOverlay
 import com.thewizrd.simplewear.ui.components.LoadingContent
 import com.thewizrd.simplewear.ui.components.SwipeToDismissPagerScreen
 import com.thewizrd.simplewear.ui.navigation.Screen
 import com.thewizrd.simplewear.ui.theme.findActivity
+import com.thewizrd.simplewear.viewmodels.ConfirmationData
+import com.thewizrd.simplewear.viewmodels.ConfirmationViewModel
 import com.thewizrd.simplewear.viewmodels.MediaPlayerListUiState
 import com.thewizrd.simplewear.viewmodels.MediaPlayerListViewModel
 import com.thewizrd.simplewear.viewmodels.WearableListenerViewModel
@@ -93,6 +95,9 @@ fun MediaPlayerListUi(
     val lifecycleOwner = LocalLifecycleOwner.current
     val mediaPlayerListViewModel = viewModel<MediaPlayerListViewModel>()
     val uiState by mediaPlayerListViewModel.uiState.collectAsState()
+
+    val confirmationViewModel = viewModel<ConfirmationViewModel>()
+    val confirmationData by confirmationViewModel.confirmationEventsFlow.collectAsState()
 
     val scrollState = rememberResponsiveColumnState(
         contentPadding = ScalingLazyColumnDefaults.padding(
@@ -127,6 +132,11 @@ fun MediaPlayerListUi(
             )
         }
     }
+
+    ConfirmationOverlay(
+        confirmationData = confirmationData,
+        onTimeout = { confirmationViewModel.clearFlow() },
+    )
 
     LaunchedEffect(context) {
         mediaPlayerListViewModel.initActivityContext(activity)
@@ -179,16 +189,11 @@ fun MediaPlayerListUi(
                             event.data.getSerializable(WearableListenerViewModel.EXTRA_STATUS) as ActionStatus
 
                         if (status == ActionStatus.PERMISSION_DENIED) {
-                            CustomConfirmationOverlay()
-                                .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
-                                .setCustomDrawable(
-                                    ContextCompat.getDrawable(
-                                        activity,
-                                        R.drawable.ws_full_sad
-                                    )
+                            confirmationViewModel.showConfirmation(
+                                ConfirmationData(
+                                    title = context.getString(R.string.error_permissiondenied)
                                 )
-                                .setMessage(activity.getString(R.string.error_permissiondenied))
-                                .showOn(activity)
+                            )
 
                             mediaPlayerListViewModel.openAppOnPhone(
                                 activity,

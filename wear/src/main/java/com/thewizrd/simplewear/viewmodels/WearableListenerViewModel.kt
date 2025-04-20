@@ -478,6 +478,7 @@ abstract class WearableListenerViewModel(private val app: Application) : Android
         const val ACTION_UPDATECONNECTIONSTATUS =
             "SimpleWear.Droid.Wear.action.UPDATE_CONNECTION_STATUS"
         const val ACTION_CHANGED = "SimpleWear.Droid.Wear.action.ACTION_CHANGED"
+        const val ACTION_SHOWCONFIRMATION = "SimpleWear.Droid.Wear.action.SHOW_CONFIRMATION"
 
         // Extras
         /**

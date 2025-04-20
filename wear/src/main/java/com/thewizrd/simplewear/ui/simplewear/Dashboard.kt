@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -32,7 +33,6 @@ import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
 import androidx.core.content.PermissionChecker
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -68,11 +68,13 @@ import com.thewizrd.shared_resources.utils.JSONParser
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.simplewear.PhoneSyncActivity
 import com.thewizrd.simplewear.R
-import com.thewizrd.simplewear.controls.CustomConfirmationOverlay
 import com.thewizrd.simplewear.preferences.Settings
+import com.thewizrd.simplewear.ui.components.ConfirmationOverlay
 import com.thewizrd.simplewear.ui.theme.findActivity
 import com.thewizrd.simplewear.updates.InAppUpdateManager
 import com.thewizrd.simplewear.utils.ErrorMessage
+import com.thewizrd.simplewear.viewmodels.ConfirmationData
+import com.thewizrd.simplewear.viewmodels.ConfirmationViewModel
 import com.thewizrd.simplewear.viewmodels.DashboardViewModel
 import com.thewizrd.simplewear.viewmodels.WearableListenerViewModel
 import kotlinx.coroutines.delay
@@ -92,6 +94,9 @@ fun Dashboard(
 
     val lifecycleOwner = LocalLifecycleOwner.current
     val dashboardViewModel = viewModel<DashboardViewModel>()
+
+    val confirmationViewModel = viewModel<ConfirmationViewModel>()
+    val confirmationData by confirmationViewModel.confirmationEventsFlow.collectAsState()
 
     val scrollState = rememberScrollState()
     var stateRefreshed by remember { mutableStateOf(false) }
@@ -202,6 +207,11 @@ fun Dashboard(
             startAnim = true
         }
     }
+
+    ConfirmationOverlay(
+        confirmationData = confirmationData,
+        onTimeout = { confirmationViewModel.clearFlow() },
+    )
 
     val permissionLauncher =
         rememberLauncherForActivityResult(contract = ActivityResultContracts.RequestMultiplePermissions()) {}
@@ -340,30 +350,18 @@ fun Dashboard(
                         if (!action.isActionSuccessful) {
                             when (actionStatus) {
                                 ActionStatus.UNKNOWN, ActionStatus.FAILURE -> {
-                                    CustomConfirmationOverlay()
-                                        .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
-                                        .setCustomDrawable(
-                                            ContextCompat.getDrawable(
-                                                activity,
-                                                R.drawable.ws_full_sad
-                                            )
-                                        )
-                                        .setMessage(activity.getString(R.string.error_actionfailed))
-                                        .showOn(activity)
+                                    confirmationViewModel.showFailure(
+                                        message = context.getString(R.string.error_actionfailed)
+                                    )
                                 }
 
                                 ActionStatus.PERMISSION_DENIED -> {
                                     if (action.actionType == Actions.TORCH) {
-                                        CustomConfirmationOverlay()
-                                            .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
-                                            .setCustomDrawable(
-                                                ContextCompat.getDrawable(
-                                                    activity,
-                                                    R.drawable.ws_full_sad
-                                                )
+                                        confirmationViewModel.showConfirmation(
+                                            ConfirmationData(
+                                                title = context.getString(R.string.error_torch_action)
                                             )
-                                            .setMessage(activity.getString(R.string.error_torch_action))
-                                            .showOn(activity)
+                                        )
                                     } else if (action.actionType == Actions.SLEEPTIMER) {
                                         // Open store on device
                                         val intentAndroid = Intent(Intent.ACTION_VIEW)
@@ -378,74 +376,45 @@ fun Dashboard(
                                                 Toast.LENGTH_LONG
                                             ).show()
                                         } else {
-                                            CustomConfirmationOverlay()
-                                                .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
-                                                .setCustomDrawable(
-                                                    ContextCompat.getDrawable(
-                                                        activity,
-                                                        R.drawable.ws_full_sad
-                                                    )
-                                                )
-                                                .setMessage(
-                                                    activity.getString(
-                                                        R.string.error_sleeptimer_notinstalled
-                                                    )
-                                                )
-                                                .showOn(activity)
-                                        }
-                                    } else {
-                                        CustomConfirmationOverlay()
-                                            .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
-                                            .setCustomDrawable(
-                                                ContextCompat.getDrawable(
-                                                    activity,
-                                                    R.drawable.ws_full_sad
+                                            confirmationViewModel.showConfirmation(
+                                                ConfirmationData(
+                                                    title = context.getString(R.string.error_sleeptimer_notinstalled)
                                                 )
                                             )
-                                            .setMessage(activity.getString(R.string.error_permissiondenied))
-                                            .showOn(activity)
+                                        }
+                                    } else {
+                                        confirmationViewModel.showConfirmation(
+                                            ConfirmationData(
+                                                title = context.getString(R.string.error_permissiondenied)
+                                            )
+                                        )
                                     }
 
                                     dashboardViewModel.openAppOnPhone(activity, false)
                                 }
 
                                 ActionStatus.TIMEOUT -> {
-                                    CustomConfirmationOverlay()
-                                        .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
-                                        .setCustomDrawable(
-                                            ContextCompat.getDrawable(
-                                                activity,
-                                                R.drawable.ws_full_sad
-                                            )
+                                    confirmationViewModel.showConfirmation(
+                                        ConfirmationData(
+                                            title = context.getString(R.string.error_sendmessage)
                                         )
-                                        .setMessage(activity.getString(R.string.error_sendmessage))
-                                        .showOn(activity)
+                                    )
                                 }
 
                                 ActionStatus.REMOTE_FAILURE -> {
-                                    CustomConfirmationOverlay()
-                                        .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
-                                        .setCustomDrawable(
-                                            ContextCompat.getDrawable(
-                                                activity,
-                                                R.drawable.ws_full_sad
-                                            )
+                                    confirmationViewModel.showConfirmation(
+                                        ConfirmationData(
+                                            title = context.getString(R.string.error_remoteactionfailed)
                                         )
-                                        .setMessage(activity.getString(R.string.error_remoteactionfailed))
-                                        .showOn(activity)
+                                    )
                                 }
 
                                 ActionStatus.REMOTE_PERMISSION_DENIED -> {
-                                    CustomConfirmationOverlay()
-                                        .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
-                                        .setCustomDrawable(
-                                            ContextCompat.getDrawable(
-                                                activity,
-                                                R.drawable.ws_full_sad
-                                            )
+                                    confirmationViewModel.showConfirmation(
+                                        ConfirmationData(
+                                            title = context.getString(R.string.error_permissiondenied)
                                         )
-                                        .setMessage(activity.getString(R.string.error_permissiondenied))
-                                        .showOn(activity)
+                                    )
                                 }
 
                                 ActionStatus.SUCCESS -> {
@@ -455,6 +424,15 @@ fun Dashboard(
 
                         // Re-enable click action
                         dashboardViewModel.setActionsClickable(true)
+                    }
+
+                    WearableListenerViewModel.ACTION_SHOWCONFIRMATION -> {
+                        val jsonData =
+                            event.data.getString(WearableListenerViewModel.EXTRA_ACTIONDATA)
+
+                        JSONParser.deserializer(jsonData, ConfirmationData::class.java)?.let {
+                            confirmationViewModel.showConfirmation(it)
+                        }
                     }
                 }
             }

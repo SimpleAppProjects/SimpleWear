@@ -52,9 +52,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.wear.compose.foundation.SwipeToDismissBoxState
 import androidx.wear.compose.foundation.rememberSwipeToDismissBoxState
@@ -73,11 +73,13 @@ import com.thewizrd.shared_resources.helpers.GestureUIHelper
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
 import com.thewizrd.simplewear.PhoneSyncActivity
 import com.thewizrd.simplewear.R
-import com.thewizrd.simplewear.controls.CustomConfirmationOverlay
+import com.thewizrd.simplewear.ui.components.ConfirmationOverlay
 import com.thewizrd.simplewear.ui.components.LoadingContent
 import com.thewizrd.simplewear.ui.components.SwipeToDismissPagerScreen
 import com.thewizrd.simplewear.ui.theme.activityViewModel
 import com.thewizrd.simplewear.ui.theme.findActivity
+import com.thewizrd.simplewear.viewmodels.ConfirmationData
+import com.thewizrd.simplewear.viewmodels.ConfirmationViewModel
 import com.thewizrd.simplewear.viewmodels.GestureUiState
 import com.thewizrd.simplewear.viewmodels.GestureUiViewModel
 import com.thewizrd.simplewear.viewmodels.WearableListenerViewModel
@@ -102,6 +104,9 @@ fun GesturesUi(
     val lifecycleOwner = LocalLifecycleOwner.current
     val gestureUiViewModel = activityViewModel<GestureUiViewModel>()
     val uiState by gestureUiViewModel.uiState.collectAsState()
+
+    val confirmationViewModel = viewModel<ConfirmationViewModel>()
+    val confirmationData by confirmationViewModel.confirmationEventsFlow.collectAsState()
 
     val pagerState = rememberPagerState {
         if (uiState.actionState.accessibilityEnabled && uiState.actionState.keyEventSupported) 2 else 1
@@ -165,6 +170,11 @@ fun GesturesUi(
         }
     }
 
+    ConfirmationOverlay(
+        confirmationData = confirmationData,
+        onTimeout = { confirmationViewModel.clearFlow() },
+    )
+
     LaunchedEffect(lifecycleOwner) {
         lifecycleOwner.lifecycleScope.launch {
             gestureUiViewModel.eventFlow.collect { event ->
@@ -212,16 +222,11 @@ fun GesturesUi(
                             event.data.getSerializable(WearableListenerViewModel.EXTRA_STATUS) as ActionStatus
 
                         if (status == ActionStatus.PERMISSION_DENIED) {
-                            CustomConfirmationOverlay()
-                                .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
-                                .setCustomDrawable(
-                                    ContextCompat.getDrawable(
-                                        activity,
-                                        R.drawable.ws_full_sad
-                                    )
+                            confirmationViewModel.showConfirmation(
+                                ConfirmationData(
+                                    title = context.getString(R.string.error_permissiondenied)
                                 )
-                                .setMessage(activity.getString(R.string.error_permissiondenied))
-                                .showOn(activity)
+                            )
 
                             gestureUiViewModel.openAppOnPhone(activity, false)
                         }
