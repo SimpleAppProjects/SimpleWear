@@ -40,8 +40,7 @@ Allows the application to pair with wearable device and to toggle Bluetooth stat
 
 ### Phone Access
 
-Allows the application to know if an active call is present on your phone (for Call Controller
-feature)
+Allows the application to know if an active call is present on your phone (for Call Controller feature)
 
 ### Contacts
 
