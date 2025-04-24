@@ -10,6 +10,7 @@ import android.bluetooth.le.AdvertiseData
 import android.bluetooth.le.AdvertisingSetCallback
 import android.bluetooth.le.AdvertisingSetParameters
 import android.content.Intent
+import android.net.wifi.WifiManager
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
@@ -24,27 +25,45 @@ import androidx.wear.ongoing.Status
 import com.google.android.gms.wearable.CapabilityInfo
 import com.google.android.gms.wearable.DataEvent
 import com.google.android.gms.wearable.DataEventBuffer
-import com.google.android.gms.wearable.DataItem
 import com.google.android.gms.wearable.DataMapItem
 import com.google.android.gms.wearable.MessageEvent
 import com.google.android.gms.wearable.Node
 import com.google.android.gms.wearable.Wearable
 import com.google.android.gms.wearable.WearableListenerService
+import com.thewizrd.shared_resources.actions.Action
 import com.thewizrd.shared_resources.actions.Actions
+import com.thewizrd.shared_resources.actions.AudioStreamState
+import com.thewizrd.shared_resources.actions.BatteryStatus
+import com.thewizrd.shared_resources.actions.ToggleAction
+import com.thewizrd.shared_resources.appLib
+import com.thewizrd.shared_resources.data.AppItemData
 import com.thewizrd.shared_resources.helpers.InCallUIHelper
 import com.thewizrd.shared_resources.helpers.MediaHelper
 import com.thewizrd.shared_resources.helpers.WearableHelper
+import com.thewizrd.shared_resources.media.MediaMetaData
+import com.thewizrd.shared_resources.media.MediaPlayerState
+import com.thewizrd.shared_resources.media.PlaybackState
+import com.thewizrd.shared_resources.utils.JSONParser
 import com.thewizrd.shared_resources.utils.Logger
+import com.thewizrd.shared_resources.utils.bytesToBool
+import com.thewizrd.shared_resources.utils.bytesToString
 import com.thewizrd.shared_resources.utils.stringToBytes
 import com.thewizrd.simplewear.DashboardActivity
 import com.thewizrd.simplewear.PhoneSyncActivity
 import com.thewizrd.simplewear.R
+import com.thewizrd.simplewear.datastore.dashboard.dashboardDataStore
+import com.thewizrd.simplewear.datastore.media.appInfoDataStore
+import com.thewizrd.simplewear.datastore.media.artworkDataStore
+import com.thewizrd.simplewear.datastore.media.mediaDataStore
 import com.thewizrd.simplewear.media.MediaPlayerActivity
 import com.thewizrd.simplewear.preferences.Settings
 import com.thewizrd.simplewear.viewmodels.WearableListenerViewModel
+import com.thewizrd.simplewear.wearable.complications.BatteryStatusComplicationService
+import com.thewizrd.simplewear.wearable.tiles.DashboardTileProviderService
+import com.thewizrd.simplewear.wearable.tiles.MediaPlayerTileProviderService
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.tasks.await
@@ -64,26 +83,301 @@ class WearableDataListenerService : WearableListenerService() {
     private var mPhoneNodeWithApp: Node? = null
 
     private lateinit var mNotificationManager: NotificationManager
+    private var mLegacyTilesEnabled: Boolean = false
 
     override fun onCreate() {
         super.onCreate()
 
         mNotificationManager = getSystemService(NotificationManager::class.java)
+        mLegacyTilesEnabled = resources.getBoolean(R.bool.enable_unofficial_tiles)
     }
 
     override fun onMessageReceived(messageEvent: MessageEvent) {
-        if (messageEvent.path == WearableHelper.StartActivityPath) {
-            val startIntent = Intent(this, PhoneSyncActivity::class.java)
-            this.startActivity(startIntent)
-        } else if (messageEvent.path == WearableHelper.BtDiscoverPath) {
-            startBTDiscovery()
+        when {
+            messageEvent.path == WearableHelper.StartActivityPath -> {
+                val startIntent = Intent(this, PhoneSyncActivity::class.java)
+                this.startActivity(startIntent)
+            }
 
-            GlobalScope.launch(Dispatchers.Default) {
-                sendMessage(
-                    messageEvent.sourceNodeId,
-                    messageEvent.path,
-                    Build.MODEL.stringToBytes()
-                )
+            messageEvent.path == WearableHelper.BtDiscoverPath -> {
+                startBTDiscovery()
+
+                appLib.appScope.launch(Dispatchers.Default) {
+                    sendMessage(
+                        messageEvent.sourceNodeId,
+                        messageEvent.path,
+                        Build.MODEL.stringToBytes()
+                    )
+                }
+            }
+
+            messageEvent.path == MediaHelper.MediaPlayerStateBridgePath -> {
+                val jsonData = messageEvent.data?.bytesToString()
+                val metadata = jsonData?.let {
+                    JSONParser.deserializer(it, MediaMetaData::class.java)
+                }
+
+                if (metadata != null) {
+                    createMediaOngoingActivity(metadata)
+                } else {
+                    dismissMediaOngoingActivity()
+                }
+            }
+
+            messageEvent.path == InCallUIHelper.CallStateBridgePath -> {
+                val enable = messageEvent.data.bytesToBool()
+
+                if (enable) {
+                    createCallOngoingActivity()
+                } else {
+                    dismissCallOngoingActivity()
+                }
+            }
+
+            messageEvent.path == WearableHelper.AudioStatusPath || messageEvent.path == MediaHelper.MediaVolumeStatusPath -> {
+                val status = messageEvent.data?.let {
+                    JSONParser.deserializer(
+                        it.bytesToString(),
+                        AudioStreamState::class.java
+                    )
+                }
+
+                appLib.appScope.launch {
+                    runCatching {
+                        Logger.debug(TAG, "saving audio state...")
+                        applicationContext.mediaDataStore.updateData { cache ->
+                            cache.copy(audioStreamState = status)
+                        }
+                    }.onFailure {
+                        Logger.error(TAG, it)
+                    }
+                }
+            }
+
+            messageEvent.path == MediaHelper.MediaPlayerStatePath -> {
+                val playerState = messageEvent.data?.let {
+                    JSONParser.deserializer(it.bytesToString(), MediaPlayerState::class.java)
+                }
+
+                appLib.appScope.launch {
+                    runCatching {
+                        val mediaDataStore = appLib.context.mediaDataStore
+                        val currentState = mediaDataStore.data.firstOrNull()
+
+                        Logger.debug(TAG, "saving media state - ${playerState?.key}...")
+                        mediaDataStore.updateData { cache ->
+                            cache.copy(mediaPlayerState = playerState)
+                        }
+
+                        if (!mLegacyTilesEnabled && (playerState?.key != currentState?.mediaPlayerState?.key || (playerState?.playbackState == PlaybackState.PLAYING && playerState.mediaMetaData?.positionState != currentState?.mediaPlayerState?.mediaMetaData?.positionState))) {
+                            MediaPlayerTileProviderService.requestTileUpdate(appLib.context)
+                        }
+                    }.onFailure {
+                        Logger.error(TAG, it)
+                    }
+                }
+            }
+
+            messageEvent.path == MediaHelper.MediaPlayerArtPath -> {
+                val artworkBytes = messageEvent.data
+
+                appLib.appScope.launch {
+                    runCatching {
+                        val artworkCache = appLib.context.artworkDataStore
+                        val currentState = artworkCache.data.firstOrNull()
+
+                        Logger.debug(TAG, "saving art - ${artworkBytes.size}bytes...")
+                        artworkCache.updateData { artworkBytes }
+
+                        if (!mLegacyTilesEnabled && !artworkBytes.contentEquals(currentState)) {
+                            MediaPlayerTileProviderService.requestTileUpdate(appLib.context)
+                        }
+                    }.onFailure {
+                        Logger.error(TAG, it)
+                    }
+                }
+            }
+
+            messageEvent.path == MediaHelper.MediaPlayerAppInfoPath -> {
+                val appInfo = messageEvent.data?.let {
+                    JSONParser.deserializer(it.bytesToString(), AppItemData::class.java)
+                }
+
+                appLib.appScope.launch {
+                    runCatching {
+                        val appInfoDataStore = appLib.context.appInfoDataStore
+                        val currentState = appInfoDataStore.data.firstOrNull()
+
+                        Logger.debug(TAG, "saving app info - ${appInfo?.label}...")
+                        appInfoDataStore.updateData { cache ->
+                            cache.copy(
+                                label = appInfo?.label,
+                                packageName = appInfo?.packageName,
+                                activityName = appInfo?.activityName,
+                                iconBitmap = appInfo?.iconBitmap
+                            )
+                        }
+
+                        if (!mLegacyTilesEnabled && appInfo?.key != currentState?.key) {
+                            MediaPlayerTileProviderService.requestTileUpdate(appLib.context)
+                        }
+                    }.onFailure {
+                        Logger.error(TAG, it)
+                    }
+                }
+            }
+
+            messageEvent.path.contains(WearableHelper.WifiPath) -> {
+                messageEvent.data?.let { data ->
+                    val wifiStatus = data[0].toInt()
+                    var enabled = false
+
+                    when (wifiStatus) {
+                        WifiManager.WIFI_STATE_DISABLING,
+                        WifiManager.WIFI_STATE_DISABLED,
+                        WifiManager.WIFI_STATE_UNKNOWN -> enabled = false
+
+                        WifiManager.WIFI_STATE_ENABLING,
+                        WifiManager.WIFI_STATE_ENABLED -> enabled = true
+                    }
+
+                    appLib.appScope.launch {
+                        runCatching {
+                            val dashboardDataStore = appLib.context.dashboardDataStore
+                            val currentState = dashboardDataStore.data.firstOrNull()
+                            val currentAction =
+                                currentState?.actions?.get(Actions.WIFI) as? ToggleAction
+
+                            Logger.debug(TAG, "wifi state changed - ${enabled}...")
+
+                            dashboardDataStore.updateData { cache ->
+                                cache.copy(
+                                    actions = cache.actions.toMutableMap().apply {
+                                        this[Actions.WIFI] = ToggleAction(Actions.WIFI, enabled)
+                                    }
+                                )
+                            }
+
+                            if (!mLegacyTilesEnabled && currentAction?.isEnabled != enabled) {
+                                DashboardTileProviderService.requestTileUpdate(appLib.context)
+                            }
+                        }
+                    }
+                }
+            }
+
+            messageEvent.path.contains(WearableHelper.BluetoothPath) -> {
+                messageEvent.data?.let { data ->
+                    val btStatus = data[0].toInt()
+                    var enabled = false
+
+                    when (btStatus) {
+                        BluetoothAdapter.STATE_OFF,
+                        BluetoothAdapter.STATE_TURNING_OFF -> enabled = false
+
+                        BluetoothAdapter.STATE_ON,
+                        BluetoothAdapter.STATE_TURNING_ON -> enabled = true
+                    }
+
+                    appLib.appScope.launch {
+                        runCatching {
+                            val dashboardDataStore = appLib.context.dashboardDataStore
+                            val currentState = dashboardDataStore.data.firstOrNull()
+                            val currentAction =
+                                currentState?.actions?.get(Actions.BLUETOOTH) as? ToggleAction
+
+                            Logger.debug(TAG, "bluetooth state changed - ${enabled}...")
+
+                            dashboardDataStore.updateData { cache ->
+                                cache.copy(
+                                    actions = cache.actions.toMutableMap().apply {
+                                        this[Actions.BLUETOOTH] =
+                                            ToggleAction(Actions.BLUETOOTH, enabled)
+                                    }
+                                )
+                            }
+
+                            if (!mLegacyTilesEnabled && currentAction?.isEnabled != enabled) {
+                                DashboardTileProviderService.requestTileUpdate(appLib.context)
+                            }
+                        }
+                    }
+                }
+            }
+
+            messageEvent.path == WearableHelper.BatteryPath -> {
+                val status = messageEvent.data?.let {
+                    JSONParser.deserializer(it.bytesToString(), BatteryStatus::class.java)
+                }
+
+                appLib.appScope.launch {
+                    runCatching {
+                        val dashboardDataStore = appLib.context.dashboardDataStore
+                        val currentState = dashboardDataStore.data.firstOrNull()
+
+                        Logger.debug(
+                            TAG,
+                            "battery state updated - ${status?.batteryLevel}|${status?.isCharging}..."
+                        )
+
+                        dashboardDataStore.updateData { cache ->
+                            cache.copy(batteryStatus = status)
+                        }
+
+                        if (currentState?.batteryStatus != status) {
+                            BatteryStatusComplicationService.requestComplicationUpdate(
+                                applicationContext
+                            )
+                            if (!mLegacyTilesEnabled) {
+                                DashboardTileProviderService.requestTileUpdate(appLib.context)
+                            }
+                        }
+                    }
+                }
+            }
+
+            messageEvent.path == WearableHelper.ActionsPath -> {
+                val jsonData = messageEvent.data?.bytesToString()
+                val action = JSONParser.deserializer(jsonData, Action::class.java)
+
+                when (action?.actionType) {
+                    Actions.WIFI,
+                    Actions.BLUETOOTH,
+                    Actions.TORCH,
+                    Actions.DONOTDISTURB,
+                    Actions.RINGER,
+                    Actions.MOBILEDATA,
+                    Actions.LOCATION,
+                    Actions.LOCKSCREEN,
+                    Actions.PHONE,
+                    Actions.HOTSPOT -> {
+                        appLib.appScope.launch {
+                            runCatching {
+                                val dashboardDataStore = appLib.context.dashboardDataStore
+                                val currentState = dashboardDataStore.data.firstOrNull()
+                                val currentAction = currentState?.actions?.get(action.actionType)
+
+                                Logger.debug(TAG, "action changed - ${action.actionType}...")
+
+                                dashboardDataStore.updateData { cache ->
+                                    cache.copy(
+                                        actions = cache.actions.toMutableMap().apply {
+                                            this[action.actionType] = action
+                                        }
+                                    )
+                                }
+
+                                if (!mLegacyTilesEnabled && currentAction != action) {
+                                    DashboardTileProviderService.requestTileUpdate(appLib.context)
+                                }
+                            }
+                        }
+                    }
+
+                    else -> {
+                        // ignore unsupported action
+                    }
+                }
             }
         }
     }
@@ -96,7 +390,7 @@ class WearableDataListenerService : WearableListenerService() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && adapter.isMultipleAdvertisementSupported) {
             val advertiser = adapter.bluetoothLeAdvertiser
 
-            GlobalScope.launch(Dispatchers.Default) {
+            appLib.appScope.launch(Dispatchers.Default) {
                 val params = AdvertisingSetParameters.Builder()
                     .setLegacyMode(true)
                     .setConnectable(false)
@@ -167,24 +461,12 @@ class WearableDataListenerService : WearableListenerService() {
                             Settings.setLoadAppIcons(loadIcons)
                         }
                     }
-                } else if (item.uri.path == MediaHelper.MediaPlayerStateBridgePath) {
-                    createMediaOngoingActivity(item)
-                } else if (item.uri.path == InCallUIHelper.CallStateBridgePath) {
-                    createCallOngoingActivity(item)
-                }
-            }
-            if (event.type == DataEvent.TYPE_DELETED) {
-                val item = event.dataItem
-                if (item.uri.path == MediaHelper.MediaPlayerStateBridgePath) {
-                    dismissMediaOngoingActivity()
-                } else if (item.uri.path == InCallUIHelper.CallStateBridgePath) {
-                    dismissCallOngoingActivity()
                 }
             }
         }
     }
 
-    private fun createCallOngoingActivity(item: DataItem) {
+    private fun createCallOngoingActivity() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             initCallControllerNotifChannel()
         }
@@ -229,13 +511,12 @@ class WearableDataListenerService : WearableListenerService() {
         mNotificationManager.notify(1000, notifBuilder.build())
     }
 
-    private fun createMediaOngoingActivity(item: DataItem) {
+    private fun createMediaOngoingActivity(mediaMetaData: MediaMetaData) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             initMediaControllerNotifChannel()
         }
 
-        val dataMap = DataMapItem.fromDataItem(item).dataMap
-        val songTitle = dataMap.getString(MediaHelper.KEY_MEDIA_METADATA_TITLE)
+        val songTitle = mediaMetaData.title
         val notifTitle = getString(R.string.title_nowplaying)
 
         val notifBuilder = NotificationCompat.Builder(this, MEDIA_NOT_CHANNEL_ID)

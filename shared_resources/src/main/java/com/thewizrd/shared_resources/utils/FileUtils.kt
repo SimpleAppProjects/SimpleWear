@@ -1,19 +1,55 @@
 package com.thewizrd.shared_resources.utils
 
+import android.content.Context
+import android.net.Uri
 import android.util.Log
 import androidx.annotation.WorkerThread
 import androidx.core.util.AtomicFile
+import androidx.core.util.ObjectsCompat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.withContext
-import java.io.*
+import java.io.BufferedReader
+import java.io.Closeable
+import java.io.File
+import java.io.FileInputStream
+import java.io.FileNotFoundException
+import java.io.FileOutputStream
+import java.io.IOException
+import java.io.InputStream
+import java.io.InputStreamReader
+import java.io.OutputStreamWriter
 
 object FileUtils {
     @JvmStatic
     fun isValid(filePath: String): Boolean {
         val file = File(filePath)
         return file.exists() && file.length() > 0
+    }
+
+    @JvmStatic
+    fun isValid(context: Context, assetUri: Uri?): Boolean {
+        if (assetUri != null && ObjectsCompat.equals(assetUri.scheme, "file")) {
+            var path = assetUri.path
+            if (path?.startsWith("/android_asset") == true) {
+                val startAsset = path.indexOf("/android_asset/")
+                path = path.substring(startAsset + 15)
+
+                var stream: InputStream? = null
+                try {
+                    stream = context.resources.assets.open(path)
+                    return true
+                } catch (ignored: IOException) {
+                } finally {
+                    stream?.closeQuietly()
+                }
+            } else if (path != null) {
+                return File(path).exists()
+            }
+        }
+
+        return false
     }
 
     suspend fun readFile(file: File): String? = withContext(Dispatchers.IO) {
@@ -44,9 +80,7 @@ object FileUtils {
             Logger.writeLine(Log.ERROR, ex)
         } finally {
             // Close stream
-            runCatching {
-                reader?.close()
-            }
+            reader?.closeQuietly()
         }
 
         data
@@ -74,10 +108,8 @@ object FileUtils {
         } catch (ex: IOException) {
             Logger.writeLine(Log.ERROR, ex)
         } finally {
-            runCatching {
-                writer?.close()
-                outputStream?.close()
-            }
+            writer?.closeQuietly()
+            outputStream?.closeQuietly()
         }
     }
 
@@ -105,6 +137,7 @@ object FileUtils {
         success
     }
 
+    @JvmStatic
     @WorkerThread
     fun isFileLocked(file: File): Boolean {
         if (!file.exists())
@@ -114,7 +147,7 @@ object FileUtils {
 
         try {
             stream = FileInputStream(file)
-        } catch (e: FileNotFoundException) {
+        } catch (fex: FileNotFoundException) {
             return false
         } catch (e: IOException) {
             //the file is unavailable because it is:
@@ -123,12 +156,19 @@ object FileUtils {
             //or does not exist (has already been processed)
             return true
         } finally {
-            runCatching {
-                stream?.close()
-            }
+            stream?.closeQuietly()
         }
 
         //file is not locked
         return false
+    }
+}
+
+fun Closeable.closeQuietly() {
+    try {
+        close()
+    } catch (e: RuntimeException) {
+        throw e
+    } catch (_: Exception) {
     }
 }

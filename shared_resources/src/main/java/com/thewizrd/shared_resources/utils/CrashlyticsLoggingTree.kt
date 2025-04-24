@@ -4,27 +4,34 @@ import android.annotation.SuppressLint
 import android.util.Log
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.thewizrd.shared_resources.utils.CrashlyticsLoggingTree
+import com.thewizrd.shared_resources.utils.Logger.DEBUG_MODE_ENABLED
 import timber.log.Timber
 
+@SuppressLint("LogNotTimber")
 class CrashlyticsLoggingTree : Timber.Tree() {
     companion object {
         private const val KEY_PRIORITY = "priority"
         private const val KEY_TAG = "tag"
         private const val KEY_MESSAGE = "message"
+
         private val TAG = CrashlyticsLoggingTree::class.java.simpleName
     }
 
     private val crashlytics = FirebaseCrashlytics.getInstance()
 
-    @SuppressLint("LogNotTimber")
+    override fun isLoggable(tag: String?, priority: Int): Boolean {
+        return priority > Log.DEBUG || DEBUG_MODE_ENABLED
+    }
+
     override fun log(priority: Int, tag: String?, message: String, t: Throwable?) {
         try {
-            val priorityTAG: String = when (priority) {
+            val priorityTAG = when (priority) {
+                Log.VERBOSE -> "VERBOSE"
                 Log.DEBUG -> "DEBUG"
                 Log.INFO -> "INFO"
-                Log.VERBOSE -> "VERBOSE"
                 Log.WARN -> "WARN"
                 Log.ERROR -> "ERROR"
+                Log.ASSERT -> "ASSERT"
                 else -> "DEBUG"
             }
 
@@ -33,10 +40,9 @@ class CrashlyticsLoggingTree : Timber.Tree() {
             crashlytics.setCustomKey(KEY_MESSAGE, message)
 
             if (tag != null) {
-                crashlytics.log(String.format("%s/%s: %s", priorityTAG, tag, message))
+                crashlytics.log("$priorityTAG | $tag: $message")
             } else {
-                crashlytics.log(String.format("%s/%s", priorityTAG, message))
-
+                crashlytics.log("$priorityTAG | $message")
             }
 
             if (t != null) {

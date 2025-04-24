@@ -7,8 +7,8 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import com.thewizrd.shared_resources.actions.Actions
+import com.thewizrd.shared_resources.appLib
 import com.thewizrd.shared_resources.utils.Logger
-import com.thewizrd.simplewear.App
 import com.thewizrd.simplewear.helpers.PhoneStatusHelper
 import com.thewizrd.simplewear.wearable.WearableWorker
 import java.util.concurrent.Executors
@@ -24,7 +24,7 @@ object TorchListener {
         object : CameraManager.TorchCallback() {
             override fun onTorchModeChanged(cameraId: String, enabled: Boolean) {
                 if (cameraId == primaryCameraId.value) {
-                    val context = App.instance.appContext
+                    val context = appLib.context
 
                     isTorchEnabled = enabled
 
@@ -39,8 +39,7 @@ object TorchListener {
     }
 
     private val primaryCameraId = lazy {
-        val cameraMgr =
-            App.instance.appContext.getSystemService(Context.CAMERA_SERVICE) as CameraManager
+        val cameraMgr = appLib.context.getSystemService(Context.CAMERA_SERVICE) as CameraManager
         cameraMgr.cameraIdList[0]
     }
 

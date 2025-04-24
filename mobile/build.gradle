@@ -20,9 +20,10 @@ android {
 
         minSdkVersion rootProject.minSdkVersion
         targetSdkVersion rootProject.targetSdkVersion
-        // NOTE: Version Code Format [TargetSDK, Version Name, Build Number, Variant Code (Android: 00, WearOS: 01)]
-        versionCode 341915050
-        versionName "1.15.2"
+        // NOTE: Version Code Format [TargetSDK, Version Name, Build Number, Variant Code (Android: 0, WearOS: 1)]
+        // NOTE: update SUPPORTED_VERSION_CODE if needed
+        versionCode 341916040
+        versionName "1.16.0"
 
         vectorDrawables.useSupportLibrary = true
     }
@@ -45,6 +46,7 @@ android {
     buildFeatures {
         dataBinding true
         viewBinding true
+        buildConfig true
     }
 
     compileOptions {
@@ -89,7 +91,7 @@ dependencies {
     implementation "androidx.work:work-runtime-ktx:$work_version"
     implementation "androidx.core:core-splashscreen:$coresplash_version"
 
-    implementation 'com.google.android.gms:play-services-wearable:18.2.0'
+    implementation 'com.google.android.gms:play-services-wearable:19.0.0'
     implementation 'com.google.android.play:app-update-ktx:2.1.0'
 
     implementation platform("com.google.firebase:firebase-bom:$firebase_version")

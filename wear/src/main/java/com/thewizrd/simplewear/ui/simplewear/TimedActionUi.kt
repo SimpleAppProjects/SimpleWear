@@ -33,7 +33,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
@@ -41,12 +40,16 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.wear.compose.foundation.ExperimentalWearFoundationApi
 import androidx.wear.compose.foundation.lazy.items
+import androidx.wear.compose.foundation.rememberActiveFocusRequester
 import androidx.wear.compose.foundation.rememberRevealState
+import androidx.wear.compose.foundation.rotary.RotaryScrollableDefaults
+import androidx.wear.compose.foundation.rotary.rotaryScrollable
 import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.ButtonDefaults
 import androidx.wear.compose.material.Chip
@@ -78,7 +81,6 @@ import com.google.android.horologist.compose.layout.scrollAway
 import com.google.android.horologist.compose.material.ResponsiveListHeader
 import com.google.android.horologist.compose.material.ToggleChip
 import com.google.android.horologist.compose.material.ToggleChipToggleControl
-import com.google.android.horologist.compose.rotaryinput.rotaryWithScroll
 import com.thewizrd.shared_resources.actions.ActionStatus
 import com.thewizrd.shared_resources.actions.Actions
 import com.thewizrd.shared_resources.actions.DNDChoice
@@ -89,12 +91,14 @@ import com.thewizrd.shared_resources.actions.ToggleAction
 import com.thewizrd.shared_resources.controls.ActionButtonViewModel
 import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.simplewear.R
-import com.thewizrd.simplewear.controls.CustomConfirmationOverlay
+import com.thewizrd.simplewear.ui.components.ConfirmationOverlay
 import com.thewizrd.simplewear.ui.components.LoadingContent
 import com.thewizrd.simplewear.ui.navigation.Screen
 import com.thewizrd.simplewear.ui.theme.activityViewModel
 import com.thewizrd.simplewear.ui.theme.findActivity
 import com.thewizrd.simplewear.ui.tools.WearPreviewDevices
+import com.thewizrd.simplewear.viewmodels.ConfirmationData
+import com.thewizrd.simplewear.viewmodels.ConfirmationViewModel
 import com.thewizrd.simplewear.viewmodels.TimedActionUiViewModel
 import com.thewizrd.simplewear.viewmodels.WearableListenerViewModel.Companion.EXTRA_STATUS
 import kotlinx.coroutines.launch
@@ -117,6 +121,9 @@ fun TimedActionUi(
     val timedActionUiViewModel = activityViewModel<TimedActionUiViewModel>()
     val uiState by timedActionUiViewModel.uiState.collectAsState()
     val actions by timedActionUiViewModel.actions.collectAsState(initial = emptyList())
+
+    val confirmationViewModel = viewModel<ConfirmationViewModel>()
+    val confirmationData by confirmationViewModel.confirmationEventsFlow.collectAsState()
 
     LoadingContent(
         empty = actions.isEmpty(),
@@ -147,6 +154,11 @@ fun TimedActionUi(
         )
     }
 
+    ConfirmationOverlay(
+        confirmationData = confirmationData,
+        onTimeout = { confirmationViewModel.clearFlow() },
+    )
+
     LaunchedEffect(Unit) {
         timedActionUiViewModel.refreshState()
     }
@@ -161,22 +173,15 @@ fun TimedActionUi(
 
                         when (status) {
                             ActionStatus.SUCCESS -> {
-                                CustomConfirmationOverlay()
-                                    .setType(CustomConfirmationOverlay.SUCCESS_ANIMATION)
-                                    .showOn(activity)
+                                confirmationViewModel.showSuccess()
                             }
 
                             ActionStatus.PERMISSION_DENIED -> {
-                                CustomConfirmationOverlay()
-                                    .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
-                                    .setCustomDrawable(
-                                        ContextCompat.getDrawable(
-                                            activity,
-                                            R.drawable.ws_full_sad
-                                        )
+                                confirmationViewModel.showConfirmation(
+                                    ConfirmationData(
+                                        title = context.getString(R.string.error_permissiondenied)
                                     )
-                                    .setMessage(activity.getString(R.string.error_permissiondenied))
-                                    .showOn(activity)
+                                )
 
                                 timedActionUiViewModel.openAppOnPhone(
                                     activity,
@@ -185,10 +190,9 @@ fun TimedActionUi(
                             }
 
                             else -> {
-                                CustomConfirmationOverlay()
-                                    .setType(CustomConfirmationOverlay.FAILURE_ANIMATION)
-                                    .setMessage(activity.getString(R.string.error_actionfailed))
-                                    .showOn(activity)
+                                confirmationViewModel.showFailure(
+                                    message = context.getString(R.string.error_actionfailed)
+                                )
                             }
                         }
                     }
@@ -222,7 +226,10 @@ private fun TimedActionUi(
         ScalingLazyColumn(
             modifier = modifier
                 .fillMaxSize()
-                .rotaryWithScroll(scrollableState = scrollState),
+                .rotaryScrollable(
+                    focusRequester = rememberActiveFocusRequester(),
+                    behavior = RotaryScrollableDefaults.behavior(scrollState)
+                ),
             columnState = scrollState
         ) {
             item {
@@ -253,7 +260,7 @@ private fun TimedActionUi(
                 Button(onClick = onAddAction) {
                     Icon(
                         painter = painterResource(id = R.drawable.ic_add_white_24dp),
-                        contentDescription = null
+                        contentDescription = stringResource(id = R.string.label_add_action)
                     )
                 }
             }
@@ -299,7 +306,7 @@ private fun EmptyTimedActionUi(
             ) {
                 Icon(
                     painter = painterResource(id = R.drawable.ic_add_white_24dp),
-                    contentDescription = null
+                    contentDescription = stringResource(R.string.label_add_action)
                 )
             }
         }
@@ -312,6 +319,8 @@ private fun TimedActionChip(
     onActionClicked: (TimedAction) -> Unit = {},
     onActionDelete: (TimedAction) -> Unit,
 ) {
+    val context = LocalContext.current
+
     val model = remember(timedAction) {
         ActionButtonViewModel(timedAction.action)
     }
@@ -337,7 +346,7 @@ private fun TimedActionChip(
                 icon = {
                     Icon(
                         imageVector = SwipeToRevealDefaults.Delete,
-                        contentDescription = null
+                        contentDescription = stringResource(id = R.string.action_delete)
                     )
                 },
                 label = {
@@ -368,7 +377,13 @@ private fun TimedActionChip(
                     Icon(
                         modifier = Modifier.size(24.dp),
                         painter = painterResource(id = model.drawableResId),
-                        contentDescription = null,
+                        contentDescription = remember(
+                            context,
+                            model.actionLabelResId,
+                            model.stateLabelResId
+                        ) {
+                            model.getDescription(context)
+                        },
                         tint = chipColors.iconColor(enabled = true).value
                     )
                 }
@@ -422,6 +437,9 @@ fun TimedActionDetailUi(
     val lifecycleOwner = LocalLifecycleOwner.current
     val timedActionUiViewModel = activityViewModel<TimedActionUiViewModel>()
 
+    val confirmationViewModel = viewModel<ConfirmationViewModel>()
+    val confirmationData by confirmationViewModel.confirmationEventsFlow.collectAsState()
+
     TimedActionDetailUi(
         modifier = modifier,
         action = action,
@@ -431,6 +449,11 @@ fun TimedActionDetailUi(
         onActionDelete = {
             timedActionUiViewModel.requestDeleteAction(action)
         }
+    )
+
+    ConfirmationOverlay(
+        confirmationData = confirmationData,
+        onTimeout = { confirmationViewModel.clearFlow() },
     )
 
     LaunchedEffect(lifecycleOwner) {
@@ -443,24 +466,16 @@ fun TimedActionDetailUi(
 
                         when (status) {
                             ActionStatus.SUCCESS -> {
-                                CustomConfirmationOverlay()
-                                    .setType(CustomConfirmationOverlay.SUCCESS_ANIMATION)
-                                    .showOn(activity)
-
+                                confirmationViewModel.showSuccess()
                                 navController.popBackStack()
                             }
 
                             ActionStatus.PERMISSION_DENIED -> {
-                                CustomConfirmationOverlay()
-                                    .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
-                                    .setCustomDrawable(
-                                        ContextCompat.getDrawable(
-                                            activity,
-                                            R.drawable.ws_full_sad
-                                        )
+                                confirmationViewModel.showConfirmation(
+                                    ConfirmationData(
+                                        title = context.getString(R.string.error_permissiondenied)
                                     )
-                                    .setMessage(activity.getString(R.string.error_permissiondenied))
-                                    .showOn(activity)
+                                )
 
                                 timedActionUiViewModel.openAppOnPhone(
                                     activity,
@@ -469,10 +484,9 @@ fun TimedActionDetailUi(
                             }
 
                             else -> {
-                                CustomConfirmationOverlay()
-                                    .setType(CustomConfirmationOverlay.FAILURE_ANIMATION)
-                                    .setMessage(activity.getString(R.string.error_actionfailed))
-                                    .showOn(activity)
+                                confirmationViewModel.showFailure(
+                                    message = context.getString(R.string.error_actionfailed)
+                                )
                             }
                         }
                     }
@@ -549,7 +563,13 @@ private fun TimedActionDetailUi(
                             Icon(
                                 modifier = Modifier.align(Alignment.Center),
                                 painter = painterResource(id = model.drawableResId),
-                                contentDescription = null,
+                                contentDescription = remember(
+                                    context,
+                                    model.actionLabelResId,
+                                    model.stateLabelResId
+                                ) {
+                                    model.getDescription(context)
+                                },
                                 tint = MaterialTheme.colors.onSurface
                             )
                         }
@@ -594,7 +614,7 @@ private fun TimedActionDetailUi(
                             Icon(
                                 modifier = Modifier.align(Alignment.Center),
                                 painter = painterResource(id = R.drawable.ic_alarm_white_24dp),
-                                contentDescription = null,
+                                contentDescription = stringResource(id = R.string.label_time),
                                 tint = MaterialTheme.colors.onSurface
                             )
                         }

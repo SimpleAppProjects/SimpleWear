@@ -3,34 +3,25 @@ package com.thewizrd.simplewear.viewmodels
 import android.app.Application
 import android.graphics.Bitmap
 import android.os.Bundle
-import android.os.CountDownTimer
-import android.util.Log
 import androidx.lifecycle.viewModelScope
-import com.google.android.gms.wearable.DataClient.OnDataChangedListener
-import com.google.android.gms.wearable.DataEvent
-import com.google.android.gms.wearable.DataEventBuffer
-import com.google.android.gms.wearable.DataMap
-import com.google.android.gms.wearable.DataMapItem
 import com.google.android.gms.wearable.MessageEvent
-import com.google.android.gms.wearable.Wearable
 import com.thewizrd.shared_resources.actions.ActionStatus
+import com.thewizrd.shared_resources.data.CallState
 import com.thewizrd.shared_resources.helpers.InCallUIHelper
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
 import com.thewizrd.shared_resources.helpers.WearableHelper
-import com.thewizrd.shared_resources.utils.ImageUtils
-import com.thewizrd.shared_resources.utils.Logger
+import com.thewizrd.shared_resources.utils.ImageUtils.toBitmap
+import com.thewizrd.shared_resources.utils.JSONParser
 import com.thewizrd.shared_resources.utils.booleanToBytes
 import com.thewizrd.shared_resources.utils.bytesToBool
 import com.thewizrd.shared_resources.utils.bytesToString
 import com.thewizrd.shared_resources.utils.charToBytes
 import com.thewizrd.simplewear.R
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 
 data class CallManagerUiState(
     val connectionStatus: WearConnectionStatus? = null,
@@ -46,11 +37,8 @@ data class CallManagerUiState(
     val isCallActive: Boolean = false,
 )
 
-class CallManagerViewModel(app: Application) : WearableListenerViewModel(app),
-    OnDataChangedListener {
+class CallManagerViewModel(app: Application) : WearableListenerViewModel(app) {
     private val viewModelState = MutableStateFlow(CallManagerUiState(isLoading = true))
-
-    private val timer: CountDownTimer
 
     val uiState = viewModelState.stateIn(
         viewModelScope,
@@ -59,16 +47,6 @@ class CallManagerViewModel(app: Application) : WearableListenerViewModel(app),
     )
 
     init {
-        Wearable.getDataClient(appContext).addListener(this)
-
-        // Set timer for retrieving call status
-        timer = object : CountDownTimer(3000, 1000) {
-            override fun onTick(millisUntilFinished: Long) {}
-            override fun onFinish() {
-                refreshCallUI()
-            }
-        }
-
         viewModelScope.launch {
             eventFlow.collect { event ->
                 when (event.eventType) {
@@ -100,8 +78,8 @@ class CallManagerViewModel(app: Application) : WearableListenerViewModel(app),
 
         viewModelScope.launch {
             updateConnectionStatus()
+            requestServiceConnect()
             requestCallState()
-            timer.start()
         }
     }
 
@@ -133,14 +111,12 @@ class CallManagerViewModel(app: Application) : WearableListenerViewModel(app),
                 }
             }
 
-            InCallUIHelper.CallStatePath -> {
+            InCallUIHelper.ConnectPath -> {
                 viewModelScope.launch {
                     val status = ActionStatus.valueOf(messageEvent.data.bytesToString())
 
                     when (status) {
                         ActionStatus.PERMISSION_DENIED -> {
-                            timer.cancel()
-
                             viewModelState.update {
                                 it.copy(
                                     isLoading = false,
@@ -149,7 +125,6 @@ class CallManagerViewModel(app: Application) : WearableListenerViewModel(app),
                             }
                         }
 
-                        ActionStatus.SUCCESS -> refreshCallUI()
                         else -> {}
                     }
 
@@ -159,57 +134,33 @@ class CallManagerViewModel(app: Application) : WearableListenerViewModel(app),
                 }
             }
 
-            else -> {
-                super.onMessageReceived(messageEvent)
-            }
-        }
-    }
+            InCallUIHelper.CallStatePath -> {
+                val callState = messageEvent.data?.let {
+                    JSONParser.deserializer(it.bytesToString(), CallState::class.java)
+                }
 
-    override fun onDataChanged(dataEventBuffer: DataEventBuffer) {
-        viewModelScope.launch {
-            viewModelState.update {
-                it.copy(
-                    isLoading = false
-                )
-            }
-
-            for (event in dataEventBuffer) {
-                if (event.type == DataEvent.TYPE_CHANGED) {
-                    val item = event.dataItem
-                    if (InCallUIHelper.CallStatePath == item.uri.path) {
-                        try {
-                            val dataMap = DataMapItem.fromDataItem(item).dataMap
-                            updateCallUI(dataMap)
-                        } catch (e: Exception) {
-                            Logger.writeLine(Log.ERROR, e)
-                        }
-                    }
+                viewModelScope.launch {
+                    updateCallUI(callState)
                 }
             }
+
+            else -> super.onMessageReceived(messageEvent)
         }
     }
 
-    private suspend fun updateCallUI(dataMap: DataMap) {
-        val callActive = dataMap.getBoolean(InCallUIHelper.KEY_CALLACTIVE, false)
-        val callerName = dataMap.getString(InCallUIHelper.KEY_CALLERNAME)
-        val callerBmp = dataMap.getAsset(InCallUIHelper.KEY_CALLERBMP)?.let {
-            try {
-                ImageUtils.bitmapFromAssetStream(
-                    Wearable.getDataClient(appContext),
-                    it
-                )
-            } catch (e: Exception) {
-                null
-            }
-        }
-        val inCallFeatures = dataMap.getInt(InCallUIHelper.KEY_SUPPORTEDFEATURES)
+    private suspend fun updateCallUI(callState: CallState?) {
+        val callActive = callState?.callActive ?: false
+        val callerName = callState?.callerName
+        val callerBmp = callState?.callerBitmap?.toBitmap()
+        val inCallFeatures = callState?.supportedFeatures ?: 0
         val supportsSpeakerToggle =
             inCallFeatures and InCallUIHelper.INCALL_FEATURE_SPEAKERPHONE != 0
         val canSendDTMFKey = inCallFeatures and InCallUIHelper.INCALL_FEATURE_DTMF != 0
 
         viewModelState.update {
             it.copy(
-                callerName = callerName?.takeIf { it.isNotBlank() }
+                isLoading = false,
+                callerName = callerName?.takeIf { name -> name.isNotBlank() }
                     ?: appContext.getString(R.string.message_callactive),
                 callerBitmap = if (callActive) callerBmp else null,
                 supportsSpeaker = callActive && supportsSpeakerToggle,
@@ -219,38 +170,10 @@ class CallManagerViewModel(app: Application) : WearableListenerViewModel(app),
         }
     }
 
-    private fun refreshCallUI() {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val buff = Wearable.getDataClient(appContext)
-                    .getDataItems(
-                        WearableHelper.getWearDataUri(
-                            "*",
-                            InCallUIHelper.CallStatePath
-                        )
-                    )
-                    .await()
-
-                for (i in 0 until buff.count) {
-                    val item = buff[i]
-                    if (InCallUIHelper.CallStatePath == item.uri.path) {
-                        try {
-                            val dataMap = DataMapItem.fromDataItem(item).dataMap
-                            updateCallUI(dataMap)
-                        } catch (e: Exception) {
-                            Logger.writeLine(Log.ERROR, e)
-                        }
-                        viewModelState.update {
-                            it.copy(
-                                isLoading = false
-                            )
-                        }
-                    }
-                }
-
-                buff.release()
-            } catch (e: Exception) {
-                Logger.writeLine(Log.ERROR, e)
+    private fun requestServiceConnect() {
+        viewModelScope.launch {
+            if (connect()) {
+                sendMessage(mPhoneNodeWithApp!!.id, InCallUIHelper.ConnectPath, null)
             }
         }
     }
@@ -313,7 +236,6 @@ class CallManagerViewModel(app: Application) : WearableListenerViewModel(app),
 
     override fun onCleared() {
         requestServiceDisconnect()
-        Wearable.getDataClient(appContext).removeListener(this)
         super.onCleared()
     }
 }

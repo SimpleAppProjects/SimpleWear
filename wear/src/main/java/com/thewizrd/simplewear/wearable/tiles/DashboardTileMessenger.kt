@@ -1,14 +1,11 @@
 package com.thewizrd.simplewear.wearable.tiles
 
-import android.bluetooth.BluetoothAdapter
 import android.content.Context
-import android.net.wifi.WifiManager
 import android.util.Log
 import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.wearable.CapabilityClient
 import com.google.android.gms.wearable.CapabilityInfo
 import com.google.android.gms.wearable.MessageClient
-import com.google.android.gms.wearable.MessageEvent
 import com.google.android.gms.wearable.Node
 import com.google.android.gms.wearable.Wearable
 import com.google.android.gms.wearable.WearableStatusCodes
@@ -29,230 +26,45 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.tasks.await
-import timber.log.Timber
 import kotlin.coroutines.resume
 
-class DashboardTileMessenger(private val context: Context) :
-    CapabilityClient.OnCapabilityChangedListener, MessageClient.OnMessageReceivedListener {
+class DashboardTileMessenger(
+    private val context: Context,
+    private val isLegacyTile: Boolean = false
+) : CapabilityClient.OnCapabilityChangedListener {
     companion object {
         private const val TAG = "DashboardTileMessenger"
-        internal val tileModel by lazy { DashboardTileModel() }
     }
+
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     @Volatile
     private var mPhoneNodeWithApp: Node? = null
 
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val _connectionState = MutableStateFlow(WearConnectionStatus.DISCONNECTED)
+    val connectionState = _connectionState.stateIn(
+        scope,
+        SharingStarted.Eagerly,
+        _connectionState.value
+    )
 
     fun register() {
         Wearable.getCapabilityClient(context)
             .addListener(this, WearableHelper.CAPABILITY_PHONE_APP)
-
-        Wearable.getMessageClient(context)
-            .addListener(this)
     }
 
     fun unregister() {
         Wearable.getCapabilityClient(context)
             .removeListener(this, WearableHelper.CAPABILITY_PHONE_APP)
 
-        Wearable.getMessageClient(context)
-            .removeListener(this)
-
         scope.cancel()
-    }
-
-    override fun onMessageReceived(messageEvent: MessageEvent) {
-        val data = messageEvent.data ?: return
-
-        Timber.tag(TAG).d("message received - path: ${messageEvent.path}")
-
-        when {
-            messageEvent.path.contains(WearableHelper.WifiPath) -> {
-                val wifiStatus = data[0].toInt()
-                var enabled = false
-
-                when (wifiStatus) {
-                    WifiManager.WIFI_STATE_DISABLING,
-                    WifiManager.WIFI_STATE_DISABLED,
-                    WifiManager.WIFI_STATE_UNKNOWN -> enabled = false
-
-                    WifiManager.WIFI_STATE_ENABLING,
-                    WifiManager.WIFI_STATE_ENABLED -> enabled = true
-                }
-
-                tileModel.setAction(Actions.WIFI, ToggleAction(Actions.WIFI, enabled))
-                requestTileUpdate(context)
-            }
-
-            messageEvent.path.contains(WearableHelper.BluetoothPath) -> {
-                val btStatus = data[0].toInt()
-                var enabled = false
-
-                when (btStatus) {
-                    BluetoothAdapter.STATE_OFF,
-                    BluetoothAdapter.STATE_TURNING_OFF -> enabled = false
-
-                    BluetoothAdapter.STATE_ON,
-                    BluetoothAdapter.STATE_TURNING_ON -> enabled = true
-                }
-
-                tileModel.setAction(Actions.BLUETOOTH, ToggleAction(Actions.BLUETOOTH, enabled))
-                requestTileUpdate(context)
-            }
-
-            messageEvent.path == WearableHelper.BatteryPath -> {
-                val jsonData: String = data.bytesToString()
-                tileModel.updateBatteryStatus(
-                    JSONParser.deserializer(
-                        jsonData,
-                        BatteryStatus::class.java
-                    )
-                )
-                requestTileUpdate(context)
-            }
-
-            messageEvent.path == WearableHelper.ActionsPath -> {
-                val jsonData: String = data.bytesToString()
-                val action = JSONParser.deserializer(jsonData, Action::class.java)
-
-                when (action?.actionType) {
-                    Actions.WIFI,
-                    Actions.BLUETOOTH,
-                    Actions.TORCH,
-                    Actions.DONOTDISTURB,
-                    Actions.RINGER,
-                    Actions.MOBILEDATA,
-                    Actions.LOCATION,
-                    Actions.LOCKSCREEN,
-                    Actions.PHONE,
-                    Actions.HOTSPOT -> {
-                        tileModel.setAction(action.actionType, action)
-                        requestTileUpdate(context)
-                    }
-
-                    else -> {
-                        // ignore unsupported action
-                    }
-                }
-            }
-        }
-    }
-
-    override fun onCapabilityChanged(capabilityInfo: CapabilityInfo) {
-        scope.launch {
-            val connectedNodes = getConnectedNodes()
-            mPhoneNodeWithApp = WearableHelper.pickBestNodeId(capabilityInfo.nodes)
-
-            mPhoneNodeWithApp?.let { node ->
-                if (node.isNearby && connectedNodes.any { it.id == node.id }) {
-                    tileModel.setConnectionStatus(WearConnectionStatus.CONNECTED)
-                } else {
-                    try {
-                        sendPing(node.id)
-                        tileModel.setConnectionStatus(WearConnectionStatus.CONNECTED)
-                    } catch (e: ApiException) {
-                        if (e.statusCode == WearableStatusCodes.TARGET_NODE_NOT_CONNECTED) {
-                            tileModel.setConnectionStatus(WearConnectionStatus.DISCONNECTED)
-                        } else {
-                            Logger.writeLine(Log.ERROR, e)
-                        }
-                    }
-                }
-            } ?: run {
-                /*
-                 * If a device is disconnected from the wear network, capable nodes are empty
-                 *
-                 * No capable nodes can mean the app is not installed on the remote device or the
-                 * device is disconnected.
-                 *
-                 * Verify if we're connected to any nodes; if not, we're truly disconnected
-                 */
-                tileModel.setConnectionStatus(
-                    if (connectedNodes.isEmpty()) {
-                        WearConnectionStatus.DISCONNECTED
-                    } else {
-                        WearConnectionStatus.APPNOTINSTALLED
-                    }
-                )
-            }
-
-            requestTileUpdate(context)
-        }
-    }
-
-    suspend fun checkConnectionStatus(refreshTile: Boolean = false) {
-        val connectedNodes = getConnectedNodes()
-        mPhoneNodeWithApp = checkIfPhoneHasApp()
-
-        mPhoneNodeWithApp?.let { node ->
-            if (node.isNearby && connectedNodes.any { it.id == node.id }) {
-                tileModel.setConnectionStatus(WearConnectionStatus.CONNECTED)
-            } else {
-                try {
-                    sendPing(node.id)
-                    tileModel.setConnectionStatus(
-                        WearConnectionStatus.CONNECTED
-                    )
-                } catch (e: ApiException) {
-                    if (e.statusCode == WearableStatusCodes.TARGET_NODE_NOT_CONNECTED) {
-                        tileModel.setConnectionStatus(
-                            WearConnectionStatus.DISCONNECTED
-                        )
-                    } else {
-                        Logger.writeLine(Log.ERROR, e)
-                    }
-                }
-            }
-        } ?: run {
-            /*
-             * If a device is disconnected from the wear network, capable nodes are empty
-             *
-             * No capable nodes can mean the app is not installed on the remote device or the
-             * device is disconnected.
-             *
-             * Verify if we're connected to any nodes; if not, we're truly disconnected
-             */
-            tileModel.setConnectionStatus(
-                if (connectedNodes.isEmpty()) {
-                    WearConnectionStatus.DISCONNECTED
-                } else {
-                    WearConnectionStatus.APPNOTINSTALLED
-                }
-            )
-        }
-
-        if (refreshTile) {
-            requestTileUpdate(context)
-        }
-    }
-
-    private suspend fun checkIfPhoneHasApp(): Node? {
-        var node: Node? = null
-
-        try {
-            val capabilityInfo = Wearable.getCapabilityClient(context)
-                .getCapability(
-                    WearableHelper.CAPABILITY_PHONE_APP,
-                    CapabilityClient.FILTER_ALL
-                )
-                .await()
-            node = pickBestNodeId(capabilityInfo.nodes)
-        } catch (e: Exception) {
-            Logger.writeLine(Log.ERROR, e)
-        }
-
-        return node
-    }
-
-    suspend fun connect(): Boolean {
-        if (mPhoneNodeWithApp == null)
-            mPhoneNodeWithApp = checkIfPhoneHasApp()
-
-        return mPhoneNodeWithApp != null
     }
 
     suspend fun requestUpdate() {
@@ -275,10 +87,10 @@ class DashboardTileMessenger(private val context: Context) :
         }
     }
 
-    suspend fun processAction(action: Actions) {
+    private suspend fun processAction(state: DashboardTileState, action: Actions) {
         when (action) {
             Actions.WIFI -> run {
-                val wifiAction = tileModel.getAction(Actions.WIFI) as? ToggleAction
+                val wifiAction = state.getAction(Actions.WIFI) as? ToggleAction
 
                 if (wifiAction == null) {
                     requestUpdate()
@@ -289,7 +101,7 @@ class DashboardTileMessenger(private val context: Context) :
             }
 
             Actions.BLUETOOTH -> run {
-                val btAction = tileModel.getAction(Actions.BLUETOOTH) as? ToggleAction
+                val btAction = state.getAction(Actions.BLUETOOTH) as? ToggleAction
 
                 if (btAction == null) {
                     requestUpdate()
@@ -300,13 +112,11 @@ class DashboardTileMessenger(private val context: Context) :
             }
 
             Actions.LOCKSCREEN -> requestAction(
-                tileModel.getAction(Actions.LOCKSCREEN) ?: NormalAction(
-                    Actions.LOCKSCREEN
-                )
+                state.getAction(Actions.LOCKSCREEN) ?: NormalAction(Actions.LOCKSCREEN)
             )
 
             Actions.DONOTDISTURB -> run {
-                val dndAction = tileModel.getAction(Actions.DONOTDISTURB)
+                val dndAction = state.getAction(Actions.DONOTDISTURB)
 
                 if (dndAction == null) {
                     requestUpdate()
@@ -326,7 +136,7 @@ class DashboardTileMessenger(private val context: Context) :
             }
 
             Actions.RINGER -> run {
-                val ringerAction = tileModel.getAction(Actions.RINGER) as? MultiChoiceAction
+                val ringerAction = state.getAction(Actions.RINGER) as? MultiChoiceAction
 
                 if (ringerAction == null) {
                     requestUpdate()
@@ -337,7 +147,7 @@ class DashboardTileMessenger(private val context: Context) :
             }
 
             Actions.TORCH -> run {
-                val torchAction = tileModel.getAction(Actions.TORCH) as? ToggleAction
+                val torchAction = state.getAction(Actions.TORCH) as? ToggleAction
 
                 if (torchAction == null) {
                     requestUpdate()
@@ -348,7 +158,7 @@ class DashboardTileMessenger(private val context: Context) :
             }
 
             Actions.MOBILEDATA -> run {
-                val mobileDataAction = tileModel.getAction(Actions.MOBILEDATA) as? ToggleAction
+                val mobileDataAction = state.getAction(Actions.MOBILEDATA) as? ToggleAction
 
                 if (mobileDataAction == null) {
                     requestUpdate()
@@ -359,7 +169,7 @@ class DashboardTileMessenger(private val context: Context) :
             }
 
             Actions.LOCATION -> run {
-                val locationAction = tileModel.getAction(Actions.LOCATION)
+                val locationAction = state.getAction(Actions.LOCATION)
 
                 if (locationAction == null) {
                     requestUpdate()
@@ -379,7 +189,7 @@ class DashboardTileMessenger(private val context: Context) :
             }
 
             Actions.HOTSPOT -> run {
-                val hotspotAction = tileModel.getAction(Actions.HOTSPOT) as? ToggleAction
+                val hotspotAction = state.getAction(Actions.HOTSPOT) as? ToggleAction
 
                 if (hotspotAction == null) {
                     requestUpdate()
@@ -395,13 +205,12 @@ class DashboardTileMessenger(private val context: Context) :
         }
     }
 
-    suspend fun processActionAsync(actionType: Actions) {
+    suspend fun processActionAsync(state: DashboardTileState, actionType: Actions): Boolean =
         suspendCancellableCoroutine { continuation ->
             val listener = MessageClient.OnMessageReceivedListener { event ->
                 when (actionType) {
                     Actions.WIFI -> {
                         if (event.path == WearableHelper.WifiPath) {
-                            onMessageReceived(event)
                             if (continuation.isActive) {
                                 continuation.resume(true)
                                 return@OnMessageReceivedListener
@@ -411,7 +220,6 @@ class DashboardTileMessenger(private val context: Context) :
 
                     Actions.BLUETOOTH -> {
                         if (event.path == WearableHelper.BluetoothPath) {
-                            onMessageReceived(event)
                             if (continuation.isActive) {
                                 continuation.resume(true)
                                 return@OnMessageReceivedListener
@@ -425,7 +233,6 @@ class DashboardTileMessenger(private val context: Context) :
                             val action = JSONParser.deserializer(jsonData, Action::class.java)
 
                             if (action?.actionType == actionType) {
-                                onMessageReceived(event)
                                 if (continuation.isActive) {
                                     continuation.resume(true)
                                     return@OnMessageReceivedListener
@@ -446,10 +253,9 @@ class DashboardTileMessenger(private val context: Context) :
                     .addListener(listener)
                     .await()
 
-                processAction(actionType)
+                processAction(state, actionType)
             }
         }
-    }
 
     suspend fun requestBatteryStatusAsync(): BatteryStatus? {
         return suspendCancellableCoroutine { continuation ->
@@ -491,6 +297,116 @@ class DashboardTileMessenger(private val context: Context) :
         }
     }
 
+    override fun onCapabilityChanged(capabilityInfo: CapabilityInfo) {
+        scope.launch {
+            val connectedNodes = getConnectedNodes()
+            mPhoneNodeWithApp = WearableHelper.pickBestNodeId(capabilityInfo.nodes)
+            mPhoneNodeWithApp?.let { node ->
+                if (node.isNearby && connectedNodes.any { it.id == node.id }) {
+                    _connectionState.update { WearConnectionStatus.CONNECTED }
+                } else {
+                    try {
+                        sendPing(node.id)
+                        _connectionState.update { WearConnectionStatus.CONNECTED }
+                    } catch (e: ApiException) {
+                        if (e.statusCode == WearableStatusCodes.TARGET_NODE_NOT_CONNECTED) {
+                            _connectionState.update { WearConnectionStatus.DISCONNECTED }
+                        } else {
+                            Logger.writeLine(Log.ERROR, e)
+                        }
+                    }
+                }
+            } ?: run {
+                /*
+                 * If a device is disconnected from the wear network, capable nodes are empty
+                 *
+                 * No capable nodes can mean the app is not installed on the remote device or the
+                 * device is disconnected.
+                 *
+                 * Verify if we're connected to any nodes; if not, we're truly disconnected
+                 */
+                _connectionState.update {
+                    if (connectedNodes.isEmpty()) {
+                        WearConnectionStatus.DISCONNECTED
+                    } else {
+                        WearConnectionStatus.APPNOTINSTALLED
+                    }
+                }
+            }
+
+            if (!isLegacyTile) {
+                requestTileUpdate(context)
+            }
+        }
+    }
+
+    suspend fun checkConnectionStatus(refreshTile: Boolean = false) {
+        val connectedNodes = getConnectedNodes()
+        mPhoneNodeWithApp = checkIfPhoneHasApp()
+
+        mPhoneNodeWithApp?.let { node ->
+            if (node.isNearby && connectedNodes.any { it.id == node.id }) {
+                _connectionState.update { WearConnectionStatus.CONNECTED }
+            } else {
+                try {
+                    sendPing(node.id)
+                    _connectionState.update { WearConnectionStatus.CONNECTED }
+                } catch (e: ApiException) {
+                    if (e.statusCode == WearableStatusCodes.TARGET_NODE_NOT_CONNECTED) {
+                        _connectionState.update { WearConnectionStatus.DISCONNECTED }
+                    } else {
+                        Logger.error(TAG, e)
+                    }
+                }
+            }
+        } ?: run {
+            /*
+             * If a device is disconnected from the wear network, capable nodes are empty
+             *
+             * No capable nodes can mean the app is not installed on the remote device or the
+             * device is disconnected.
+             *
+             * Verify if we're connected to any nodes; if not, we're truly disconnected
+             */
+            _connectionState.update {
+                if (connectedNodes.isEmpty()) {
+                    WearConnectionStatus.DISCONNECTED
+                } else {
+                    WearConnectionStatus.APPNOTINSTALLED
+                }
+            }
+        }
+
+        if (!isLegacyTile && refreshTile) {
+            requestTileUpdate(context)
+        }
+    }
+
+    private suspend fun checkIfPhoneHasApp(): Node? {
+        var node: Node? = null
+
+        try {
+            val capabilityInfo = Wearable.getCapabilityClient(context)
+                .getCapability(
+                    WearableHelper.CAPABILITY_PHONE_APP,
+                    CapabilityClient.FILTER_ALL
+                )
+                .await()
+            node = pickBestNodeId(capabilityInfo.nodes)
+        } catch (e: Exception) {
+            Logger.writeLine(Log.ERROR, e)
+        }
+
+        return node
+    }
+
+    suspend fun connect(): Boolean {
+        if (mPhoneNodeWithApp == null)
+            mPhoneNodeWithApp = checkIfPhoneHasApp()
+
+        return mPhoneNodeWithApp != null
+    }
+
     /*
      * There should only ever be one phone in a node set (much less w/ the correct capability), so
      * I am just grabbing the first one (which should be the only one).
@@ -508,7 +424,7 @@ class DashboardTileMessenger(private val context: Context) :
         return bestNode
     }
 
-    suspend fun getConnectedNodes(): List<Node> {
+    private suspend fun getConnectedNodes(): List<Node> {
         try {
             return Wearable.getNodeClient(context)
                 .connectedNodes
@@ -529,11 +445,11 @@ class DashboardTileMessenger(private val context: Context) :
             if (e is ApiException || e.cause is ApiException) {
                 val apiException = e.cause as? ApiException ?: e as? ApiException
                 if (apiException?.statusCode == WearableStatusCodes.TARGET_NODE_NOT_CONNECTED) {
-                    tileModel.setConnectionStatus(
-                        WearConnectionStatus.DISCONNECTED
-                    )
+                    _connectionState.update { WearConnectionStatus.DISCONNECTED }
 
-                    requestTileUpdate(context)
+                    if (!isLegacyTile) {
+                        requestTileUpdate(context)
+                    }
                     return
                 }
             }

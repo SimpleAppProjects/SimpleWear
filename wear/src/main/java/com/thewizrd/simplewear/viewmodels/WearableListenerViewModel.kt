@@ -28,14 +28,13 @@ import com.thewizrd.shared_resources.actions.Action
 import com.thewizrd.shared_resources.actions.Actions
 import com.thewizrd.shared_resources.actions.BatteryStatus
 import com.thewizrd.shared_resources.actions.ToggleAction
-import com.thewizrd.shared_resources.helpers.AppState
+import com.thewizrd.shared_resources.appLib
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
 import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.shared_resources.utils.JSONParser
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.shared_resources.utils.bytesToString
 import com.thewizrd.shared_resources.utils.stringToBytes
-import com.thewizrd.simplewear.App
 import com.thewizrd.simplewear.helpers.showConfirmationOverlay
 import com.thewizrd.simplewear.utils.ErrorMessage
 import kotlinx.coroutines.channels.BufferOverflow
@@ -66,6 +65,13 @@ abstract class WearableListenerViewModel(private val app: Application) : Android
         onBufferOverflow = BufferOverflow.DROP_OLDEST
     )
     val eventFlow: SharedFlow<WearableEvent> = _eventsFlow
+
+    protected val _channelEventsFlow = MutableSharedFlow<WearableEvent>(
+        replay = 0,
+        extraBufferCapacity = 64,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST
+    )
+    val channelEventsFlow: SharedFlow<WearableEvent> = _channelEventsFlow
 
     protected val _errorMessagesFlow = MutableSharedFlow<ErrorMessage>(replay = 0)
     val errorMessagesFlow: SharedFlow<ErrorMessage> = _errorMessagesFlow
@@ -226,7 +232,7 @@ abstract class WearableListenerViewModel(private val app: Application) : Android
                 }
 
                 messageEvent.path == WearableHelper.AppStatePath -> {
-                    val appState: AppState = App.instance.applicationState
+                    val appState = appLib.appState
                     sendMessage(
                         messageEvent.sourceNodeId,
                         messageEvent.path,
@@ -472,6 +478,7 @@ abstract class WearableListenerViewModel(private val app: Application) : Android
         const val ACTION_UPDATECONNECTIONSTATUS =
             "SimpleWear.Droid.Wear.action.UPDATE_CONNECTION_STATUS"
         const val ACTION_CHANGED = "SimpleWear.Droid.Wear.action.ACTION_CHANGED"
+        const val ACTION_SHOWCONFIRMATION = "SimpleWear.Droid.Wear.action.SHOW_CONFIRMATION"
 
         // Extras
         /**

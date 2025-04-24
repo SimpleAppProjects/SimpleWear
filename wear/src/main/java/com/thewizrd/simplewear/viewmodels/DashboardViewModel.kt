@@ -4,7 +4,6 @@ import android.app.Application
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.util.ArrayMap
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewModelScope
 import com.google.android.gms.wearable.MessageClient
 import com.google.android.gms.wearable.Wearable
@@ -18,7 +17,6 @@ import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.shared_resources.utils.JSONParser
 import com.thewizrd.shared_resources.utils.bytesToLong
 import com.thewizrd.simplewear.R
-import com.thewizrd.simplewear.controls.CustomConfirmationOverlay
 import com.thewizrd.simplewear.preferences.Settings
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -71,16 +69,22 @@ class DashboardViewModel(app: Application) : WearableListenerViewModel(app) {
             override fun onTick(millisUntilFinished: Long) {}
 
             override fun onFinish() {
-                viewModelScope.launch {
-                    activityContext?.let {
-                        CustomConfirmationOverlay()
-                            .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
-                            .setCustomDrawable(
-                                ContextCompat.getDrawable(it, R.drawable.ws_full_sad)
-                            )
-                            .setMessage(it.getString(R.string.error_sendmessage))
-                            .showOn(it)
-                    }
+                activityContext?.let {
+                    _eventsFlow.tryEmit(
+                        WearableEvent(
+                            ACTION_SHOWCONFIRMATION,
+                            Bundle().apply {
+                                putString(
+                                    EXTRA_ACTIONDATA,
+                                    JSONParser.serializer(
+                                        ConfirmationData(
+                                            title = it.getString(R.string.error_sendmessage)
+                                        ), ConfirmationData::class.java
+                                    )
+                                )
+                            }
+                        )
+                    )
                 }
             }
         }

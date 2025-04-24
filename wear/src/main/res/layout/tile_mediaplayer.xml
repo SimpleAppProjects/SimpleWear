@@ -40,7 +40,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
                 android:layout_marginHorizontal="8dp"
-                android:layout_marginTop="4dp"
+                android:layout_marginTop="0dp"
                 android:layout_weight="1"
                 android:autoSizeMaxTextSize="14sp"
                 android:autoSizeMinTextSize="12sp"
@@ -54,9 +54,8 @@
             <TextView
                 android:id="@+id/title_view"
                 android:layout_width="match_parent"
-                android:layout_height="0dp"
+                android:layout_height="wrap_content"
                 android:layout_marginHorizontal="@dimen/inner_layout_padding"
-                android:layout_weight="1.25"
                 android:ellipsize="end"
                 android:gravity="center"
                 android:maxLines="1"
@@ -67,9 +66,8 @@
             <TextView
                 android:id="@+id/subtitle_view"
                 android:layout_width="match_parent"
-                android:layout_height="0dp"
+                android:layout_height="wrap_content"
                 android:layout_marginHorizontal="@dimen/inner_layout_padding"
-                android:layout_weight="1"
                 android:autoSizeMaxTextSize="14sp"
                 android:autoSizeMinTextSize="12sp"
                 android:autoSizeTextType="uniform"
@@ -130,7 +128,7 @@
                 android:src="@drawable/ic_baseline_pause_24"
                 android:visibility="gone"
                 app:tint="@android:color/white"
-                tools:visibility="visible" />
+                tools:visibility="gone" />
 
             <ImageButton
                 android:id="@+id/next_button"
@@ -148,10 +146,11 @@
         </LinearLayout>
 
         <LinearLayout
+            android:id="@+id/volume_controls"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_below="@id/playcontrols"
-            android:layout_alignParentBottom="true"
+            android:layout_above="@id/app_icon"
             android:layout_marginStart="8dp"
             android:layout_marginEnd="8dp"
             android:gravity="center"
@@ -185,6 +184,18 @@
                 android:src="@drawable/ic_volume_up_white_24dp" />
 
         </LinearLayout>
+
+        <ImageView
+            android:id="@+id/app_icon"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_alignParentBottom="true"
+            android:layout_centerHorizontal="true"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginBottom="8dp"
+            android:gravity="center"
+            tools:src="@drawable/ic_play_circle_simpleblue" />
 
     </RelativeLayout>
 

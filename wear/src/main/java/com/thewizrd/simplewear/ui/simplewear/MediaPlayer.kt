@@ -24,7 +24,7 @@ import com.thewizrd.simplewear.ui.theme.findActivity
 
 @Composable
 fun MediaPlayer(
-    startDestination: String = Screen.MediaPlayerList.route
+    startDestination: String = Screen.MediaPlayer.autoLaunch()
 ) {
     WearAppTheme {
         val context = LocalContext.current

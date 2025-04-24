@@ -16,8 +16,8 @@
     <string name="pref_title_showlauncher">Show app icon</string>
     <string name="pref_summary_showlauncher">Show app icon in the launcher</string>
 
-    <string name="url_root_access_help" translatable="false">https://github.com/SimpleAppProjects/SimpleWear/wiki/Root-Access</string>
-    <string name="url_secure_settings_help" translatable="false">https://github.com/SimpleAppProjects/SimpleWear/wiki/Enable-WRITE_SECURE_SETTINGS-permission</string>
+    <string name="url_root_access_help" translatable="false">https://simpleappprojects.github.io/SimpleWear/root-access</string>
+    <string name="url_secure_settings_help" translatable="false">https://simpleappprojects.github.io/SimpleWear/secure-settings-access</string>
 
     <string name="permission_title_bt">Bluetooth</string>
     <string name="permission_bt_enabled">Bluetooth permission enabled</string>

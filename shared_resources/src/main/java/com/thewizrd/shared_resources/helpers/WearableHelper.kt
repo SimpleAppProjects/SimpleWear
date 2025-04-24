@@ -11,7 +11,7 @@ import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.GoogleApiAvailability
 import com.google.android.gms.wearable.Node
 import com.google.android.gms.wearable.PutDataRequest
-import com.thewizrd.shared_resources.SimpleLibrary
+import com.thewizrd.shared_resources.sharedDeps
 import com.thewizrd.shared_resources.utils.Logger
 
 object WearableHelper {
@@ -24,7 +24,7 @@ object WearableHelper {
     // Link to Play Store listing
     private const val PLAY_STORE_APP_URI = "market://details?id=com.thewizrd.simplewear"
 
-    private const val VERSION_CODE: Long = 341915030
+    private const val SUPPORTED_VERSION_CODE: Long = 341916000
 
     fun getPlayStoreURI(): Uri = Uri.parse(PLAY_STORE_APP_URI)
 
@@ -68,7 +68,7 @@ object WearableHelper {
 
     fun isGooglePlayServicesInstalled(): Boolean {
         val queryResult = GoogleApiAvailability.getInstance()
-            .isGooglePlayServicesAvailable(SimpleLibrary.instance.app.appContext)
+            .isGooglePlayServicesAvailable(sharedDeps.context)
         if (queryResult == ConnectionResult.SUCCESS) {
             Logger.writeLine(Log.INFO, "App: Google Play Services is installed on this device.")
             return true
@@ -160,11 +160,11 @@ object WearableHelper {
         ParcelUuid.fromString("0000DA28-0000-1000-8000-00805F9B34FB")
 
     fun isAppUpToDate(versionCode: Long): Boolean {
-        return versionCode >= VERSION_CODE
+        return versionCode >= SUPPORTED_VERSION_CODE
     }
 
     fun getAppVersionCode(): Long = try {
-        val context = SimpleLibrary.instance.app.appContext
+        val context = sharedDeps.context
         val packageInfo = context.run {
             packageManager.getPackageInfo(packageName, 0)
         }

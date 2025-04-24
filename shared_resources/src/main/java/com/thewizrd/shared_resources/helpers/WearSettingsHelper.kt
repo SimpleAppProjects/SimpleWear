@@ -5,13 +5,13 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.util.Log
 import com.thewizrd.shared_resources.BuildConfig
-import com.thewizrd.shared_resources.SimpleLibrary
+import com.thewizrd.shared_resources.sharedDeps
 import com.thewizrd.shared_resources.utils.Logger
 
 object WearSettingsHelper {
     // Link to Play Store listing
     const val PACKAGE_NAME = "com.thewizrd.wearsettings"
-    private const val SUPPORTED_VERSION_CODE: Long = 1020000
+    private const val SUPPORTED_VERSION_CODE: Long = 1030000
 
     fun getPackageName(): String {
         var packageName = PACKAGE_NAME
@@ -20,7 +20,7 @@ object WearSettingsHelper {
     }
 
     fun isWearSettingsInstalled(): Boolean = try {
-        val context = SimpleLibrary.instance.app.appContext
+        val context = sharedDeps.context
         context.packageManager.getApplicationInfo(getPackageName(), 0).enabled
     } catch (e: PackageManager.NameNotFoundException) {
         false
@@ -28,7 +28,7 @@ object WearSettingsHelper {
 
     fun launchWearSettings() {
         runCatching {
-            val context = SimpleLibrary.instance.app.appContext
+            val context = sharedDeps.context
 
             val i = context.packageManager.getLaunchIntentForPackage(getPackageName())
             if (i != null) {
@@ -42,7 +42,7 @@ object WearSettingsHelper {
     }
 
     private fun getWearSettingsVersionCode(): Long = try {
-        val context = SimpleLibrary.instance.app.appContext
+        val context = sharedDeps.context
         val packageInfo = context.packageManager.getPackageInfo(getPackageName(), 0)
 
         val versionCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {

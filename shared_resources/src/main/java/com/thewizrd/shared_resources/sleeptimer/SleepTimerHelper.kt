@@ -5,7 +5,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import com.thewizrd.shared_resources.BuildConfig
-import com.thewizrd.shared_resources.SimpleLibrary
+import com.thewizrd.shared_resources.sharedDeps
 
 object SleepTimerHelper {
     // Link to Play Store listing
@@ -21,7 +21,7 @@ object SleepTimerHelper {
     }
 
     fun isSleepTimerInstalled(): Boolean = try {
-        val context = SimpleLibrary.instance.app.appContext
+        val context = sharedDeps.context
         context.packageManager.getApplicationInfo(getPackageName(), 0).enabled
     } catch (e: PackageManager.NameNotFoundException) {
         false
@@ -29,7 +29,7 @@ object SleepTimerHelper {
 
     fun launchSleepTimer() {
         try {
-            val context = SimpleLibrary.instance.app.appContext
+            val context = sharedDeps.context
 
             val directIntent = Intent(Intent.ACTION_VIEW)
                 .addCategory(Intent.CATEGORY_LAUNCHER)
@@ -44,7 +44,7 @@ object SleepTimerHelper {
                     context.startActivity(i)
                 }
             }
-        } catch (e: PackageManager.NameNotFoundException) {
+        } catch (_: PackageManager.NameNotFoundException) {
         }
     }
 }

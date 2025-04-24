@@ -1,8 +1,7 @@
 package com.thewizrd.simplewear.preferences
 
 import androidx.core.content.edit
-import androidx.preference.PreferenceManager
-import com.thewizrd.simplewear.App
+import com.thewizrd.shared_resources.appLib
 
 object Settings {
     private const val KEY_LOADAPPICONS = "key_loadappicons"
@@ -11,49 +10,41 @@ object Settings {
     private const val KEY_VERSIONCODE = "key_versioncode"
 
     fun isLoadAppIcons(): Boolean {
-        val preferences = PreferenceManager.getDefaultSharedPreferences(App.instance.appContext)
-        return preferences.getBoolean(KEY_LOADAPPICONS, false)
+        return appLib.preferences.getBoolean(KEY_LOADAPPICONS, false)
     }
 
     fun setLoadAppIcons(value: Boolean) {
-        val preferences = PreferenceManager.getDefaultSharedPreferences(App.instance.appContext)
-        preferences.edit {
+        appLib.preferences.edit {
             putBoolean(KEY_LOADAPPICONS, value)
         }
     }
 
     fun isBridgeMediaEnabled(): Boolean {
-        val preferences = PreferenceManager.getDefaultSharedPreferences(App.instance.appContext)
-        return preferences.getBoolean(KEY_BRIDGEMEDIA, false)
+        return appLib.preferences.getBoolean(KEY_BRIDGEMEDIA, false)
     }
 
     fun setBridgeMediaEnabled(value: Boolean) {
-        val preferences = PreferenceManager.getDefaultSharedPreferences(App.instance.appContext)
-        preferences.edit {
+        appLib.preferences.edit {
             putBoolean(KEY_BRIDGEMEDIA, value)
         }
     }
 
     fun isBridgeCallsEnabled(): Boolean {
-        val preferences = PreferenceManager.getDefaultSharedPreferences(App.instance.appContext)
-        return preferences.getBoolean(KEY_BRIDGECALLS, false)
+        return appLib.preferences.getBoolean(KEY_BRIDGECALLS, false)
     }
 
     fun setBridgeCallsEnabled(value: Boolean) {
-        val preferences = PreferenceManager.getDefaultSharedPreferences(App.instance.appContext)
-        preferences.edit {
+        appLib.preferences.edit {
             putBoolean(KEY_BRIDGECALLS, value)
         }
     }
 
     fun getVersionCode(): Long {
-        val preferences = PreferenceManager.getDefaultSharedPreferences(App.instance.appContext)
-        return preferences.getLong(KEY_VERSIONCODE, 0)
+        return appLib.preferences.getLong(KEY_VERSIONCODE, 0)
     }
 
     fun setVersionCode(value: Long) {
-        val preferences = PreferenceManager.getDefaultSharedPreferences(App.instance.appContext)
-        preferences.edit {
+        appLib.preferences.edit {
             putLong(KEY_VERSIONCODE, value)
         }
     }

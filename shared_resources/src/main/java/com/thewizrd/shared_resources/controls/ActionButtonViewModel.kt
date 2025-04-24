@@ -1,5 +1,6 @@
 package com.thewizrd.shared_resources.controls
 
+import android.content.Context
 import android.os.Build
 import androidx.annotation.DrawableRes
 import androidx.annotation.RestrictTo
@@ -295,6 +296,22 @@ class ActionButtonViewModel(val action: Action) {
                 stateLabelResId = 0
             }
         }
+    }
+
+    fun getDescription(context: Context): String {
+        var text = this.actionLabelResId
+            .takeIf { it != 0 }
+            ?.let {
+                context.getString(it)
+            } ?: ""
+
+        this.stateLabelResId
+            .takeIf { it != 0 }
+            ?.let {
+                text = String.format("%s: %s", text, context.getString(it))
+            }
+
+        return text
     }
 
     override fun equals(other: Any?): Boolean {

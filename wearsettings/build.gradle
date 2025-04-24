@@ -12,9 +12,9 @@ android {
         minSdk rootProject.minSdkVersion
         //noinspection ExpiredTargetSdkVersion
         targetSdk 28
-        // NOTE: update SUPPORTED_VERSION_CODE
-        versionCode 1020000
-        versionName "1.2.0"
+        // NOTE: update SUPPORTED_VERSION_CODE if needed
+        versionCode 1030001
+        versionName "1.3.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -36,6 +36,7 @@ android {
 
     buildFeatures {
         viewBinding true
+        buildConfig true
     }
 
     compileOptions {
@@ -85,5 +86,5 @@ dependencies {
     implementation "dev.rikka.shizuku:api:$shizuku_version"
     implementation "dev.rikka.shizuku:provider:$shizuku_version"
     implementation "dev.rikka.tools.refine:runtime:$refine_version"
-    implementation 'org.lsposed.hiddenapibypass:hiddenapibypass:4.3'
+    implementation 'org.lsposed.hiddenapibypass:hiddenapibypass:6.1'
 }

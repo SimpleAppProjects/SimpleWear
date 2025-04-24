@@ -2,6 +2,7 @@ package com.thewizrd.simplewear.wearable.complications
 
 import android.app.PendingIntent
 import android.content.ComponentName
+import android.content.Context
 import android.content.Intent
 import android.graphics.drawable.Icon
 import androidx.wear.watchface.complications.data.ComplicationData
@@ -15,19 +16,53 @@ import androidx.wear.watchface.complications.data.ShortTextComplicationData
 import androidx.wear.watchface.complications.datasource.ComplicationDataSourceUpdateRequester
 import androidx.wear.watchface.complications.datasource.ComplicationRequest
 import androidx.wear.watchface.complications.datasource.SuspendingComplicationDataSourceService
+import com.thewizrd.shared_resources.actions.BatteryStatus
+import com.thewizrd.shared_resources.appLib
+import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.simplewear.DashboardActivity
 import com.thewizrd.simplewear.R
+import com.thewizrd.simplewear.datastore.dashboard.dashboardDataStore
 import com.thewizrd.simplewear.utils.asLauncherIntent
 import com.thewizrd.simplewear.wearable.tiles.DashboardTileMessenger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 
 class BatteryStatusComplicationService : SuspendingComplicationDataSourceService() {
     companion object {
         private const val TAG = "BatteryStatusComplicationService"
+
+        fun requestComplicationUpdate(context: Context, complicationInstanceId: Int? = null) {
+            updateJob?.cancel()
+
+            updateJob = appLib.appScope.launch {
+                delay(1000)
+                if (isActive) {
+                    Logger.debug(TAG, "requesting complication update")
+
+                    ComplicationDataSourceUpdateRequester.create(
+                        context,
+                        ComponentName(context, this::class.java)
+                    ).run {
+                        if (complicationInstanceId != null) {
+                            requestUpdate(complicationInstanceId)
+                        } else {
+                            requestUpdateAll()
+                        }
+                    }
+                }
+            }
+        }
+
+        private var updateJob: Job? = null
     }
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -39,7 +74,6 @@ class BatteryStatusComplicationService : SuspendingComplicationDataSourceService
             ComplicationType.SHORT_TEXT,
             ComplicationType.LONG_TEXT
         )
-    private val complicationIconResId = R.drawable.ic_smartphone_white_24dp
 
     override fun onDestroy() {
         super.onDestroy()
@@ -48,13 +82,7 @@ class BatteryStatusComplicationService : SuspendingComplicationDataSourceService
 
     override fun onComplicationActivated(complicationInstanceId: Int, type: ComplicationType) {
         super.onComplicationActivated(complicationInstanceId, type)
-
-        ComplicationDataSourceUpdateRequester.create(
-            applicationContext,
-            ComponentName(applicationContext, this::class.java)
-        ).run {
-            requestUpdate(complicationInstanceId)
-        }
+        requestComplicationUpdate(applicationContext, complicationInstanceId)
     }
 
     override suspend fun onComplicationRequest(request: ComplicationRequest): ComplicationData {
@@ -63,14 +91,18 @@ class BatteryStatusComplicationService : SuspendingComplicationDataSourceService
         }
 
         return scope.async {
-            val batteryStatus = tileMessenger.requestBatteryStatusAsync()
-                ?: return@async NoDataComplicationData()
+            val batteryStatus = latestStatus() ?: return@async NoDataComplicationData()
 
             val batteryLvl = batteryStatus.batteryLevel
             val statusText = if (batteryStatus.isCharging) {
                 getString(R.string.batt_state_charging)
             } else {
                 getString(R.string.batt_state_discharging)
+            }
+            val complicationIconResId = if (batteryStatus.isCharging) {
+                R.drawable.ic_charging_station_24dp
+            } else {
+                R.drawable.ic_smartphone_white_24dp
             }
 
             when (request.complicationType) {
@@ -92,7 +124,7 @@ class BatteryStatusComplicationService : SuspendingComplicationDataSourceService
 
                 ComplicationType.SHORT_TEXT -> {
                     ShortTextComplicationData.Builder(
-                        PlainComplicationText.Builder("70%").build(),
+                        PlainComplicationText.Builder("${batteryLvl}%").build(),
                         PlainComplicationText.Builder("${getString(R.string.pref_title_phone_batt_state)}: ${batteryLvl}%, $statusText")
                             .build()
                     ).setMonochromaticImage(
@@ -106,7 +138,7 @@ class BatteryStatusComplicationService : SuspendingComplicationDataSourceService
 
                 ComplicationType.LONG_TEXT -> {
                     LongTextComplicationData.Builder(
-                        PlainComplicationText.Builder("70%, $statusText").build(),
+                        PlainComplicationText.Builder("${batteryLvl}%, $statusText").build(),
                         PlainComplicationText.Builder("${getString(R.string.pref_title_phone_batt_state)}: ${batteryLvl}%, $statusText")
                             .build()
                     ).setTitle(
@@ -130,6 +162,8 @@ class BatteryStatusComplicationService : SuspendingComplicationDataSourceService
         if (!supportedComplicationTypes.contains(type)) {
             return NoDataComplicationData()
         }
+
+        val complicationIconResId = R.drawable.ic_charging_station_24dp
 
         return when (type) {
             ComplicationType.RANGED_VALUE -> {
@@ -190,5 +224,16 @@ class BatteryStatusComplicationService : SuspendingComplicationDataSourceService
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
         }
+    }
+
+    private suspend fun latestStatus(): BatteryStatus? {
+        var status = this.dashboardDataStore.data.map { it.batteryStatus }.firstOrNull()
+
+        if (status == null) {
+            Logger.debug(TAG, "No battery status available. loading from remote...")
+            status = tileMessenger.requestBatteryStatusAsync()
+        }
+
+        return status
     }
 }

@@ -3,51 +3,47 @@ package com.thewizrd.simplewear
 import android.app.Activity
 import android.app.Application
 import android.app.Application.ActivityLifecycleCallbacks
-import android.content.Context
+import android.content.SharedPreferences
 import android.os.Bundle
 import android.util.Log
-import com.google.firebase.crashlytics.FirebaseCrashlytics
+import androidx.preference.PreferenceManager
 import com.thewizrd.shared_resources.ApplicationLib
-import com.thewizrd.shared_resources.SimpleLibrary
+import com.thewizrd.shared_resources.SharedModule
+import com.thewizrd.shared_resources.appLib
 import com.thewizrd.shared_resources.helpers.AppState
-import com.thewizrd.shared_resources.utils.CrashlyticsLoggingTree
+import com.thewizrd.shared_resources.sharedDeps
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.simplewear.media.MediaPlayerActivity
+import kotlinx.coroutines.cancel
 import kotlin.system.exitProcess
 
-class App : Application(), ApplicationLib, ActivityLifecycleCallbacks {
-    companion object {
-        @JvmStatic
-        lateinit var instance: ApplicationLib
-            private set
-    }
-
-    override lateinit var appContext: Context
-        private set
-    override lateinit var applicationState: AppState
-        private set
+class App : Application(), ActivityLifecycleCallbacks {
+    private lateinit var applicationState: AppState
     private var mActivitiesStarted = 0
-    override val isPhone: Boolean = false
 
     override fun onCreate() {
         super.onCreate()
-        appContext = applicationContext
-        instance = this
 
         registerActivityLifecycleCallbacks(this)
         applicationState = AppState.CLOSED
         mActivitiesStarted = 0
 
-        // Init shared library
-        SimpleLibrary.initialize(this)
-
-        // Start logger
-        Logger.init(appContext)
-        Logger.registerLogger(CrashlyticsLoggingTree())
-        FirebaseCrashlytics.getInstance().apply {
-            setCrashlyticsCollectionEnabled(true)
-            sendUnsentReports()
+        // Initialize app dependencies (library module chain)
+        // 1. ApplicationLib + SharedModule, 2. Firebase
+        appLib = object : ApplicationLib() {
+            override val context = applicationContext
+            override val preferences: SharedPreferences
+                get() = PreferenceManager.getDefaultSharedPreferences(context)
+            override val appState: AppState
+                get() = applicationState
+            override val isPhone = false
         }
+
+        sharedDeps = object : SharedModule() {
+            override val context = appLib.context // keep same context as applib
+        }
+
+        FirebaseConfigurator.initialize(applicationContext)
 
         val oldHandler = Thread.getDefaultUncaughtExceptionHandler()
 
@@ -65,7 +61,7 @@ class App : Application(), ApplicationLib, ActivityLifecycleCallbacks {
         super.onTerminate()
         // Shutdown logger
         Logger.shutdown()
-        SimpleLibrary.unregister()
+        appLib.appScope.cancel()
     }
 
     override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {}
@@ -87,7 +83,7 @@ class App : Application(), ApplicationLib, ActivityLifecycleCallbacks {
 
     override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {}
     override fun onActivityDestroyed(activity: Activity) {
-        if (activity.localClassName.contains("DashboardActivity")) {
+        if (activity.localClassName.contains(DashboardActivity::class.java.simpleName)) {
             applicationState = AppState.CLOSED
         }
     }

@@ -26,7 +26,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -35,6 +34,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.core.content.PermissionChecker
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.ButtonDefaults
@@ -272,7 +272,13 @@ private fun PhoneSyncUi(
 
                                 null -> painterResource(id = R.drawable.ic_sync_24dp)
                             },
-                            contentDescription = null
+                            contentDescription = when (uiState.connectionStatus) {
+                                WearConnectionStatus.DISCONNECTED -> stringResource(R.string.status_disconnected)
+                                WearConnectionStatus.CONNECTING -> stringResource(R.string.status_connecting)
+                                WearConnectionStatus.APPNOTINSTALLED -> stringResource(R.string.error_notinstalled)
+                                WearConnectionStatus.CONNECTED -> stringResource(R.string.status_connected)
+                                null -> null
+                            }
                         )
                     }
                 }

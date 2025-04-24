@@ -1,7 +1,6 @@
 package com.thewizrd.simplewear.ui.simplewear
 
 import android.content.Intent
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -20,13 +19,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
@@ -57,17 +56,18 @@ import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.simplewear.PhoneSyncActivity
 import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.controls.AppItemViewModel
-import com.thewizrd.simplewear.controls.CustomConfirmationOverlay
+import com.thewizrd.simplewear.ui.components.ConfirmationOverlay
 import com.thewizrd.simplewear.ui.components.LoadingContent
 import com.thewizrd.simplewear.ui.components.SwipeToDismissPagerScreen
 import com.thewizrd.simplewear.ui.theme.findActivity
 import com.thewizrd.simplewear.viewmodels.AppLauncherUiState
 import com.thewizrd.simplewear.viewmodels.AppLauncherViewModel
+import com.thewizrd.simplewear.viewmodels.ConfirmationData
+import com.thewizrd.simplewear.viewmodels.ConfirmationViewModel
 import com.thewizrd.simplewear.viewmodels.WearableListenerViewModel
 import kotlinx.coroutines.launch
 
 @OptIn(
-    ExperimentalFoundationApi::class,
     ExperimentalHorologistApi::class
 )
 @Composable
@@ -82,6 +82,9 @@ fun AppLauncherScreen(
 
     val appLauncherViewModel = viewModel<AppLauncherViewModel>()
     val uiState by appLauncherViewModel.uiState.collectAsState()
+
+    val confirmationViewModel = viewModel<ConfirmationViewModel>()
+    val confirmationData by confirmationViewModel.confirmationEventsFlow.collectAsState()
 
     val scrollState = rememberResponsiveColumnState(
         contentPadding = ScalingLazyColumnDefaults.padding(
@@ -120,6 +123,11 @@ fun AppLauncherScreen(
             )
         }
     }
+
+    ConfirmationOverlay(
+        confirmationData = confirmationData,
+        onTimeout = { confirmationViewModel.clearFlow() },
+    )
 
     LaunchedEffect(context) {
         appLauncherViewModel.initActivityContext(activity)
@@ -174,37 +182,23 @@ fun AppLauncherScreen(
 
                         when (status) {
                             ActionStatus.SUCCESS -> {
-                                CustomConfirmationOverlay()
-                                    .setType(CustomConfirmationOverlay.SUCCESS_ANIMATION)
-                                    .showOn(activity)
+                                confirmationViewModel.showSuccess()
                             }
 
                             ActionStatus.PERMISSION_DENIED -> {
-                                CustomConfirmationOverlay()
-                                    .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
-                                    .setCustomDrawable(
-                                        ContextCompat.getDrawable(
-                                            activity,
-                                            R.drawable.ws_full_sad
-                                        )
+                                confirmationViewModel.showConfirmation(
+                                    ConfirmationData(
+                                        title = context.getString(R.string.error_permissiondenied)
                                     )
-                                    .setMessage(activity.getString(R.string.error_permissiondenied))
-                                    .showOn(activity)
+                                )
 
                                 appLauncherViewModel.openAppOnPhone(activity, false)
                             }
 
                             ActionStatus.FAILURE -> {
-                                CustomConfirmationOverlay()
-                                    .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
-                                    .setCustomDrawable(
-                                        ContextCompat.getDrawable(
-                                            activity,
-                                            R.drawable.ws_full_sad
-                                        )
-                                    )
-                                    .setMessage(activity.getString(R.string.error_actionfailed))
-                                    .showOn(activity)
+                                confirmationViewModel.showFailure(
+                                    message = context.getString(R.string.error_actionfailed)
+                                )
                             }
 
                             else -> {}
@@ -217,7 +211,7 @@ fun AppLauncherScreen(
 
     LaunchedEffect(Unit) {
         // Update statuses
-        appLauncherViewModel.refreshApps(true)
+        appLauncherViewModel.refreshApps()
     }
 }
 
@@ -280,7 +274,7 @@ private fun AppLauncherScreen(
                             icon = {
                                 Icon(
                                     painter = painterResource(id = R.drawable.ic_baseline_refresh_24),
-                                    contentDescription = null
+                                    contentDescription = stringResource(id = R.string.action_refresh)
                                 )
                             },
                             onClick = onRefresh
@@ -303,19 +297,19 @@ private fun AppLauncherScreen(
                 items(
                     items = uiState.appsList,
                     key = { Pair(it.activityName, it.packageName) }
-                ) {
+                ) { appItem ->
                     Chip(
                         modifier = Modifier.fillMaxWidth(),
                         label = {
-                            Text(text = it.appLabel ?: "")
+                            Text(text = appItem.appLabel ?: "")
                         },
                         icon = if (uiState.loadAppIcons) {
-                            it.bitmapIcon?.let {
+                            appItem.bitmapIcon?.let {
                                 {
                                     Icon(
                                         modifier = Modifier.requiredSize(ChipDefaults.IconSize),
                                         bitmap = it.asImageBitmap(),
-                                        contentDescription = null,
+                                        contentDescription = appItem.appLabel,
                                         tint = Color.Unspecified
                                     )
                                 }
@@ -325,7 +319,7 @@ private fun AppLauncherScreen(
                         },
                         colors = ChipDefaults.secondaryChipColors(),
                         onClick = {
-                            onItemClicked(it)
+                            onItemClicked(appItem)
                         }
                     )
                 }

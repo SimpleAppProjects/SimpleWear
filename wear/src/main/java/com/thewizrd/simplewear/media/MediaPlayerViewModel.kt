@@ -1,28 +1,30 @@
+@file:OptIn(ExperimentalHorologistApi::class, ExperimentalHorologistApi::class)
+
 package com.thewizrd.simplewear.media
 
 import android.app.Application
 import android.graphics.Bitmap
 import android.os.Bundle
-import android.util.Log
 import androidx.lifecycle.viewModelScope
-import com.google.android.gms.wearable.DataClient
-import com.google.android.gms.wearable.DataEvent
-import com.google.android.gms.wearable.DataEventBuffer
-import com.google.android.gms.wearable.DataItem
-import com.google.android.gms.wearable.DataMap
-import com.google.android.gms.wearable.DataMapItem
+import com.google.android.gms.wearable.ChannelClient.Channel
+import com.google.android.gms.wearable.ChannelClient.ChannelCallback
 import com.google.android.gms.wearable.MessageEvent
 import com.google.android.gms.wearable.Wearable
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
 import com.google.android.horologist.media.model.PlaybackStateEvent
 import com.thewizrd.shared_resources.actions.ActionStatus
 import com.thewizrd.shared_resources.actions.AudioStreamState
+import com.thewizrd.shared_resources.data.AppItemData
 import com.thewizrd.shared_resources.helpers.MediaHelper
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
 import com.thewizrd.shared_resources.helpers.WearableHelper
+import com.thewizrd.shared_resources.media.BrowseMediaItems
+import com.thewizrd.shared_resources.media.CustomControls
+import com.thewizrd.shared_resources.media.MediaPlayerState
 import com.thewizrd.shared_resources.media.PlaybackState
 import com.thewizrd.shared_resources.media.PositionState
-import com.thewizrd.shared_resources.utils.ImageUtils
+import com.thewizrd.shared_resources.media.QueueItems
+import com.thewizrd.shared_resources.utils.ImageUtils.toBitmap
 import com.thewizrd.shared_resources.utils.JSONParser
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.shared_resources.utils.booleanToBytes
@@ -34,14 +36,13 @@ import com.thewizrd.simplewear.viewmodels.WearableEvent
 import com.thewizrd.simplewear.viewmodels.WearableListenerViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.tasks.await
 
 data class MediaPlayerUiState(
@@ -90,7 +91,8 @@ data class PlayerState(
 data class MediaPagerState(
     val supportsBrowser: Boolean = false,
     val supportsCustomActions: Boolean = false,
-    val supportsQueue: Boolean = false
+    val supportsQueue: Boolean = false,
+    val currentPageKey: MediaPageType = MediaPageType.Player
 ) {
     val pageCount: Int
         get() {
@@ -104,8 +106,7 @@ data class MediaPagerState(
         }
 }
 
-class MediaPlayerViewModel(app: Application) : WearableListenerViewModel(app),
-    DataClient.OnDataChangedListener {
+class MediaPlayerViewModel(app: Application) : WearableListenerViewModel(app) {
     private val viewModelState = MutableStateFlow(MediaPlayerUiState(isLoading = true))
 
     val uiState = viewModelState.stateIn(
@@ -127,13 +128,27 @@ class MediaPlayerViewModel(app: Application) : WearableListenerViewModel(app),
         PlaybackStateEvent.INITIAL
     )
 
-    private var deleteJob: Job? = null
+    private val channelCallback = object : ChannelCallback() {
+        override fun onChannelOpened(channel: Channel) {
+            startChannelListener(channel)
+        }
 
-    private var mediaPagerState = MediaPagerState()
-    private var updatePagerJob: Job? = null
+        override fun onChannelClosed(
+            channel: Channel,
+            closeReason: Int,
+            appSpecificErrorCode: Int
+        ) {
+            Logger.debug(
+                "ChannelCallback",
+                "channel closed - reason = $closeReason | path = ${channel.path}"
+            )
+        }
+    }
 
     init {
-        Wearable.getDataClient(appContext).addListener(this)
+        Wearable.getChannelClient(appContext).run {
+            registerChannelCallback(channelCallback)
+        }
 
         viewModelScope.launch {
             eventFlow.collect { event ->
@@ -202,6 +217,58 @@ class MediaPlayerViewModel(app: Application) : WearableListenerViewModel(app),
                 }
             }
         }
+
+        viewModelScope.launch {
+            channelEventsFlow.collect { event ->
+                when (event.eventType) {
+                    MediaHelper.MediaActionsPath -> {
+                        val jsonData = event.data.getString(EXTRA_ACTIONDATA)
+
+                        viewModelScope.launch {
+                            val customControls = jsonData?.let {
+                                JSONParser.deserializer(it, CustomControls::class.java)
+                            }
+
+                            updateCustomControls(customControls)
+                        }
+                    }
+
+                    MediaHelper.MediaBrowserItemsPath -> {
+                        val jsonData = event.data.getString(EXTRA_ACTIONDATA)
+
+                        viewModelScope.launch {
+                            val browseMediaItems = jsonData?.let {
+                                JSONParser.deserializer(it, BrowseMediaItems::class.java)
+                            }
+
+                            updateBrowserItems(browseMediaItems)
+                        }
+                    }
+//                    MediaHelper.MediaBrowserItemsExtraSuggestedPath -> {
+//                        val jsonData = event.data.getString(EXTRA_ACTIONDATA)
+//
+//                        viewModelScope.launch {
+//                            val browseMediaItems = jsonData?.let {
+//                                JSONParser.deserializer(it, BrowseMediaItems::class.java)
+//                            }
+//
+//                            updateBrowserItems(browseMediaItems)
+//                        }
+//                    }
+                    MediaHelper.MediaQueueItemsPath -> {
+                        val jsonData = event.data.getString(EXTRA_ACTIONDATA)
+
+                        viewModelScope.launch {
+                            val queueItems = jsonData?.let {
+                                JSONParser.deserializer(it, QueueItems::class.java)
+                            }
+
+                            updateQueueItems(queueItems)
+                        }
+                    }
+                }
+            }
+        }
     }
 
     override fun onMessageReceived(messageEvent: MessageEvent) {
@@ -254,115 +321,94 @@ class MediaPlayerViewModel(app: Application) : WearableListenerViewModel(app),
                 }))
             }
 
-            else -> super.onMessageReceived(messageEvent)
-        }
-    }
+            MediaHelper.MediaPlayerStatePath -> {
+                val playerState = messageEvent.data?.let {
+                    JSONParser.deserializer(it.bytesToString(), MediaPlayerState::class.java)
+                }
 
-    override fun onDataChanged(dataEventBuffer: DataEventBuffer) {
-        viewModelScope.launch {
-            updatePagerJob?.cancel()
-            var isPagerUpdated = false
+                viewModelScope.launch {
+                    updatePlayerState(playerState)
+                }
+            }
 
-            for (event in dataEventBuffer) {
-                if (event.type == DataEvent.TYPE_CHANGED) {
-                    val item = event.dataItem
-                    when (item.uri.path) {
-                        MediaHelper.MediaActionsPath -> {
-                            try {
-                                updatePager(item)
-                                val dataMap = DataMapItem.fromDataItem(item).dataMap
-                                updateCustomControls(dataMap)
-                                isPagerUpdated = true
-                            } catch (e: Exception) {
-                                Logger.writeLine(Log.ERROR, e)
+            MediaHelper.MediaPlayerArtPath -> {
+                val artworkBytes = messageEvent.data
+
+                viewModelScope.launch {
+                    updatePlayerArtwork(artworkBytes)
+                }
+            }
+
+            MediaHelper.MediaPlayerAppInfoPath -> {
+                val appInfo = messageEvent.data?.let {
+                    JSONParser.deserializer(it.bytesToString(), AppItemData::class.java)
+                }
+
+                viewModelScope.launch {
+                    viewModelState.update {
+                        it.copy(
+                            mediaPlayerDetails = AppItemViewModel().apply {
+                                appLabel = appInfo?.label
+                                packageName = appInfo?.packageName
+                                activityName = appInfo?.activityName
+                                bitmapIcon = appInfo?.iconBitmap?.toBitmap()
                             }
-                        }
-
-                        MediaHelper.MediaBrowserItemsPath -> {
-                            try {
-                                updatePager(item)
-                                val dataMap = DataMapItem.fromDataItem(item).dataMap
-                                updateBrowserItems(dataMap)
-                                isPagerUpdated = true
-                            } catch (e: Exception) {
-                                Logger.writeLine(Log.ERROR, e)
-                            }
-                        }
-
-                        MediaHelper.MediaQueueItemsPath -> {
-                            try {
-                                updatePager(item)
-                                val dataMap = DataMapItem.fromDataItem(item).dataMap
-                                updateQueueItems(dataMap)
-                                isPagerUpdated = true
-                            } catch (e: Exception) {
-                                Logger.writeLine(Log.ERROR, e)
-                            }
-                        }
-
-                        MediaHelper.MediaPlayerStatePath -> {
-                            deleteJob?.cancel()
-                            val dataMap = DataMapItem.fromDataItem(item).dataMap
-                            updatePlayerState(dataMap)
-                        }
-                    }
-                } else if (event.type == DataEvent.TYPE_DELETED) {
-                    val item = event.dataItem
-                    when (item.uri.path) {
-                        MediaHelper.MediaBrowserItemsPath -> {
-                            mediaPagerState = mediaPagerState.copy(
-                                supportsBrowser = false
-                            )
-                            isPagerUpdated = true
-                        }
-
-                        MediaHelper.MediaActionsPath -> {
-                            mediaPagerState = mediaPagerState.copy(
-                                supportsCustomActions = false
-                            )
-                            isPagerUpdated = true
-                        }
-
-                        MediaHelper.MediaQueueItemsPath -> {
-                            mediaPagerState = mediaPagerState.copy(
-                                supportsQueue = false,
-                            )
-
-                            viewModelState.update {
-                                it.copy(
-                                    activeQueueItemId = -1
-                                )
-                            }
-
-                            isPagerUpdated = true
-                        }
-
-                        MediaHelper.MediaPlayerStatePath -> {
-                            deleteJob?.cancel()
-                            deleteJob = viewModelScope.launch delete@{
-                                delay(1000)
-
-                                if (!isActive) return@delete
-
-                                updatePlayerState(DataMap())
-                            }
-                        }
+                        )
                     }
                 }
             }
 
-            if (isPagerUpdated) {
-                updatePagerJob = viewModelScope.launch updatePagerJob@{
-                    delay(1000)
+            else -> super.onMessageReceived(messageEvent)
+        }
+    }
 
-                    if (!isActive) return@updatePagerJob
+    private fun startChannelListener(channel: Channel) {
+        when (channel.path) {
+            MediaHelper.MediaActionsPath,
+            MediaHelper.MediaBrowserItemsPath,
+            MediaHelper.MediaBrowserItemsExtraSuggestedPath,
+            MediaHelper.MediaQueueItemsPath -> {
+                createChannelListener(channel)
+            }
+        }
+    }
 
-                    viewModelState.update {
-                        it.copy(
-                            pagerState = mediaPagerState
-                        )
+    private fun createChannelListener(channel: Channel): Job =
+        viewModelScope.launch(Dispatchers.Default) {
+            supervisorScope {
+                runCatching {
+                    val stream = Wearable.getChannelClient(appContext)
+                        .getInputStream(channel).await()
+                    stream.bufferedReader().use { reader ->
+                        val line = reader.readLine()
+
+                        when {
+                            line.startsWith("data: ") -> {
+                                runCatching {
+                                    val json = line.substringAfter("data: ")
+                                    _channelEventsFlow.tryEmit(
+                                        WearableEvent(channel.path, Bundle().apply {
+                                            putString(EXTRA_ACTIONDATA, json)
+                                        })
+                                )
+                                }.onFailure {
+                                    Logger.error(
+                                        "MediaPlayerChannelListener",
+                                        it,
+                                        "error reading data for channel = ${channel.path}"
+                                    )
+                            }
+                        }
+
+                            line.isEmpty() -> {
+                                // empty line; data terminator
+                            }
+
+                            else -> {}
                     }
                 }
+                }.onFailure {
+                    Logger.error("MediaPlayerChannelListener", it)
             }
         }
     }
@@ -371,7 +417,7 @@ class MediaPlayerViewModel(app: Application) : WearableListenerViewModel(app),
         viewModelState.update {
             it.copy(
                 mediaPlayerDetails = AppItemViewModel(),
-                isAutoLaunch = false
+                isAutoLaunch = true
             )
         }
         requestPlayerConnect()
@@ -385,78 +431,6 @@ class MediaPlayerViewModel(app: Application) : WearableListenerViewModel(app),
             )
         }
         requestPlayerConnect()
-    }
-
-    private fun updatePager() {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val buff = Wearable.getDataClient(appContext)
-                    .getDataItems(
-                        WearableHelper.getWearDataUri(
-                            "*",
-                            "/media"
-                        ),
-                        DataClient.FILTER_PREFIX
-                    )
-                    .await()
-
-                for (i in 0 until buff.count) {
-                    val item = buff[i]
-                    updatePager(item)
-                }
-
-                buff.release()
-
-                viewModelState.update {
-                    it.copy(pagerState = mediaPagerState)
-                }
-            } catch (e: Exception) {
-                Logger.writeLine(Log.ERROR, e)
-            }
-        }
-    }
-
-    private fun updatePager(item: DataItem) {
-        when (item.uri.path) {
-            MediaHelper.MediaBrowserItemsPath -> {
-                mediaPagerState = mediaPagerState.copy(
-                    supportsBrowser = try {
-                        val dataMap = DataMapItem.fromDataItem(item).dataMap
-                        val items = dataMap.getDataMapArrayList(MediaHelper.KEY_MEDIAITEMS)
-                        !items.isNullOrEmpty()
-                    } catch (e: Exception) {
-                        Logger.writeLine(Log.ERROR, e)
-                        false
-                    }
-                )
-            }
-
-            MediaHelper.MediaActionsPath -> {
-                mediaPagerState = mediaPagerState.copy(
-                    supportsCustomActions = try {
-                        val dataMap = DataMapItem.fromDataItem(item).dataMap
-                        val items = dataMap.getDataMapArrayList(MediaHelper.KEY_MEDIAITEMS)
-                        !items.isNullOrEmpty()
-                    } catch (e: Exception) {
-                        Logger.writeLine(Log.ERROR, e)
-                        false
-                    }
-                )
-            }
-
-            MediaHelper.MediaQueueItemsPath -> {
-                mediaPagerState = mediaPagerState.copy(
-                    supportsQueue = try {
-                        val dataMap = DataMapItem.fromDataItem(item).dataMap
-                        val items = dataMap.getDataMapArrayList(MediaHelper.KEY_MEDIAITEMS)
-                        !items.isNullOrEmpty()
-                    } catch (e: Exception) {
-                        Logger.writeLine(Log.ERROR, e)
-                        false
-                    }
-                )
-            }
-        }
     }
 
     private fun requestPlayerConnect() {
@@ -481,11 +455,18 @@ class MediaPlayerViewModel(app: Application) : WearableListenerViewModel(app),
         }
     }
 
+    private fun requestPlayerAppInfo() {
+        requestMediaAction(MediaHelper.MediaPlayerAppInfoPath)
+    }
+
     fun refreshStatus() {
         viewModelScope.launch {
             updateConnectionStatus()
             requestPlayerConnect()
-            updatePager()
+            requestPlayerAppInfo()
+            requestUpdateCustomControls()
+            //requestUpdateBrowserItems()
+            requestUpdateQueueItems()
         }
     }
 
@@ -493,80 +474,53 @@ class MediaPlayerViewModel(app: Application) : WearableListenerViewModel(app),
         viewModelScope.launch {
             // Request connect to media player
             requestVolumeStatus()
-            updatePlayerState()
+            requestUpdatePlayerState()
         }
     }
 
-    private fun updatePlayerState(dataMap: DataMap) {
-        viewModelScope.launch {
-            val stateName = dataMap.getString(MediaHelper.KEY_MEDIA_PLAYBACKSTATE)
-            val playbackState = stateName?.let { PlaybackState.valueOf(it) } ?: PlaybackState.NONE
-            val title = dataMap.getString(MediaHelper.KEY_MEDIA_METADATA_TITLE)
-            val artist = dataMap.getString(MediaHelper.KEY_MEDIA_METADATA_ARTIST)
-            val artBitmap = dataMap.getAsset(MediaHelper.KEY_MEDIA_METADATA_ART)?.let {
-                try {
-                    ImageUtils.bitmapFromAssetStream(
-                        Wearable.getDataClient(appContext),
-                        it
-                    )
-                } catch (e: Exception) {
-                    null
-                }
-            }
-            val positionState = dataMap.getString(MediaHelper.KEY_MEDIA_POSITIONSTATE)?.let {
-                JSONParser.deserializer(it, PositionState::class.java)
-            }
+    fun requestUpdatePlayerState() {
+        requestMediaAction(MediaHelper.MediaPlayerStatePath)
+    }
 
-            if (playbackState != PlaybackState.NONE) {
-                viewModelState.update {
-                    it.copy(
-                        playerState = PlayerState(
-                            playbackState = playbackState,
-                            title = title,
-                            artist = artist,
-                            artworkBitmap = artBitmap,
-                            positionState = positionState
-                        ),
-                        isLoading = false,
-                        isPlaybackLoading = playbackState == PlaybackState.LOADING
-                    )
-                }
-            } else {
-                viewModelState.update {
-                    it.copy(
-                        playerState = PlayerState(),
-                        isLoading = false,
-                        isPlaybackLoading = false
-                    )
-                }
+    private suspend fun updatePlayerState(playerState: MediaPlayerState?) {
+        val playbackState = playerState?.playbackState ?: PlaybackState.NONE
+        val title = playerState?.mediaMetaData?.title
+        val artist = playerState?.mediaMetaData?.artist
+        val positionState = playerState?.mediaMetaData?.positionState
+
+        if (playbackState != PlaybackState.NONE) {
+            viewModelState.update {
+                it.copy(
+                    playerState = it.playerState.copy(
+                        playbackState = playbackState,
+                        title = title,
+                        artist = artist,
+                        positionState = positionState
+                    ),
+                    isLoading = false,
+                    isPlaybackLoading = playbackState == PlaybackState.LOADING
+                )
+            }
+        } else {
+            viewModelState.update {
+                it.copy(
+                    playerState = PlayerState(),
+                    isLoading = false,
+                    isPlaybackLoading = false
+                )
             }
         }
     }
 
-    private fun updatePlayerState() {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val buff = Wearable.getDataClient(appContext)
-                    .getDataItems(
-                        WearableHelper.getWearDataUri(
-                            "*",
-                            MediaHelper.MediaPlayerStatePath
-                        )
-                    )
-                    .await()
+    private suspend fun updatePlayerArtwork(artworkBytes: ByteArray?) {
+        val artworkBitmap = artworkBytes?.toBitmap()
 
-                for (i in 0 until buff.count) {
-                    val item = buff[i]
-                    if (MediaHelper.MediaPlayerStatePath == item.uri.path) {
-                        val dataMap = DataMapItem.fromDataItem(item).dataMap
-                        updatePlayerState(dataMap)
-                    }
-                }
-
-                buff.release()
-            } catch (e: Exception) {
-                Logger.writeLine(Log.ERROR, e)
-            }
+        viewModelState.update {
+            it.copy(
+                playerState = it.playerState.copy(
+                    artworkBitmap = artworkBitmap
+                )
+            )
         }
     }
 
@@ -620,125 +574,56 @@ class MediaPlayerViewModel(app: Application) : WearableListenerViewModel(app),
         requestMediaAction(MediaHelper.MediaActionsClickPath, itemId.stringToBytes())
     }
 
-    fun updateCustomControls() {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val buff = Wearable.getDataClient(appContext)
-                    .getDataItems(
-                        WearableHelper.getWearDataUri(
-                            "*",
-                            MediaHelper.MediaActionsPath
-                        )
-                    )
-                    .await()
-
-                for (i in 0 until buff.count) {
-                    val item = buff[i]
-                    if (MediaHelper.MediaActionsPath == item.uri.path) {
-                        val dataMap = DataMapItem.fromDataItem(item).dataMap
-                        updateCustomControls(dataMap)
-                    }
-                }
-
-                buff.release()
-            } catch (e: Exception) {
-                Logger.writeLine(Log.ERROR, e)
-            }
-        }
+    fun requestUpdateCustomControls() {
+        requestMediaAction(MediaHelper.MediaActionsPath)
     }
 
-    private suspend fun updateCustomControls(dataMap: DataMap) {
-        val items = dataMap.getDataMapArrayList(MediaHelper.KEY_MEDIAITEMS) ?: emptyList()
-        val mediaItems = ArrayList<MediaItemModel>(items.size)
-
-        for (item in items) {
-            val id = item.getString(MediaHelper.KEY_MEDIA_ACTIONITEM_ACTION) ?: continue
-            val icon = item.getAsset(MediaHelper.KEY_MEDIA_ACTIONITEM_ICON)?.let {
-                try {
-                    ImageUtils.bitmapFromAssetStream(
-                        Wearable.getDataClient(appContext),
-                        it
-                    )
-                } catch (e: Exception) {
-                    null
-                }
+    private suspend fun updateCustomControls(customControls: CustomControls?) {
+        val mediaItems = customControls?.actions?.map { action ->
+            MediaItemModel(action.action).apply {
+                title = action.title
+                icon = action.icon?.toBitmap()
             }
-            val title = item.getString(MediaHelper.KEY_MEDIA_ACTIONITEM_TITLE)
-
-            mediaItems.add(MediaItemModel(id).apply {
-                this.icon = icon
-                this.title = title
-            })
         }
 
         viewModelState.update {
             it.copy(
                 isLoading = false,
-                mediaCustomItems = mediaItems
+                mediaCustomItems = mediaItems ?: emptyList(),
+                pagerState = it.pagerState.copy(
+                    supportsCustomActions = !mediaItems.isNullOrEmpty()
+                )
             )
         }
     }
 
     // Media Browser
-    fun updateBrowserItems() {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val buff = Wearable.getDataClient(appContext)
-                    .getDataItems(
-                        WearableHelper.getWearDataUri(
-                            "*",
-                            MediaHelper.MediaBrowserItemsPath
-                        )
-                    )
-                    .await()
-
-                for (i in 0 until buff.count) {
-                    val item = buff[i]
-                    if (MediaHelper.MediaBrowserItemsPath == item.uri.path) {
-                        val dataMap = DataMapItem.fromDataItem(item).dataMap
-                        updateBrowserItems(dataMap)
-                    }
-                }
-
-                buff.release()
-            } catch (e: Exception) {
-                Logger.writeLine(Log.ERROR, e)
-            }
-        }
+    fun requestUpdateBrowserItems() {
+        requestMediaAction(MediaHelper.MediaBrowserItemsPath)
     }
 
-    private suspend fun updateBrowserItems(dataMap: DataMap) {
-        val isRoot = dataMap.getBoolean(MediaHelper.KEY_MEDIAITEM_ISROOT)
-        val items = dataMap.getDataMapArrayList(MediaHelper.KEY_MEDIAITEMS) ?: emptyList()
+    private suspend fun updateBrowserItems(browseMediaItems: BrowseMediaItems?) {
+        val isRoot = browseMediaItems?.isRoot ?: true
+        val items = browseMediaItems?.mediaItems ?: emptyList()
         val mediaItems = ArrayList<MediaItemModel>(if (isRoot) items.size else items.size + 1)
         if (!isRoot) {
             mediaItems.add(MediaItemModel(MediaHelper.ACTIONITEM_BACK))
         }
 
         for (item in items) {
-            val id = item.getString(MediaHelper.KEY_MEDIAITEM_ID) ?: continue
-            val icon = item.getAsset(MediaHelper.KEY_MEDIAITEM_ICON)?.let {
-                try {
-                    ImageUtils.bitmapFromAssetStream(
-                        Wearable.getDataClient(appContext),
-                        it
-                    )
-                } catch (e: Exception) {
-                    null
-                }
-            }
-            val title = item.getString(MediaHelper.KEY_MEDIAITEM_TITLE)
-
-            mediaItems.add(MediaItemModel(id).apply {
-                this.icon = icon
-                this.title = title
+            mediaItems.add(MediaItemModel(item.mediaId).apply {
+                this.icon = item.icon?.toBitmap()
+                this.title = item.title
             })
         }
 
         viewModelState.update {
             it.copy(
                 isLoading = false,
-                mediaBrowserItems = mediaItems
+                mediaBrowserItems = mediaItems,
+                pagerState = it.pagerState.copy(
+                    supportsBrowser = items.isNotEmpty()
+                )
             )
         }
     }
@@ -752,69 +637,48 @@ class MediaPlayerViewModel(app: Application) : WearableListenerViewModel(app),
     }
 
     // Media Queue
-    fun updateQueueItems() {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val buff = Wearable.getDataClient(appContext)
-                    .getDataItems(
-                        WearableHelper.getWearDataUri(
-                            "*",
-                            MediaHelper.MediaQueueItemsPath
-                        )
-                    )
-                    .await()
-
-                for (i in 0 until buff.count) {
-                    val item = buff[i]
-                    if (MediaHelper.MediaQueueItemsPath == item.uri.path) {
-                        val dataMap = DataMapItem.fromDataItem(item).dataMap
-                        updateQueueItems(dataMap)
-                    }
-                }
-
-                buff.release()
-            } catch (e: Exception) {
-                Logger.writeLine(Log.ERROR, e)
-            }
-        }
+    fun requestUpdateQueueItems() {
+        requestMediaAction(MediaHelper.MediaQueueItemsPath)
     }
 
-    private suspend fun updateQueueItems(dataMap: DataMap) {
-        val items = dataMap.getDataMapArrayList(MediaHelper.KEY_MEDIAITEMS) ?: emptyList()
-        val mediaItems = ArrayList<MediaItemModel>(items.size)
-
-        for (item in items) {
-            val id = item.getLong(MediaHelper.KEY_MEDIAITEM_ID)
-            val icon = item.getAsset(MediaHelper.KEY_MEDIAITEM_ICON)?.let {
-                try {
-                    ImageUtils.bitmapFromAssetStream(
-                        Wearable.getDataClient(appContext),
-                        it
-                    )
-                } catch (e: Exception) {
-                    null
-                }
+    private suspend fun updateQueueItems(queueItems: QueueItems?) {
+        val mediaQueueItems = queueItems?.queueItems?.map { item ->
+            MediaItemModel(item.queueId.toString()).apply {
+                this.icon = item.icon?.toBitmap()
+                this.title = item.title
             }
-            val title = item.getString(MediaHelper.KEY_MEDIAITEM_TITLE)
-
-            mediaItems.add(MediaItemModel(id.toString()).apply {
-                this.icon = icon
-                this.title = title
-            })
         }
-
-        val newQueueId = dataMap.getLong(MediaHelper.KEY_MEDIA_ACTIVEQUEUEITEM_ID, -1)
 
         viewModelState.update {
             it.copy(
                 isLoading = false,
-                mediaQueueItems = mediaItems,
-                activeQueueItemId = newQueueId
+                mediaQueueItems = mediaQueueItems ?: emptyList(),
+                activeQueueItemId = queueItems?.activeQueueItemId ?: -1,
+                pagerState = it.pagerState.copy(
+                    supportsQueue = !mediaQueueItems.isNullOrEmpty()
+                )
             )
         }
     }
 
     fun requestQueueActionItem(itemId: String) {
         requestMediaAction(MediaHelper.MediaQueueItemsClickPath, itemId.stringToBytes())
+    }
+
+    fun updateCurrentPage(pageType: MediaPageType) {
+        viewModelState.update {
+            it.copy(
+                pagerState = it.pagerState.copy(
+                    currentPageKey = pageType
+                )
+            )
+        }
+    }
+
+    override fun onCleared() {
+        Wearable.getChannelClient(appContext).run {
+            unregisterChannelCallback(channelCallback)
+        }
+        super.onCleared()
     }
 }

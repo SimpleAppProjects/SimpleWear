@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalWearFoundationApi::class, ExperimentalMaterialApi::class)
+
 package com.thewizrd.simplewear.ui.simplewear
 
 import android.content.ComponentName
@@ -47,7 +49,6 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
@@ -57,9 +58,14 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
 import androidx.navigation.NavOptions
+import androidx.wear.compose.foundation.ExperimentalWearFoundationApi
+import androidx.wear.compose.foundation.rememberActiveFocusRequester
+import androidx.wear.compose.foundation.rotary.RotaryScrollableDefaults
+import androidx.wear.compose.foundation.rotary.rotaryScrollable
 import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.ButtonDefaults
 import androidx.wear.compose.material.Chip
@@ -74,8 +80,6 @@ import androidx.wear.compose.material.Text
 import androidx.wear.compose.material.TimeText
 import androidx.wear.compose.material.ToggleChip
 import androidx.wear.compose.ui.tooling.preview.WearPreviewDevices
-import com.google.android.horologist.annotations.ExperimentalHorologistApi
-import com.google.android.horologist.compose.rotaryinput.rotaryWithScroll
 import com.thewizrd.shared_resources.actions.Actions
 import com.thewizrd.shared_resources.actions.BatteryStatus
 import com.thewizrd.shared_resources.controls.ActionButtonViewModel
@@ -155,7 +159,6 @@ fun DashboardScreen(
     )
 }
 
-@OptIn(ExperimentalHorologistApi::class, ExperimentalMaterialApi::class)
 @Composable
 fun DashboardScreen(
     modifier: Modifier = Modifier,
@@ -199,7 +202,10 @@ fun DashboardScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(scrollState)
-                .rotaryWithScroll(scrollState)
+                .rotaryScrollable(
+                    focusRequester = rememberActiveFocusRequester(),
+                    behavior = RotaryScrollableDefaults.behavior(scrollState)
+                ),
         ) {
             if (isPreview) {
                 TimeText()
@@ -250,7 +256,7 @@ private fun DeviceStateChip(
         icon = {
             Icon(
                 painter = painterResource(id = R.drawable.ic_smartphone_white_24dp),
-                contentDescription = null
+                contentDescription = stringResource(R.string.desc_phone_state)
             )
         },
         label = {
@@ -308,7 +314,7 @@ private fun BatteryStatusChip(
             icon = {
                 Icon(
                     painter = painterResource(id = R.drawable.ic_battery_std_white_24dp),
-                    contentDescription = null
+                    contentDescription = stringResource(R.string.title_batt_state)
                 )
             },
             label = {
@@ -492,7 +498,9 @@ private fun ActionGridButton(
         Icon(
             modifier = Modifier.requiredSize(iconSize),
             painter = painterResource(id = model.drawableResId),
-            contentDescription = null
+            contentDescription = remember(context, model.actionLabelResId, model.stateLabelResId) {
+                model.getDescription(context)
+            }
         )
     }
 
@@ -505,20 +513,8 @@ private fun ActionGridButton(
                     delay(viewConfig.longPressTimeoutMillis)
 
                     if (isActive) {
-                        var text = model.actionLabelResId
-                            .takeIf { it != 0 }
-                            ?.let {
-                                context.getString(it)
-                            } ?: ""
-
-                        model.stateLabelResId
-                            .takeIf { it != 0 }
-                            ?.let {
-                                text = String.format("%s: %s", text, context.getString(it))
-                            }
-
                         Toast
-                            .makeText(context, text, Toast.LENGTH_SHORT)
+                            .makeText(context, model.getDescription(context), Toast.LENGTH_SHORT)
                             .show()
                     }
                 }
@@ -533,6 +529,8 @@ private fun ActionListButton(
     isClickable: Boolean = true,
     onClick: (ActionButtonViewModel) -> Unit
 ) {
+    val context = LocalContext.current
+
     Chip(
         modifier = Modifier.fillMaxWidth(),
         enabled = model.buttonState != null,
@@ -567,7 +565,13 @@ private fun ActionListButton(
             Icon(
                 modifier = Modifier.requiredSize(24.dp),
                 painter = painterResource(id = model.drawableResId),
-                contentDescription = null
+                contentDescription = remember(
+                    context,
+                    model.actionLabelResId,
+                    model.stateLabelResId
+                ) {
+                    model.getDescription(context)
+                }
             )
         },
         onClick = {
@@ -623,7 +627,11 @@ private fun LayoutPreferenceButton(
                 } else {
                     painterResource(id = R.drawable.ic_view_list_white_24dp)
                 },
-                contentDescription = null
+                contentDescription = if (isGridLayout) {
+                    stringResource(id = R.string.option_grid)
+                } else {
+                    stringResource(id = R.string.option_list)
+                }
             )
         },
         colors = ChipDefaults.secondaryChipColors(
@@ -655,7 +663,7 @@ private fun DashboardConfigButton(
         icon = {
             Icon(
                 painter = painterResource(id = R.drawable.ic_baseline_edit_24),
-                contentDescription = null
+                contentDescription = stringResource(id = R.string.pref_title_dasheditor)
             )
         },
         colors = ChipDefaults.secondaryChipColors(),
@@ -675,7 +683,7 @@ private fun TileDashboardConfigButton(
         icon = {
             Icon(
                 painter = painterResource(id = R.drawable.ic_baseline_edit_24),
-                contentDescription = null
+                contentDescription = stringResource(id = R.string.pref_title_tiledasheditor)
             )
         },
         colors = ChipDefaults.secondaryChipColors(),

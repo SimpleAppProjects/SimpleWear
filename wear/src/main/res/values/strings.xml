@@ -79,4 +79,20 @@
     <string name="title_initial_state">Initial State</string>
     <string name="title_scheduled_state">Scheduled State</string>
 
+    <!-- Content Descriptions -->
+    <string name="label_mute">Mute</string>
+    <string name="label_keypad">Keypad</string>
+    <string name="desc_speakerphone_on">Speakerphone On</string>
+    <string name="desc_speakerphone_off">Speakerphone Off</string>
+    <string name="desc_contact_photo">Contact Photo</string>
+    <string name="desc_phone_state">Device State</string>
+    <string name="label_arrow_up">Arrow Up</string>
+    <string name="label_arrow_down">Arrow Down</string>
+    <string name="label_arrow_left">Arrow Left</string>
+    <string name="label_arrow_right">Arrow Right</string>
+    <string name="label_dpad_center">DPad Center</string>
+    <string name="desc_open_player_list">Open Player List</string>
+    <string name="desc_artwork">Artwork</string>
+    <string name="label_add_action">Add Action</string>
+
 </resources>

@@ -18,6 +18,7 @@ import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -28,12 +29,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.wear.compose.foundation.ExperimentalWearFoundationApi
 import androidx.wear.compose.foundation.lazy.items
@@ -65,12 +66,14 @@ import com.thewizrd.shared_resources.actions.ToggleAction
 import com.thewizrd.shared_resources.controls.ActionButtonViewModel
 import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.simplewear.R
-import com.thewizrd.simplewear.controls.CustomConfirmationOverlay
 import com.thewizrd.simplewear.helpers.showConfirmationOverlay
+import com.thewizrd.simplewear.ui.components.ConfirmationOverlay
 import com.thewizrd.simplewear.ui.components.ScalingLazyColumn
 import com.thewizrd.simplewear.ui.theme.activityViewModel
 import com.thewizrd.simplewear.ui.theme.findActivity
 import com.thewizrd.simplewear.ui.tools.WearPreviewDevices
+import com.thewizrd.simplewear.viewmodels.ConfirmationData
+import com.thewizrd.simplewear.viewmodels.ConfirmationViewModel
 import com.thewizrd.simplewear.viewmodels.TimedActionUiViewModel
 import com.thewizrd.simplewear.viewmodels.WearableListenerViewModel.Companion.EXTRA_STATUS
 import kotlinx.coroutines.delay
@@ -95,6 +98,9 @@ fun TimedActionSetupUi(
     val compositionScope = rememberCoroutineScope()
     val timedActionUiViewModel = activityViewModel<TimedActionUiViewModel>()
 
+    val confirmationViewModel = viewModel<ConfirmationViewModel>()
+    val confirmationData by confirmationViewModel.confirmationEventsFlow.collectAsState()
+
     TimedActionSetupUi(
         modifier = modifier,
         onAddAction = { initialAction, timedAction ->
@@ -118,6 +124,11 @@ fun TimedActionSetupUi(
         }
     )
 
+    ConfirmationOverlay(
+        confirmationData = confirmationData,
+        onTimeout = { confirmationViewModel.clearFlow() },
+    )
+
     LaunchedEffect(lifecycleOwner) {
         lifecycleOwner.lifecycleScope.launch {
             timedActionUiViewModel.eventFlow.collect { event ->
@@ -127,24 +138,17 @@ fun TimedActionSetupUi(
 
                         when (status) {
                             ActionStatus.SUCCESS -> {
-                                CustomConfirmationOverlay()
-                                    .setType(CustomConfirmationOverlay.SUCCESS_ANIMATION)
-                                    .showOn(activity)
+                                confirmationViewModel.showSuccess()
 
                                 navController.popBackStack()
                             }
 
                             ActionStatus.PERMISSION_DENIED -> {
-                                CustomConfirmationOverlay()
-                                    .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
-                                    .setCustomDrawable(
-                                        ContextCompat.getDrawable(
-                                            activity,
-                                            R.drawable.ws_full_sad
-                                        )
+                                confirmationViewModel.showConfirmation(
+                                    ConfirmationData(
+                                        title = context.getString(R.string.error_permissiondenied)
                                     )
-                                    .setMessage(activity.getString(R.string.error_permissiondenied))
-                                    .showOn(activity)
+                                )
 
                                 timedActionUiViewModel.openAppOnPhone(
                                     activity,
@@ -153,10 +157,9 @@ fun TimedActionSetupUi(
                             }
 
                             else -> {
-                                CustomConfirmationOverlay()
-                                    .setType(CustomConfirmationOverlay.FAILURE_ANIMATION)
-                                    .setMessage(activity.getString(R.string.error_actionfailed))
-                                    .showOn(activity)
+                                confirmationViewModel.showFailure(
+                                    message = context.getString(R.string.error_actionfailed)
+                                )
                             }
                         }
                     }
@@ -241,7 +244,7 @@ private fun TimedActionSetupUi(
                                     icon = {
                                         Icon(
                                             painter = painterResource(id = model.drawableResId),
-                                            contentDescription = null
+                                            contentDescription = stringResource(id = model.actionLabelResId)
                                         )
                                     },
                                     colors = ChipDefaults.secondaryChipColors(),
@@ -308,7 +311,7 @@ private fun TimedActionSetupUi(
                                             Icon(
                                                 modifier = Modifier.align(Alignment.Center),
                                                 painter = painterResource(id = model.drawableResId),
-                                                contentDescription = null,
+                                                contentDescription = stringResource(id = model.actionLabelResId),
                                                 tint = MaterialTheme.colors.onSurface
                                             )
                                         }
@@ -363,7 +366,7 @@ private fun TimedActionSetupUi(
                                             Icon(
                                                 modifier = Modifier.align(Alignment.Center),
                                                 painter = painterResource(id = R.drawable.ic_alarm_white_24dp),
-                                                contentDescription = null,
+                                                contentDescription = stringResource(id = R.string.label_time),
                                                 tint = MaterialTheme.colors.onSurface
                                             )
                                         }

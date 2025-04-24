@@ -60,4 +60,22 @@ abstract class Action(_action: Actions) {
             }
         }
     }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is Action) return false
+
+        if (isActionSuccessful != other.isActionSuccessful) return false
+        if (actionStatus != other.actionStatus) return false
+        if (actionType != other.actionType) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = isActionSuccessful.hashCode()
+        result = 31 * result + actionStatus.hashCode()
+        result = 31 * result + actionType.hashCode()
+        return result
+    }
 }

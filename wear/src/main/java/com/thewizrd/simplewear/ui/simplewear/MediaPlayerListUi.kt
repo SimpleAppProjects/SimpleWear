@@ -1,7 +1,8 @@
+@file:OptIn(ExperimentalWearFoundationApi::class, ExperimentalHorologistApi::class)
+
 package com.thewizrd.simplewear.ui.simplewear
 
 import android.content.Intent
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -20,24 +21,28 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import androidx.navigation.NavOptions
+import androidx.wear.compose.foundation.ExperimentalWearFoundationApi
 import androidx.wear.compose.foundation.lazy.items
+import androidx.wear.compose.foundation.rememberActiveFocusRequester
+import androidx.wear.compose.foundation.rotary.RotaryScrollableDefaults
+import androidx.wear.compose.foundation.rotary.rotaryScrollable
 import androidx.wear.compose.material.Checkbox
 import androidx.wear.compose.material.Chip
 import androidx.wear.compose.material.ChipDefaults
@@ -45,7 +50,6 @@ import androidx.wear.compose.material.CompactChip
 import androidx.wear.compose.material.Icon
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.PositionIndicator
-import androidx.wear.compose.material.Switch
 import androidx.wear.compose.material.Text
 import androidx.wear.compose.material.TimeText
 import androidx.wear.compose.material.ToggleChip
@@ -60,26 +64,26 @@ import com.google.android.horologist.compose.layout.rememberResponsiveColumnStat
 import com.google.android.horologist.compose.layout.scrollAway
 import com.google.android.horologist.compose.material.ListHeaderDefaults
 import com.google.android.horologist.compose.material.ResponsiveListHeader
-import com.google.android.horologist.compose.rotaryinput.rotaryWithScroll
 import com.thewizrd.shared_resources.actions.ActionStatus
 import com.thewizrd.shared_resources.helpers.MediaHelper
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
 import com.thewizrd.simplewear.PhoneSyncActivity
 import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.controls.AppItemViewModel
-import com.thewizrd.simplewear.controls.CustomConfirmationOverlay
 import com.thewizrd.simplewear.helpers.showConfirmationOverlay
 import com.thewizrd.simplewear.preferences.Settings
+import com.thewizrd.simplewear.ui.components.ConfirmationOverlay
 import com.thewizrd.simplewear.ui.components.LoadingContent
 import com.thewizrd.simplewear.ui.components.SwipeToDismissPagerScreen
 import com.thewizrd.simplewear.ui.navigation.Screen
 import com.thewizrd.simplewear.ui.theme.findActivity
+import com.thewizrd.simplewear.viewmodels.ConfirmationData
+import com.thewizrd.simplewear.viewmodels.ConfirmationViewModel
 import com.thewizrd.simplewear.viewmodels.MediaPlayerListUiState
 import com.thewizrd.simplewear.viewmodels.MediaPlayerListViewModel
 import com.thewizrd.simplewear.viewmodels.WearableListenerViewModel
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalHorologistApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun MediaPlayerListUi(
     modifier: Modifier = Modifier,
@@ -92,6 +96,9 @@ fun MediaPlayerListUi(
     val mediaPlayerListViewModel = viewModel<MediaPlayerListViewModel>()
     val uiState by mediaPlayerListViewModel.uiState.collectAsState()
 
+    val confirmationViewModel = viewModel<ConfirmationViewModel>()
+    val confirmationData by confirmationViewModel.confirmationEventsFlow.collectAsState()
+
     val scrollState = rememberResponsiveColumnState(
         contentPadding = ScalingLazyColumnDefaults.padding(
             first = ScalingLazyColumnDefaults.ItemType.Unspecified,
@@ -103,8 +110,6 @@ fun MediaPlayerListUi(
         initialPage = 0,
         pageCount = { 2 }
     )
-
-    var autoLaunched by rememberSaveable(navController) { mutableStateOf(false) }
 
     SwipeToDismissPagerScreen(
         state = pagerState,
@@ -128,18 +133,16 @@ fun MediaPlayerListUi(
         }
     }
 
+    ConfirmationOverlay(
+        confirmationData = confirmationData,
+        onTimeout = { confirmationViewModel.clearFlow() },
+    )
+
     LaunchedEffect(context) {
         mediaPlayerListViewModel.initActivityContext(activity)
     }
 
     LaunchedEffect(lifecycleOwner) {
-        lifecycleOwner.lifecycleScope.launchWhenResumed {
-            if (!autoLaunched) {
-                mediaPlayerListViewModel.autoLaunchMediaControls()
-                autoLaunched = true
-            }
-        }
-
         lifecycleOwner.lifecycleScope.launch {
             mediaPlayerListViewModel.eventFlow.collect { event ->
                 when (event.eventType) {
@@ -186,16 +189,11 @@ fun MediaPlayerListUi(
                             event.data.getSerializable(WearableListenerViewModel.EXTRA_STATUS) as ActionStatus
 
                         if (status == ActionStatus.PERMISSION_DENIED) {
-                            CustomConfirmationOverlay()
-                                .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
-                                .setCustomDrawable(
-                                    ContextCompat.getDrawable(
-                                        activity,
-                                        R.drawable.ws_full_sad
-                                    )
+                            confirmationViewModel.showConfirmation(
+                                ConfirmationData(
+                                    title = context.getString(R.string.error_permissiondenied)
                                 )
-                                .setMessage(activity.getString(R.string.error_permissiondenied))
-                                .showOn(activity)
+                            )
 
                             mediaPlayerListViewModel.openAppOnPhone(
                                 activity,
@@ -209,7 +207,13 @@ fun MediaPlayerListUi(
                             event.data.getSerializable(WearableListenerViewModel.EXTRA_STATUS) as ActionStatus
 
                         if (status == ActionStatus.SUCCESS) {
-                            navController.navigate(Screen.MediaPlayer.autoLaunch())
+                            navController.navigate(
+                                Screen.MediaPlayer.autoLaunch(),
+                                NavOptions.Builder()
+                                    .setLaunchSingleTop(true)
+                                    .setPopUpTo(Screen.MediaPlayer.route, true)
+                                    .build()
+                            )
                         }
                     }
                 }
@@ -219,7 +223,7 @@ fun MediaPlayerListUi(
 
     LaunchedEffect(Unit) {
         // Update statuses
-        mediaPlayerListViewModel.refreshState(true)
+        mediaPlayerListViewModel.refreshState()
     }
 }
 
@@ -244,7 +248,13 @@ private fun MediaPlayerListScreen(
                 val success = mediaPlayerListViewModel.startMediaApp(it)
 
                 if (success) {
-                    navController.navigate(Screen.MediaPlayer.getRoute(it))
+                    navController.navigate(
+                        Screen.MediaPlayer.getRoute(it),
+                        NavOptions.Builder()
+                            .setLaunchSingleTop(true)
+                            .setPopUpTo(Screen.MediaPlayer.route, true)
+                            .build()
+                    )
                 } else {
                     activity.showConfirmationOverlay(false)
                 }
@@ -293,7 +303,7 @@ private fun MediaPlayerListScreen(
                             icon = {
                                 Icon(
                                     painter = painterResource(id = R.drawable.ic_baseline_refresh_24),
-                                    contentDescription = null
+                                    contentDescription = stringResource(id = R.string.action_refresh)
                                 )
                             },
                             onClick = onRefresh
@@ -316,25 +326,29 @@ private fun MediaPlayerListScreen(
                 items(
                     items = uiState.mediaAppsSet.toList(),
                     key = { Pair(it.activityName, it.packageName) }
-                ) {
+                ) { mediaItem ->
                     Chip(
                         modifier = Modifier.fillMaxWidth(),
                         label = {
-                            Text(text = it.appLabel ?: "")
+                            Text(text = mediaItem.appLabel ?: "")
                         },
-                        icon = it.bitmapIcon?.let {
+                        icon = mediaItem.bitmapIcon?.let {
                             {
                                 Icon(
                                     modifier = Modifier.requiredSize(ChipDefaults.IconSize),
                                     bitmap = it.asImageBitmap(),
-                                    contentDescription = null,
+                                    contentDescription = mediaItem.appLabel,
                                     tint = Color.Unspecified
                                 )
                             }
                         },
-                        colors = ChipDefaults.secondaryChipColors(),
+                        colors = if (mediaItem.key == uiState.activePlayerKey) {
+                            ChipDefaults.gradientBackgroundChipColors()
+                        } else {
+                            ChipDefaults.secondaryChipColors()
+                        },
                         onClick = {
-                            onItemClicked(it)
+                            onItemClicked(mediaItem)
                         }
                     )
                 }
@@ -362,7 +376,6 @@ private fun MediaPlayerListSettings(
     )
 }
 
-@OptIn(ExperimentalHorologistApi::class)
 @Composable
 private fun MediaPlayerListSettings(
     uiState: MediaPlayerListUiState,
@@ -402,21 +415,8 @@ private fun MediaPlayerListSettings(
                 icon = {
                     Icon(
                         painter = painterResource(id = R.drawable.ic_baseline_filter_list_24),
-                        contentDescription = null
+                        contentDescription = stringResource(id = R.string.title_filter_apps)
                     )
-                }
-            )
-        }
-        item {
-            ToggleChip(
-                modifier = Modifier.fillMaxWidth(),
-                label = {
-                    Text(text = stringResource(id = R.string.title_autolaunchmediactrls))
-                },
-                checked = uiState.isAutoLaunchEnabled,
-                onCheckedChange = onCheckChanged,
-                toggleControl = {
-                    Switch(checked = uiState.isAutoLaunchEnabled)
                 }
             )
         }
@@ -463,7 +463,6 @@ private fun MediaPlayerListSettings(
     }
 }
 
-@OptIn(ExperimentalHorologistApi::class)
 @Composable
 private fun MediaPlayerFilterScreen(
     uiState: MediaPlayerListUiState,
@@ -475,7 +474,10 @@ private fun MediaPlayerFilterScreen(
     ScalingLazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .rotaryWithScroll(dialogScrollState),
+            .rotaryScrollable(
+                focusRequester = rememberActiveFocusRequester(),
+                behavior = RotaryScrollableDefaults.behavior(dialogScrollState)
+            ),
         columnState = dialogScrollState,
     ) {
         item {
@@ -574,7 +576,6 @@ private fun PreviewNoContentMediaPlayerListScreen() {
             mediaAppsSet = emptySet(),
             filteredAppsList = emptySet(),
             isLoading = false,
-            isAutoLaunchEnabled = false
         )
     }
 
@@ -605,7 +606,6 @@ private fun PreviewMediaPlayerListScreen() {
             mediaAppsSet = allApps,
             filteredAppsList = emptySet(),
             isLoading = false,
-            isAutoLaunchEnabled = false
         )
     }
 
@@ -621,7 +621,6 @@ private fun PreviewMediaPlayerSettings() {
             connectionStatus = WearConnectionStatus.CONNECTED,
             filteredAppsList = emptySet(),
             isLoading = false,
-            isAutoLaunchEnabled = false
         )
     }
 
@@ -652,7 +651,6 @@ private fun PreviewMediaPlayerFilterScreen() {
             mediaAppsSet = emptySet(),
             filteredAppsList = setOf("com.package.0"),
             isLoading = false,
-            isAutoLaunchEnabled = false
         )
     }
 

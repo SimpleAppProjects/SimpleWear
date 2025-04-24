@@ -12,9 +12,11 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.FlowRowOverflow
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -25,7 +27,6 @@ import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.requiredSizeIn
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -43,7 +44,6 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -53,8 +53,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.ContextCompat
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.ButtonDefaults
@@ -66,6 +67,7 @@ import androidx.wear.compose.material.TimeText
 import androidx.wear.compose.material.Vignette
 import androidx.wear.compose.material.VignettePosition
 import androidx.wear.compose.material.dialog.Dialog
+import androidx.wear.compose.material.ripple
 import androidx.wear.compose.ui.tooling.preview.WearPreviewDevices
 import androidx.wear.compose.ui.tooling.preview.WearPreviewFontScales
 import com.thewizrd.shared_resources.actions.ActionStatus
@@ -75,13 +77,15 @@ import com.thewizrd.shared_resources.helpers.InCallUIHelper
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
 import com.thewizrd.simplewear.PhoneSyncActivity
 import com.thewizrd.simplewear.R
-import com.thewizrd.simplewear.controls.CustomConfirmationOverlay
+import com.thewizrd.simplewear.ui.components.ConfirmationOverlay
 import com.thewizrd.simplewear.ui.components.LoadingContent
 import com.thewizrd.simplewear.ui.navigation.Screen
 import com.thewizrd.simplewear.ui.theme.activityViewModel
 import com.thewizrd.simplewear.ui.theme.findActivity
 import com.thewizrd.simplewear.viewmodels.CallManagerUiState
 import com.thewizrd.simplewear.viewmodels.CallManagerViewModel
+import com.thewizrd.simplewear.viewmodels.ConfirmationData
+import com.thewizrd.simplewear.viewmodels.ConfirmationViewModel
 import com.thewizrd.simplewear.viewmodels.WearableListenerViewModel
 import kotlinx.coroutines.launch
 
@@ -96,6 +100,9 @@ fun CallManagerUi(
     val lifecycleOwner = LocalLifecycleOwner.current
     val callManagerViewModel = activityViewModel<CallManagerViewModel>()
     val uiState by callManagerViewModel.uiState.collectAsState()
+
+    val confirmationViewModel = viewModel<ConfirmationViewModel>()
+    val confirmationData by confirmationViewModel.confirmationEventsFlow.collectAsState()
 
     Scaffold(
         modifier = modifier.background(MaterialTheme.colors.background),
@@ -117,6 +124,11 @@ fun CallManagerUi(
             )
         }
     }
+
+    ConfirmationOverlay(
+        confirmationData = confirmationData,
+        onTimeout = { confirmationViewModel.clearFlow() },
+    )
 
     LaunchedEffect(lifecycleOwner) {
         lifecycleOwner.lifecycleScope.launch {
@@ -160,21 +172,16 @@ fun CallManagerUi(
                         }
                     }
 
-                    InCallUIHelper.CallStatePath -> {
+                    InCallUIHelper.ConnectPath -> {
                         val status =
                             event.data.getSerializable(WearableListenerViewModel.EXTRA_STATUS) as ActionStatus
 
                         if (status == ActionStatus.PERMISSION_DENIED) {
-                            CustomConfirmationOverlay()
-                                .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
-                                .setCustomDrawable(
-                                    ContextCompat.getDrawable(
-                                        activity,
-                                        R.drawable.ws_full_sad
-                                    )
+                            confirmationViewModel.showConfirmation(
+                                ConfirmationData(
+                                    title = context.getString(R.string.error_permissiondenied)
                                 )
-                                .setMessage(activity.getString(R.string.error_permissiondenied))
-                                .showOn(activity)
+                            )
 
                             callManagerViewModel.openAppOnPhone(activity, false)
                         }
@@ -260,7 +267,7 @@ private fun CallManagerUi(
             Image(
                 modifier = Modifier.fillMaxSize(),
                 bitmap = uiState.callerBitmap.asImageBitmap(),
-                contentDescription = null
+                contentDescription = stringResource(R.string.desc_contact_photo)
             )
         }
 
@@ -299,24 +306,36 @@ private fun CallManagerUi(
                 CallUiButton(
                     iconResourceId = R.drawable.ic_mic_off_24dp,
                     isChecked = uiState.isMuted,
-                    onClick = onMute
+                    onClick = onMute,
+                    contentDescription = if (uiState.isMuted) {
+                        stringResource(R.string.volstate_muted)
+                    } else {
+                        stringResource(R.string.label_mute)
+                    }
                 )
                 if (uiState.canSendDTMFKeys) {
                     CallUiButton(
                         iconResourceId = R.drawable.ic_dialpad_24dp,
-                        onClick = onShowKeypadUi
+                        onClick = onShowKeypadUi,
+                        contentDescription = stringResource(R.string.label_keypad)
                     )
                 }
                 if (uiState.supportsSpeaker) {
                     CallUiButton(
                         iconResourceId = R.drawable.ic_baseline_speaker_phone_24,
                         isChecked = uiState.isSpeakerPhoneOn,
-                        onClick = onSpeakerPhone
+                        onClick = onSpeakerPhone,
+                        contentDescription = if (uiState.isSpeakerPhoneOn) {
+                            stringResource(R.string.desc_speakerphone_on)
+                        } else {
+                            stringResource(R.string.desc_speakerphone_off)
+                        }
                     )
                 }
                 CallUiButton(
                     iconResourceId = R.drawable.ic_volume_up_white_24dp,
-                    onClick = onVolume
+                    onClick = onVolume,
+                    contentDescription = stringResource(R.string.action_volume)
                 )
             }
 
@@ -346,7 +365,7 @@ private fun CallUiButton(
     modifier: Modifier = Modifier,
     isChecked: Boolean = false,
     @DrawableRes iconResourceId: Int,
-    contentDescription: String? = null,
+    contentDescription: String?,
     onClick: () -> Unit = {}
 ) {
     Box(
@@ -356,7 +375,7 @@ private fun CallUiButton(
                 onClick = onClick,
                 role = Role.Button,
                 interactionSource = remember { MutableInteractionSource() },
-                indication = rememberRipple(
+                indication = ripple(
                     color = MaterialTheme.colors.onSurface,
                     radius = 20.dp
                 )
@@ -399,6 +418,7 @@ private fun NoCallActiveScreen() {
 
 @OptIn(ExperimentalLayoutApi::class)
 @WearPreviewDevices
+@WearPreviewFontScales
 @Composable
 private fun KeypadScreen(
     onKeyPressed: (Char) -> Unit = {}
@@ -442,36 +462,38 @@ private fun KeypadScreen(
                 overflow = TextOverflow.Visible
             )
         }
-        FlowRow(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f, fill = true)
-                .padding(
-                    start = if (isRound) 32.dp else 8.dp,
-                    end = if (isRound) 32.dp else 8.dp,
-                    bottom = if (isRound) 32.dp else 8.dp
-                ),
-            maxItemsInEachRow = 3,
-            horizontalArrangement = Arrangement.Center,
-            verticalArrangement = Arrangement.Center
-        ) {
-            digits.forEach {
-                Box(
-                    modifier = Modifier
-                        .weight(1f, fill = true)
-                        .fillMaxHeight(1f / 4f)
-                        .clickable {
-                            keypadText += it
-                            onKeyPressed.invoke(it)
-                        },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = it + "",
-                        maxLines = 1,
-                        textAlign = TextAlign.Center,
-                        fontSize = 16.sp
-                    )
+        BoxWithConstraints {
+            FlowRow(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(
+                        start = if (isRound) 32.dp else 8.dp,
+                        end = if (isRound) 32.dp else 8.dp,
+                        bottom = if (isRound) 32.dp else 8.dp
+                    ),
+                maxItemsInEachRow = 3,
+                horizontalArrangement = Arrangement.Center,
+                verticalArrangement = Arrangement.Center,
+                overflow = FlowRowOverflow.Visible
+            ) {
+                digits.forEach {
+                    Box(
+                        modifier = Modifier
+                            .weight(1f, fill = true)
+                            .height((this@BoxWithConstraints.maxHeight - if (isRound) 32.dp else 8.dp) / 4)
+                            .clickable {
+                                keypadText += it
+                                onKeyPressed.invoke(it)
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = it + "",
+                            maxLines = 1,
+                            textAlign = TextAlign.Center,
+                            fontSize = 16.sp
+                        )
+                    }
                 }
             }
         }

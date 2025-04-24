@@ -5,4 +5,5 @@ object GestureUIHelper {
     const val ScrollPath = "/gesture/scroll"
     const val DPadPath = "/gesture/dpad"
     const val DPadClickPath = "/gesture/dpad/click"
+    const val KeyEventPath = "/gesture/keyEvent"
 }

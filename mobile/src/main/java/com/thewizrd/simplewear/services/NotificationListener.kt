@@ -1,7 +1,9 @@
 package com.thewizrd.simplewear.services
 
+import android.app.NotificationManager
 import android.content.ComponentName
 import android.content.Context
+import android.os.Build
 import android.service.notification.NotificationListenerService
 import androidx.core.app.NotificationManagerCompat
 
@@ -16,9 +18,14 @@ class NotificationListener : NotificationListenerService() {
     // sessions, we need an enabled notification listener component.
     companion object {
         fun isEnabled(context: Context): Boolean {
-            return NotificationManagerCompat
-                .getEnabledListenerPackages(context)
-                .contains(context.packageName)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+                val notMgr = context.getSystemService(NotificationManager::class.java)
+                return notMgr.isNotificationListenerAccessGranted(getComponentName(context))
+            } else {
+                return NotificationManagerCompat
+                    .getEnabledListenerPackages(context)
+                    .contains(context.packageName)
+            }
         }
 
         fun getComponentName(context: Context): ComponentName {

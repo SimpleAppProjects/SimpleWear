@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.util.Log
 import com.thewizrd.shared_resources.actions.Action
 import com.thewizrd.shared_resources.actions.EXTRA_ACTION_DATA
+import com.thewizrd.shared_resources.appLib
 import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.shared_resources.utils.AnalyticsLogger
 import com.thewizrd.shared_resources.utils.JSONParser
@@ -19,7 +20,6 @@ import com.thewizrd.simplewear.services.TorchService
 import com.thewizrd.simplewear.wearable.WearableManager
 import com.thewizrd.simplewear.wearable.WearableWorker
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 
 class PhoneBroadcastReceiver : BroadcastReceiver() {
@@ -83,7 +83,7 @@ class PhoneBroadcastReceiver : BroadcastReceiver() {
                             action.actionType.name
                         )
 
-                        GlobalScope.launch(Dispatchers.Default) {
+                        appLib.appScope.launch(Dispatchers.Default) {
                             WearableManager(context.applicationContext).run {
                                 performAction(null, action)
                             }

@@ -73,16 +73,19 @@ object ImageUtils {
         return@withContext createAssetFromBitmap(bmp)
     }
 
-    suspend fun Bitmap.toByteArray() = withContext(Dispatchers.IO) {
+    suspend fun Bitmap.toByteArray() = toByteArray(
+        format = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            Bitmap.CompressFormat.WEBP_LOSSLESS
+        } else {
+            Bitmap.CompressFormat.WEBP
+        }
+    )
+
+    suspend fun Bitmap.toByteArray(format: Bitmap.CompressFormat, quality: Int = 100) =
+        withContext(Dispatchers.IO) {
         val byteStream = ByteArrayOutputStream()
         return@withContext byteStream.use { stream ->
-            compress(
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                    Bitmap.CompressFormat.WEBP_LOSSLESS
-                } else {
-                    Bitmap.CompressFormat.WEBP
-                }, 100, stream
-            )
+            compress(format, quality, stream)
             stream.toByteArray()
         }
     }

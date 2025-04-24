@@ -80,7 +80,7 @@ class WearableDataListenerService : WearableListenerService() {
                 }
             } else if (messageEvent.path.startsWith(MediaHelper.MusicPlayersPath)) {
                 if (NotificationListener.isEnabled(ctx)) {
-                    mWearMgr.sendSupportedMusicPlayers()
+                    mWearMgr.sendSupportedMusicPlayers(messageEvent.sourceNodeId)
                     mWearMgr.sendMessage(
                         messageEvent.sourceNodeId, messageEvent.path,
                         ActionStatus.SUCCESS.name.stringToBytes()
@@ -212,7 +212,7 @@ class WearableDataListenerService : WearableListenerService() {
                 }
             }
             /* InCall Actions */
-            else if (messageEvent.path == InCallUIHelper.CallStatePath) {
+            else if (messageEvent.path == InCallUIHelper.ConnectPath) {
                 if (PhoneStatusHelper.callStatePermissionEnabled(ctx) &&
                     (Build.VERSION.SDK_INT < Build.VERSION_CODES.O ||
                             Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
@@ -256,6 +256,8 @@ class WearableDataListenerService : WearableListenerService() {
                 mWearMgr.performDPadAction(messageEvent.sourceNodeId, idx)
             } else if (messageEvent.path == GestureUIHelper.DPadClickPath && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 mWearMgr.performDPadClick(messageEvent.sourceNodeId)
+            } else if (messageEvent.path == GestureUIHelper.KeyEventPath) {
+                mWearMgr.performKeyEvent(messageEvent.sourceNodeId, messageEvent.data.bytesToInt())
             } else if (messageEvent.path == WearableHelper.TimedActionDeletePath) {
                 val action = Actions.valueOf(messageEvent.data.bytesToString())
 

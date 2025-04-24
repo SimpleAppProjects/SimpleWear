@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalWearFoundationApi::class, ExperimentalHorologistApi::class)
+
 package com.thewizrd.simplewear.ui.simplewear
 
 import android.content.Intent
@@ -11,19 +13,19 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.core.content.ContextCompat
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.wear.compose.foundation.ExperimentalWearFoundationApi
+import androidx.wear.compose.foundation.rememberActiveFocusRequester
+import androidx.wear.compose.foundation.rotary.rotaryScrollable
 import androidx.wear.compose.material.Chip
 import androidx.wear.compose.material.ChipDefaults
 import androidx.wear.compose.material.Icon
 import androidx.wear.compose.material.MaterialTheme
-import androidx.wear.compose.material.PositionIndicator
 import androidx.wear.compose.material.Scaffold
 import androidx.wear.compose.material.Stepper
 import androidx.wear.compose.material.Text
@@ -32,26 +34,30 @@ import androidx.wear.compose.material.Vignette
 import androidx.wear.compose.material.VignettePosition
 import androidx.wear.compose.ui.tooling.preview.WearPreviewDevices
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
+import com.google.android.horologist.audio.ui.VolumePositionIndicator
 import com.google.android.horologist.audio.ui.VolumeUiState
-import com.google.android.horologist.audio.ui.rotaryVolumeControlsWithFocus
-import com.google.android.horologist.compose.rotaryinput.RotaryDefaults
+import com.google.android.horologist.audio.ui.volumeRotaryBehavior
 import com.thewizrd.shared_resources.actions.Action
 import com.thewizrd.shared_resources.actions.ActionStatus
 import com.thewizrd.shared_resources.actions.Actions
 import com.thewizrd.shared_resources.actions.AudioStreamType
 import com.thewizrd.shared_resources.actions.ValueActionState
+import com.thewizrd.shared_resources.controls.ActionButtonViewModel
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
 import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.shared_resources.utils.JSONParser
 import com.thewizrd.simplewear.PhoneSyncActivity
 import com.thewizrd.simplewear.R
-import com.thewizrd.simplewear.controls.CustomConfirmationOverlay
+import com.thewizrd.simplewear.ui.components.ConfirmationOverlay
 import com.thewizrd.simplewear.ui.theme.findActivity
+import com.thewizrd.simplewear.viewmodels.ConfirmationData
+import com.thewizrd.simplewear.viewmodels.ConfirmationViewModel
 import com.thewizrd.simplewear.viewmodels.ValueActionUiState
 import com.thewizrd.simplewear.viewmodels.ValueActionViewModel
+import com.thewizrd.simplewear.viewmodels.ValueActionVolumeViewModel
 import com.thewizrd.simplewear.viewmodels.WearableListenerViewModel
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlin.math.max
 
 @Composable
 fun ValueActionScreen(
@@ -64,6 +70,12 @@ fun ValueActionScreen(
 
     val lifecycleOwner = LocalLifecycleOwner.current
     val valueActionViewModel = viewModel<ValueActionViewModel>()
+    val volumeViewModel = remember(context, valueActionViewModel) {
+        ValueActionVolumeViewModel(context, valueActionViewModel)
+    }
+
+    val confirmationViewModel = viewModel<ConfirmationViewModel>()
+    val confirmationData by confirmationViewModel.confirmationEventsFlow.collectAsState()
 
     Scaffold(
         modifier = modifier.background(MaterialTheme.colors.background),
@@ -72,8 +84,13 @@ fun ValueActionScreen(
             TimeText()
         },
     ) {
-        ValueActionScreen(valueActionViewModel)
+        ValueActionScreen(valueActionViewModel, volumeViewModel)
     }
+
+    ConfirmationOverlay(
+        confirmationData = confirmationData,
+        onTimeout = { confirmationViewModel.clearFlow() },
+    )
 
     LaunchedEffect(actionType, audioStreamType) {
         valueActionViewModel.onActionUpdated(actionType, audioStreamType)
@@ -137,29 +154,21 @@ fun ValueActionScreen(
                             lifecycleOwner.lifecycleScope.launch {
                                 when (actionStatus) {
                                     ActionStatus.UNKNOWN, ActionStatus.FAILURE -> {
-                                        CustomConfirmationOverlay()
-                                            .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
-                                            .setCustomDrawable(
-                                                ContextCompat.getDrawable(
-                                                    activity,
-                                                    R.drawable.ws_full_sad
-                                                )
+                                        confirmationViewModel.showConfirmation(
+                                            ConfirmationData(
+                                                iconResId = R.drawable.ws_full_sad,
+                                                title = context.getString(R.string.error_actionfailed),
                                             )
-                                            .setMessage(activity.getString(R.string.error_actionfailed))
-                                            .showOn(activity)
+                                        )
                                     }
 
                                     ActionStatus.PERMISSION_DENIED -> {
-                                        CustomConfirmationOverlay()
-                                            .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
-                                            .setCustomDrawable(
-                                                ContextCompat.getDrawable(
-                                                    activity,
-                                                    R.drawable.ws_full_sad
-                                                )
+                                        confirmationViewModel.showConfirmation(
+                                            ConfirmationData(
+                                                iconResId = R.drawable.ws_full_sad,
+                                                title = context.getString(R.string.error_permissiondenied),
                                             )
-                                            .setMessage(activity.getString(R.string.error_permissiondenied))
-                                            .showOn(activity)
+                                        )
 
                                         valueActionViewModel.openAppOnPhone(
                                             activity,
@@ -168,16 +177,12 @@ fun ValueActionScreen(
                                     }
 
                                     ActionStatus.TIMEOUT -> {
-                                        CustomConfirmationOverlay()
-                                            .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
-                                            .setCustomDrawable(
-                                                ContextCompat.getDrawable(
-                                                    activity,
-                                                    R.drawable.ws_full_sad
-                                                )
+                                        confirmationViewModel.showConfirmation(
+                                            ConfirmationData(
+                                                iconResId = R.drawable.ws_full_sad,
+                                                title = context.getString(R.string.error_sendmessage)
                                             )
-                                            .setMessage(activity.getString(R.string.error_sendmessage))
-                                            .showOn(activity)
+                                        )
                                     }
 
                                     ActionStatus.SUCCESS -> {}
@@ -193,29 +198,21 @@ fun ValueActionScreen(
 
                         when (status) {
                             ActionStatus.UNKNOWN, ActionStatus.FAILURE -> {
-                                CustomConfirmationOverlay()
-                                    .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
-                                    .setCustomDrawable(
-                                        ContextCompat.getDrawable(
-                                            activity,
-                                            R.drawable.ws_full_sad
-                                        )
+                                confirmationViewModel.showConfirmation(
+                                    ConfirmationData(
+                                        iconResId = R.drawable.ws_full_sad,
+                                        title = context.getString(R.string.error_actionfailed)
                                     )
-                                    .setMessage(activity.getString(R.string.error_actionfailed))
-                                    .showOn(activity)
+                                )
                             }
 
                             ActionStatus.PERMISSION_DENIED -> {
-                                CustomConfirmationOverlay()
-                                    .setType(CustomConfirmationOverlay.CUSTOM_ANIMATION)
-                                    .setCustomDrawable(
-                                        ContextCompat.getDrawable(
-                                            activity,
-                                            R.drawable.ws_full_sad
-                                        )
+                                confirmationViewModel.showConfirmation(
+                                    ConfirmationData(
+                                        iconResId = R.drawable.ws_full_sad,
+                                        title = context.getString(R.string.error_permissiondenied)
                                     )
-                                    .setMessage(activity.getString(R.string.error_permissiondenied))
-                                    .showOn(activity)
+                                )
 
                                 valueActionViewModel.openAppOnPhone(activity, false)
                             }
@@ -234,46 +231,28 @@ fun ValueActionScreen(
     }
 }
 
-@OptIn(ExperimentalHorologistApi::class)
 @Composable
 fun ValueActionScreen(
-    valueActionViewModel: ValueActionViewModel
+    valueActionViewModel: ValueActionViewModel,
+    volumeViewModel: ValueActionVolumeViewModel
 ) {
     val lifecycleOwner = LocalLifecycleOwner.current
     val activityCtx = LocalContext.current.findActivity()
 
     val uiState by valueActionViewModel.uiState.collectAsState()
-    val progressUiState by valueActionViewModel.uiState.map {
-        VolumeUiState(
-            current = it.valueActionState?.currentValue ?: 0,
-            min = it.valueActionState?.minValue ?: 0,
-            max = it.valueActionState?.maxValue ?: 1
-        )
-    }.collectAsState(VolumeUiState())
+    val progressUiState by volumeViewModel.volumeUiState.collectAsState()
 
     ValueActionScreen(
-        modifier = Modifier.rotaryVolumeControlsWithFocus(
-            volumeUiStateProvider = {
-                progressUiState
-            },
-            onRotaryVolumeInput = {
-                if (it > (uiState.valueActionState?.currentValue ?: 0)) {
-                    valueActionViewModel.increaseValue()
-                } else {
-                    valueActionViewModel.decreaseValue()
-                }
-            },
-            localView = LocalView.current,
-            isLowRes = RotaryDefaults.isLowResInput()
+        modifier = Modifier.rotaryScrollable(
+            focusRequester = rememberActiveFocusRequester(),
+            behavior = volumeRotaryBehavior(
+                volumeUiStateProvider = { progressUiState },
+                onRotaryVolumeInput = { newValue -> volumeViewModel.setVolume(newValue) }
+            )
         ),
         uiState = uiState,
-        onValueChanged = {
-            if (it > (uiState.valueActionState?.currentValue ?: 0)) {
-                valueActionViewModel.increaseValue()
-            } else {
-                valueActionViewModel.decreaseValue()
-            }
-        },
+        volumeUiState = progressUiState,
+        onValueChanged = { newValue -> volumeViewModel.setVolume(newValue) },
         onActionChange = {
             valueActionViewModel.requestActionChange()
         }
@@ -284,17 +263,24 @@ fun ValueActionScreen(
 fun ValueActionScreen(
     modifier: Modifier = Modifier,
     uiState: ValueActionUiState,
+    volumeUiState: VolumeUiState = VolumeUiState(),
     onValueChanged: (Int) -> Unit = {},
     onActionChange: () -> Unit = {}
 ) {
+    val context = LocalContext.current
+
     Box(modifier = modifier.fillMaxSize())
     Stepper(
-        value = uiState.valueActionState?.currentValue ?: 0,
+        value = volumeUiState.current,
         onValueChange = onValueChanged,
         valueProgression = IntProgression.fromClosedRange(
-            rangeStart = uiState.valueActionState?.minValue ?: 0,
-            rangeEnd = uiState.valueActionState?.maxValue ?: 100,
-            step = 1
+            rangeStart = volumeUiState.min,
+            rangeEnd = volumeUiState.max,
+            step = if (uiState.action == Actions.VOLUME) {
+                1
+            } else {
+                max(1f, (volumeUiState.max - volumeUiState.min) * 0.05f).toInt()
+            }
         ),
         increaseIcon = {
             if (uiState.action == Actions.VOLUME) {
@@ -384,7 +370,13 @@ fun ValueActionScreen(
                     else -> {
                         Icon(
                             painter = painterResource(id = R.drawable.ic_icon),
-                            contentDescription = null
+                            contentDescription = remember(uiState.action) {
+                                uiState.action?.let {
+                                    context.getString(
+                                        ActionButtonViewModel.getViewModelFromAction(it).actionLabelResId
+                                    )
+                                }
+                            }
                         )
                     }
                 }
@@ -393,13 +385,8 @@ fun ValueActionScreen(
             onClick = onActionChange
         )
     }
-    PositionIndicator(
-        value = {
-            uiState.valueActionState?.currentValue?.toFloat() ?: 0f
-        },
-        range = (uiState.valueActionState?.minValue?.toFloat()
-            ?: 0f)..(uiState.valueActionState?.maxValue?.toFloat() ?: 1f),
-        color = MaterialTheme.colors.primary
+    VolumePositionIndicator(
+        volumeUiState = { volumeUiState }
     )
 }
 
