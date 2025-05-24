@@ -11,7 +11,7 @@ import com.thewizrd.shared_resources.utils.Logger
 object WearSettingsHelper {
     // Link to Play Store listing
     const val PACKAGE_NAME = "com.thewizrd.wearsettings"
-    private const val SUPPORTED_VERSION_CODE: Long = 1030000
+    private const val SUPPORTED_VERSION_CODE: Long = 1030002
 
     fun getPackageName(): String {
         var packageName = PACKAGE_NAME
