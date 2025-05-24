@@ -83,16 +83,18 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import java.io.BufferedWriter
 import java.io.OutputStreamWriter
 import java.nio.ByteBuffer
 import java.util.Collections
+import kotlin.coroutines.cancellation.CancellationException
+import kotlin.coroutines.resume
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-class WearableManager(private val mContext: Context) : OnCapabilityChangedListener,
-    RemoteActionReceiver.IResultReceiver {
+class WearableManager(private val mContext: Context) : OnCapabilityChangedListener {
     init {
         init()
     }
@@ -102,22 +104,16 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
     private lateinit var mCapabilityClient: CapabilityClient
     private var mWearNodesWithApp: Collection<Node>? = null
 
-    private lateinit var mResultReceiver: RemoteActionReceiver
     private var mPackageValidator = PackageValidator(mContext)
 
     private fun init() {
         mCapabilityClient = Wearable.getCapabilityClient(mContext)
         mCapabilityClient.addListener(this, WearableHelper.CAPABILITY_WEAR_APP)
-
-        mResultReceiver = RemoteActionReceiver().apply {
-            resultReceiver = this@WearableManager
-        }
     }
 
     fun unregister() {
         scope.cancel()
         mCapabilityClient.removeListener(this)
-        mResultReceiver.resultReceiver = null
     }
 
     suspend fun isWearNodesAvailable(): Boolean {
@@ -1102,26 +1098,58 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
         }
     }
 
-    private fun performRemoteAction(action: Action): ActionStatus {
+    private suspend fun performRemoteAction(action: Action): ActionStatus {
         return try {
-            if (mPackageValidator.isKnownCaller(WearSettingsHelper.getPackageName())) {
-                mContext.startService(
-                    Intent(ACTION_PERFORMACTION).apply {
-                        component = WearSettingsHelper.getSettingsServiceComponent()
-                        putExtra(
-                            EXTRA_ACTION_DATA,
-                            action.toRemoteAction(mResultReceiver)
-                        )
-                        putExtra(
-                            EXTRA_ACTION_CALLINGPKG,
-                            mContext.packageName
-                        )
+            suspendCancellableCoroutine { continuation ->
+                val remoteActionReceiver = RemoteActionReceiver().apply {
+                    resultReceiver = object : RemoteActionReceiver.IResultReceiver {
+                        override fun onReceiveResult(resultCode: Int, resultData: Bundle) {
+                            if (resultCode == Activity.RESULT_OK) {
+                                if (continuation.isActive) {
+                                    continuation.resume(ActionStatus.SUCCESS)
+                                }
+                            } else {
+                                var resultStatus = ActionStatus.REMOTE_FAILURE
+
+                                if (resultData.containsKey(EXTRA_ACTION_ERROR)) {
+                                    Logger.writeLine(
+                                        Log.ERROR,
+                                        "Error executing remote action; Error: %s",
+                                        resultData.getString(EXTRA_ACTION_ERROR)
+                                    )
+                                } else if (resultData.containsKey(EXTRA_ACTION_DATA)) {
+                                    val actionData = resultData.getString(EXTRA_ACTION_DATA)
+                                    val resultAction =
+                                        JSONParser.deserializer(actionData, Action::class.java)
+                                    resultStatus = resultAction?.actionStatus ?: resultStatus
+                                }
+
+                                if (continuation.isActive) {
+                                    continuation.resume(resultStatus)
+                                }
+                            }
+                        }
                     }
-                )
-                ActionStatus.UNKNOWN
-            } else {
-                throw IllegalStateException("Package: ${WearSettingsHelper.getPackageName()} has invalid certificate")
+                }
+
+                continuation.invokeOnCancellation {
+                    remoteActionReceiver.resultReceiver = null
+                }
+
+                if (mPackageValidator.isKnownCaller(WearSettingsHelper.getPackageName())) {
+                    mContext.startService(
+                        Intent(ACTION_PERFORMACTION).apply {
+                            component = WearSettingsHelper.getSettingsServiceComponent()
+                            putExtra(EXTRA_ACTION_DATA, action.toRemoteAction(remoteActionReceiver))
+                            putExtra(EXTRA_ACTION_CALLINGPKG, mContext.packageName)
+                        }
+                    )
+                } else {
+                    throw IllegalStateException("Package: ${WearSettingsHelper.getPackageName()} has invalid certificate")
+                }
             }
+        } catch (ce: CancellationException) {
+            ActionStatus.UNKNOWN
         } catch (ise: IllegalStateException) {
             // Likely background service restriction
             Logger.writeLine(Log.ERROR, ise)
@@ -1129,33 +1157,6 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
         } catch (e: Exception) {
             Logger.writeLine(Log.ERROR, e)
             ActionStatus.REMOTE_FAILURE
-        }
-    }
-
-    override fun onReceiveResult(resultCode: Int, resultData: Bundle) {
-        if (resultData.containsKey(EXTRA_ACTION_ERROR)) {
-            Logger.writeLine(
-                Log.ERROR,
-                "Error executing remote action; Error: %s",
-                resultData.getString(EXTRA_ACTION_ERROR)
-            )
-        }
-        if (resultCode == Activity.RESULT_CANCELED && resultData.containsKey(EXTRA_ACTION_DATA)) {
-            // Check for remote failure
-            val actionData = resultData.getString(EXTRA_ACTION_DATA)
-            val action = JSONParser.deserializer(actionData, Action::class.java)
-            if (action?.actionStatus == ActionStatus.REMOTE_FAILURE ||
-                action?.actionStatus == ActionStatus.REMOTE_PERMISSION_DENIED
-            ) {
-                scope.launch {
-                    sendMessage(
-                        null,
-                        WearableHelper.ActionsPath,
-                        actionData?.stringToBytes()
-                    )
-                    WearSettingsHelper.launchWearSettings()
-                }
-            }
         }
     }
 }
