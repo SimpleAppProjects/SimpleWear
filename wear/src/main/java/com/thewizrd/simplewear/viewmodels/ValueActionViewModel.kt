@@ -77,7 +77,7 @@ class ValueActionViewModel(app: Application) : WearableListenerViewModel(app) {
 
                         viewModelScope.launch {
                             timer?.cancel()
-                            timer = object : CountDownTimer(3000, 500) {
+                            timer = object : CountDownTimer(5000, 500) {
                                 override fun onTick(millisUntilFinished: Long) {}
 
                                 override fun onFinish() {

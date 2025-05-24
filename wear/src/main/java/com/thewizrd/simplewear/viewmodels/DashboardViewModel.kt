@@ -130,7 +130,7 @@ class DashboardViewModel(app: Application) : WearableListenerViewModel(app) {
 
                         requestAction(jsonData)
 
-                        val timer: CountDownTimer = object : CountDownTimer(3000, 500) {
+                        val timer: CountDownTimer = object : CountDownTimer(5000, 500) {
                             override fun onTick(millisUntilFinished: Long) {}
 
                             override fun onFinish() {
