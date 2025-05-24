@@ -11,8 +11,8 @@ import com.thewizrd.shared_resources.actions.ActionStatus
 import com.thewizrd.shared_resources.actions.ToggleAction
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.wearsettings.root.RootHelper
+import com.thewizrd.wearsettings.shizuku.ShizukuUtils
 import com.topjohnwu.superuser.Shell
-import rikka.shizuku.Shizuku
 import rikka.shizuku.ShizukuBinderWrapper
 import rikka.shizuku.SystemServiceHelper
 import com.thewizrd.wearsettings.Settings as SettingsHelper
@@ -20,7 +20,7 @@ import com.thewizrd.wearsettings.Settings as SettingsHelper
 object MobileDataAction {
     fun executeAction(context: Context, action: Action): ActionStatus {
         if (action is ToggleAction) {
-            return if (Shizuku.pingBinder()) {
+            return if (ShizukuUtils.isRunning(context)) {
                 setMobileDataEnabledShizuku(context, action.isEnabled)
             } else if (SettingsHelper.isRootAccessEnabled() && RootHelper.isRootEnabled()) {
                 setMobileDataEnabledRoot(action.isEnabled)

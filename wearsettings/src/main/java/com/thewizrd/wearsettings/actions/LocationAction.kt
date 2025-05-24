@@ -17,7 +17,6 @@ import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.wearsettings.root.RootHelper
 import com.thewizrd.wearsettings.shizuku.ShizukuUtils
 import com.thewizrd.wearsettings.shizuku.grantSecureSettingsPermission
-import rikka.shizuku.Shizuku
 import rikka.shizuku.ShizukuBinderWrapper
 import rikka.shizuku.SystemServiceHelper
 import com.thewizrd.wearsettings.Settings as SettingsHelper
@@ -29,7 +28,7 @@ object LocationAction {
 
             return if (checkSecureSettingsPermission(context)) {
                 setLocationState(context, state)
-            } else if (Shizuku.pingBinder()) {
+            } else if (ShizukuUtils.isRunning(context)) {
                 context.grantSecureSettingsPermission()
                 setLocationState(context, state)
             } else if (SettingsHelper.isRootAccessEnabled() && RootHelper.isRootEnabled()) {
@@ -38,7 +37,7 @@ object LocationAction {
                 ActionStatus.REMOTE_PERMISSION_DENIED
             }
         } else if (action is ToggleAction) {
-            return if (Shizuku.pingBinder()) {
+            return if (ShizukuUtils.isRunning(context)) {
                 setLocationEnabledShizuku(context, action.isEnabled)
             } else if (checkSecureSettingsPermission(context)) {
                 setLocationEnabled(context, action.isEnabled)
