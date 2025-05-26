@@ -11,8 +11,8 @@ import com.thewizrd.shared_resources.actions.ActionStatus
 import com.thewizrd.shared_resources.actions.NormalAction
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.wearsettings.root.RootHelper
+import com.thewizrd.wearsettings.shizuku.ShizukuUtils
 import com.topjohnwu.superuser.Shell
-import rikka.shizuku.Shizuku
 import rikka.shizuku.ShizukuBinderWrapper
 import rikka.shizuku.SystemServiceHelper
 import com.thewizrd.wearsettings.Settings as SettingsHelper
@@ -20,7 +20,7 @@ import com.thewizrd.wearsettings.Settings as SettingsHelper
 object LockScreenAction {
     fun executeAction(context: Context, action: Action): ActionStatus {
         if (action is NormalAction) {
-            return if (Shizuku.pingBinder()) {
+            return if (ShizukuUtils.isRunning(context)) {
                 lockScreenShizuku(context)
             } else if (SettingsHelper.isRootAccessEnabled() && RootHelper.isRootEnabled()) {
                 lockScreenRoot()

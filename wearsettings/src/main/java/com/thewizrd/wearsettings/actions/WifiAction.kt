@@ -14,8 +14,8 @@ import com.thewizrd.shared_resources.actions.ToggleAction
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.wearsettings.Settings
 import com.thewizrd.wearsettings.root.RootHelper
+import com.thewizrd.wearsettings.shizuku.ShizukuUtils
 import com.topjohnwu.superuser.Shell
-import rikka.shizuku.Shizuku
 import rikka.shizuku.ShizukuBinderWrapper
 import rikka.shizuku.SystemServiceHelper
 
@@ -26,7 +26,7 @@ object WifiAction {
             return if (status != ActionStatus.SUCCESS) {
                 // Note: could have failed due to Airplane mode restriction
                 // Try with root
-                if (Shizuku.pingBinder()) {
+                if (ShizukuUtils.isRunning(context)) {
                     setWifiEnabledShizuku(context, action.isEnabled)
                 } else if (Settings.isRootAccessEnabled() && RootHelper.isRootEnabled()) {
                     setWifiEnabledRoot(action.isEnabled)

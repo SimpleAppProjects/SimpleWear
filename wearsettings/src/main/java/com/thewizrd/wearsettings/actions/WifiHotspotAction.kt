@@ -16,7 +16,7 @@ import com.thewizrd.shared_resources.actions.Action
 import com.thewizrd.shared_resources.actions.ActionStatus
 import com.thewizrd.shared_resources.actions.ToggleAction
 import com.thewizrd.shared_resources.utils.Logger
-import rikka.shizuku.Shizuku
+import com.thewizrd.wearsettings.shizuku.ShizukuUtils
 import rikka.shizuku.ShizukuBinderWrapper
 import rikka.shizuku.SystemServiceHelper
 
@@ -26,7 +26,7 @@ object WifiHotspotAction {
 
     fun executeAction(context: Context, action: Action): ActionStatus {
         if (action is ToggleAction) {
-            return if (Shizuku.pingBinder()) {
+            return if (ShizukuUtils.isRunning(context)) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                     setHotspotEnabledShizuku(action.isEnabled)
                 } else {

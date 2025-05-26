@@ -104,6 +104,8 @@ object ShizukuUtils {
         }
     }
 
+    fun isRunning(context: Context): Boolean = getShizukuState(context) == ShizukuState.RUNNING
+
     private fun getPlayStoreURI(): Uri {
         return Uri.parse(PLAY_STORE_APP_URI)
     }

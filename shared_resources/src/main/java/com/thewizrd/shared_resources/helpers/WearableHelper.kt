@@ -24,7 +24,7 @@ object WearableHelper {
     // Link to Play Store listing
     private const val PLAY_STORE_APP_URI = "market://details?id=com.thewizrd.simplewear"
 
-    private const val SUPPORTED_VERSION_CODE: Long = 341916000
+    private const val SUPPORTED_VERSION_CODE: Long = 341916050
 
     fun getPlayStoreURI(): Uri = Uri.parse(PLAY_STORE_APP_URI)
 
