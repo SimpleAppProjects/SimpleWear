@@ -8,9 +8,11 @@ permalink: /settings-helper
 
 Companion app for SimpleWear
 
-Latest version: [SimpleWear Settings v1.3.0]({{ site.github.repository_url}}/releases/download/v1.16.0_beta/wearsettings-release-1.3.0.apk)
+Latest version: [SimpleWear Settings v1.3.1]({{
+site.github.repository_url}}/releases/download/v1.16.1_release/wearsettings-release-1.3.1.apk)
 
-Previous version: [SimpleWear Settings v1.2.0]({{ site.github.repository_url}}/releases/download/v1.15.2-release/wearsettings-release-1.2.0.apk)
+Previous version: [SimpleWear Settings v1.3.0]({{
+site.github.repository_url}}/releases/download/v1.16.0_beta/wearsettings-release-1.3.0.apk)
 
 ## WiFi and Location Toggle
 
@@ -23,8 +25,12 @@ If you are using Android 10 and above, and want to toggle **Wi-Fi** settings or 
 
 ## Mobile Data
 
-SimpleWear is unable to toggle mobile data without system permissions. [Root access](./root-access) or  for unrooted devices, [Shizuku](https://github.com/RikkaApps/Shizuku) can be used. Please follow the instructions in app to start.
+SimpleWear is unable to toggle mobile data without system permissions. [Root access](./root-access)
+or for unrooted devices, [Shizuku](https://github.com/RikkaApps/Shizuku) can be used. Please follow
+the instructions in app to start.
 
 ## Bluetooth
 
-As of Android 13 (or T), non-system apps are no longer allowed to toggle Bluetooth on or off. This helper app is needed in order to allow SimpleWear to toggle Bluetooth . The helper app is built for an older version of Android which allows it to be able to toggle Bluetooth.
+As of Android 13 (or T), non-system apps are no longer allowed to toggle Bluetooth on or off. This
+helper app is needed in order to allow SimpleWear to toggle Bluetooth. The helper app is built for
+an older version of Android which allows it to be able to toggle Bluetooth.
