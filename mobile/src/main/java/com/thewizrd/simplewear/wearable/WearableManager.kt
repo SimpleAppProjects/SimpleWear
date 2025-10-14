@@ -9,7 +9,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
-import android.content.pm.ResolveInfo
 import android.graphics.Bitmap
 import android.os.Build
 import android.os.Bundle
@@ -267,29 +266,32 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
     }
 
     suspend fun sendSupportedMusicPlayers(nodeID: String) {
-        val mediaBrowserInfos = mContext.packageManager.queryIntentServices(
+        val appInfos = mutableListOf<ApplicationInfo>()
+
+        mContext.packageManager.queryIntentServices(
             Intent(MediaBrowserServiceCompat.SERVICE_INTERFACE),
             PackageManager.GET_RESOLVED_FILTER
-        )
+        ).mapTo(appInfos) { it.serviceInfo.applicationInfo }
 
         val activeSessions = MediaAppControllerUtils.getActiveMediaSessions(
             mContext,
             NotificationListener.getComponentName(mContext)
         )
-        val activeMediaInfos = MediaAppControllerUtils.getMediaAppsFromControllers(
+        MediaAppControllerUtils.getMediaAppsFromControllers(
             mContext,
             activeSessions
-        )
+        ).run { appInfos.addAll(this) }
+
         val activeController =
             activeSessions.firstOrNull { it.playbackState?.isPlaybackStateActive() == true }
 
         // Sort result
         Collections.sort(
-            mediaBrowserInfos,
-            ResolveInfo.DisplayNameComparator(mContext.packageManager)
+            appInfos,
+            ApplicationInfo.DisplayNameComparator(mContext.packageManager)
         )
 
-        val supportedPlayers = ArrayList<String>(mediaBrowserInfos.size)
+        val supportedPlayers = ArrayList<String>(appInfos.size)
         val musicPlayers = mutableSetOf<AppItemData>()
         var activePlayerKey: String? = null
 
@@ -333,12 +335,7 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
             }
         }
 
-        for (info in mediaBrowserInfos) {
-            val appInfo = info.serviceInfo.applicationInfo
-            addPlayerInfo(appInfo)
-        }
-
-        for (info in activeMediaInfos) {
+        for (info in appInfos) {
             addPlayerInfo(info)
         }
 
