@@ -1,4 +1,4 @@
-@file:OptIn(ExperimentalLayoutApi::class, ExperimentalHorologistApi::class)
+@file:OptIn(ExperimentalLayoutApi::class)
 
 package com.thewizrd.simplewear.ui.simplewear
 
@@ -22,7 +22,6 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
@@ -40,9 +39,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.rotary.onRotaryScrollEvent
 import androidx.compose.ui.platform.LocalConfiguration
@@ -56,17 +53,15 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import androidx.wear.compose.foundation.SwipeToDismissBoxState
-import androidx.wear.compose.foundation.rememberSwipeToDismissBoxState
-import androidx.wear.compose.material.CompactChip
-import androidx.wear.compose.material.Icon
-import androidx.wear.compose.material.MaterialTheme
-import androidx.wear.compose.material.Text
-import androidx.wear.compose.material.TimeText
-import androidx.wear.compose.ui.tooling.preview.WearPreviewDevices
+import androidx.wear.compose.foundation.pager.rememberPagerState
+import androidx.wear.compose.material3.AnimatedPage
+import androidx.wear.compose.material3.CompactButton
+import androidx.wear.compose.material3.FilledIconButton
+import androidx.wear.compose.material3.Icon
+import androidx.wear.compose.material3.MaterialTheme
+import androidx.wear.compose.material3.ScreenScaffold
+import androidx.wear.compose.material3.Text
 import androidx.wear.compose.ui.tooling.preview.WearPreviewFontScales
-import com.google.android.horologist.annotations.ExperimentalHorologistApi
-import com.google.android.horologist.compose.material.Button
 import com.thewizrd.shared_resources.actions.ActionStatus
 import com.thewizrd.shared_resources.actions.GestureActionState
 import com.thewizrd.shared_resources.helpers.GestureUIHelper
@@ -74,11 +69,12 @@ import com.thewizrd.shared_resources.helpers.WearConnectionStatus
 import com.thewizrd.simplewear.PhoneSyncActivity
 import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.ui.components.ConfirmationOverlay
+import com.thewizrd.simplewear.ui.components.HorizontalPagerScreen
 import com.thewizrd.simplewear.ui.components.LoadingContent
-import com.thewizrd.simplewear.ui.components.SwipeToDismissPagerScreen
 import com.thewizrd.simplewear.ui.theme.activityViewModel
 import com.thewizrd.simplewear.ui.theme.findActivity
-import com.thewizrd.simplewear.viewmodels.ConfirmationData
+import com.thewizrd.simplewear.ui.tools.WearPreviewDevices
+import com.thewizrd.simplewear.ui.utils.rememberFocusRequester
 import com.thewizrd.simplewear.viewmodels.ConfirmationViewModel
 import com.thewizrd.simplewear.viewmodels.GestureUiState
 import com.thewizrd.simplewear.viewmodels.GestureUiViewModel
@@ -95,8 +91,7 @@ import kotlin.math.sqrt
 @Composable
 fun GesturesUi(
     modifier: Modifier = Modifier,
-    navController: NavController,
-    swipeToDismissBoxState: SwipeToDismissBoxState = rememberSwipeToDismissBoxState()
+    navController: NavController
 ) {
     val context = LocalContext.current
     val activity = context.findActivity()
@@ -112,59 +107,73 @@ fun GesturesUi(
         if (uiState.actionState.accessibilityEnabled && uiState.actionState.keyEventSupported) 2 else 1
     }
 
-    val isRoot = navController.previousBackStackEntry == null
-
-    SwipeToDismissPagerScreen(
-        modifier = modifier.background(MaterialTheme.colors.background),
-        isRoot = isRoot,
-        swipeToDismissBoxState = swipeToDismissBoxState,
-        state = pagerState,
-        timeText = {
-            if (!uiState.isLoading) TimeText()
-        },
-        hidePagerIndicator = uiState.isLoading
+    HorizontalPagerScreen(
+        modifier = modifier,
+        pagerState = pagerState,
+        hidePagerIndicator = uiState.isLoading,
     ) { pageIdx ->
-        LoadingContent(
-            empty = !uiState.actionState.accessibilityEnabled,
-            emptyContent = {
-                NoAccessibilityScreen(
-                    onRefresh = {
-                        gestureUiViewModel.refreshState()
-                    }
-                )
-            },
-            loading = uiState.isLoading
-        ) {
-            when (pageIdx) {
-                // Gestures
-                0 -> {
-                    GestureScreen(
-                        modifier = modifier,
-                        uiState = uiState,
-                        onDPadDirection = { direction ->
-                            when (direction) {
-                                KeyEvent.KEYCODE_DPAD_UP -> gestureUiViewModel.requestDPad(top = 1)
-                                KeyEvent.KEYCODE_DPAD_DOWN -> gestureUiViewModel.requestDPad(bottom = 1)
-                                KeyEvent.KEYCODE_DPAD_LEFT -> gestureUiViewModel.requestDPad(left = 1)
-                                KeyEvent.KEYCODE_DPAD_RIGHT -> gestureUiViewModel.requestDPad(right = 1)
+        AnimatedPage(pageIdx, pagerState) {
+            ScreenScaffold { contentPadding ->
+                LoadingContent(
+                    empty = !uiState.actionState.accessibilityEnabled,
+                    emptyContent = {
+                        NoAccessibilityScreen(
+                            modifier = Modifier.padding(contentPadding),
+                            onRefresh = {
+                                gestureUiViewModel.refreshState()
                             }
-                        },
-                        onDPadClicked = {
-                            gestureUiViewModel.requestDPadClick()
-                        },
-                        onScroll = { dX, dY, screenWidth, screenHeight ->
-                            gestureUiViewModel.requestScroll(dX, dY, screenWidth, screenHeight)
+                        )
+                    },
+                    loading = uiState.isLoading
+                ) {
+                    when (pageIdx) {
+                        // Gestures
+                        0 -> {
+                            GestureScreen(
+                                modifier = modifier.padding(contentPadding),
+                                uiState = uiState,
+                                onDPadDirection = { direction ->
+                                    when (direction) {
+                                        KeyEvent.KEYCODE_DPAD_UP -> gestureUiViewModel.requestDPad(
+                                            top = 1
+                                        )
+
+                                        KeyEvent.KEYCODE_DPAD_DOWN -> gestureUiViewModel.requestDPad(
+                                            bottom = 1
+                                        )
+
+                                        KeyEvent.KEYCODE_DPAD_LEFT -> gestureUiViewModel.requestDPad(
+                                            left = 1
+                                        )
+
+                                        KeyEvent.KEYCODE_DPAD_RIGHT -> gestureUiViewModel.requestDPad(
+                                            right = 1
+                                        )
+                                    }
+                                },
+                                onDPadClicked = {
+                                    gestureUiViewModel.requestDPadClick()
+                                },
+                                onScroll = { dX, dY, screenWidth, screenHeight ->
+                                    gestureUiViewModel.requestScroll(
+                                        dX,
+                                        dY,
+                                        screenWidth,
+                                        screenHeight
+                                    )
+                                }
+                            )
                         }
-                    )
-                }
-                // Buttons
-                1 -> {
-                    ButtonScreen(
-                        modifier = modifier,
-                        onKeyPressed = { keyEvent ->
-                            gestureUiViewModel.requestKeyEvent(keyEvent)
+                        // Buttons
+                        1 -> {
+                            ButtonScreen(
+                                modifier = modifier.padding(contentPadding),
+                                onKeyPressed = { keyEvent ->
+                                    gestureUiViewModel.requestKeyEvent(keyEvent)
+                                }
+                            )
                         }
-                    )
+                    }
                 }
             }
         }
@@ -222,9 +231,9 @@ fun GesturesUi(
                             event.data.getSerializable(WearableListenerViewModel.EXTRA_STATUS) as ActionStatus
 
                         if (status == ActionStatus.PERMISSION_DENIED) {
-                            confirmationViewModel.showConfirmation(
-                                ConfirmationData(
-                                    title = context.getString(R.string.error_permissiondenied)
+                            confirmationViewModel.showOpenOnPhoneForFailure(
+                                message = context.getString(
+                                    R.string.error_permissiondenied
                                 )
                             )
 
@@ -280,7 +289,7 @@ private fun GestureScreen(
         context.resources.displayMetrics.widthPixels
     }
 
-    val focusRequester = remember { FocusRequester() }
+    val focusRequester = rememberFocusRequester()
 
     Box(
         modifier = modifier
@@ -371,7 +380,7 @@ private fun GestureScreen(
                     onDPadDirection(KeyEvent.KEYCODE_DPAD_UP)
                 },
             imageVector = Icons.Filled.KeyboardArrowUp,
-            tint = Color.White,
+            tint = MaterialTheme.colorScheme.primary,
             contentDescription = stringResource(R.string.label_arrow_up)
         )
         Icon(
@@ -383,7 +392,7 @@ private fun GestureScreen(
                     onDPadDirection(KeyEvent.KEYCODE_DPAD_DOWN)
                 },
             imageVector = Icons.Filled.KeyboardArrowDown,
-            tint = Color.White,
+            tint = MaterialTheme.colorScheme.primary,
             contentDescription = stringResource(R.string.label_arrow_down)
         )
         Icon(
@@ -395,7 +404,7 @@ private fun GestureScreen(
                     onDPadDirection(KeyEvent.KEYCODE_DPAD_LEFT)
                 },
             imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-            tint = Color.White,
+            tint = MaterialTheme.colorScheme.primary,
             contentDescription = stringResource(R.string.label_arrow_left)
         )
         Icon(
@@ -407,7 +416,7 @@ private fun GestureScreen(
                     onDPadDirection(KeyEvent.KEYCODE_DPAD_RIGHT)
                 },
             imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-            tint = Color.White,
+            tint = MaterialTheme.colorScheme.primary,
             contentDescription = stringResource(R.string.label_arrow_right)
         )
         if (uiState.actionState.dpadSupported) {
@@ -420,7 +429,7 @@ private fun GestureScreen(
                     ) {
                         onDPadClicked()
                     }
-                    .background(Color.White, shape = RoundedCornerShape(50))
+                    .background(MaterialTheme.colorScheme.primary, shape = RoundedCornerShape(50))
             )
         }
 
@@ -449,23 +458,35 @@ private fun ButtonScreen(
             verticalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterVertically),
             overflow = FlowRowOverflow.Visible,
         ) {
-            Button(
-                imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
-                contentDescription = stringResource(id = R.string.label_back),
+            FilledIconButton(
+                content = {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
+                        contentDescription = stringResource(id = R.string.label_back)
+                    )
+                },
                 onClick = {
                     onKeyPressed(KeyEvent.KEYCODE_BACK)
                 }
             )
-            Button(
-                imageVector = Icons.Outlined.Home,
-                contentDescription = stringResource(id = R.string.label_home),
+            FilledIconButton(
+                content = {
+                    Icon(
+                        imageVector = Icons.Outlined.Home,
+                        contentDescription = stringResource(id = R.string.label_home),
+                    )
+                },
                 onClick = {
                     onKeyPressed(KeyEvent.KEYCODE_HOME)
                 }
             )
-            Button(
-                id = R.drawable.ic_outline_view_apps,
-                contentDescription = stringResource(id = R.string.label_recents),
+            FilledIconButton(
+                content = {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_outline_view_apps),
+                        contentDescription = stringResource(id = R.string.label_recents),
+                    )
+                },
                 onClick = {
                     onKeyPressed(KeyEvent.KEYCODE_APP_SWITCH)
                 }
@@ -478,10 +499,11 @@ private fun ButtonScreen(
 @WearPreviewFontScales
 @Composable
 private fun NoAccessibilityScreen(
+    modifier: Modifier = Modifier,
     onRefresh: () -> Unit = {}
 ) {
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             .wrapContentHeight(),
         contentAlignment = Alignment.Center
@@ -495,7 +517,7 @@ private fun NoAccessibilityScreen(
                 text = stringResource(R.string.message_accessibility_svc_disabled),
                 textAlign = TextAlign.Center
             )
-            CompactChip(
+            CompactButton(
                 label = {
                     Text(text = stringResource(id = R.string.action_refresh))
                 },

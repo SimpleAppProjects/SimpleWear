@@ -34,6 +34,7 @@ import android.util.Log
 import android.util.TypedValue
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
+import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.graphics.scale
@@ -311,7 +312,7 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
 
         disconnectMedia(invalidateData = true)
 
-        stopForeground(true)
+        ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
         scope.cancel()
         super.onDestroy()
     }
@@ -1198,7 +1199,7 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
 
                 if (!isActive) return@launch
 
-                if (mNodes.size == 0 || mItems.isNullOrEmpty()) {
+                if (mNodes.isEmpty() || mItems.isNullOrEmpty()) {
                     // Remove all items (datamap)
                     sendDataByChannel(itemNodePath, null, BrowseMediaItems::class.java)
                     return@launch
@@ -1206,10 +1207,13 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
 
                 // Send media items to datamap
                 val mediaItems = mItems?.map {
+                    val size = dpToPx(48f).toInt()
+
                     MediaItem(
                         mediaId = it.mediaId ?: "",
                         title = it.description.title.toString(),
-                        icon = it.description.iconBitmap?.toByteArray()
+                        subTitle = it.description.subtitle?.toString(),
+                        icon = it.description.iconBitmap?.scale(size, size)?.toByteArray()
                     )
                 }
 
@@ -1274,7 +1278,7 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
         }
 
         protected open fun unsubscribe() {
-            if (mNodes.size > 0) {
+            if (mNodes.isNotEmpty()) {
                 mBrowser!!.unsubscribe(mNodes.peek(), callback)
             }
             updateItems(null)
@@ -1318,10 +1322,13 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
 
                 // Send action items to datamap
                 val queueItems = mQueueItems.map {
+                    val size = dpToPx(48f).toInt()
+
                     QueueItem(
                         queueId = it.queueId,
                         title = it.description.title.toString(),
-                        icon = it.description.iconBitmap?.toByteArray()
+                        subTitle = it.description.subtitle?.toString(),
+                        icon = it.description.iconBitmap?.scale(size, size)?.toByteArray()
                     )
                 }
 

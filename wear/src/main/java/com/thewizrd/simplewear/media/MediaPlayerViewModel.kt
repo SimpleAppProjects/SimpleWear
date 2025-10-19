@@ -646,6 +646,7 @@ class MediaPlayerViewModel(app: Application) : WearableListenerViewModel(app) {
             MediaItemModel(item.queueId.toString()).apply {
                 this.icon = item.icon?.toBitmap()
                 this.title = item.title
+                this.subTitle = item.subTitle
             }
         }
 

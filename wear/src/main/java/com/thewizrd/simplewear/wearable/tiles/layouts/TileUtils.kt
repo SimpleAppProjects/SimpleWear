@@ -2,6 +2,7 @@ package com.thewizrd.simplewear.wearable.tiles.layouts
 
 import androidx.wear.protolayout.DeviceParametersBuilders.DeviceParameters
 import androidx.wear.protolayout.expression.VersionBuilders.VersionInfo
+import kotlin.math.max
 
 fun DeviceParameters.supportsTransformation(): Boolean {
     // @RequiresSchemaVersion(major = 1, minor = 400)
@@ -19,4 +20,28 @@ fun DeviceParameters.supportsDynamicValue(): Boolean {
         .build()
 
     return this.rendererSchemaVersion >= supportedVersion
+}
+
+fun DeviceParameters.isSmallWatch(): Boolean {
+    return max(screenHeightDp, screenWidthDp) < 225
+}
+
+fun DeviceParameters.isLargeWatch(): Boolean {
+    return max(screenHeightDp, screenWidthDp) >= 225
+}
+
+fun DeviceParameters.isSmallHeight(): Boolean {
+    return screenHeightDp < 225
+}
+
+fun DeviceParameters.isLargeHeight(): Boolean {
+    return screenHeightDp >= 225
+}
+
+fun DeviceParameters.isSmallWidth(): Boolean {
+    return screenWidthDp < 225
+}
+
+fun DeviceParameters.isLargeWidth(): Boolean {
+    return screenWidthDp >= 225
 }

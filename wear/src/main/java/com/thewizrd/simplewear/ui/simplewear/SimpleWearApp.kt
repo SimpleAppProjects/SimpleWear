@@ -10,6 +10,7 @@ import androidx.navigation.NavType
 import androidx.navigation.activity
 import androidx.navigation.navArgument
 import androidx.wear.compose.foundation.rememberSwipeToDismissBoxState
+import androidx.wear.compose.material3.AppScaffold
 import androidx.wear.compose.navigation.SwipeDismissableNavHost
 import androidx.wear.compose.navigation.composable
 import androidx.wear.compose.navigation.rememberSwipeDismissableNavController
@@ -38,158 +39,154 @@ fun SimpleWearApp(
             swipeToDismissBoxState = swipeToDismissBoxState
         )
 
-        SwipeDismissableNavHost(
-            navController = navController,
-            startDestination = startDestination,
-            state = swipeDismissNavState
-        ) {
-            composable(Screen.Dashboard.route) {
-                Dashboard(navController = navController)
+        AppScaffold {
+            SwipeDismissableNavHost(
+                navController = navController,
+                startDestination = startDestination,
+                state = swipeDismissNavState
+            ) {
+                composable(Screen.Dashboard.route) {
+                    Dashboard(navController = navController)
 
-                LaunchedEffect(navController) {
-                    AnalyticsLogger.logEvent("nav_route", Bundle().apply {
-                        putString("screen", Screen.Dashboard.route)
-                    })
-                }
-            }
-
-            composable(
-                route = Screen.ValueAction.route + "/{actionId}?streamType={streamType}",
-                arguments = listOf(
-                    navArgument("actionId") {
-                        type = NavType.IntType
-                    },
-                    navArgument("streamType") {
-                        type = NavType.EnumType(AudioStreamType::class.java)
-                        defaultValue = AudioStreamType.MUSIC
+                    LaunchedEffect(navController) {
+                        AnalyticsLogger.logEvent("nav_route", Bundle().apply {
+                            putString("screen", Screen.Dashboard.route)
+                        })
                     }
-                )
-            ) { backstackEntry ->
-                val actionType = backstackEntry.arguments?.getInt("actionId")?.let {
-                    Actions.valueOf(it)
-                }
-                val streamType = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    backstackEntry.arguments?.getSerializable(
-                        "streamType",
-                        AudioStreamType::class.java
-                    )
-                } else {
-                    backstackEntry.arguments?.getSerializable("streamType") as AudioStreamType
                 }
 
-                ValueActionScreen(
-                    actionType = actionType ?: Actions.VOLUME,
-                    audioStreamType = streamType
-                )
-
-                LaunchedEffect(navController, actionType) {
-                    AnalyticsLogger.logEvent("nav_route", Bundle().apply {
-                        putString("screen", Screen.ValueAction.route)
-                        actionType?.let {
-                            putString("actionType", it.name)
+                composable(
+                    route = Screen.ValueAction.route + "/{actionId}?streamType={streamType}",
+                    arguments = listOf(
+                        navArgument("actionId") {
+                            type = NavType.IntType
+                        },
+                        navArgument("streamType") {
+                            type = NavType.EnumType(AudioStreamType::class.java)
+                            defaultValue = AudioStreamType.MUSIC
                         }
-                    })
-                }
-            }
-
-            activity(route = Screen.MediaPlayerList.route) {
-                targetPackage = context.packageName
-                activityClass = MediaPlayerActivity::class
-            }
-
-            composable(Screen.AppLauncher.route) {
-                AppLauncherScreen(
-                    navController = navController,
-                    swipeToDismissBoxState = swipeToDismissBoxState
-                )
-
-                LaunchedEffect(navController) {
-                    AnalyticsLogger.logEvent("nav_route", Bundle().apply {
-                        putString("screen", Screen.AppLauncher.route)
-                    })
-                }
-            }
-
-            composable(Screen.CallManager.route) {
-                CallManagerUi(navController = navController)
-
-                LaunchedEffect(navController) {
-                    AnalyticsLogger.logEvent("nav_route", Bundle().apply {
-                        putString("screen", Screen.CallManager.route)
-                    })
-                }
-            }
-
-            composable(Screen.GesturesAction.route) {
-                GesturesUi(
-                    navController = navController,
-                    swipeToDismissBoxState = swipeToDismissBoxState
-                )
-
-                LaunchedEffect(navController) {
-                    AnalyticsLogger.logEvent("nav_route", Bundle().apply {
-                        putString("screen", Screen.GesturesAction.route)
-                    })
-                }
-            }
-
-            composable(Screen.TimedActions.route) {
-                TimedActionUi(navController = navController)
-
-                LaunchedEffect(navController) {
-                    AnalyticsLogger.logEvent("nav_route", Bundle().apply {
-                        putString("screen", Screen.TimedActions.route)
-                    })
-                }
-            }
-
-            composable(
-                route = Screen.TimedActionDetail.route + "?action={action}",
-                arguments = listOf(
-                    navArgument("action") {
-                        type = NavType.StringType
-                        nullable = false
+                    )
+                ) { backstackEntry ->
+                    val actionType = backstackEntry.arguments?.getInt("actionId")?.let {
+                        Actions.valueOf(it)
                     }
-                )
-            ) { backstackEntry ->
-                val action = remember(backstackEntry) {
-                    JSONParser.deserializer(
-                        backstackEntry.arguments?.getString("action"),
-                        TimedAction::class.java
-                    )!!
+                    val streamType = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        backstackEntry.arguments?.getSerializable(
+                            "streamType",
+                            AudioStreamType::class.java
+                        )
+                    } else {
+                        backstackEntry.arguments?.getSerializable("streamType") as AudioStreamType
+                    }
+
+                    ValueActionScreen(
+                        actionType = actionType ?: Actions.VOLUME,
+                        audioStreamType = streamType
+                    )
+
+                    LaunchedEffect(navController, actionType) {
+                        AnalyticsLogger.logEvent("nav_route", Bundle().apply {
+                            putString("screen", Screen.ValueAction.route)
+                            actionType?.let {
+                                putString("actionType", it.name)
+                            }
+                        })
+                    }
                 }
 
-                TimedActionDetailUi(
-                    action = action,
-                    navController = navController
-                )
-
-                LaunchedEffect(navController) {
-                    AnalyticsLogger.logEvent("nav_route", Bundle().apply {
-                        putString("screen", Screen.TimedActionDetail.route)
-                        putString("actionType", action.action.actionType.name)
-                    })
+                activity(route = Screen.MediaPlayerList.route) {
+                    targetPackage = context.packageName
+                    activityClass = MediaPlayerActivity::class
                 }
-            }
 
-            composable(Screen.TimedActionSetup.route) {
-                TimedActionSetupUi(navController = navController)
+                composable(Screen.AppLauncher.route) {
+                    AppLauncherScreen()
 
-                LaunchedEffect(navController) {
-                    AnalyticsLogger.logEvent("nav_route", Bundle().apply {
-                        putString("screen", Screen.TimedActionSetup.route)
-                    })
+                    LaunchedEffect(navController) {
+                        AnalyticsLogger.logEvent("nav_route", Bundle().apply {
+                            putString("screen", Screen.AppLauncher.route)
+                        })
+                    }
                 }
-            }
 
-            activity(route = Screen.DashboardConfig.route) {
-                targetPackage = context.packageName
-                activityClass = DashboardConfigActivity::class
-            }
+                composable(Screen.CallManager.route) {
+                    CallManagerUi(navController = navController)
 
-            activity(route = Screen.DashboardTileConfig.route) {
-                targetPackage = context.packageName
-                activityClass = DashboardTileConfigActivity::class
+                    LaunchedEffect(navController) {
+                        AnalyticsLogger.logEvent("nav_route", Bundle().apply {
+                            putString("screen", Screen.CallManager.route)
+                        })
+                    }
+                }
+
+                composable(Screen.GesturesAction.route) {
+                    GesturesUi(navController = navController)
+
+                    LaunchedEffect(navController) {
+                        AnalyticsLogger.logEvent("nav_route", Bundle().apply {
+                            putString("screen", Screen.GesturesAction.route)
+                        })
+                    }
+                }
+
+                composable(Screen.TimedActions.route) {
+                    TimedActionUi(navController = navController)
+
+                    LaunchedEffect(navController) {
+                        AnalyticsLogger.logEvent("nav_route", Bundle().apply {
+                            putString("screen", Screen.TimedActions.route)
+                        })
+                    }
+                }
+
+                composable(
+                    route = Screen.TimedActionDetail.route + "?action={action}",
+                    arguments = listOf(
+                        navArgument("action") {
+                            type = NavType.StringType
+                            nullable = false
+                        }
+                    )
+                ) { backstackEntry ->
+                    val action = remember(backstackEntry) {
+                        JSONParser.deserializer(
+                            backstackEntry.arguments?.getString("action"),
+                            TimedAction::class.java
+                        )!!
+                    }
+
+                    TimedActionDetailUi(
+                        action = action,
+                        navController = navController
+                    )
+
+                    LaunchedEffect(navController) {
+                        AnalyticsLogger.logEvent("nav_route", Bundle().apply {
+                            putString("screen", Screen.TimedActionDetail.route)
+                            putString("actionType", action.action.actionType.name)
+                        })
+                    }
+                }
+
+                composable(Screen.TimedActionSetup.route) {
+                    TimedActionSetupUi(navController = navController)
+
+                    LaunchedEffect(navController) {
+                        AnalyticsLogger.logEvent("nav_route", Bundle().apply {
+                            putString("screen", Screen.TimedActionSetup.route)
+                        })
+                    }
+                }
+
+                activity(route = Screen.DashboardConfig.route) {
+                    targetPackage = context.packageName
+                    activityClass = DashboardConfigActivity::class
+                }
+
+                activity(route = Screen.DashboardTileConfig.route) {
+                    targetPackage = context.packageName
+                    activityClass = DashboardTileConfigActivity::class
+                }
             }
         }
     }

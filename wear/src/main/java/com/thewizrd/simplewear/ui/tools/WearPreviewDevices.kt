@@ -40,6 +40,13 @@ import androidx.wear.tooling.preview.devices.WearDevices
     showBackground = true,
     group = "Devices - Square"
 )
+@Preview(
+    device = WearDevices.RECT,
+    showSystemUi = true,
+    backgroundColor = 0xff000000,
+    showBackground = true,
+    group = "Devices - Rect"
+)
 public annotation class WearPreviewDevices
 
 @Preview(

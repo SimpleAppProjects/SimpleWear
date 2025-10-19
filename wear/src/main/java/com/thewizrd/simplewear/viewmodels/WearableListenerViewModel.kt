@@ -11,6 +11,7 @@ import android.os.Bundle
 import android.util.Log
 import androidx.annotation.RestrictTo
 import androidx.annotation.VisibleForTesting
+import androidx.concurrent.futures.await
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.wear.phone.interactions.PhoneTypeHelper
@@ -37,10 +38,10 @@ import com.thewizrd.shared_resources.utils.bytesToString
 import com.thewizrd.shared_resources.utils.stringToBytes
 import com.thewizrd.simplewear.helpers.showConfirmationOverlay
 import com.thewizrd.simplewear.utils.ErrorMessage
+import com.thewizrd.simplewear.viewmodels.WearableListenerViewModel.Companion.ACTION_OPENONPHONE
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.guava.await
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlin.coroutines.cancellation.CancellationException

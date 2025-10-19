@@ -44,7 +44,6 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -57,18 +56,15 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import androidx.wear.compose.material.Button
-import androidx.wear.compose.material.ButtonDefaults
-import androidx.wear.compose.material.Icon
-import androidx.wear.compose.material.MaterialTheme
-import androidx.wear.compose.material.Scaffold
-import androidx.wear.compose.material.Text
-import androidx.wear.compose.material.TimeText
-import androidx.wear.compose.material.Vignette
-import androidx.wear.compose.material.VignettePosition
-import androidx.wear.compose.material.dialog.Dialog
-import androidx.wear.compose.material.ripple
-import androidx.wear.compose.ui.tooling.preview.WearPreviewDevices
+import androidx.wear.compose.material3.Button
+import androidx.wear.compose.material3.ButtonDefaults
+import androidx.wear.compose.material3.Dialog
+import androidx.wear.compose.material3.Icon
+import androidx.wear.compose.material3.MaterialTheme
+import androidx.wear.compose.material3.ScreenScaffold
+import androidx.wear.compose.material3.Text
+import androidx.wear.compose.material3.TimeText
+import androidx.wear.compose.material3.ripple
 import androidx.wear.compose.ui.tooling.preview.WearPreviewFontScales
 import com.thewizrd.shared_resources.actions.ActionStatus
 import com.thewizrd.shared_resources.actions.Actions
@@ -82,9 +78,9 @@ import com.thewizrd.simplewear.ui.components.LoadingContent
 import com.thewizrd.simplewear.ui.navigation.Screen
 import com.thewizrd.simplewear.ui.theme.activityViewModel
 import com.thewizrd.simplewear.ui.theme.findActivity
+import com.thewizrd.simplewear.ui.tools.WearPreviewDevices
 import com.thewizrd.simplewear.viewmodels.CallManagerUiState
 import com.thewizrd.simplewear.viewmodels.CallManagerViewModel
-import com.thewizrd.simplewear.viewmodels.ConfirmationData
 import com.thewizrd.simplewear.viewmodels.ConfirmationViewModel
 import com.thewizrd.simplewear.viewmodels.WearableListenerViewModel
 import kotlinx.coroutines.launch
@@ -104,21 +100,18 @@ fun CallManagerUi(
     val confirmationViewModel = viewModel<ConfirmationViewModel>()
     val confirmationData by confirmationViewModel.confirmationEventsFlow.collectAsState()
 
-    Scaffold(
-        modifier = modifier.background(MaterialTheme.colors.background),
-        vignette = { Vignette(vignettePosition = VignettePosition.TopAndBottom) },
-        timeText = {
-            if (!uiState.isLoading) TimeText()
-        },
-    ) {
+    ScreenScaffold { contentPadding ->
         LoadingContent(
             empty = !uiState.isCallActive,
             emptyContent = {
-                NoCallActiveScreen()
+                NoCallActiveScreen(
+                    modifier = Modifier.padding(contentPadding)
+                )
             },
             loading = uiState.isLoading
         ) {
             CallManagerUi(
+                modifier = Modifier.padding(contentPadding),
                 callManagerViewModel = callManagerViewModel,
                 navController = navController
             )
@@ -177,9 +170,9 @@ fun CallManagerUi(
                             event.data.getSerializable(WearableListenerViewModel.EXTRA_STATUS) as ActionStatus
 
                         if (status == ActionStatus.PERMISSION_DENIED) {
-                            confirmationViewModel.showConfirmation(
-                                ConfirmationData(
-                                    title = context.getString(R.string.error_permissiondenied)
+                            confirmationViewModel.showOpenOnPhoneForFailure(
+                                message = context.getString(
+                                    R.string.error_permissiondenied
                                 )
                             )
 
@@ -199,6 +192,7 @@ fun CallManagerUi(
 
 @Composable
 fun CallManagerUi(
+    modifier: Modifier = Modifier,
     callManagerViewModel: CallManagerViewModel,
     navController: NavController
 ) {
@@ -210,6 +204,7 @@ fun CallManagerUi(
     var showKeyPadUi by remember { mutableStateOf(false) }
 
     CallManagerUi(
+        modifier = modifier,
         uiState = uiState,
         onShowKeypadUi = {
             showKeyPadUi = true
@@ -232,7 +227,7 @@ fun CallManagerUi(
 
     Dialog(
         modifier = Modifier.fillMaxSize(),
-        showDialog = showKeyPadUi,
+        visible = showKeyPadUi,
         onDismissRequest = { showKeyPadUi = false }
     ) {
         KeypadScreen(
@@ -246,6 +241,7 @@ fun CallManagerUi(
 @OptIn(ExperimentalFoundationApi::class, ExperimentalLayoutApi::class)
 @Composable
 private fun CallManagerUi(
+    modifier: Modifier = Modifier,
     uiState: CallManagerUiState,
     onMute: () -> Unit = {},
     onShowKeypadUi: () -> Unit = {},
@@ -257,7 +253,7 @@ private fun CallManagerUi(
     val isRound = LocalConfiguration.current.isScreenRound
 
     Box(
-        modifier = Modifier.fillMaxSize()
+        modifier = modifier.fillMaxSize()
     ) {
         if (isPreview) {
             TimeText()
@@ -343,9 +339,9 @@ private fun CallManagerUi(
                 modifier = Modifier
                     .requiredSize(40.dp)
                     .align(Alignment.CenterHorizontally),
-                colors = ButtonDefaults.primaryButtonColors(
-                    backgroundColor = colorResource(id = android.R.color.holo_red_dark),
-                    contentColor = Color.White
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.errorContainer,
+                    contentColor = MaterialTheme.colorScheme.onErrorContainer
                 ),
                 onClick = onEndCall
             ) {
@@ -376,7 +372,7 @@ private fun CallUiButton(
                 role = Role.Button,
                 interactionSource = remember { MutableInteractionSource() },
                 indication = ripple(
-                    color = MaterialTheme.colors.onSurface,
+                    color = MaterialTheme.colorScheme.onSurface,
                     radius = 20.dp
                 )
             )
@@ -403,9 +399,11 @@ private fun CallUiButton(
 
 @WearPreviewDevices
 @Composable
-private fun NoCallActiveScreen() {
+private fun NoCallActiveScreen(
+    modifier: Modifier = Modifier
+) {
     Box(
-        modifier = Modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
         Text(
@@ -430,7 +428,14 @@ private fun KeypadScreen(
 
     var keypadText by remember { mutableStateOf("") }
     val digits by remember {
-        derivedStateOf { listOf('1', '2', '3', '4', '5', '6', '7', '8', '9', '*', '0', '#') }
+        derivedStateOf {
+            listOf(
+                '1', '2', '3',
+                '4', '5', '6',
+                '7', '8', '9',
+                '*', '0', '#'
+            )
+        }
     }
 
     Column(

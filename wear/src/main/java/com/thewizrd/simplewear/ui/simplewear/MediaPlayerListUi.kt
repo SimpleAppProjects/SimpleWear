@@ -1,9 +1,6 @@
-@file:OptIn(ExperimentalWearFoundationApi::class, ExperimentalHorologistApi::class)
-
 package com.thewizrd.simplewear.ui.simplewear
 
 import android.content.Intent
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,7 +11,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -38,46 +34,40 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavOptions
-import androidx.wear.compose.foundation.ExperimentalWearFoundationApi
+import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
 import androidx.wear.compose.foundation.lazy.items
-import androidx.wear.compose.foundation.rememberActiveFocusRequester
-import androidx.wear.compose.foundation.rotary.RotaryScrollableDefaults
-import androidx.wear.compose.foundation.rotary.rotaryScrollable
-import androidx.wear.compose.material.Checkbox
-import androidx.wear.compose.material.Chip
-import androidx.wear.compose.material.ChipDefaults
-import androidx.wear.compose.material.CompactChip
-import androidx.wear.compose.material.Icon
-import androidx.wear.compose.material.MaterialTheme
-import androidx.wear.compose.material.PositionIndicator
-import androidx.wear.compose.material.Text
-import androidx.wear.compose.material.TimeText
-import androidx.wear.compose.material.ToggleChip
-import androidx.wear.compose.material.dialog.Dialog
-import androidx.wear.compose.ui.tooling.preview.WearPreviewDevices
+import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
+import androidx.wear.compose.foundation.pager.rememberPagerState
+import androidx.wear.compose.material3.AnimatedPage
+import androidx.wear.compose.material3.Button
+import androidx.wear.compose.material3.ButtonDefaults
+import androidx.wear.compose.material3.CompactButton
+import androidx.wear.compose.material3.Dialog
+import androidx.wear.compose.material3.FilledTonalButton
+import androidx.wear.compose.material3.Icon
+import androidx.wear.compose.material3.ListHeader
+import androidx.wear.compose.material3.ScreenScaffold
+import androidx.wear.compose.material3.SurfaceTransformation
+import androidx.wear.compose.material3.Text
+import androidx.wear.compose.material3.TextToggleButton
+import androidx.wear.compose.material3.lazy.rememberTransformationSpec
+import androidx.wear.compose.material3.lazy.transformedHeight
 import androidx.wear.compose.ui.tooling.preview.WearPreviewFontScales
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
-import com.google.android.horologist.compose.layout.ScalingLazyColumn
-import com.google.android.horologist.compose.layout.ScalingLazyColumnDefaults
-import com.google.android.horologist.compose.layout.ScalingLazyColumnState
-import com.google.android.horologist.compose.layout.rememberResponsiveColumnState
-import com.google.android.horologist.compose.layout.scrollAway
-import com.google.android.horologist.compose.material.ListHeaderDefaults
-import com.google.android.horologist.compose.material.ResponsiveListHeader
+import com.google.android.horologist.compose.layout.ColumnItemType
+import com.google.android.horologist.compose.layout.rememberResponsiveColumnPadding
 import com.thewizrd.shared_resources.actions.ActionStatus
 import com.thewizrd.shared_resources.helpers.MediaHelper
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
 import com.thewizrd.simplewear.PhoneSyncActivity
 import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.controls.AppItemViewModel
-import com.thewizrd.simplewear.helpers.showConfirmationOverlay
-import com.thewizrd.simplewear.preferences.Settings
 import com.thewizrd.simplewear.ui.components.ConfirmationOverlay
+import com.thewizrd.simplewear.ui.components.HorizontalPagerScreen
 import com.thewizrd.simplewear.ui.components.LoadingContent
-import com.thewizrd.simplewear.ui.components.SwipeToDismissPagerScreen
 import com.thewizrd.simplewear.ui.navigation.Screen
 import com.thewizrd.simplewear.ui.theme.findActivity
-import com.thewizrd.simplewear.viewmodels.ConfirmationData
+import com.thewizrd.simplewear.ui.tools.WearPreviewDevices
 import com.thewizrd.simplewear.viewmodels.ConfirmationViewModel
 import com.thewizrd.simplewear.viewmodels.MediaPlayerListUiState
 import com.thewizrd.simplewear.viewmodels.MediaPlayerListViewModel
@@ -99,37 +89,28 @@ fun MediaPlayerListUi(
     val confirmationViewModel = viewModel<ConfirmationViewModel>()
     val confirmationData by confirmationViewModel.confirmationEventsFlow.collectAsState()
 
-    val scrollState = rememberResponsiveColumnState(
-        contentPadding = ScalingLazyColumnDefaults.padding(
-            first = ScalingLazyColumnDefaults.ItemType.Unspecified,
-            last = ScalingLazyColumnDefaults.ItemType.Chip,
-        )
-    )
-
     val pagerState = rememberPagerState(
         initialPage = 0,
         pageCount = { 2 }
     )
 
-    SwipeToDismissPagerScreen(
-        state = pagerState,
+    HorizontalPagerScreen(
+        modifier = modifier,
+        pagerState = pagerState,
         hidePagerIndicator = uiState.isLoading,
-        timeText = {
-            if (pagerState.currentPage == 0) {
-                TimeText(modifier = Modifier.scrollAway { scrollState })
-            }
-        }
     ) { pageIdx ->
-        if (pageIdx == 0) {
-            MediaPlayerListScreen(
-                mediaPlayerListViewModel = mediaPlayerListViewModel,
-                navController = navController,
-                scrollState = scrollState
-            )
-        } else {
-            MediaPlayerListSettings(
-                mediaPlayerListViewModel = mediaPlayerListViewModel
-            )
+        AnimatedPage(pageIdx, pagerState) {
+            if (pageIdx == 0) {
+                MediaPlayerListScreen(
+                    mediaPlayerListViewModel = mediaPlayerListViewModel,
+                    confirmationViewModel = confirmationViewModel,
+                    navController = navController
+                )
+            } else {
+                MediaPlayerListSettings(
+                    mediaPlayerListViewModel = mediaPlayerListViewModel
+                )
+            }
         }
     }
 
@@ -189,9 +170,9 @@ fun MediaPlayerListUi(
                             event.data.getSerializable(WearableListenerViewModel.EXTRA_STATUS) as ActionStatus
 
                         if (status == ActionStatus.PERMISSION_DENIED) {
-                            confirmationViewModel.showConfirmation(
-                                ConfirmationData(
-                                    title = context.getString(R.string.error_permissiondenied)
+                            confirmationViewModel.showOpenOnPhoneForFailure(
+                                message = context.getString(
+                                    R.string.error_permissiondenied
                                 )
                             )
 
@@ -231,18 +212,14 @@ fun MediaPlayerListUi(
 @Composable
 private fun MediaPlayerListScreen(
     mediaPlayerListViewModel: MediaPlayerListViewModel,
-    navController: NavController,
-    scrollState: ScalingLazyColumnState
+    confirmationViewModel: ConfirmationViewModel,
+    navController: NavController
 ) {
-    val context = LocalContext.current
-    val activity = context.findActivity()
-
     val lifecycleOwner = LocalLifecycleOwner.current
     val uiState by mediaPlayerListViewModel.uiState.collectAsState()
 
     MediaPlayerListScreen(
         uiState = uiState,
-        scrollState = scrollState,
         onItemClicked = {
             lifecycleOwner.lifecycleScope.launch {
                 val success = mediaPlayerListViewModel.startMediaApp(it)
@@ -256,7 +233,7 @@ private fun MediaPlayerListScreen(
                             .build()
                     )
                 } else {
-                    activity.showConfirmationOverlay(false)
+                    confirmationViewModel.showFailure()
                 }
             }
         },
@@ -270,13 +247,20 @@ private fun MediaPlayerListScreen(
 @Composable
 private fun MediaPlayerListScreen(
     uiState: MediaPlayerListUiState,
-    scrollState: ScalingLazyColumnState = rememberResponsiveColumnState(),
     onItemClicked: (AppItemViewModel) -> Unit = {},
     onRefresh: () -> Unit = {}
 ) {
-    Box(
-        modifier = Modifier.fillMaxSize()
-    ) {
+    val columnState = rememberTransformingLazyColumnState()
+    val contentPadding = rememberResponsiveColumnPadding(
+        first = ColumnItemType.ListHeader,
+        last = ColumnItemType.Button,
+    )
+    val transformationSpec = rememberTransformationSpec()
+
+    ScreenScaffold(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = contentPadding
+    ) { contentPadding ->
         LoadingContent(
             empty = uiState.mediaAppsSet.isEmpty(),
             emptyContent = {
@@ -296,7 +280,7 @@ private fun MediaPlayerListScreen(
                             text = stringResource(id = R.string.error_nomusicplayers),
                             textAlign = TextAlign.Center
                         )
-                        CompactChip(
+                        CompactButton(
                             label = {
                                 Text(text = stringResource(id = R.string.action_refresh))
                             },
@@ -313,12 +297,18 @@ private fun MediaPlayerListScreen(
             },
             loading = uiState.isLoading
         ) {
-            ScalingLazyColumn(
+            TransformingLazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                columnState = scrollState,
+                state = columnState,
+                contentPadding = contentPadding
             ) {
                 item {
-                    ResponsiveListHeader(contentPadding = ListHeaderDefaults.firstItemPadding()) {
+                    ListHeader(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .transformedHeight(this, transformationSpec),
+                        transformation = SurfaceTransformation(transformationSpec)
+                    ) {
                         Text(text = stringResource(id = R.string.action_apps))
                     }
                 }
@@ -327,15 +317,18 @@ private fun MediaPlayerListScreen(
                     items = uiState.mediaAppsSet.toList(),
                     key = { Pair(it.activityName, it.packageName) }
                 ) { mediaItem ->
-                    Chip(
-                        modifier = Modifier.fillMaxWidth(),
+                    Button(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .transformedHeight(this, transformationSpec),
+                        transformation = SurfaceTransformation(transformationSpec),
                         label = {
                             Text(text = mediaItem.appLabel ?: "")
                         },
                         icon = mediaItem.bitmapIcon?.let {
                             {
                                 Icon(
-                                    modifier = Modifier.requiredSize(ChipDefaults.IconSize),
+                                    modifier = Modifier.requiredSize(ButtonDefaults.IconSize),
                                     bitmap = it.asImageBitmap(),
                                     contentDescription = mediaItem.appLabel,
                                     tint = Color.Unspecified
@@ -343,9 +336,9 @@ private fun MediaPlayerListScreen(
                             }
                         },
                         colors = if (mediaItem.key == uiState.activePlayerKey) {
-                            ChipDefaults.gradientBackgroundChipColors()
+                            ButtonDefaults.filledVariantButtonColors()
                         } else {
-                            ChipDefaults.secondaryChipColors()
+                            ButtonDefaults.filledTonalButtonColors()
                         },
                         onClick = {
                             onItemClicked(mediaItem)
@@ -353,8 +346,6 @@ private fun MediaPlayerListScreen(
                     )
                 }
             }
-
-            PositionIndicator(scalingLazyListState = scrollState.state)
         }
     }
 }
@@ -367,9 +358,6 @@ private fun MediaPlayerListSettings(
 
     MediaPlayerListSettings(
         uiState = uiState,
-        onCheckChanged = {
-            Settings.setAutoLaunchMediaCtrls(it)
-        },
         onCommitSelectedItems = {
             mediaPlayerListViewModel.updateFilteredApps(it)
         }
@@ -379,55 +367,55 @@ private fun MediaPlayerListSettings(
 @Composable
 private fun MediaPlayerListSettings(
     uiState: MediaPlayerListUiState,
-    onCheckChanged: (Boolean) -> Unit = {},
     onCommitSelectedItems: (Set<String>) -> Unit = {}
 ) {
-    val scrollState = rememberResponsiveColumnState(
-        contentPadding = ScalingLazyColumnDefaults.padding(
-            first = ScalingLazyColumnDefaults.ItemType.Unspecified,
-            last = ScalingLazyColumnDefaults.ItemType.Chip,
-        )
+    val columnState = rememberTransformingLazyColumnState()
+    val contentPadding = rememberResponsiveColumnPadding(
+        first = ColumnItemType.ListHeader,
+        last = ColumnItemType.Button,
     )
+    val transformationSpec = rememberTransformationSpec()
 
     var showFilterDialog by remember { mutableStateOf(false) }
 
-    ScalingLazyColumn(
-        columnState = scrollState
-    ) {
-        item {
-            ResponsiveListHeader(
-                modifier = Modifier.fillMaxWidth(),
-                contentPadding = ListHeaderDefaults.firstItemPadding()
-            ) {
-                Text(text = stringResource(id = R.string.title_settings))
+    ScreenScaffold(
+        scrollState = columnState,
+        contentPadding = contentPadding
+    ) { contentPadding ->
+        TransformingLazyColumn(
+            state = columnState,
+            contentPadding = contentPadding
+        ) {
+            item {
+                ListHeader(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .transformedHeight(this, transformationSpec),
+                    transformation = SurfaceTransformation(transformationSpec)
+                ) {
+                    Text(text = stringResource(id = R.string.title_settings))
+                }
+            }
+            item {
+                FilledTonalButton(
+                    modifier = Modifier.fillMaxWidth(),
+                    label = {
+                        Text(text = stringResource(id = R.string.title_filter_apps))
+                    },
+                    onClick = {
+                        showFilterDialog = true
+                    },
+                    icon = {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_baseline_filter_list_24),
+                            contentDescription = stringResource(id = R.string.title_filter_apps)
+                        )
+                    }
+                )
             }
         }
-        item {
-            Chip(
-                modifier = Modifier.fillMaxWidth(),
-                label = {
-                    Text(text = stringResource(id = R.string.title_filter_apps))
-                },
-                onClick = {
-                    showFilterDialog = true
-                },
-                colors = ChipDefaults.secondaryChipColors(),
-                icon = {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_baseline_filter_list_24),
-                        contentDescription = stringResource(id = R.string.title_filter_apps)
-                    )
-                }
-            )
-        }
-    }
 
-    val dialogScrollState = rememberResponsiveColumnState(
-        contentPadding = ScalingLazyColumnDefaults.padding(
-            first = ScalingLazyColumnDefaults.ItemType.Unspecified,
-            last = ScalingLazyColumnDefaults.ItemType.Chip,
-        )
-    )
+    }
 
     var selectedItems by remember(uiState.filteredAppsList) {
         mutableStateOf(uiState.filteredAppsList)
@@ -435,18 +423,15 @@ private fun MediaPlayerListSettings(
 
     Dialog(
         modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colors.background),
-        showDialog = showFilterDialog,
+            .fillMaxSize(),
+        visible = showFilterDialog,
         onDismissRequest = {
             onCommitSelectedItems.invoke(selectedItems)
             showFilterDialog = false
-        },
-        scrollState = dialogScrollState.state
+        }
     ) {
         MediaPlayerFilterScreen(
             uiState = uiState,
-            dialogScrollState = dialogScrollState,
             selectedItems = selectedItems,
             onSelectedItemsChanged = {
                 selectedItems = it
@@ -456,34 +441,33 @@ private fun MediaPlayerListSettings(
                 showFilterDialog = false
             }
         )
-
-        LaunchedEffect(showFilterDialog) {
-            dialogScrollState.state.scrollToItem(0)
-        }
     }
 }
 
 @Composable
 private fun MediaPlayerFilterScreen(
     uiState: MediaPlayerListUiState,
-    dialogScrollState: ScalingLazyColumnState = rememberResponsiveColumnState(),
     selectedItems: Set<String> = emptySet(),
     onSelectedItemsChanged: (Set<String>) -> Unit = {},
     onDismissRequest: () -> Unit = {}
 ) {
-    ScalingLazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .rotaryScrollable(
-                focusRequester = rememberActiveFocusRequester(),
-                behavior = RotaryScrollableDefaults.behavior(dialogScrollState)
-            ),
-        columnState = dialogScrollState,
+    val columnState = rememberTransformingLazyColumnState()
+    val contentPadding = rememberResponsiveColumnPadding(
+        first = ColumnItemType.ListHeader,
+        last = ColumnItemType.Button,
+    )
+    val transformationSpec = rememberTransformationSpec()
+
+    TransformingLazyColumn(
+        state = columnState,
+        contentPadding = contentPadding
     ) {
         item {
-            ResponsiveListHeader(
-                modifier = Modifier.fillMaxWidth(),
-                contentPadding = ListHeaderDefaults.firstItemPadding()
+            ListHeader(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .transformedHeight(this, transformationSpec),
+                transformation = SurfaceTransformation(transformationSpec)
             ) {
                 Text(text = stringResource(id = R.string.title_filter_apps))
             }
@@ -492,8 +476,10 @@ private fun MediaPlayerFilterScreen(
         items(uiState.allMediaAppsSet.toList()) {
             val isChecked = selectedItems.contains(it.packageName!!)
 
-            ToggleChip(
-                modifier = Modifier.fillMaxWidth(),
+            TextToggleButton(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .transformedHeight(this, transformationSpec),
                 checked = isChecked,
                 onCheckedChange = { checked ->
                     onSelectedItemsChanged.invoke(
@@ -504,14 +490,9 @@ private fun MediaPlayerFilterScreen(
                         }
                     )
                 },
-                label = {
+                content = {
                     Text(
                         text = it.appLabel!!
-                    )
-                },
-                toggleControl = {
-                    Checkbox(
-                        checked = isChecked
                     )
                 }
             )
@@ -522,8 +503,11 @@ private fun MediaPlayerFilterScreen(
         }
 
         item {
-            Chip(
-                modifier = Modifier.fillMaxWidth(),
+            FilledTonalButton(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .transformedHeight(this, transformationSpec),
+                transformation = SurfaceTransformation(transformationSpec),
                 label = {
                     Text(text = stringResource(id = R.string.clear_all))
                 },
@@ -535,17 +519,16 @@ private fun MediaPlayerFilterScreen(
                 },
                 onClick = {
                     onSelectedItemsChanged.invoke(emptySet())
-                },
-                colors = ChipDefaults.secondaryChipColors(
-                    backgroundColor = MaterialTheme.colors.onBackground,
-                    contentColor = MaterialTheme.colors.background
-                )
+                }
             )
         }
 
         item {
-            Chip(
-                modifier = Modifier.fillMaxWidth(),
+            Button(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .transformedHeight(this, transformationSpec),
+                transformation = SurfaceTransformation(transformationSpec),
                 label = {
                     Text(text = stringResource(id = android.R.string.ok))
                 },
@@ -557,8 +540,7 @@ private fun MediaPlayerFilterScreen(
                 },
                 onClick = {
                     onDismissRequest.invoke()
-                },
-                colors = ChipDefaults.primaryChipColors()
+                }
             )
         }
     }

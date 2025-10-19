@@ -1,28 +1,20 @@
-@file:OptIn(
-    ExperimentalHorologistApi::class,
-    ExperimentalWearFoundationApi::class,
-    ExperimentalWearMaterialApi::class
-)
-
 package com.thewizrd.simplewear.ui.simplewear
 
 import android.text.format.DateFormat
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.material.LocalContentColor
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -31,7 +23,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -44,43 +35,33 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import androidx.wear.compose.foundation.ExperimentalWearFoundationApi
+import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
 import androidx.wear.compose.foundation.lazy.items
-import androidx.wear.compose.foundation.rememberActiveFocusRequester
-import androidx.wear.compose.foundation.rememberRevealState
-import androidx.wear.compose.foundation.rotary.RotaryScrollableDefaults
-import androidx.wear.compose.foundation.rotary.rotaryScrollable
-import androidx.wear.compose.material.Button
-import androidx.wear.compose.material.ButtonDefaults
-import androidx.wear.compose.material.Chip
-import androidx.wear.compose.material.ChipDefaults
-import androidx.wear.compose.material.ExperimentalWearMaterialApi
-import androidx.wear.compose.material.Icon
-import androidx.wear.compose.material.ListHeader
-import androidx.wear.compose.material.MaterialTheme
-import androidx.wear.compose.material.PositionIndicator
-import androidx.wear.compose.material.Scaffold
-import androidx.wear.compose.material.SwipeToRevealChip
-import androidx.wear.compose.material.SwipeToRevealDefaults
-import androidx.wear.compose.material.SwipeToRevealPrimaryAction
-import androidx.wear.compose.material.Text
-import androidx.wear.compose.material.TimeText
-import androidx.wear.compose.material.Vignette
-import androidx.wear.compose.material.VignettePosition
-import androidx.wear.compose.material.dialog.Dialog
+import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
+import androidx.wear.compose.material3.Button
+import androidx.wear.compose.material3.ButtonDefaults
+import androidx.wear.compose.material3.Dialog
+import androidx.wear.compose.material3.EdgeButton
+import androidx.wear.compose.material3.FilledIconButton
+import androidx.wear.compose.material3.FilledTonalButton
+import androidx.wear.compose.material3.Icon
+import androidx.wear.compose.material3.IconButtonDefaults
+import androidx.wear.compose.material3.ListHeader
+import androidx.wear.compose.material3.MaterialTheme
+import androidx.wear.compose.material3.RadioButton
+import androidx.wear.compose.material3.ScreenScaffold
+import androidx.wear.compose.material3.SurfaceTransformation
+import androidx.wear.compose.material3.SwipeToReveal
+import androidx.wear.compose.material3.SwitchButton
+import androidx.wear.compose.material3.Text
+import androidx.wear.compose.material3.TimePicker
+import androidx.wear.compose.material3.TimePickerType
+import androidx.wear.compose.material3.lazy.rememberTransformationSpec
+import androidx.wear.compose.material3.lazy.transformedHeight
 import androidx.wear.compose.ui.tooling.preview.WearPreviewFontScales
-import com.google.android.horologist.annotations.ExperimentalHorologistApi
-import com.google.android.horologist.composables.TimePicker
-import com.google.android.horologist.composables.TimePickerWith12HourClock
-import com.google.android.horologist.compose.layout.ScalingLazyColumn
-import com.google.android.horologist.compose.layout.ScalingLazyColumnDefaults
-import com.google.android.horologist.compose.layout.ScalingLazyColumnDefaults.listTextPadding
+import com.google.android.horologist.compose.layout.ColumnItemType
 import com.google.android.horologist.compose.layout.fillMaxRectangle
-import com.google.android.horologist.compose.layout.rememberResponsiveColumnState
-import com.google.android.horologist.compose.layout.scrollAway
-import com.google.android.horologist.compose.material.ResponsiveListHeader
-import com.google.android.horologist.compose.material.ToggleChip
-import com.google.android.horologist.compose.material.ToggleChipToggleControl
+import com.google.android.horologist.compose.layout.rememberResponsiveColumnPadding
 import com.thewizrd.shared_resources.actions.ActionStatus
 import com.thewizrd.shared_resources.actions.Actions
 import com.thewizrd.shared_resources.actions.DNDChoice
@@ -94,10 +75,10 @@ import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.ui.components.ConfirmationOverlay
 import com.thewizrd.simplewear.ui.components.LoadingContent
 import com.thewizrd.simplewear.ui.navigation.Screen
+import com.thewizrd.simplewear.ui.theme.WearAppTheme
 import com.thewizrd.simplewear.ui.theme.activityViewModel
 import com.thewizrd.simplewear.ui.theme.findActivity
 import com.thewizrd.simplewear.ui.tools.WearPreviewDevices
-import com.thewizrd.simplewear.viewmodels.ConfirmationData
 import com.thewizrd.simplewear.viewmodels.ConfirmationViewModel
 import com.thewizrd.simplewear.viewmodels.TimedActionUiViewModel
 import com.thewizrd.simplewear.viewmodels.WearableListenerViewModel.Companion.EXTRA_STATUS
@@ -177,9 +158,9 @@ fun TimedActionUi(
                             }
 
                             ActionStatus.PERMISSION_DENIED -> {
-                                confirmationViewModel.showConfirmation(
-                                    ConfirmationData(
-                                        title = context.getString(R.string.error_permissiondenied)
+                                confirmationViewModel.showOpenOnPhoneForFailure(
+                                    message = context.getString(
+                                        R.string.error_permissiondenied
                                     )
                                 )
 
@@ -210,37 +191,38 @@ private fun TimedActionUi(
     onActionDelete: (TimedAction) -> Unit = {},
     onAddAction: () -> Unit = {}
 ) {
-    val scrollState = rememberResponsiveColumnState(
-        contentPadding = ScalingLazyColumnDefaults.padding(
-            first = ScalingLazyColumnDefaults.ItemType.Text,
-            last = ScalingLazyColumnDefaults.ItemType.SingleButton
-        )
+    val columnState = rememberTransformingLazyColumnState()
+    val contentPadding = rememberResponsiveColumnPadding(
+        first = ColumnItemType.ListHeader,
+        last = ColumnItemType.Button,
     )
+    val transformationSpec = rememberTransformationSpec()
 
-    Scaffold(
-        modifier = modifier.background(MaterialTheme.colors.background),
-        timeText = { TimeText(modifier = Modifier.scrollAway { scrollState }) },
-        vignette = { Vignette(vignettePosition = VignettePosition.TopAndBottom) },
-        positionIndicator = { PositionIndicator(scalingLazyListState = scrollState.state) }
+    ScreenScaffold(
+        modifier = modifier,
+        scrollState = columnState,
+        contentPadding = contentPadding,
+        edgeButton = {
+            EdgeButton(onClick = onAddAction) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_add_white_24dp),
+                    contentDescription = stringResource(id = R.string.label_add_action)
+                )
+            }
+        }
     ) {
-        ScalingLazyColumn(
-            modifier = modifier
-                .fillMaxSize()
-                .rotaryScrollable(
-                    focusRequester = rememberActiveFocusRequester(),
-                    behavior = RotaryScrollableDefaults.behavior(scrollState)
-                ),
-            columnState = scrollState
+        TransformingLazyColumn(
+            state = columnState,
+            contentPadding = contentPadding
         ) {
             item {
-                Box(
-                    modifier = Modifier.padding(bottom = 12.dp)
+                ListHeader(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .transformedHeight(this, transformationSpec),
+                    transformation = SurfaceTransformation(transformationSpec)
                 ) {
-                    Text(
-                        modifier = Modifier.listTextPadding(),
-                        text = stringResource(id = R.string.title_actions),
-                        style = MaterialTheme.typography.button
-                    )
+                    Text(text = stringResource(id = R.string.title_actions))
                 }
             }
             items(
@@ -253,17 +235,6 @@ private fun TimedActionUi(
                     onActionDelete = onActionDelete
                 )
             }
-            item {
-                Spacer(modifier = Modifier.height(16.dp))
-            }
-            item {
-                Button(onClick = onAddAction) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_add_white_24dp),
-                        contentDescription = stringResource(id = R.string.label_add_action)
-                    )
-                }
-            }
         }
     }
 }
@@ -273,13 +244,13 @@ private fun EmptyTimedActionUi(
     modifier: Modifier = Modifier,
     onAddAction: () -> Unit = {}
 ) {
-    Scaffold(
-        modifier = modifier.background(MaterialTheme.colors.background),
-        timeText = { TimeText() },
-        vignette = { Vignette(vignettePosition = VignettePosition.TopAndBottom) }
-    ) {
+    ScreenScaffold(
+        modifier = modifier
+    ) { contentPadding ->
         Column(
-            modifier = Modifier.fillMaxRectangle()
+            modifier = Modifier
+                .padding(contentPadding)
+                .fillMaxRectangle()
         ) {
             Box(
                 modifier = Modifier
@@ -292,8 +263,7 @@ private fun EmptyTimedActionUi(
             ) {
                 Text(
                     text = stringResource(id = R.string.title_schedule_action),
-                    textAlign = TextAlign.Center,
-                    color = MaterialTheme.colors.onBackground
+                    textAlign = TextAlign.Center
                 )
             }
 
@@ -332,37 +302,32 @@ private fun TimedActionChip(
             )
         )
     }
-    val revealState = rememberRevealState()
 
-    val chipColors = ChipDefaults.secondaryChipColors()
+    val buttonColors = ButtonDefaults.filledTonalButtonColors()
 
-    SwipeToRevealChip(
+    SwipeToReveal(
         primaryAction = {
-            SwipeToRevealPrimaryAction(
-                revealState = revealState,
+            PrimaryActionButton(
                 onClick = {
                     onActionDelete.invoke(timedAction)
                 },
                 icon = {
                     Icon(
-                        imageVector = SwipeToRevealDefaults.Delete,
+                        imageVector = Icons.Outlined.Delete,
                         contentDescription = stringResource(id = R.string.action_delete)
                     )
                 },
-                label = {
+                text = {
                     Text(text = stringResource(id = R.string.action_delete))
                 }
             )
         },
-        revealState = revealState,
-        onFullSwipe = {
+        onSwipePrimaryAction = {
             onActionDelete.invoke(timedAction)
         }
     ) {
-        Chip(
+        FilledTonalButton(
             modifier = Modifier.fillMaxWidth(),
-            colors = chipColors,
-            border = ChipDefaults.chipBorder(),
             onClick = {
                 onActionClicked.invoke(timedAction)
             }
@@ -384,7 +349,7 @@ private fun TimedActionChip(
                         ) {
                             model.getDescription(context)
                         },
-                        tint = chipColors.iconColor(enabled = true).value
+                        tint = buttonColors.iconColor
                     )
                 }
                 Spacer(modifier = Modifier.size(6.dp))
@@ -394,8 +359,8 @@ private fun TimedActionChip(
                     Row {
                         Text(
                             text = stringResource(id = model.actionLabelResId),
-                            style = MaterialTheme.typography.button,
-                            color = chipColors.contentColor(enabled = true).value,
+                            style = MaterialTheme.typography.labelMedium,
+                            color = buttonColors.contentColor,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )
@@ -404,8 +369,8 @@ private fun TimedActionChip(
                         Row {
                             Text(
                                 text = stringResource(id = model.stateLabelResId),
-                                style = MaterialTheme.typography.caption1,
-                                color = chipColors.secondaryContentColor(enabled = true).value,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = buttonColors.secondaryContentColor,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                             )
@@ -414,8 +379,8 @@ private fun TimedActionChip(
                     Row {
                         Text(
                             text = timeString,
-                            style = MaterialTheme.typography.caption2,
-                            color = chipColors.secondaryContentColor(enabled = true).value,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = buttonColors.secondaryContentColor,
                             maxLines = 1
                         )
                     }
@@ -471,9 +436,9 @@ fun TimedActionDetailUi(
                             }
 
                             ActionStatus.PERMISSION_DENIED -> {
-                                confirmationViewModel.showConfirmation(
-                                    ConfirmationData(
-                                        title = context.getString(R.string.error_permissiondenied)
+                                confirmationViewModel.showOpenOnPhoneForFailure(
+                                    message = context.getString(
+                                        R.string.error_permissiondenied
                                     )
                                 )
 
@@ -503,13 +468,13 @@ private fun TimedActionDetailUi(
     onActionUpdate: (TimedAction) -> Unit = {},
     onActionDelete: (TimedAction) -> Unit = {}
 ) {
-    val scrollState = rememberResponsiveColumnState(
-        contentPadding = ScalingLazyColumnDefaults.padding(
-            first = ScalingLazyColumnDefaults.ItemType.Text,
-            last = ScalingLazyColumnDefaults.ItemType.SingleButton,
-        ),
-        verticalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterVertically)
+    val columnState = rememberTransformingLazyColumnState()
+    val contentPadding = rememberResponsiveColumnPadding(
+        first = ColumnItemType.ListHeader,
+        last = ColumnItemType.Button,
     )
+    val transformationSpec = rememberTransformationSpec()
+
     val context = LocalContext.current
     val is24Hour = remember(context) {
         DateFormat.is24HourFormat(context)
@@ -531,122 +496,87 @@ private fun TimedActionDetailUi(
         )
     }
 
-    Scaffold(
-        modifier = modifier.background(MaterialTheme.colors.background),
-        timeText = { TimeText(modifier = Modifier.scrollAway { scrollState }) },
-        vignette = { Vignette(vignettePosition = VignettePosition.TopAndBottom) },
-        positionIndicator = { PositionIndicator(scalingLazyListState = scrollState.state) }
-    ) {
-        ScalingLazyColumn(
-            columnState = scrollState
+    ScreenScaffold(
+        scrollState = columnState,
+        contentPadding = contentPadding
+    ) { contentPadding ->
+        TransformingLazyColumn(
+            state = columnState,
+            contentPadding = contentPadding
         ) {
             item {
-                ResponsiveListHeader {
+                ListHeader(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .transformedHeight(this, transformationSpec),
+                    transformation = SurfaceTransformation(transformationSpec)
+                ) {
                     Text(text = stringResource(id = R.string.title_edit_action))
                 }
             }
 
             item {
-                Chip(
-                    modifier = Modifier.fillMaxWidth(),
+                FilledTonalButton(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .transformedHeight(this, transformationSpec),
+                    transformation = SurfaceTransformation(transformationSpec),
                     enabled = false,
-                    colors = ChipDefaults.secondaryChipColors(),
-                    border = ChipDefaults.chipBorder(),
+                    icon = {
+                        Icon(
+                            modifier = Modifier.align(Alignment.Center),
+                            painter = painterResource(id = model.drawableResId),
+                            contentDescription = remember(
+                                context,
+                                model.actionLabelResId,
+                                model.stateLabelResId
+                            ) {
+                                model.getDescription(context)
+                            }
+                        )
+                    },
+                    label = {
+                        Text(text = stringResource(id = R.string.label_action))
+                    },
+                    secondaryLabel = {
+                        Text(text = stringResource(id = model.actionLabelResId))
+                    },
                     onClick = {}
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        Box(
-                            modifier = Modifier.align(Alignment.CenterVertically)
-                        ) {
-                            Icon(
-                                modifier = Modifier.align(Alignment.Center),
-                                painter = painterResource(id = model.drawableResId),
-                                contentDescription = remember(
-                                    context,
-                                    model.actionLabelResId,
-                                    model.stateLabelResId
-                                ) {
-                                    model.getDescription(context)
-                                },
-                                tint = MaterialTheme.colors.onSurface
-                            )
-                        }
-                        Spacer(modifier = Modifier.size(6.dp))
-                        Column(
-                            modifier = Modifier.align(Alignment.CenterVertically)
-                        ) {
-                            Row {
-                                Text(
-                                    text = stringResource(id = R.string.label_action),
-                                    style = MaterialTheme.typography.button,
-                                    color = MaterialTheme.colors.onSurface
-                                )
-                            }
-                            Row {
-                                Text(
-                                    text = stringResource(id = model.actionLabelResId),
-                                    style = MaterialTheme.typography.caption2,
-                                    color = MaterialTheme.colors.onSurface.copy(alpha = 0.75f)
-                                )
-                            }
-                        }
-                    }
-                }
+                )
             }
 
             item {
-                Chip(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ChipDefaults.secondaryChipColors(),
-                    border = ChipDefaults.chipBorder(),
+                FilledTonalButton(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .transformedHeight(this, transformationSpec),
+                    transformation = SurfaceTransformation(transformationSpec),
                     onClick = {
                         showTimePicker = true
+                    },
+                    icon = {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_alarm_white_24dp),
+                            contentDescription = stringResource(id = R.string.label_time)
+                        )
+                    },
+                    label = {
+                        Text(text = stringResource(id = R.string.label_time))
+                    },
+                    secondaryLabel = {
+                        Text(text = timeString)
                     }
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        Box(
-                            modifier = Modifier.align(Alignment.CenterVertically)
-                        ) {
-                            Icon(
-                                modifier = Modifier.align(Alignment.Center),
-                                painter = painterResource(id = R.drawable.ic_alarm_white_24dp),
-                                contentDescription = stringResource(id = R.string.label_time),
-                                tint = MaterialTheme.colors.onSurface
-                            )
-                        }
-                        Spacer(modifier = Modifier.size(6.dp))
-                        Column(
-                            modifier = Modifier.align(Alignment.CenterVertically)
-                        ) {
-                            Row {
-                                Text(
-                                    text = stringResource(id = R.string.label_time),
-                                    style = MaterialTheme.typography.button,
-                                    color = MaterialTheme.colors.onSurface
-                                )
-                            }
-                            Row {
-                                Text(
-                                    text = timeString,
-                                    style = MaterialTheme.typography.caption2,
-                                    color = MaterialTheme.colors.onSurface.copy(alpha = 0.75f)
-                                )
-                            }
-                        }
-                    }
-                }
+                )
             }
 
             item {
-                ListHeader {
-                    Text(
-                        text = stringResource(id = R.string.label_state),
-                        style = MaterialTheme.typography.caption1
-                    )
+                ListHeader(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .transformedHeight(this, transformationSpec),
+                    transformation = SurfaceTransformation(transformationSpec)
+                ) {
+                    Text(text = stringResource(id = R.string.label_state))
                 }
             }
 
@@ -657,14 +587,19 @@ private fun TimedActionDetailUi(
                             action.action as ToggleAction
                         }
 
-                        ToggleChip(
+                        SwitchButton(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .transformedHeight(this, transformationSpec),
+                            transformation = SurfaceTransformation(transformationSpec),
                             checked = tA.isEnabled,
-                            onCheckedChanged = {
+                            onCheckedChange = {
                                 tA.isEnabled = it
                                 actionState = it
                             },
-                            label = stringResource(id = model.stateLabelResId),
-                            toggleControl = ToggleChipToggleControl.Switch
+                            label = {
+                                Text(text = stringResource(id = model.stateLabelResId))
+                            }
                         )
                     }
                 }
@@ -678,22 +613,33 @@ private fun TimedActionDetailUi(
                             ActionButtonViewModel(MultiChoiceAction(mA.actionType, choice))
                         }
 
-                        ToggleChip(
-                            checked = mA.choice == choice,
-                            onCheckedChanged = {
+                        RadioButton(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .transformedHeight(this, transformationSpec),
+                            transformation = SurfaceTransformation(transformationSpec),
+                            selected = mA.choice == choice,
+                            onSelect = {
                                 mA.choice = choice
                                 actionState = choice
                             },
-                            label = stringResource(id = multiActionModel.stateLabelResId),
-                            toggleControl = ToggleChipToggleControl.Radio
+                            label = {
+                                Text(text = stringResource(id = multiActionModel.stateLabelResId))
+                            }
                         )
                     }
                 }
 
                 else -> {
                     item {
-                        com.google.android.horologist.compose.material.Chip(
-                            label = stringResource(id = R.string.label_action_not_supported),
+                        Button(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .transformedHeight(this, transformationSpec),
+                            transformation = SurfaceTransformation(transformationSpec),
+                            label = {
+                                Text(text = stringResource(id = R.string.label_action_not_supported))
+                            },
                             onClick = {},
                             enabled = false
                         )
@@ -702,7 +648,9 @@ private fun TimedActionDetailUi(
             }
 
             item {
-                Spacer(modifier = Modifier.size(16.dp))
+                Spacer(
+                    modifier = Modifier.size(16.dp)
+                )
             }
 
             item {
@@ -712,20 +660,27 @@ private fun TimedActionDetailUi(
                         Alignment.CenterHorizontally
                     )
                 ) {
-                    com.google.android.horologist.compose.material.Button(
-                        id = R.drawable.ic_check_white_24dp,
-                        contentDescription = stringResource(id = android.R.string.ok),
+                    FilledIconButton(
+                        content = {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_check_white_24dp),
+                                contentDescription = stringResource(id = android.R.string.ok),
+                            )
+                        },
                         onClick = {
                             onActionUpdate.invoke(action)
-                        },
-                        colors = ButtonDefaults.primaryButtonColors()
+                        }
                     )
-                    com.google.android.horologist.compose.material.Button(
-                        id = R.drawable.ic_delete_outline,
-                        contentDescription = stringResource(id = R.string.action_delete),
-                        colors = ButtonDefaults.primaryButtonColors(
-                            backgroundColor = MaterialTheme.colors.error,
-                            contentColor = MaterialTheme.colors.onError
+                    FilledIconButton(
+                        content = {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_delete_outline),
+                                contentDescription = stringResource(id = R.string.action_delete),
+                            )
+                        },
+                        colors = IconButtonDefaults.iconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer,
+                            contentColor = MaterialTheme.colorScheme.onErrorContainer,
                         ),
                         onClick = {
                             onActionDelete.invoke(action)
@@ -737,7 +692,7 @@ private fun TimedActionDetailUi(
     }
 
     Dialog(
-        showDialog = showTimePicker,
+        visible = showTimePicker,
         onDismissRequest = {
             showTimePicker = false
         }
@@ -748,42 +703,27 @@ private fun TimedActionDetailUi(
                 .toLocalTime()
         }
 
-        if (is24Hour) {
-            TimePicker(
-                time = localTime,
-                onTimeConfirm = {
-                    val today = LocalDate.now()
-                    val now = LocalTime.now()
+        TimePicker(
+            initialTime = localTime,
+            onTimePicked = {
+                val today = LocalDate.now()
+                val now = LocalTime.now()
 
-                    action.timeInMillis = if (it < now) {
-                        today.plusDays(1).atTime(it).atZone(ZoneId.systemDefault()).toInstant()
-                            .toEpochMilli()
-                    } else {
-                        today.atTime(it).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
-                    }
-
-                    showTimePicker = false
-                },
-                showSeconds = false
-            )
-        } else {
-            TimePickerWith12HourClock(
-                time = localTime,
-                onTimeConfirm = {
-                    val today = LocalDate.now()
-                    val now = LocalTime.now()
-
-                    action.timeInMillis = if (it < now) {
-                        today.plusDays(1).atTime(it).atZone(ZoneId.systemDefault()).toInstant()
-                            .toEpochMilli()
-                    } else {
-                        today.atTime(it).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
-                    }
-
-                    showTimePicker = false
+                action.timeInMillis = if (it < now) {
+                    today.plusDays(1).atTime(it).atZone(ZoneId.systemDefault()).toInstant()
+                        .toEpochMilli()
+                } else {
+                    today.atTime(it).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
                 }
-            )
-        }
+
+                showTimePicker = false
+            },
+            timePickerType = if (is24Hour) {
+                TimePickerType.HoursMinutes24H
+            } else {
+                TimePickerType.HoursMinutesAmPm12H
+            }
+        )
     }
 }
 
@@ -810,9 +750,7 @@ private fun PreviewTimedActionUi() {
         )
     }
 
-    CompositionLocalProvider(
-        LocalContentColor provides Color.White
-    ) {
+    WearAppTheme {
         TimedActionUi(
             actions = actions
         )
@@ -834,9 +772,7 @@ private fun PreviewTimedActionDetailUi() {
         )
     }
 
-    CompositionLocalProvider(
-        LocalContentColor provides Color.White
-    ) {
+    WearAppTheme {
         TimedActionDetailUi(
             action = action
         )
@@ -847,9 +783,7 @@ private fun PreviewTimedActionDetailUi() {
 @WearPreviewFontScales
 @Composable
 private fun PreviewEmptyTimedActionUi() {
-    CompositionLocalProvider(
-        LocalContentColor provides Color.White
-    ) {
+    WearAppTheme {
         EmptyTimedActionUi()
     }
 }

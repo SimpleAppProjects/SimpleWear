@@ -1,27 +1,27 @@
-@file:OptIn(
-    ExperimentalHorologistApi::class, ExperimentalFoundationApi::class,
-    ExperimentalWearFoundationApi::class, ExperimentalWearMaterialApi::class
-)
+@file:OptIn(ExperimentalHorologistApi::class)
 
 package com.thewizrd.simplewear.ui.simplewear
 
 import android.content.Intent
-import androidx.compose.foundation.ExperimentalFoundationApi
+import android.graphics.Bitmap
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
@@ -33,17 +33,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
@@ -52,44 +54,54 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavOptions
-import androidx.wear.compose.foundation.ExperimentalWearFoundationApi
-import androidx.wear.compose.foundation.SwipeToDismissBoxState
+import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
 import androidx.wear.compose.foundation.lazy.items
-import androidx.wear.compose.foundation.rememberSwipeToDismissBoxState
+import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
+import androidx.wear.compose.foundation.pager.rememberPagerState
 import androidx.wear.compose.foundation.rotary.rotaryScrollable
-import androidx.wear.compose.material.ButtonDefaults
-import androidx.wear.compose.material.ChipDefaults
-import androidx.wear.compose.material.CompactChip
-import androidx.wear.compose.material.ExperimentalWearMaterialApi
-import androidx.wear.compose.material.Icon
-import androidx.wear.compose.material.MaterialTheme
-import androidx.wear.compose.material.Text
-import androidx.wear.compose.material.TimeText
-import androidx.wear.compose.ui.tooling.preview.WearPreviewDevices
+import androidx.wear.compose.material3.Button
+import androidx.wear.compose.material3.ButtonDefaults
+import androidx.wear.compose.material3.CompactButton
+import androidx.wear.compose.material3.FilledTonalButton
+import androidx.wear.compose.material3.Icon
+import androidx.wear.compose.material3.IconButtonDefaults
+import androidx.wear.compose.material3.ListHeader
+import androidx.wear.compose.material3.ListHeaderDefaults
+import androidx.wear.compose.material3.PageIndicatorDefaults
+import androidx.wear.compose.material3.ScreenScaffold
+import androidx.wear.compose.material3.SurfaceTransformation
+import androidx.wear.compose.material3.Text
+import androidx.wear.compose.material3.lazy.rememberTransformationSpec
+import androidx.wear.compose.material3.lazy.transformedHeight
+import androidx.wear.compose.material3.touchTargetAwareSize
 import androidx.wear.compose.ui.tooling.preview.WearPreviewFontScales
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
-import com.google.android.horologist.audio.ui.VolumePositionIndicator
 import com.google.android.horologist.audio.ui.VolumeUiState
 import com.google.android.horologist.audio.ui.VolumeViewModel
-import com.google.android.horologist.audio.ui.components.actions.SettingsButton
-import com.google.android.horologist.audio.ui.volumeRotaryBehavior
+import com.google.android.horologist.audio.ui.material3.VolumeLevelIndicator
+import com.google.android.horologist.audio.ui.material3.components.actions.SettingsButton
+import com.google.android.horologist.audio.ui.material3.components.actions.SettingsButtonDefaults
+import com.google.android.horologist.audio.ui.material3.volumeRotaryBehavior
 import com.google.android.horologist.compose.ambient.AmbientAware
 import com.google.android.horologist.compose.ambient.AmbientState
-import com.google.android.horologist.compose.layout.ScalingLazyColumnDefaults
-import com.google.android.horologist.compose.layout.rememberResponsiveColumnState
-import com.google.android.horologist.compose.layout.scrollAway
-import com.google.android.horologist.compose.material.Chip
+import com.google.android.horologist.compose.layout.ColumnItemType
+import com.google.android.horologist.compose.layout.rememberResponsiveColumnPadding
+import com.google.android.horologist.images.base.paintable.BitmapPaintable.Companion.asPaintable
 import com.google.android.horologist.media.model.PlaybackStateEvent
 import com.google.android.horologist.media.model.TimestampProvider
-import com.google.android.horologist.media.ui.components.ControlButtonLayout
-import com.google.android.horologist.media.ui.components.animated.AnimatedMediaControlButtons
-import com.google.android.horologist.media.ui.components.animated.MarqueeTextMediaDisplay
-import com.google.android.horologist.media.ui.components.controls.MediaButton
-import com.google.android.horologist.media.ui.components.display.LoadingMediaDisplay
-import com.google.android.horologist.media.ui.components.display.NothingPlayingDisplay
-import com.google.android.horologist.media.ui.screens.player.PlayerScreen
+import com.google.android.horologist.media.ui.material3.components.ButtonGroupLayoutDefaults
+import com.google.android.horologist.media.ui.material3.components.ambient.AmbientMediaControlButtons
+import com.google.android.horologist.media.ui.material3.components.ambient.AmbientMediaInfoDisplay
+import com.google.android.horologist.media.ui.material3.components.ambient.AmbientSeekToNextButton
+import com.google.android.horologist.media.ui.material3.components.ambient.AmbientSeekToPreviousButton
+import com.google.android.horologist.media.ui.material3.components.animated.AnimatedMediaControlButtons
+import com.google.android.horologist.media.ui.material3.components.animated.AnimatedMediaInfoDisplay
+import com.google.android.horologist.media.ui.material3.components.background.ArtworkImageBackground
+import com.google.android.horologist.media.ui.material3.components.display.TextMediaDisplay
+import com.google.android.horologist.media.ui.material3.screens.player.PlayerScreen
 import com.google.android.horologist.media.ui.state.LocalTimestampProvider
 import com.google.android.horologist.media.ui.state.mapper.TrackPositionUiModelMapper
+import com.google.android.horologist.media.ui.state.model.MediaUiModel
 import com.thewizrd.shared_resources.actions.ActionStatus
 import com.thewizrd.shared_resources.actions.AudioStreamState
 import com.thewizrd.shared_resources.actions.AudioStreamType
@@ -111,25 +123,24 @@ import com.thewizrd.simplewear.media.PlayerUiController
 import com.thewizrd.simplewear.media.toPlaybackStateEvent
 import com.thewizrd.simplewear.ui.ambient.ambientMode
 import com.thewizrd.simplewear.ui.components.ConfirmationOverlay
+import com.thewizrd.simplewear.ui.components.HorizontalPagerScreen
 import com.thewizrd.simplewear.ui.components.LoadingContent
-import com.thewizrd.simplewear.ui.components.ScalingLazyColumn
-import com.thewizrd.simplewear.ui.components.SwipeToDismissPagerScreen
 import com.thewizrd.simplewear.ui.navigation.Screen
 import com.thewizrd.simplewear.ui.theme.findActivity
+import com.thewizrd.simplewear.ui.tools.WearPreviewDevices
 import com.thewizrd.simplewear.ui.utils.rememberFocusRequester
-import com.thewizrd.simplewear.viewmodels.ConfirmationData
 import com.thewizrd.simplewear.viewmodels.ConfirmationViewModel
 import com.thewizrd.simplewear.viewmodels.WearableListenerViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 @Composable
 fun MediaPlayerUi(
     modifier: Modifier = Modifier,
     navController: NavController,
-    swipeToDismissBoxState: SwipeToDismissBoxState = rememberSwipeToDismissBoxState(),
     app: AppItemViewModel? = null,
     autoLaunch: Boolean = (app == null),
 ) {
@@ -149,8 +160,6 @@ fun MediaPlayerUi(
 
     val confirmationViewModel = viewModel<ConfirmationViewModel>()
     val confirmationData by confirmationViewModel.confirmationEventsFlow.collectAsState()
-
-    val isRoot = navController.previousBackStackEntry == null
 
     val pagerState = rememberPagerState(
         initialPage = 0,
@@ -190,18 +199,12 @@ fun MediaPlayerUi(
             }
         }
 
-        SwipeToDismissPagerScreen(
+        HorizontalPagerScreen(
             modifier = modifier,
-            isRoot = isRoot,
-            swipeToDismissBoxState = swipeToDismissBoxState,
-            state = pagerState,
+            pagerState = pagerState,
             hidePagerIndicator = ambientState.isAmbient || uiState.isLoading || !uiState.isPlayerAvailable,
-            timeText = {
-                if (pagerState.currentPage == 0) {
-                    TimeText()
-                }
-            },
-            pagerKey = keyFunc
+            pagerKey = keyFunc,
+            pagerIndicatorBackgroundColor = PageIndicatorDefaults.backgroundColor.copy(alpha = 0.5f)
         ) { pageIdx ->
             val key = keyFunc(pageIdx)
 
@@ -312,9 +315,9 @@ fun MediaPlayerUi(
                             event.data.getSerializable(WearableListenerViewModel.EXTRA_STATUS) as ActionStatus
 
                         if (actionStatus == ActionStatus.PERMISSION_DENIED) {
-                            confirmationViewModel.showConfirmation(
-                                ConfirmationData(
-                                    title = context.getString(R.string.error_permissiondenied)
+                            confirmationViewModel.showOpenOnPhoneForFailure(
+                                message = context.getString(
+                                    R.string.error_permissiondenied
                                 )
                             )
 
@@ -327,11 +330,7 @@ fun MediaPlayerUi(
                             event.data.getSerializable(WearableListenerViewModel.EXTRA_STATUS) as ActionStatus
 
                         if (actionStatus == ActionStatus.TIMEOUT) {
-                            confirmationViewModel.showConfirmation(
-                                ConfirmationData(
-                                    title = context.getString(R.string.error_playback_failed)
-                                )
-                            )
+                            confirmationViewModel.showFailure(message = context.getString(R.string.error_playback_failed))
                         }
                     }
                 }
@@ -433,92 +432,114 @@ private fun MediaPlayerControlsPage(
     // Progress
     val timestampProvider = remember { TimestampProvider { System.currentTimeMillis() } }
 
-    LoadingContent(
-        empty = !uiState.isPlayerAvailable && !isAmbient,
-        emptyContent = {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .wrapContentHeight(),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally
+    ScreenScaffold(
+        modifier = Modifier.fillMaxSize(),
+        scrollIndicator = {
+            VolumeLevelIndicator(
+                volumeUiState = { volumeUiState },
+                displayIndicatorEvents = displayVolumeIndicatorEvents
+            )
+        }
+    ) { contentPadding ->
+        LoadingContent(
+            empty = !uiState.isPlayerAvailable && !isAmbient,
+            emptyContent = {
+                Box(
+                    modifier = Modifier
+                        .padding(contentPadding)
+                        .fillMaxSize()
+                        .wrapContentHeight(),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        modifier = Modifier.padding(horizontal = 14.dp),
-                        text = stringResource(id = R.string.error_nomusicplayers),
-                        textAlign = TextAlign.Center
-                    )
-                    CompactChip(
-                        label = {
-                            Text(text = stringResource(id = R.string.action_retry))
-                        },
-                        icon = {
-                            Icon(
-                                painter = painterResource(id = R.drawable.ic_baseline_refresh_24),
-                                contentDescription = stringResource(id = R.string.action_retry)
-                            )
-                        },
-                        onClick = onRefresh
-                    )
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            modifier = Modifier.padding(horizontal = 14.dp),
+                            text = stringResource(id = R.string.error_nomusicplayers),
+                            textAlign = TextAlign.Center
+                        )
+                        CompactButton(
+                            label = {
+                                Text(text = stringResource(id = R.string.action_retry))
+                            },
+                            icon = {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.ic_baseline_refresh_24),
+                                    contentDescription = stringResource(id = R.string.action_retry)
+                                )
+                            },
+                            onClick = onRefresh
+                        )
+                    }
                 }
-            }
-        },
-        loading = uiState.isLoading && !isAmbient
-    ) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center,
+            },
+            loading = uiState.isLoading && !isAmbient
         ) {
-            PlayerScreen(
-                modifier = modifier,
-                mediaDisplay = {
-                    if (uiState.isPlaybackLoading && !isAmbient) {
-                        LoadingMediaDisplay()
-                    } else if (!playerState.isEmpty()) {
-                        if (!isAmbient) {
-                            MarqueeTextMediaDisplay(
-                                title = playerState.title,
-                                artist = playerState.artist
-                            )
-                        } else {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Text(
-                                    text = playerState.title.orEmpty(),
-                                    modifier = Modifier
-                                        .fillMaxWidth(0.7f)
-                                        .padding(top = 2.dp, bottom = .8.dp),
-                                    color = MaterialTheme.colors.onBackground,
-                                    textAlign = TextAlign.Center,
-                                    overflow = TextOverflow.Ellipsis,
-                                    maxLines = 1,
-                                    style = MaterialTheme.typography.button,
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center,
+            ) {
+                PlayerScreen(
+                    modifier = modifier,
+                    mediaDisplay = {
+                        val mediaUiModel = remember(playerState, uiState.isPlaybackLoading) {
+                            if (!playerState.isEmpty() && !uiState.isPlaybackLoading) {
+                                MediaUiModel.Ready(
+                                    id = "",
+                                    title = playerState.title ?: "",
+                                    subtitle = playerState.artist ?: ""
                                 )
-                                Text(
-                                    text = playerState.artist.orEmpty(),
-                                    modifier = Modifier
-                                        .fillMaxWidth(0.8f)
-                                        .padding(top = 2.dp, bottom = .6.dp),
-                                    color = MaterialTheme.colors.onBackground,
-                                    textAlign = TextAlign.Center,
-                                    overflow = TextOverflow.Ellipsis,
-                                    maxLines = 1,
-                                    style = MaterialTheme.typography.body2,
-                                )
+                            } else {
+                                MediaUiModel.Loading
                             }
                         }
-                    } else {
-                        NothingPlayingDisplay()
-                    }
-                },
-                controlButtons = {
-                    if (!isAmbient) {
-                        CompositionLocalProvider(LocalTimestampProvider provides timestampProvider) {
-                            AnimatedMediaControlButtons(
+
+                        if (!isAmbient) {
+                            AnimatedMediaInfoDisplay(
+                                media = mediaUiModel,
+                                loading = uiState.isPlaybackLoading
+                            )
+                        } else {
+                            AmbientMediaInfoDisplay(
+                                media = mediaUiModel,
+                                loading = uiState.isPlaybackLoading
+                            )
+                        }
+                    },
+                    controlButtons = {
+                        if (!isAmbient) {
+                            CompositionLocalProvider(LocalTimestampProvider provides timestampProvider) {
+                                AnimatedMediaControlButtons(
+                                    onPlayButtonClick = {
+                                        playerUiController.play()
+                                    },
+                                    onPauseButtonClick = {
+                                        playerUiController.pause()
+                                    },
+                                    playPauseButtonEnabled = !uiState.isPlaybackLoading || playerState.playbackState > PlaybackState.LOADING,
+                                    playing = playerState.playbackState == PlaybackState.PLAYING,
+                                    onSeekToPreviousButtonClick = {
+                                        playerUiController.skipToPreviousMedia()
+                                    },
+                                    seekToPreviousButtonEnabled = !uiState.isPlaybackLoading || playerState.playbackState > PlaybackState.LOADING,
+                                    onSeekToNextButtonClick = {
+                                        playerUiController.skipToNextMedia()
+                                    },
+                                    seekToNextButtonEnabled = !uiState.isPlaybackLoading || playerState.playbackState > PlaybackState.LOADING,
+                                    trackPositionUiModel = TrackPositionUiModelMapper.map(
+                                        playbackStateEvent
+                                    )
+                                )
+                            }
+                        } else {
+                            val leftButtonPadding =
+                                ButtonGroupLayoutDefaults.getSideButtonsPadding(isLeftButton = true)
+                            val rightButtonPadding =
+                                ButtonGroupLayoutDefaults.getSideButtonsPadding(isLeftButton = false)
+
+                            AmbientMediaControlButtons(
                                 onPlayButtonClick = {
                                     playerUiController.play()
                                 },
@@ -527,120 +548,289 @@ private fun MediaPlayerControlsPage(
                                 },
                                 playPauseButtonEnabled = !uiState.isPlaybackLoading || playerState.playbackState > PlaybackState.LOADING,
                                 playing = playerState.playbackState == PlaybackState.PLAYING,
-                                onSeekToPreviousButtonClick = {
-                                    playerUiController.skipToPreviousMedia()
+                                leftButton = {
+                                    AmbientSeekToPreviousButton(
+                                        onClick = {
+                                            playerUiController.skipToPreviousMedia()
+                                        },
+                                        buttonPadding = leftButtonPadding,
+                                        enabled = !uiState.isPlaybackLoading || playerState.playbackState > PlaybackState.LOADING,
+                                    )
                                 },
-                                seekToPreviousButtonEnabled = !uiState.isPlaybackLoading || playerState.playbackState > PlaybackState.LOADING,
-                                onSeekToNextButtonClick = {
-                                    playerUiController.skipToNextMedia()
-                                },
-                                seekToNextButtonEnabled = !uiState.isPlaybackLoading || playerState.playbackState > PlaybackState.LOADING,
-                                trackPositionUiModel = TrackPositionUiModelMapper.map(
-                                    playbackStateEvent
-                                )
+                                rightButton = {
+                                    AmbientSeekToNextButton(
+                                        onClick = {
+                                            playerUiController.skipToNextMedia()
+                                        },
+                                        buttonPadding = rightButtonPadding,
+                                        enabled = !uiState.isPlaybackLoading || playerState.playbackState > PlaybackState.LOADING,
+                                    )
+                                }
                             )
                         }
-                    } else {
-                        ControlButtonLayout(
-                            leftButton = {},
-                            middleButton = {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .clip(CircleShape),
-                                    contentAlignment = Alignment.Center,
-                                ) {
-                                    if (playerState.playbackState == PlaybackState.PLAYING) {
-                                        MediaButton(
-                                            onClick = {},
-                                            icon = ImageVector.vectorResource(id = R.drawable.ic_outline_pause_24),
-                                            contentDescription = stringResource(id = R.string.horologist_pause_button_content_description)
-                                        )
-                                    } else {
-                                        MediaButton(
-                                            onClick = {},
-                                            icon = ImageVector.vectorResource(id = R.drawable.ic_outline_play_arrow_24),
-                                            contentDescription = stringResource(id = R.string.horologist_play_button_content_description)
-                                        )
-                                    }
-                                }
-                            },
-                            rightButton = {}
-                        )
-                    }
-                },
-                buttons = {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        if (!isAmbient) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.Center
-                            ) {
-                                SettingsButton(
-                                    onClick = onVolumeDown,
-                                    imageVector = ImageVector.vectorResource(id = R.drawable.ic_baseline_volume_down_24),
-                                    contentDescription = stringResource(R.string.horologist_volume_screen_volume_down_content_description),
-                                    tapTargetSize = ButtonDefaults.ExtraSmallButtonSize
-                                )
-                                Spacer(modifier = Modifier.width(10.dp))
-                                uiState.mediaPlayerDetails.bitmapIcon?.let {
-                                    Image(
-                                        modifier = Modifier
-                                            .size(32.dp)
-                                            .clickable(onClick = onOpenPlayerList),
-                                        bitmap = it.asImageBitmap(),
-                                        contentDescription = stringResource(R.string.desc_open_player_list)
-                                    )
-                                } ?: run {
-                                    Image(
-                                        modifier = Modifier
-                                            .size(32.dp)
-                                            .clickable(onClick = onOpenPlayerList),
-                                        painter = painterResource(R.drawable.ic_play_circle_filled_white_24dp),
-                                        contentDescription = stringResource(R.string.desc_open_player_list)
-                                    )
-                                }
-                                Spacer(modifier = Modifier.width(10.dp))
-                                SettingsButton(
-                                    onClick = onVolumeUp,
-                                    imageVector = ImageVector.vectorResource(id = R.drawable.ic_volume_up_white_24dp),
-                                    contentDescription = stringResource(R.string.horologist_volume_screen_volume_up_content_description),
-                                    tapTargetSize = ButtonDefaults.ExtraSmallButtonSize
-                                )
-                            }
-                        }
-                    }
-                },
-                background = {
-                    playerState.artworkBitmap?.takeUnless { isAmbient }?.let {
-                        Image(
+                    },
+                    buttons = {
+                        SettingsButtonsLayout(
                             modifier = Modifier.fillMaxSize(),
-                            bitmap = it.asImageBitmap(),
-                            colorFilter = ColorFilter.tint(
-                                Color.Black.copy(alpha = 0.66f),
-                                BlendMode.SrcAtop
+                            isAmbient = isAmbient,
+                            leftButton = SettingsButtonData(
+                                onClick = onVolumeDown,
+                                imageVector = ImageVector.vectorResource(id = R.drawable.ic_baseline_volume_down_24),
+                                contentDescription = stringResource(R.string.horologist_volume_screen_volume_down_content_description)
                             ),
-                            contentDescription = stringResource(R.string.desc_artwork)
+                            brandImage = BrandImageData(
+                                bitmap = uiState.mediaPlayerDetails.bitmapIcon,
+                                onClick = onOpenPlayerList
+                            ),
+                            rightButton = SettingsButtonData(
+                                onClick = onVolumeUp,
+                                imageVector = ImageVector.vectorResource(id = R.drawable.ic_volume_up_white_24dp),
+                                contentDescription = stringResource(R.string.horologist_volume_screen_volume_up_content_description)
+                            )
+                        )
+                    },
+                    background = {
+                        ArtworkImageBackground(
+                            artwork = playerState.artworkBitmap?.takeUnless { isAmbient }
+                                ?.asPaintable()
                         )
                     }
-                }
-            )
+                )
 
-            VolumePositionIndicator(
-                volumeUiState = { volumeUiState },
-                displayIndicatorEvents = displayVolumeIndicatorEvents
-            )
-
-            LaunchedEffect(uiState, uiState.pagerState) {
-                if (uiState.pagerState.currentPageKey == MediaPageType.Player) {
-                    delay(500)
-                    focusRequester.requestFocus()
+                LaunchedEffect(uiState, uiState.pagerState) {
+                    if (uiState.pagerState.currentPageKey == MediaPageType.Player) {
+                        delay(500)
+                        focusRequester.requestFocus()
+                    }
                 }
             }
         }
+    }
+}
+
+private data class SettingsButtonData(
+    val imageVector: ImageVector,
+    val contentDescription: String,
+    val onClick: () -> Unit
+)
+
+private data class BrandImageData(
+    val imageVector: ImageVector? = null,
+    val painter: Painter? = null,
+    val bitmap: Bitmap? = null,
+    val onClick: () -> Unit
+)
+
+@Composable
+private fun SettingsButtonsLayout(
+    modifier: Modifier = Modifier,
+    isAmbient: Boolean,
+    leftButton: SettingsButtonData,
+    brandImage: BrandImageData,
+    rightButton: SettingsButtonData,
+) {
+    val isRound = LocalConfiguration.current.isScreenRound
+
+    if (isRound) {
+        RoundSettingsButtonsLayout(
+            modifier = modifier,
+            isAmbient = isAmbient,
+            leftButton = leftButton,
+            brandImage = brandImage,
+            rightButton = rightButton
+        )
+    } else {
+        SimpleSettingsButtonsLayout(
+            modifier = modifier,
+            isAmbient = isAmbient,
+            leftButton = leftButton,
+            brandImage = brandImage,
+            rightButton = rightButton
+        )
+    }
+}
+
+@Composable
+private fun SimpleSettingsButtonsLayout(
+    modifier: Modifier = Modifier,
+    isAmbient: Boolean,
+    leftButton: SettingsButtonData,
+    brandImage: BrandImageData,
+    rightButton: SettingsButtonData,
+) {
+    Box(
+        modifier = modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Spacer(modifier = Modifier.fillMaxWidth(0.11f))
+            SettingsButton(
+                modifier = Modifier.weight(1f),
+                onClick = leftButton.onClick,
+                imageVector = leftButton.imageVector,
+                contentDescription = leftButton.contentDescription,
+                iconSize = ButtonDefaults.ExtraSmallIconSize,
+                buttonColors = if (!isAmbient) {
+                    SettingsButtonDefaults.buttonColors()
+                } else {
+                    SettingsButtonDefaults.ambientButtonColors()
+                },
+                border = if (!isAmbient) {
+                    null
+                } else {
+                    SettingsButtonDefaults.ambientButtonBorder(true)
+                }
+            )
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxSize()
+                    .clickable(onClick = brandImage.onClick),
+                contentAlignment = Alignment.Center
+            ) {
+                BrandImage(brandImage)
+            }
+            SettingsButton(
+                modifier = Modifier.weight(1f),
+                onClick = rightButton.onClick,
+                imageVector = rightButton.imageVector,
+                contentDescription = rightButton.contentDescription,
+                iconSize = ButtonDefaults.ExtraSmallIconSize,
+                buttonColors = if (!isAmbient) {
+                    SettingsButtonDefaults.buttonColors()
+                } else {
+                    SettingsButtonDefaults.ambientButtonColors()
+                },
+                border = if (!isAmbient) {
+                    null
+                } else {
+                    SettingsButtonDefaults.ambientButtonBorder(true)
+                }
+            )
+            Spacer(modifier = Modifier.fillMaxWidth(0.11f))
+        }
+    }
+}
+
+@Composable
+private fun RoundSettingsButtonsLayout(
+    modifier: Modifier = Modifier,
+    isAmbient: Boolean,
+    leftButton: SettingsButtonData,
+    brandImage: BrandImageData,
+    rightButton: SettingsButtonData,
+) {
+    val screenHeightDp = LocalConfiguration.current.screenHeightDp
+    val isLargeWidth = LocalConfiguration.current.screenWidthDp >= 225
+    val horizontalSpacerFraction = if (isLargeWidth) 0.11f else 0.145f
+
+    BoxWithConstraints(
+        modifier = modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Row(
+            modifier = Modifier.padding(bottom = (maxHeight * 0.012f)),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Spacer(modifier = Modifier.fillMaxWidth(horizontalSpacerFraction))
+            if (isLargeWidth) {
+                SettingsButton(
+                    modifier = Modifier.weight(1f),
+                    alignment = Alignment.TopCenter,
+                    onClick = leftButton.onClick,
+                    imageVector = leftButton.imageVector,
+                    contentDescription = leftButton.contentDescription,
+                    iconSize = ButtonDefaults.ExtraSmallIconSize,
+                    buttonColors = if (!isAmbient) {
+                        SettingsButtonDefaults.buttonColors()
+                    } else {
+                        SettingsButtonDefaults.ambientButtonColors()
+                    },
+                    border = if (!isAmbient) {
+                        null
+                    } else {
+                        SettingsButtonDefaults.ambientButtonBorder(true)
+                    }
+                )
+            }
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxSize()
+                    .padding(
+                        bottom = if (isLargeWidth) {
+                            (screenHeightDp * 0.03f).dp
+                        } else {
+                            0.dp
+                        }
+                    )
+                    .clickable(
+                        onClick = brandImage.onClick,
+                        indication = null,
+                        interactionSource = null,
+                        role = Role.Button
+                    ),
+                contentAlignment = if (isLargeWidth) {
+                    Alignment.BottomCenter
+                } else {
+                    Alignment.TopCenter
+                }
+            ) {
+                BrandImage(brandImage)
+            }
+            SettingsButton(
+                modifier = Modifier.weight(1f),
+                alignment = Alignment.TopCenter,
+                onClick = rightButton.onClick,
+                imageVector = rightButton.imageVector,
+                contentDescription = rightButton.contentDescription,
+                iconSize = ButtonDefaults.ExtraSmallIconSize,
+                buttonColors = if (!isAmbient) {
+                    SettingsButtonDefaults.buttonColors()
+                } else {
+                    SettingsButtonDefaults.ambientButtonColors()
+                },
+                border = if (!isAmbient) {
+                    null
+                } else {
+                    SettingsButtonDefaults.ambientButtonBorder(true)
+                }
+            )
+            Spacer(modifier = Modifier.fillMaxWidth(horizontalSpacerFraction))
+        }
+    }
+}
+
+@Composable
+private fun BrandImage(data: BrandImageData) {
+    if (data.imageVector != null) {
+        Image(
+            modifier = Modifier.touchTargetAwareSize(IconButtonDefaults.LargeIconSize),
+            imageVector = data.imageVector,
+            contentDescription = stringResource(R.string.desc_open_player_list)
+        )
+    } else if (data.painter != null) {
+        Image(
+            modifier = Modifier.touchTargetAwareSize(IconButtonDefaults.LargeIconSize),
+            painter = data.painter,
+            contentDescription = stringResource(R.string.desc_open_player_list)
+        )
+    } else if (data.bitmap != null) {
+        Image(
+            modifier = Modifier.touchTargetAwareSize(IconButtonDefaults.LargeIconSize),
+            bitmap = data.bitmap.asImageBitmap(),
+            contentDescription = stringResource(R.string.desc_open_player_list)
+        )
+    } else {
+        Image(
+            modifier = Modifier.touchTargetAwareSize(IconButtonDefaults.LargeIconSize),
+            painter = painterResource(R.drawable.ic_play_circle_filled_white_24dp),
+            contentDescription = stringResource(R.string.desc_open_player_list)
+        )
     }
 }
 
@@ -675,29 +865,62 @@ private fun MediaCustomControlsPage(
         emptyContent = {},
         loading = uiState.isLoading
     ) {
-        val scrollState = rememberResponsiveColumnState(
-            contentPadding = ScalingLazyColumnDefaults.padding(
-                first = ScalingLazyColumnDefaults.ItemType.Chip,
-                last = ScalingLazyColumnDefaults.ItemType.Chip
-            )
+        val columnState = rememberTransformingLazyColumnState()
+        val contentPadding = rememberResponsiveColumnPadding(
+            first = ColumnItemType.ListHeader,
+            last = ColumnItemType.Button,
         )
+        val transformationSpec = rememberTransformationSpec()
 
-        Box(
-            modifier = Modifier.fillMaxSize()
-        ) {
-            TimeText(Modifier.scrollAway { scrollState })
-
-            ScalingLazyColumn(
-                scrollState = scrollState,
-                focusRequester = focusRequester
+        ScreenScaffold(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = contentPadding
+        ) { contentPadding ->
+            TransformingLazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .focusable()
+                    .focusRequester(focusRequester),
+                state = columnState,
+                contentPadding = contentPadding
             ) {
+                item {
+                    ListHeader(
+                        contentPadding = PaddingValues(
+                            start = ListHeaderDefaults.ContentPadding.calculateStartPadding(
+                                LocalLayoutDirection.current
+                            ),
+                            top = 0.dp,
+                            end = ListHeaderDefaults.ContentPadding.calculateEndPadding(
+                                LocalLayoutDirection.current
+                            ),
+                            bottom = ListHeaderDefaults.ContentPadding.calculateBottomPadding()
+                        )
+                    ) {
+                        TextMediaDisplay(
+                            title = uiState.playerState.title ?: "",
+                            subtitle = uiState.playerState.artist ?: "",
+                            titleIcon = uiState.mediaPlayerDetails.bitmapIcon?.asPaintable()
+                        )
+                    }
+                }
+
                 items(uiState.mediaCustomItems) { item ->
-                    Chip(
-                        label = item.title ?: "",
+                    FilledTonalButton(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .transformedHeight(this, transformationSpec),
+                        transformation = SurfaceTransformation(transformationSpec),
+                        label = {
+                            Text(text = item.title ?: "")
+                        },
+                        secondaryLabel = item.subTitle?.let {
+                            { Text(text = it) }
+                        },
                         icon = {
                             item.icon?.let { bmp ->
                                 Icon(
-                                    modifier = Modifier.size(ChipDefaults.IconSize),
+                                    modifier = Modifier.size(ButtonDefaults.IconSize),
                                     bitmap = bmp.asImageBitmap(),
                                     tint = Color.White,
                                     contentDescription = item.title
@@ -706,14 +929,13 @@ private fun MediaCustomControlsPage(
                         },
                         onClick = {
                             onItemClick(item)
-                        },
-                        colors = ChipDefaults.secondaryChipColors()
+                        }
                     )
                 }
             }
 
             LaunchedEffect(Unit) {
-                scrollState.state.scrollToItem(0)
+                columnState.scrollToItem(0)
             }
 
             LaunchedEffect(uiState, uiState.pagerState) {
@@ -751,48 +973,78 @@ private fun MediaBrowserPage(
     focusRequester: FocusRequester = rememberFocusRequester(),
     onItemClick: (MediaItemModel) -> Unit = {}
 ) {
-    LoadingContent(
-        empty = false,
-        emptyContent = {},
-        loading = uiState.isLoading
-    ) {
-        val scrollState = rememberResponsiveColumnState(
-            contentPadding = ScalingLazyColumnDefaults.padding(
-                first = ScalingLazyColumnDefaults.ItemType.Chip,
-                last = ScalingLazyColumnDefaults.ItemType.Chip
-            )
-        )
+    val columnState = rememberTransformingLazyColumnState()
+    val contentPadding = rememberResponsiveColumnPadding(
+        first = ColumnItemType.ListHeader,
+        last = ColumnItemType.Button,
+    )
+    val transformationSpec = rememberTransformationSpec()
 
-        Box(
-            modifier = Modifier.fillMaxSize()
+    ScreenScaffold(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = contentPadding
+    ) { contentPadding ->
+        LoadingContent(
+            empty = false,
+            emptyContent = {},
+            loading = uiState.isLoading
         ) {
-            TimeText(Modifier.scrollAway { scrollState })
-
-            ScalingLazyColumn(
-                scrollState = scrollState,
-                focusRequester = focusRequester
+            TransformingLazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                state = columnState,
+                contentPadding = contentPadding
             ) {
+                item {
+                    ListHeader(
+                        contentPadding = PaddingValues(
+                            start = ListHeaderDefaults.ContentPadding.calculateStartPadding(
+                                LocalLayoutDirection.current
+                            ),
+                            top = 0.dp,
+                            end = ListHeaderDefaults.ContentPadding.calculateEndPadding(
+                                LocalLayoutDirection.current
+                            ),
+                            bottom = ListHeaderDefaults.ContentPadding.calculateBottomPadding()
+                        )
+                    ) {
+                        TextMediaDisplay(
+                            title = uiState.playerState.title ?: "",
+                            subtitle = uiState.playerState.artist ?: "",
+                            titleIcon = uiState.mediaPlayerDetails.bitmapIcon?.asPaintable()
+                        )
+                    }
+                }
+
                 items(uiState.mediaBrowserItems) { item ->
-                    Chip(
-                        label = if (item.id == MediaHelper.ACTIONITEM_BACK) {
-                            stringResource(id = R.string.label_back)
-                        } else {
-                            item.title ?: ""
+                    FilledTonalButton(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .transformedHeight(this, transformationSpec),
+                        transformation = SurfaceTransformation(transformationSpec),
+                        label = {
+                            Text(
+                                text = if (item.id == MediaHelper.ACTIONITEM_BACK) {
+                                    stringResource(id = R.string.label_back)
+                                } else {
+                                    item.title ?: ""
+                                }
+                            )
+                        },
+                        secondaryLabel = item.takeIf { it.id != MediaHelper.ACTIONITEM_BACK }?.subTitle?.let {
+                            { Text(text = it) }
                         },
                         icon = {
                             if (item.id == MediaHelper.ACTIONITEM_BACK) {
                                 Icon(
-                                    modifier = Modifier.size(ChipDefaults.IconSize),
+                                    modifier = Modifier.size(ButtonDefaults.IconSize),
                                     painter = painterResource(id = R.drawable.ic_baseline_arrow_back_24),
-                                    tint = Color.White,
                                     contentDescription = stringResource(id = R.string.label_back)
                                 )
                             } else {
                                 item.icon?.let { bmp ->
                                     Icon(
-                                        modifier = Modifier.size(ChipDefaults.IconSize),
+                                        modifier = Modifier.size(ButtonDefaults.IconSize),
                                         bitmap = bmp.asImageBitmap(),
-                                        tint = Color.White,
                                         contentDescription = item.title
                                     )
                                 }
@@ -800,14 +1052,13 @@ private fun MediaBrowserPage(
                         },
                         onClick = {
                             onItemClick(item)
-                        },
-                        colors = ChipDefaults.secondaryChipColors()
+                        }
                     )
                 }
             }
 
             LaunchedEffect(Unit) {
-                scrollState.state.scrollToItem(0)
+                columnState.scrollToItem(0)
             }
 
             LaunchedEffect(uiState, uiState.pagerState) {
@@ -845,65 +1096,109 @@ private fun MediaQueuePage(
     focusRequester: FocusRequester = rememberFocusRequester(),
     onItemClick: (MediaItemModel) -> Unit = {}
 ) {
-    val lifecycleOwner = LocalLifecycleOwner.current
+    val context = LocalContext.current
+    val activeQueueItemIndex = remember(uiState.activeQueueItemId, uiState.mediaQueueItems) {
+        (uiState.activeQueueItemId.takeIf { it > -1L }?.let { activeId ->
+            uiState.mediaQueueItems.indexOfFirst { it.id.toLong() == activeId }.takeIf { it > 0 }
+        } ?: 0) + 1
+    }
 
-    LoadingContent(
-        empty = false,
-        emptyContent = {},
-        loading = uiState.isLoading
-    ) {
-        val scrollState = rememberResponsiveColumnState(
-            contentPadding = ScalingLazyColumnDefaults.padding(
-                first = ScalingLazyColumnDefaults.ItemType.Chip,
-                last = ScalingLazyColumnDefaults.ItemType.Chip
-            )
-        )
+    val columnState = rememberTransformingLazyColumnState(
+        initialAnchorItemIndex = 1
+    )
+    val contentPadding = rememberResponsiveColumnPadding(
+        first = ColumnItemType.ListHeader,
+        last = ColumnItemType.Button,
+    )
+    val transformationSpec = rememberTransformationSpec()
 
-        Box(
-            modifier = Modifier.fillMaxSize()
+    ScreenScaffold(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = contentPadding
+    ) { contentPadding ->
+        LoadingContent(
+            empty = false,
+            emptyContent = {},
+            loading = uiState.isLoading
         ) {
-            TimeText(Modifier.scrollAway { scrollState })
-
-            ScalingLazyColumn(
-                scrollState = scrollState,
-                focusRequester = focusRequester
+            TransformingLazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                state = columnState,
+                contentPadding = contentPadding
             ) {
+                item {
+                    ListHeader(
+                        contentPadding = PaddingValues(
+                            start = ListHeaderDefaults.ContentPadding.calculateStartPadding(
+                                LocalLayoutDirection.current
+                            ),
+                            top = 0.dp,
+                            end = ListHeaderDefaults.ContentPadding.calculateEndPadding(
+                                LocalLayoutDirection.current
+                            ),
+                            bottom = ListHeaderDefaults.ContentPadding.calculateBottomPadding()
+                        )
+                    ) {
+                        TextMediaDisplay(
+                            title = uiState.playerState.title ?: "",
+                            subtitle = uiState.playerState.artist ?: "",
+                            titleIcon = uiState.mediaPlayerDetails.bitmapIcon?.asPaintable()
+                        )
+                    }
+                }
+
                 items(uiState.mediaQueueItems) { item ->
-                    Chip(
-                        label = item.title ?: "",
-                        icon = {
-                            item.icon?.let { bmp ->
-                                Icon(
-                                    modifier = Modifier.size(ChipDefaults.IconSize),
+                    Button(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .transformedHeight(this, transformationSpec),
+                        transformation = SurfaceTransformation(transformationSpec),
+                        label = {
+                            Text(text = item.title ?: "")
+                        },
+                        secondaryLabel = item.subTitle?.let {
+                            { Text(text = it) }
+                        },
+                        icon = item.icon?.let { bmp ->
+                            {
+                                Image(
+                                    modifier = Modifier
+                                        .size(ButtonDefaults.IconSize)
+                                        .clip(RoundedCornerShape(4.dp)),
                                     bitmap = bmp.asImageBitmap(),
-                                    contentDescription = item.title,
-                                    tint = Color.Unspecified
+                                    contentDescription = item.title
                                 )
+                            }
+                        } ?: run {
+                            if (item.id.toLong() == uiState.activeQueueItemId) {
+                                {
+                                    Icon(
+                                        modifier = Modifier.size(ButtonDefaults.IconSize),
+                                        painter = painterResource(id = R.drawable.rounded_equalizer_24),
+                                        contentDescription = item.title
+                                    )
+                                }
+                            } else {
+                                null
                             }
                         },
                         onClick = {
                             onItemClick(item)
-                            lifecycleOwner.lifecycleScope.launch {
-                                delay(1000)
-                                scrollState.state.scrollToItem(0)
-                            }
                         },
                         colors = if (item.id.toLong() == uiState.activeQueueItemId) {
-                            ChipDefaults.gradientBackgroundChipColors()
+                            ButtonDefaults.filledVariantButtonColors()
                         } else {
-                            ChipDefaults.secondaryChipColors()
+                            ButtonDefaults.filledTonalButtonColors()
                         }
                     )
                 }
             }
 
-            LaunchedEffect(Unit) {
-                if (uiState.activeQueueItemId != -1L) {
-                    uiState.mediaQueueItems.indexOfFirst {
-                        it.id.toLong() == uiState.activeQueueItemId
-                    }.takeIf { it > 0 }?.run {
-                        scrollState.state.scrollToItem(this)
-                    }
+            LaunchedEffect(uiState.activeQueueItemId, uiState.mediaQueueItems) {
+                delay(500)
+
+                if (isActive && !columnState.isScrollInProgress) {
+                    columnState.animateScrollToItem(activeQueueItemIndex)
                 }
             }
 
@@ -998,16 +1293,65 @@ private fun PreviewCustomControls() {
     val uiState = remember {
         MediaPlayerUiState(
             isPlayerAvailable = true,
+            playerState = PlayerState(
+                playbackState = PlaybackState.PLAYING,
+                title = "Title",
+                artist = "Artist",
+                artworkBitmap = ContextCompat.getDrawable(context, R.drawable.sample_image)!!
+                    .toBitmap()
+            ),
+            mediaPlayerDetails = AppItemViewModel().apply {
+                activityName = "Media Player"
+                bitmapIcon =
+                    ContextCompat.getDrawable(context, R.mipmap.ic_launcher_round)!!.toBitmap()
+            },
             mediaCustomItems = List(5) {
                 MediaItemModel(it.toString()).apply {
                     title = "Item ${it + 1}"
                     icon = ContextCompat.getDrawable(context, R.drawable.ic_icon)!!.toBitmap()
                 }
-            }
+            },
+            activeQueueItemId = 0
         )
     }
 
     MediaCustomControlsPage(
+        uiState = uiState
+    )
+}
+
+@WearPreviewDevices
+@WearPreviewFontScales
+@Composable
+private fun PreviewMediaQueue() {
+    val context = LocalContext.current
+
+    val uiState = remember {
+        MediaPlayerUiState(
+            isPlayerAvailable = true,
+            playerState = PlayerState(
+                playbackState = PlaybackState.PLAYING,
+                title = "Title",
+                artist = "Artist",
+                artworkBitmap = ContextCompat.getDrawable(context, R.drawable.sample_image)!!
+                    .toBitmap()
+            ),
+            mediaPlayerDetails = AppItemViewModel().apply {
+                activityName = "Media Player"
+                bitmapIcon =
+                    ContextCompat.getDrawable(context, R.mipmap.ic_launcher_round)!!.toBitmap()
+            },
+            mediaQueueItems = List(5) {
+                MediaItemModel(it.toString()).apply {
+                    title = "Item ${it + 1}"
+                    icon = ContextCompat.getDrawable(context, R.drawable.sample_image)!!.toBitmap()
+                }
+            },
+            activeQueueItemId = 0
+        )
+    }
+
+    MediaQueuePage(
         uiState = uiState
     )
 }
