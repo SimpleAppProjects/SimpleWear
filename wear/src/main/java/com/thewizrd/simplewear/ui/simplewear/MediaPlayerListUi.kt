@@ -38,18 +38,20 @@ import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
 import androidx.wear.compose.foundation.lazy.items
 import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
 import androidx.wear.compose.foundation.pager.rememberPagerState
+import androidx.wear.compose.material3.AlertDialogContent
 import androidx.wear.compose.material3.AnimatedPage
 import androidx.wear.compose.material3.Button
 import androidx.wear.compose.material3.ButtonDefaults
+import androidx.wear.compose.material3.CheckboxButton
 import androidx.wear.compose.material3.CompactButton
 import androidx.wear.compose.material3.Dialog
+import androidx.wear.compose.material3.EdgeButton
 import androidx.wear.compose.material3.FilledTonalButton
 import androidx.wear.compose.material3.Icon
 import androidx.wear.compose.material3.ListHeader
 import androidx.wear.compose.material3.ScreenScaffold
 import androidx.wear.compose.material3.SurfaceTransformation
 import androidx.wear.compose.material3.Text
-import androidx.wear.compose.material3.TextToggleButton
 import androidx.wear.compose.material3.lazy.rememberTransformationSpec
 import androidx.wear.compose.material3.lazy.transformedHeight
 import androidx.wear.compose.ui.tooling.preview.WearPreviewFontScales
@@ -267,6 +269,7 @@ private fun MediaPlayerListScreen(
 
     ScreenScaffold(
         modifier = Modifier.fillMaxSize(),
+        scrollState = columnState,
         contentPadding = contentPadding
     ) { contentPadding ->
         LoadingContent(
@@ -459,35 +462,30 @@ private fun MediaPlayerFilterScreen(
     onSelectedItemsChanged: (Set<String>) -> Unit = {},
     onDismissRequest: () -> Unit = {}
 ) {
-    val columnState = rememberTransformingLazyColumnState()
-    val contentPadding = rememberResponsiveColumnPadding(
-        first = ColumnItemType.ListHeader,
-        last = ColumnItemType.Button,
-    )
-    val transformationSpec = rememberTransformationSpec()
-
-    TransformingLazyColumn(
-        state = columnState,
-        contentPadding = contentPadding
-    ) {
-        item {
-            ListHeader(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .transformedHeight(this, transformationSpec),
-                transformation = SurfaceTransformation(transformationSpec)
-            ) {
-                Text(text = stringResource(id = R.string.title_filter_apps))
-            }
+    AlertDialogContent(
+        modifier = Modifier.fillMaxSize(),
+        title = {
+            Text(text = stringResource(id = R.string.title_filter_apps))
+        },
+        edgeButton = {
+            EdgeButton(
+                content = {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_check_white_24dp),
+                        contentDescription = stringResource(id = android.R.string.ok)
+                    )
+                },
+                onClick = {
+                    onDismissRequest.invoke()
+                }
+            )
         }
-
+    ) {
         items(uiState.allMediaAppsSet.toList()) {
             val isChecked = selectedItems.contains(it.packageName!!)
 
-            TextToggleButton(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .transformedHeight(this, transformationSpec),
+            CheckboxButton(
+                modifier = Modifier.fillMaxWidth(),
                 checked = isChecked,
                 onCheckedChange = { checked ->
                     onSelectedItemsChanged.invoke(
@@ -498,7 +496,7 @@ private fun MediaPlayerFilterScreen(
                         }
                     )
                 },
-                content = {
+                label = {
                     Text(
                         text = it.appLabel!!
                     )
@@ -512,10 +510,7 @@ private fun MediaPlayerFilterScreen(
 
         item {
             FilledTonalButton(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .transformedHeight(this, transformationSpec),
-                transformation = SurfaceTransformation(transformationSpec),
+                modifier = Modifier.fillMaxWidth(),
                 label = {
                     Text(text = stringResource(id = R.string.clear_all))
                 },
@@ -527,27 +522,6 @@ private fun MediaPlayerFilterScreen(
                 },
                 onClick = {
                     onSelectedItemsChanged.invoke(emptySet())
-                }
-            )
-        }
-
-        item {
-            Button(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .transformedHeight(this, transformationSpec),
-                transformation = SurfaceTransformation(transformationSpec),
-                label = {
-                    Text(text = stringResource(id = android.R.string.ok))
-                },
-                icon = {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_check_white_24dp),
-                        contentDescription = stringResource(id = android.R.string.ok)
-                    )
-                },
-                onClick = {
-                    onDismissRequest.invoke()
                 }
             )
         }
