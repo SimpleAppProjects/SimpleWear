@@ -55,6 +55,7 @@ import androidx.wear.compose.material3.ListHeader
 import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.material3.ScreenScaffold
 import androidx.wear.compose.material3.Text
+import androidx.wear.compose.ui.tooling.preview.WearPreviewFontScales
 import com.google.android.horologist.compose.layout.ColumnItemType
 import com.google.android.horologist.compose.layout.rememberResponsiveColumnPadding
 import com.thewizrd.shared_resources.actions.Actions
@@ -66,6 +67,7 @@ import com.thewizrd.simplewear.preferences.DashboardTileUtils.isActionAllowed
 import com.thewizrd.simplewear.preferences.Settings
 import com.thewizrd.simplewear.ui.compose.LazyGridScrollIndicator
 import com.thewizrd.simplewear.ui.compose.LazyGridScrollInfoProvider
+import com.thewizrd.simplewear.ui.tools.WearPreviewDevices
 import com.thewizrd.simplewear.ui.utils.ReorderHapticFeedbackType
 import com.thewizrd.simplewear.ui.utils.rememberFocusRequester
 import com.thewizrd.simplewear.ui.utils.rememberReorderHapticFeedback
@@ -127,6 +129,7 @@ private fun DashboardTileConfigUi(
     lazyGridState: LazyGridState = rememberLazyGridState(),
     focusRequester: FocusRequester = rememberFocusRequester(),
     tileConfig: List<Actions> = DEFAULT_TILES,
+    initialTileBatteryStatusShown: Boolean = Settings.isShowTileBatStatus(),
     onSaveItems: (actions: List<Actions>, showBatteryStatus: Boolean) -> Unit = { _, _ -> }
 ) {
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -140,7 +143,7 @@ private fun DashboardTileConfigUi(
     val selectionList =
         remember { MutableList(DashboardTileUtils.MAX_BUTTONS) { false }.toMutableStateList() }
 
-    var isBatteryVisible by remember { mutableStateOf(Settings.isShowTileBatStatus()) }
+    var isBatteryVisible by remember { mutableStateOf(initialTileBatteryStatusShown) }
     var batterySelected by remember { mutableStateOf(false) }
 
     val reorderableGridState = rememberReorderableLazyGridState(
@@ -497,4 +500,13 @@ private fun addAddButtonIfNeeded(userTileConfigList: MutableList<Any>) {
     if (userTileConfigList.size < DashboardTileUtils.MAX_BUTTONS && !userTileConfigList.contains("")) {
         userTileConfigList.add("")
     }
+}
+
+@WearPreviewDevices
+@WearPreviewFontScales
+@Composable
+private fun PreviewDashboardTileConfigUi() {
+    DashboardTileConfigUi(
+        initialTileBatteryStatusShown = true
+    )
 }
