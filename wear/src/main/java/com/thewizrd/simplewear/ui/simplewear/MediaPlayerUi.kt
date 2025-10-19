@@ -108,6 +108,7 @@ import com.thewizrd.shared_resources.actions.AudioStreamType
 import com.thewizrd.shared_resources.helpers.MediaHelper
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
 import com.thewizrd.shared_resources.media.PlaybackState
+import com.thewizrd.shared_resources.utils.JSONParser
 import com.thewizrd.simplewear.PhoneSyncActivity
 import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.controls.AppItemViewModel
@@ -129,6 +130,7 @@ import com.thewizrd.simplewear.ui.navigation.Screen
 import com.thewizrd.simplewear.ui.theme.findActivity
 import com.thewizrd.simplewear.ui.tools.WearPreviewDevices
 import com.thewizrd.simplewear.ui.utils.rememberFocusRequester
+import com.thewizrd.simplewear.viewmodels.ConfirmationData
 import com.thewizrd.simplewear.viewmodels.ConfirmationViewModel
 import com.thewizrd.simplewear.viewmodels.WearableListenerViewModel
 import kotlinx.coroutines.delay
@@ -293,7 +295,7 @@ fun MediaPlayerUi(
 
                             WearConnectionStatus.APPNOTINSTALLED -> {
                                 // Open store on remote device
-                                mediaPlayerViewModel.openPlayStore(activity)
+                                mediaPlayerViewModel.openPlayStore()
 
                                 // Navigate
                                 activity.startActivity(
@@ -321,7 +323,7 @@ fun MediaPlayerUi(
                                 )
                             )
 
-                            mediaPlayerViewModel.openAppOnPhone(activity, false)
+                            mediaPlayerViewModel.openAppOnPhone(false)
                         }
                     }
 
@@ -331,6 +333,15 @@ fun MediaPlayerUi(
 
                         if (actionStatus == ActionStatus.TIMEOUT) {
                             confirmationViewModel.showFailure(message = context.getString(R.string.error_playback_failed))
+                        }
+                    }
+
+                    WearableListenerViewModel.ACTION_SHOWCONFIRMATION -> {
+                        val jsonData =
+                            event.data.getString(WearableListenerViewModel.EXTRA_ACTIONDATA)
+
+                        JSONParser.deserializer(jsonData, ConfirmationData::class.java)?.let {
+                            confirmationViewModel.showConfirmation(it)
                         }
                     }
                 }

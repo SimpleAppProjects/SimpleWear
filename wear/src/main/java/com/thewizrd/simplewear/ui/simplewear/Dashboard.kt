@@ -311,7 +311,7 @@ fun Dashboard(
                             WearConnectionStatus.CONNECTING -> {}
                             WearConnectionStatus.APPNOTINSTALLED -> {
                                 // Open store on remote device
-                                dashboardViewModel.openPlayStore(activity)
+                                dashboardViewModel.openPlayStore()
 
                                 // Navigate
                                 activity.startActivity(
@@ -375,7 +375,7 @@ fun Dashboard(
                                         )
                                     }
 
-                                    dashboardViewModel.openAppOnPhone(activity, false)
+                                    dashboardViewModel.openAppOnPhone(false)
                                 }
 
                                 ActionStatus.TIMEOUT -> {
@@ -388,7 +388,7 @@ fun Dashboard(
 
                                 ActionStatus.REMOTE_PERMISSION_DENIED -> {
                                     confirmationViewModel.showFailure(message = context.getString(R.string.error_permissiondenied))
-                                    dashboardViewModel.openAppOnPhone(activity, false)
+                                    dashboardViewModel.openAppOnPhone(false)
                                 }
 
                                 ActionStatus.SUCCESS -> {
@@ -441,7 +441,7 @@ fun Dashboard(
                     phoneVersionCode?.let {
                         showAppUpdateConfirmation = !WearableHelper.isAppUpToDate(it)
                         if (showAppUpdateConfirmation) {
-                            dashboardViewModel.openPlayStore(activity, false)
+                            dashboardViewModel.openPlayStore(false)
                         }
                     }
                 }

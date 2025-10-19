@@ -138,7 +138,7 @@ fun AppLauncherScreen(
 
                             WearConnectionStatus.APPNOTINSTALLED -> {
                                 // Open store on remote device
-                                appLauncherViewModel.openPlayStore(activity)
+                                appLauncherViewModel.openPlayStore()
 
                                 // Navigate
                                 activity.startActivity(
@@ -167,7 +167,7 @@ fun AppLauncherScreen(
                             ActionStatus.PERMISSION_DENIED -> {
                                 confirmationViewModel.showFailure(message = context.getString(R.string.error_permissiondenied))
 
-                                appLauncherViewModel.openAppOnPhone(activity, false)
+                                appLauncherViewModel.openAppOnPhone(false)
                             }
 
                             ActionStatus.FAILURE -> {

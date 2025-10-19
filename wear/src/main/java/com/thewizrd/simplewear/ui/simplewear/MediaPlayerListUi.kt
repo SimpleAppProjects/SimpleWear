@@ -59,6 +59,7 @@ import com.google.android.horologist.compose.layout.rememberResponsiveColumnPadd
 import com.thewizrd.shared_resources.actions.ActionStatus
 import com.thewizrd.shared_resources.helpers.MediaHelper
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
+import com.thewizrd.shared_resources.utils.JSONParser
 import com.thewizrd.simplewear.PhoneSyncActivity
 import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.controls.AppItemViewModel
@@ -68,6 +69,7 @@ import com.thewizrd.simplewear.ui.components.LoadingContent
 import com.thewizrd.simplewear.ui.navigation.Screen
 import com.thewizrd.simplewear.ui.theme.findActivity
 import com.thewizrd.simplewear.ui.tools.WearPreviewDevices
+import com.thewizrd.simplewear.viewmodels.ConfirmationData
 import com.thewizrd.simplewear.viewmodels.ConfirmationViewModel
 import com.thewizrd.simplewear.viewmodels.MediaPlayerListUiState
 import com.thewizrd.simplewear.viewmodels.MediaPlayerListViewModel
@@ -149,7 +151,7 @@ fun MediaPlayerListUi(
 
                             WearConnectionStatus.APPNOTINSTALLED -> {
                                 // Open store on remote device
-                                mediaPlayerListViewModel.openPlayStore(activity)
+                                mediaPlayerListViewModel.openPlayStore()
 
                                 // Navigate
                                 activity.startActivity(
@@ -176,10 +178,7 @@ fun MediaPlayerListUi(
                                 )
                             )
 
-                            mediaPlayerListViewModel.openAppOnPhone(
-                                activity,
-                                false
-                            )
+                            mediaPlayerListViewModel.openAppOnPhone(false)
                         }
                     }
 
@@ -195,6 +194,15 @@ fun MediaPlayerListUi(
                                     .setPopUpTo(Screen.MediaPlayer.route, true)
                                     .build()
                             )
+                        }
+                    }
+
+                    WearableListenerViewModel.ACTION_SHOWCONFIRMATION -> {
+                        val jsonData =
+                            event.data.getString(WearableListenerViewModel.EXTRA_ACTIONDATA)
+
+                        JSONParser.deserializer(jsonData, ConfirmationData::class.java)?.let {
+                            confirmationViewModel.showConfirmation(it)
                         }
                     }
                 }

@@ -71,6 +71,7 @@ import com.thewizrd.shared_resources.actions.TimedAction
 import com.thewizrd.shared_resources.actions.ToggleAction
 import com.thewizrd.shared_resources.controls.ActionButtonViewModel
 import com.thewizrd.shared_resources.helpers.WearableHelper
+import com.thewizrd.shared_resources.utils.JSONParser
 import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.ui.components.ConfirmationOverlay
 import com.thewizrd.simplewear.ui.components.LoadingContent
@@ -79,8 +80,10 @@ import com.thewizrd.simplewear.ui.theme.WearAppTheme
 import com.thewizrd.simplewear.ui.theme.activityViewModel
 import com.thewizrd.simplewear.ui.theme.findActivity
 import com.thewizrd.simplewear.ui.tools.WearPreviewDevices
+import com.thewizrd.simplewear.viewmodels.ConfirmationData
 import com.thewizrd.simplewear.viewmodels.ConfirmationViewModel
 import com.thewizrd.simplewear.viewmodels.TimedActionUiViewModel
+import com.thewizrd.simplewear.viewmodels.WearableListenerViewModel
 import com.thewizrd.simplewear.viewmodels.WearableListenerViewModel.Companion.EXTRA_STATUS
 import kotlinx.coroutines.launch
 import java.time.Instant
@@ -164,10 +167,7 @@ fun TimedActionUi(
                                     )
                                 )
 
-                                timedActionUiViewModel.openAppOnPhone(
-                                    activity,
-                                    showAnimation = false
-                                )
+                                timedActionUiViewModel.openAppOnPhone(showAnimation = false)
                             }
 
                             else -> {
@@ -175,6 +175,15 @@ fun TimedActionUi(
                                     message = context.getString(R.string.error_actionfailed)
                                 )
                             }
+                        }
+                    }
+
+                    WearableListenerViewModel.ACTION_SHOWCONFIRMATION -> {
+                        val jsonData =
+                            event.data.getString(WearableListenerViewModel.EXTRA_ACTIONDATA)
+
+                        JSONParser.deserializer(jsonData, ConfirmationData::class.java)?.let {
+                            confirmationViewModel.showConfirmation(it)
                         }
                     }
                 }
@@ -442,10 +451,7 @@ fun TimedActionDetailUi(
                                     )
                                 )
 
-                                timedActionUiViewModel.openAppOnPhone(
-                                    activity,
-                                    showAnimation = false
-                                )
+                                timedActionUiViewModel.openAppOnPhone(showAnimation = false)
                             }
 
                             else -> {
@@ -453,6 +459,15 @@ fun TimedActionDetailUi(
                                     message = context.getString(R.string.error_actionfailed)
                                 )
                             }
+                        }
+                    }
+
+                    WearableListenerViewModel.ACTION_SHOWCONFIRMATION -> {
+                        val jsonData =
+                            event.data.getString(WearableListenerViewModel.EXTRA_ACTIONDATA)
+
+                        JSONParser.deserializer(jsonData, ConfirmationData::class.java)?.let {
+                            confirmationViewModel.showConfirmation(it)
                         }
                     }
                 }

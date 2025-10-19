@@ -5,6 +5,7 @@ import android.app.Activity
 import android.bluetooth.BluetoothAdapter
 import android.content.Intent
 import android.os.Build
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
@@ -40,6 +41,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.PermissionChecker
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.wear.compose.material3.AppScaffold
 import androidx.wear.compose.material3.ArcProgressIndicator
 import androidx.wear.compose.material3.ArcProgressIndicatorDefaults
@@ -55,13 +57,19 @@ import androidx.wear.compose.material3.Text
 import androidx.wear.compose.ui.tooling.preview.WearPreviewFontScales
 import com.google.accompanist.drawablepainter.rememberDrawablePainter
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
+import com.thewizrd.shared_resources.utils.JSONParser
 import com.thewizrd.simplewear.R
+import com.thewizrd.simplewear.ui.components.ConfirmationOverlay
 import com.thewizrd.simplewear.ui.theme.WearAppTheme
 import com.thewizrd.simplewear.ui.theme.activityViewModel
 import com.thewizrd.simplewear.ui.theme.findActivity
 import com.thewizrd.simplewear.ui.tools.WearPreviewDevices
+import com.thewizrd.simplewear.utils.ErrorMessage
+import com.thewizrd.simplewear.viewmodels.ConfirmationData
+import com.thewizrd.simplewear.viewmodels.ConfirmationViewModel
 import com.thewizrd.simplewear.viewmodels.PhoneSyncUiState
 import com.thewizrd.simplewear.viewmodels.PhoneSyncViewModel
+import com.thewizrd.simplewear.viewmodels.WearableListenerViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -92,6 +100,9 @@ private fun PhoneSyncUi(
     val lifecycleOwner = LocalLifecycleOwner.current
 
     val uiState by phoneSyncViewModel.uiState.collectAsState()
+
+    val confirmationViewModel = viewModel<ConfirmationViewModel>()
+    val confirmationData by confirmationViewModel.confirmationEventsFlow.collectAsState()
 
     val bluetoothRequestLauncher =
         rememberLauncherForActivityResult(contract = ActivityResultContracts.StartActivityForResult()) {
@@ -146,7 +157,7 @@ private fun PhoneSyncUi(
 
                 WearConnectionStatus.APPNOTINSTALLED -> {
                     lifecycleOwner.lifecycleScope.launch {
-                        phoneSyncViewModel.openPlayStore(activity)
+                        phoneSyncViewModel.openPlayStore()
                     }
                 }
 
@@ -154,6 +165,42 @@ private fun PhoneSyncUi(
             }
         }
     )
+
+    ConfirmationOverlay(
+        confirmationData = confirmationData,
+        onTimeout = { confirmationViewModel.clearFlow() },
+    )
+
+    LaunchedEffect(lifecycleOwner) {
+        lifecycleOwner.lifecycleScope.launch {
+            phoneSyncViewModel.eventFlow.collect { event ->
+                when (event.eventType) {
+                    WearableListenerViewModel.ACTION_SHOWCONFIRMATION -> {
+                        val jsonData =
+                            event.data.getString(WearableListenerViewModel.EXTRA_ACTIONDATA)
+
+                        JSONParser.deserializer(jsonData, ConfirmationData::class.java)?.let {
+                            confirmationViewModel.showConfirmation(it)
+                        }
+                    }
+                }
+            }
+        }
+
+        lifecycleOwner.lifecycleScope.launch {
+            phoneSyncViewModel.errorMessagesFlow.collect { error ->
+                when (error) {
+                    is ErrorMessage.String -> {
+                        Toast.makeText(context, error.message, Toast.LENGTH_SHORT).show()
+                    }
+
+                    is ErrorMessage.Resource -> {
+                        Toast.makeText(context, error.stringId, Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+        }
+    }
 }
 
 @Composable

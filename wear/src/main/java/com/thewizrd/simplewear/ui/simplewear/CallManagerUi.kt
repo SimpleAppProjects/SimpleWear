@@ -71,6 +71,7 @@ import com.thewizrd.shared_resources.actions.Actions
 import com.thewizrd.shared_resources.actions.AudioStreamType
 import com.thewizrd.shared_resources.helpers.InCallUIHelper
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
+import com.thewizrd.shared_resources.utils.JSONParser
 import com.thewizrd.simplewear.PhoneSyncActivity
 import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.ui.components.ConfirmationOverlay
@@ -81,6 +82,7 @@ import com.thewizrd.simplewear.ui.theme.findActivity
 import com.thewizrd.simplewear.ui.tools.WearPreviewDevices
 import com.thewizrd.simplewear.viewmodels.CallManagerUiState
 import com.thewizrd.simplewear.viewmodels.CallManagerViewModel
+import com.thewizrd.simplewear.viewmodels.ConfirmationData
 import com.thewizrd.simplewear.viewmodels.ConfirmationViewModel
 import com.thewizrd.simplewear.viewmodels.WearableListenerViewModel
 import kotlinx.coroutines.launch
@@ -149,7 +151,7 @@ fun CallManagerUi(
 
                             WearConnectionStatus.APPNOTINSTALLED -> {
                                 // Open store on remote device
-                                callManagerViewModel.openPlayStore(activity)
+                                callManagerViewModel.openPlayStore()
 
                                 // Navigate
                                 activity.startActivity(
@@ -176,7 +178,16 @@ fun CallManagerUi(
                                 )
                             )
 
-                            callManagerViewModel.openAppOnPhone(activity, false)
+                            callManagerViewModel.openAppOnPhone(false)
+                        }
+                    }
+
+                    WearableListenerViewModel.ACTION_SHOWCONFIRMATION -> {
+                        val jsonData =
+                            event.data.getString(WearableListenerViewModel.EXTRA_ACTIONDATA)
+
+                        JSONParser.deserializer(jsonData, ConfirmationData::class.java)?.let {
+                            confirmationViewModel.showConfirmation(it)
                         }
                     }
                 }

@@ -66,6 +66,7 @@ import com.thewizrd.shared_resources.actions.ActionStatus
 import com.thewizrd.shared_resources.actions.GestureActionState
 import com.thewizrd.shared_resources.helpers.GestureUIHelper
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
+import com.thewizrd.shared_resources.utils.JSONParser
 import com.thewizrd.simplewear.PhoneSyncActivity
 import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.ui.components.ConfirmationOverlay
@@ -75,6 +76,7 @@ import com.thewizrd.simplewear.ui.theme.activityViewModel
 import com.thewizrd.simplewear.ui.theme.findActivity
 import com.thewizrd.simplewear.ui.tools.WearPreviewDevices
 import com.thewizrd.simplewear.ui.utils.rememberFocusRequester
+import com.thewizrd.simplewear.viewmodels.ConfirmationData
 import com.thewizrd.simplewear.viewmodels.ConfirmationViewModel
 import com.thewizrd.simplewear.viewmodels.GestureUiState
 import com.thewizrd.simplewear.viewmodels.GestureUiViewModel
@@ -210,7 +212,7 @@ fun GesturesUi(
 
                             WearConnectionStatus.APPNOTINSTALLED -> {
                                 // Open store on remote device
-                                gestureUiViewModel.openPlayStore(activity)
+                                gestureUiViewModel.openPlayStore()
 
                                 // Navigate
                                 activity.startActivity(
@@ -237,7 +239,16 @@ fun GesturesUi(
                                 )
                             )
 
-                            gestureUiViewModel.openAppOnPhone(activity, false)
+                            gestureUiViewModel.openAppOnPhone(false)
+                        }
+                    }
+
+                    WearableListenerViewModel.ACTION_SHOWCONFIRMATION -> {
+                        val jsonData =
+                            event.data.getString(WearableListenerViewModel.EXTRA_ACTIONDATA)
+
+                        JSONParser.deserializer(jsonData, ConfirmationData::class.java)?.let {
+                            confirmationViewModel.showConfirmation(it)
                         }
                     }
                 }

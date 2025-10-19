@@ -42,6 +42,7 @@ import com.thewizrd.simplewear.ui.components.ConfirmationOverlay
 import com.thewizrd.simplewear.ui.theme.findActivity
 import com.thewizrd.simplewear.ui.tools.WearPreviewDevices
 import com.thewizrd.simplewear.ui.utils.rememberFocusRequester
+import com.thewizrd.simplewear.viewmodels.ConfirmationData
 import com.thewizrd.simplewear.viewmodels.ConfirmationViewModel
 import com.thewizrd.simplewear.viewmodels.ValueActionUiState
 import com.thewizrd.simplewear.viewmodels.ValueActionViewModel
@@ -115,7 +116,7 @@ fun ValueActionScreen(
 
                             WearConnectionStatus.APPNOTINSTALLED -> {
                                 // Open store on remote device
-                                valueActionViewModel.openPlayStore(activity)
+                                valueActionViewModel.openPlayStore()
 
                                 // Navigate
                                 activity.startActivity(
@@ -157,10 +158,7 @@ fun ValueActionScreen(
                                             )
                                         )
 
-                                        valueActionViewModel.openAppOnPhone(
-                                            activity,
-                                            false
-                                        )
+                                        valueActionViewModel.openAppOnPhone(false)
                                     }
 
                                     ActionStatus.TIMEOUT -> {
@@ -190,10 +188,19 @@ fun ValueActionScreen(
                             ActionStatus.PERMISSION_DENIED -> {
                                 confirmationViewModel.showFailure(message = context.getString(R.string.error_permissiondenied))
 
-                                valueActionViewModel.openAppOnPhone(activity, false)
+                                valueActionViewModel.openAppOnPhone(false)
                             }
 
                             else -> {}
+                        }
+                    }
+
+                    WearableListenerViewModel.ACTION_SHOWCONFIRMATION -> {
+                        val jsonData =
+                            event.data.getString(WearableListenerViewModel.EXTRA_ACTIONDATA)
+
+                        JSONParser.deserializer(jsonData, ConfirmationData::class.java)?.let {
+                            confirmationViewModel.showConfirmation(it)
                         }
                     }
                 }
