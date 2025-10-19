@@ -158,6 +158,18 @@ class DashboardViewModel(app: Application) : WearableListenerViewModel(app) {
             }
         }
 
+        viewModelScope.launch {
+            Settings.getDashboardConfigFlow().collect {
+                updateActions(it)
+            }
+        }
+
+        viewModelScope.launch {
+            Settings.isShowBatStatusFlow().collect {
+                showBatteryState(it)
+            }
+        }
+
         resetDashboard()
     }
 

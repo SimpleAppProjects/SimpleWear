@@ -131,6 +131,8 @@ dependencies {
     implementation "com.google.android.horologist:horologist-compose-tools:$horologist_version"
     implementation "com.google.android.horologist:horologist-media-ui-material3:$horologist_version"
 
+    implementation 'sh.calvin.reorderable:reorderable:3.0.0'
+
     androidTestImplementation platform("androidx.compose:compose-bom:$compose_bom_version")
     androidTestImplementation "androidx.compose.ui:ui-test-junit4"
     debugImplementation "androidx.compose.ui:ui-tooling"

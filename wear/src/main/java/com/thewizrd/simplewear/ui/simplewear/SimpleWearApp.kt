@@ -21,8 +21,6 @@ import com.thewizrd.shared_resources.actions.TimedAction
 import com.thewizrd.shared_resources.utils.AnalyticsLogger
 import com.thewizrd.shared_resources.utils.JSONParser
 import com.thewizrd.simplewear.media.MediaPlayerActivity
-import com.thewizrd.simplewear.preferences.DashboardConfigActivity
-import com.thewizrd.simplewear.preferences.DashboardTileConfigActivity
 import com.thewizrd.simplewear.ui.navigation.Screen
 import com.thewizrd.simplewear.ui.theme.WearAppTheme
 
@@ -178,14 +176,24 @@ fun SimpleWearApp(
                     }
                 }
 
-                activity(route = Screen.DashboardConfig.route) {
-                    targetPackage = context.packageName
-                    activityClass = DashboardConfigActivity::class
+                composable(Screen.DashboardConfig.route) {
+                    DashboardConfigUi(navController = navController)
+
+                    LaunchedEffect(navController) {
+                        AnalyticsLogger.logEvent("nav_route", Bundle().apply {
+                            putString("screen", Screen.DashboardConfig.route)
+                        })
+                    }
                 }
 
-                activity(route = Screen.DashboardTileConfig.route) {
-                    targetPackage = context.packageName
-                    activityClass = DashboardTileConfigActivity::class
+                composable(Screen.DashboardTileConfig.route) {
+                    DashboardTileConfigUi(navController = navController)
+
+                    LaunchedEffect(navController) {
+                        AnalyticsLogger.logEvent("nav_route", Bundle().apply {
+                            putString("screen", Screen.DashboardTileConfig.route)
+                        })
+                    }
                 }
             }
         }

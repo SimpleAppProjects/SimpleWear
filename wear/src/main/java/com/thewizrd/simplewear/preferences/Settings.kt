@@ -1,10 +1,15 @@
 package com.thewizrd.simplewear.preferences
 
+import android.content.SharedPreferences
 import androidx.core.content.edit
 import com.google.gson.reflect.TypeToken
 import com.thewizrd.shared_resources.actions.Actions
 import com.thewizrd.shared_resources.appLib
 import com.thewizrd.shared_resources.utils.JSONParser
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.buffer
+import kotlinx.coroutines.flow.callbackFlow
 import java.time.Instant
 
 object Settings {
@@ -68,6 +73,18 @@ object Settings {
         }
     }
 
+    fun getDashboardTileConfigFlow() = callbackFlow {
+        val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            when (key) {
+                KEY_DASHTILECONFIG -> trySend(getDashboardTileConfig())
+            }
+        }
+
+        appLib.preferences.registerOnSharedPreferenceChangeListener(listener)
+
+        awaitClose { appLib.preferences.unregisterOnSharedPreferenceChangeListener(listener) }
+    }.buffer(Channel.UNLIMITED)
+
     fun setDashboardTileConfig(actions: List<Actions>?) {
         appLib.preferences.edit {
             putString(KEY_DASHTILECONFIG, actions?.let {
@@ -85,6 +102,18 @@ object Settings {
         }
     }
 
+    fun getDashboardConfigFlow() = callbackFlow {
+        val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            when (key) {
+                KEY_DASHCONFIG -> trySend(getDashboardConfig())
+            }
+        }
+
+        appLib.preferences.registerOnSharedPreferenceChangeListener(listener)
+
+        awaitClose { appLib.preferences.unregisterOnSharedPreferenceChangeListener(listener) }
+    }.buffer(Channel.UNLIMITED)
+
     fun setDashboardConfig(actions: List<Actions>?) {
         appLib.preferences.edit {
             putString(KEY_DASHCONFIG, actions?.let {
@@ -97,6 +126,18 @@ object Settings {
     fun isShowBatStatus(): Boolean {
         return appLib.preferences.getBoolean(KEY_SHOWBATSTATUS, true)
     }
+
+    fun isShowBatStatusFlow() = callbackFlow {
+        val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            when (key) {
+                KEY_SHOWBATSTATUS -> trySend(isShowBatStatus())
+            }
+        }
+
+        appLib.preferences.registerOnSharedPreferenceChangeListener(listener)
+
+        awaitClose { appLib.preferences.unregisterOnSharedPreferenceChangeListener(listener) }
+    }.buffer(Channel.UNLIMITED)
 
     fun setShowBatStatus(value: Boolean) {
         appLib.preferences.edit {

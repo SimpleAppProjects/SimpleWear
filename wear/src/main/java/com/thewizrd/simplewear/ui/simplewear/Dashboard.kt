@@ -218,26 +218,6 @@ fun Dashboard(
                         }
                     }
                 }
-
-                Settings.KEY_DASHCONFIG -> {
-                    lifecycleOwner.lifecycleScope.launch {
-                        runCatching {
-                            lifecycleOwner.withStarted {
-                                dashboardViewModel.resetDashboard()
-                            }
-                        }
-                    }
-                }
-
-                Settings.KEY_SHOWBATSTATUS -> {
-                    lifecycleOwner.lifecycleScope.launch {
-                        runCatching {
-                            lifecycleOwner.withStarted {
-                                dashboardViewModel.showBatteryState(Settings.isShowBatStatus())
-                            }
-                        }
-                    }
-                }
             }
         }
     }
