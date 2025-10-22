@@ -37,6 +37,7 @@ import com.thewizrd.shared_resources.actions.BatteryStatus
 import com.thewizrd.shared_resources.actions.ToggleAction
 import com.thewizrd.shared_resources.appLib
 import com.thewizrd.shared_resources.data.AppItemData
+import com.thewizrd.shared_resources.data.CallState
 import com.thewizrd.shared_resources.helpers.InCallUIHelper
 import com.thewizrd.shared_resources.helpers.MediaHelper
 import com.thewizrd.shared_resources.helpers.WearableHelper
@@ -126,9 +127,15 @@ class WearableDataListenerService : WearableListenerService() {
 
             messageEvent.path == InCallUIHelper.CallStateBridgePath -> {
                 val enable = messageEvent.data.bytesToBool()
+                val callState = messageEvent.data.takeIf { it.size > 1 }?.let {
+                    JSONParser.deserializer(
+                        it.copyOfRange(1, it.size).bytesToString(),
+                        CallState::class.java
+                    )
+                }
 
                 if (enable) {
-                    createCallOngoingActivity()
+                    createCallOngoingActivity(callState)
                 } else {
                     dismissCallOngoingActivity()
                 }
@@ -447,6 +454,17 @@ class WearableDataListenerService : WearableListenerService() {
         }
     }
 
+    protected suspend fun sendRequest(nodeID: String, path: String, data: ByteArray?): ByteArray {
+        try {
+            return Wearable.getMessageClient(this@WearableDataListenerService)
+                .sendRequest(nodeID, path, data).await()
+        } catch (e: Exception) {
+            Logger.writeLine(Log.ERROR, e)
+        }
+
+        return byteArrayOf()
+    }
+
     override fun onDataChanged(dataEventBuffer: DataEventBuffer) {
         super.onDataChanged(dataEventBuffer)
 
@@ -466,12 +484,13 @@ class WearableDataListenerService : WearableListenerService() {
         }
     }
 
-    private fun createCallOngoingActivity() {
+    private fun createCallOngoingActivity(callState: CallState? = null) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             initCallControllerNotifChannel()
         }
 
-        val notifTitle = getString(R.string.message_callactive)
+        val notifTitle: String = callState?.callerName?.takeIf { it.isNotEmpty() }
+            ?: getString(R.string.message_callactive)
 
         val notifBuilder = NotificationCompat.Builder(this, CALLS_NOT_CHANNEL_ID)
             .setStyle(
@@ -493,9 +512,16 @@ class WearableDataListenerService : WearableListenerService() {
                 getCallControllerIntent()
             )
             .setLocusId(LocusIdCompat(CALLS_LOCUS_ID))
+            .apply {
+                callState?.callStartTime?.takeIf { it > 0 }?.let { callStartTime ->
+                    this.setUsesChronometer(true)
+                        .setWhen(callStartTime)
+                        .setShowWhen(false)
+                }
+            }
 
         val ongoingActivityStatus = Status.Builder()
-            .addTemplate(getString(R.string.message_callactive))
+            .addTemplate(notifTitle)
             .build()
 
         val ongoingActivity = OngoingActivity.Builder(applicationContext, 1000, notifBuilder)

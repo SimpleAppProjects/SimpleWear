@@ -1,19 +1,13 @@
-<?xml version="1.0" encoding="utf-8"?>
-<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item
-        android:height="24dp"
-        android:width="24dp">
-        <shape>
-            <corners android:radius="@dimen/button_corner_radius" />
-            <solid android:color="@color/colorPrimary" />
-            <stroke
-                android:color="#00FFFFFF"
-                android:width="1dp" />
-        </shape>
-    </item>
-    <item
-        android:height="16dp"
-        android:width="16dp"
-        android:gravity="center"
-        android:drawable="@drawable/ic_phone_24dp" />
-</layer-list>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="2160"
+    android:viewportHeight="2160">
+    <path
+        android:pathData="M1080,1080m-1080,0a1080,1080 0,1 1,2160 0a1080,1080 0,1 1,-2160 0"
+        android:strokeWidth="25.7142"
+        android:fillColor="#0070c0" />
+    <path
+        android:pathData="M1552.5,1620Q1378.5,1620 1197.8,1536 1017,1452 862.5,1297.5 708,1143 624,962.3 540,781.5 540,607.5q0,-28.5 19.5,-48 19.5,-19.5 48,-19.5l210,0q21,0 36,15 15,15 21,37.5l40.5,189q3,21 -0.8,38.3Q910.5,837 898.5,849l-150,151.5q39,66 82.5,123 43.5,57 96,108 55.5,57 117,104.3 61.5,47.3 129,83.3l142.5,-147q15,-16.5 34.5,-22.5 19.5,-6 39,-3l178.5,39q22.5,6 37.5,24 15,18 15,40.5l0,202.5q0,28.5 -19.5,48 -19.5,19.5 -48,19.5z"
+        android:fillColor="#ffffff" />
+</vector>

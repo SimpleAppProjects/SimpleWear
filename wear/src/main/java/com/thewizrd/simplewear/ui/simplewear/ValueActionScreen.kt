@@ -220,9 +220,6 @@ fun ValueActionScreen(
     valueActionViewModel: ValueActionViewModel,
     volumeViewModel: ValueActionVolumeViewModel
 ) {
-    val lifecycleOwner = LocalLifecycleOwner.current
-    val activityCtx = LocalContext.current.findActivity()
-
     val uiState by valueActionViewModel.uiState.collectAsState()
     val progressUiState by volumeViewModel.volumeUiState.collectAsState()
 

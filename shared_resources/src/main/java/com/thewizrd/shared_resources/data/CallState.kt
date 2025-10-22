@@ -4,6 +4,7 @@ data class CallState(
     val callerName: String? = null,
     val callerBitmap: ByteArray? = null,
     val callActive: Boolean = false,
+    val callStartTime: Long = -1L,
     val supportedFeatures: Int = 0,
 ) {
     override fun equals(other: Any?): Boolean {
@@ -16,6 +17,7 @@ data class CallState(
             if (!callerBitmap.contentEquals(other.callerBitmap)) return false
         } else if (other.callerBitmap != null) return false
         if (callActive != other.callActive) return false
+        if (callStartTime != other.callStartTime) return false
         if (supportedFeatures != other.supportedFeatures) return false
 
         return true
@@ -25,6 +27,7 @@ data class CallState(
         var result = callerName?.hashCode() ?: 0
         result = 31 * result + (callerBitmap?.contentHashCode() ?: 0)
         result = 31 * result + callActive.hashCode()
+        result = 31 * result + callStartTime.hashCode()
         result = 31 * result + supportedFeatures
         return result
     }

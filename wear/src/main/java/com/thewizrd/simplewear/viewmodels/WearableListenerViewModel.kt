@@ -469,6 +469,32 @@ abstract class WearableListenerViewModel(private val app: Application) : Android
         return -1
     }
 
+    protected suspend fun sendRequest(nodeID: String, path: String, data: ByteArray?): ByteArray {
+        try {
+            return Wearable.getMessageClient(appContext)
+                .sendRequest(nodeID, path, data).await()
+        } catch (e: Exception) {
+            if (e is ApiException || e.cause is ApiException) {
+                val apiException = e.cause as? ApiException ?: e as? ApiException
+                if (apiException?.statusCode == WearableStatusCodes.TARGET_NODE_NOT_CONNECTED) {
+                    mConnectionStatus = WearConnectionStatus.DISCONNECTED
+
+                    _eventsFlow.tryEmit(
+                        WearableEvent(
+                            ACTION_UPDATECONNECTIONSTATUS,
+                            Bundle().apply {
+                                putInt(EXTRA_CONNECTIONSTATUS, mConnectionStatus.value)
+                            })
+                    )
+                }
+            }
+
+            Logger.writeLine(Log.ERROR, e)
+        }
+
+        return byteArrayOf()
+    }
+
     @Throws(ApiException::class)
     protected suspend fun sendPing(nodeID: String) {
         try {

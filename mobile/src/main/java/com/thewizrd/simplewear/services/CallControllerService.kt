@@ -23,6 +23,7 @@ import android.util.Log
 import android.view.KeyEvent
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
+import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleService
 import com.google.android.gms.wearable.MessageClient
@@ -253,6 +254,17 @@ class CallControllerService : LifecycleService(), MessageClient.OnMessageReceive
 
         registerMediaControllerListener()
         registerPhoneStateListener()
+        OngoingCall.callLiveData.observe(this) {
+            scope.launch {
+                sendCallState(
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        it?.details?.state
+                    } else {
+                        it?.state
+                    }
+                )
+            }
+        }
         OngoingCall.callState.observe(this) {
             scope.launch {
                 onCallStateChanged(it)
@@ -298,7 +310,7 @@ class CallControllerService : LifecycleService(), MessageClient.OnMessageReceive
                         }
 
                         // Send call state
-                        sendCallState(mTelephonyManager.callState, "")
+                        sendCallState(mTelephonyManager.callStateCompat)
                         mWearableManager.sendMessage(
                             null,
                             InCallUIHelper.MuteMicStatusPath,
@@ -358,7 +370,7 @@ class CallControllerService : LifecycleService(), MessageClient.OnMessageReceive
         mMessageClient.removeListener(this)
         mWearableManager.unregister()
 
-        stopForeground(true)
+        ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
         scope.cancel()
         super.onDestroy()
     }
@@ -374,13 +386,14 @@ class CallControllerService : LifecycleService(), MessageClient.OnMessageReceive
         }
     }
 
+    @Suppress("DEPRECATION")
     private fun registerPhoneStateListener() {
         mTelephonyManager?.let { tm ->
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 mTelephonyCallback =
                     object : TelephonyCallback(), TelephonyCallback.CallStateListener {
                         override fun onCallStateChanged(state: Int) {
-                            this@CallControllerService.onCallStateChanged(state, "")
+                            this@CallControllerService.onCallStateChanged(state)
                         }
                     }
 
@@ -432,6 +445,7 @@ class CallControllerService : LifecycleService(), MessageClient.OnMessageReceive
         }
     }
 
+    @Suppress("DEPRECATION")
     private fun unregisterPhoneStateListener() {
         mTelephonyManager?.let { tm ->
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -491,7 +505,13 @@ class CallControllerService : LifecycleService(), MessageClient.OnMessageReceive
             OngoingCall.call?.details?.contactDisplayName
         } else {
             null
-        } ?: OngoingCall.call?.details?.callerDisplayName ?: phoneNo ?: ""
+        } ?: OngoingCall.call?.details?.callerDisplayName ?: getContactName(phoneNo) ?: ""
+
+        val callStartTime = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            OngoingCall.call?.details?.creationTimeMillis
+        } else {
+            OngoingCall.call?.details?.connectTimeMillis
+        } ?: -1L
 
         val callState = state ?: OngoingCall.call?.let {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -501,7 +521,7 @@ class CallControllerService : LifecycleService(), MessageClient.OnMessageReceive
             }
         } ?: TelephonyManager.CALL_STATE_IDLE
 
-        val callActive = callState != TelephonyManager.CALL_STATE_IDLE
+        val callActive = callState != TelephonyManager.CALL_STATE_IDLE || isInCall()
 
         var supportedFeatures = 0
         if (supportsSpeakerToggle()) {
@@ -514,15 +534,18 @@ class CallControllerService : LifecycleService(), MessageClient.OnMessageReceive
         val callStateData = CallState(
             callerName = callerName,
             callActive = callActive,
+            callStartTime = callStartTime,
             supportedFeatures = supportedFeatures
         )
 
         sendCallState(nodeID = null, callStateData)
         if (Settings.isBridgeCallsEnabled()) {
+            val callStateJson = JSONParser.serializer(callStateData, CallState::class.java)
+
             mWearableManager.sendMessage(
                 null,
                 InCallUIHelper.CallStateBridgePath,
-                callActive.booleanToBytes()
+                callActive.booleanToBytes() + callStateJson.stringToBytes()
             )
         }
     }
@@ -539,7 +562,7 @@ class CallControllerService : LifecycleService(), MessageClient.OnMessageReceive
         when (messageEvent.path) {
             InCallUIHelper.CallStatePath -> {
                 scope.launch {
-                    sendCallState(mTelephonyManager.callState, "")
+                    sendCallState(mTelephonyManager.callStateCompat)
                 }
             }
             InCallUIHelper.EndCallPath -> {
@@ -634,7 +657,6 @@ class CallControllerService : LifecycleService(), MessageClient.OnMessageReceive
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.S)
     private fun toggleSpeakerphone(nodeID: String? = null, on: Boolean) {
         mInCallManagerAdapter.setSpeakerPhoneEnabled(on)
         scope.launch {
@@ -647,7 +669,6 @@ class CallControllerService : LifecycleService(), MessageClient.OnMessageReceive
         updateNotification(this, isInCall())
     }
 
-    @RequiresApi(Build.VERSION_CODES.S)
     private fun isSpeakerPhoneEnabled(): Boolean {
         return mInCallManagerAdapter.getAudioState()?.route == CallAudioState.ROUTE_SPEAKER
     }
@@ -662,7 +683,7 @@ class CallControllerService : LifecycleService(), MessageClient.OnMessageReceive
     private fun isInCall(): Boolean {
         return runCatching {
             mTelecomManager.isInCall
-        }.getOrDefault(mTelephonyManager.callState != TelephonyManager.CALL_STATE_IDLE)
+        }.getOrDefault(mTelephonyManager.callStateCompat != TelephonyManager.CALL_STATE_IDLE)
     }
 
     @SuppressLint("MissingPermission")
@@ -671,4 +692,21 @@ class CallControllerService : LifecycleService(), MessageClient.OnMessageReceive
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && mInCallManagerAdapter.isInCallServiceAvailable()
         }.getOrDefault(false)
     }
+
+    private fun getContactName(phoneNo: String? = null): String? {
+        Logger.debug(TAG, "Contact name: $phoneNo")
+
+        return phoneNo
+    }
+
+    @Suppress("DEPRECATION")
+    @get:SuppressLint("MissingPermission")
+    private val TelephonyManager.callStateCompat: Int
+        get() {
+            return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                this.callStateForSubscription
+            } else {
+                this.callState
+            }
+        }
 }

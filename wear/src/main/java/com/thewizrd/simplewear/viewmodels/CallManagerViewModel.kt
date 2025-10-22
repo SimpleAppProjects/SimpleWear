@@ -32,6 +32,7 @@ data class CallManagerUiState(
     // InCallUi
     val callerName: String? = null,
     val callerBitmap: Bitmap? = null,
+    val callStartTime: Long = -1L,
     val supportsSpeaker: Boolean = false,
     val canSendDTMFKeys: Boolean = false,
     val isCallActive: Boolean = false,
@@ -152,6 +153,7 @@ class CallManagerViewModel(app: Application) : WearableListenerViewModel(app) {
         val callActive = callState?.callActive ?: false
         val callerName = callState?.callerName
         val callerBmp = callState?.callerBitmap?.toBitmap()
+        val callStartTime = callState?.callStartTime ?: -1L
         val inCallFeatures = callState?.supportedFeatures ?: 0
         val supportsSpeakerToggle =
             inCallFeatures and InCallUIHelper.INCALL_FEATURE_SPEAKERPHONE != 0
@@ -163,6 +165,7 @@ class CallManagerViewModel(app: Application) : WearableListenerViewModel(app) {
                 callerName = callerName?.takeIf { name -> name.isNotBlank() }
                     ?: appContext.getString(R.string.message_callactive),
                 callerBitmap = if (callActive) callerBmp else null,
+                callStartTime = callStartTime,
                 supportsSpeaker = callActive && supportsSpeakerToggle,
                 canSendDTMFKeys = callActive && canSendDTMFKey,
                 isCallActive = callActive
