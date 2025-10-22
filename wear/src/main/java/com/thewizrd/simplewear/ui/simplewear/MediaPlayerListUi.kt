@@ -62,6 +62,7 @@ import com.thewizrd.shared_resources.actions.ActionStatus
 import com.thewizrd.shared_resources.helpers.MediaHelper
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
 import com.thewizrd.shared_resources.utils.JSONParser
+import com.thewizrd.shared_resources.utils.getSerializableCompat
 import com.thewizrd.simplewear.PhoneSyncActivity
 import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.controls.AppItemViewModel
@@ -171,7 +172,10 @@ fun MediaPlayerListUi(
 
                     MediaHelper.MusicPlayersPath -> {
                         val status =
-                            event.data.getSerializable(WearableListenerViewModel.EXTRA_STATUS) as ActionStatus
+                            event.data.getSerializableCompat(
+                                WearableListenerViewModel.EXTRA_STATUS,
+                                ActionStatus::class.java
+                            )
 
                         if (status == ActionStatus.PERMISSION_DENIED) {
                             confirmationViewModel.showOpenOnPhoneForFailure(
@@ -186,7 +190,10 @@ fun MediaPlayerListUi(
 
                     MediaHelper.MediaPlayerAutoLaunchPath -> {
                         val status =
-                            event.data.getSerializable(WearableListenerViewModel.EXTRA_STATUS) as ActionStatus
+                            event.data.getSerializableCompat(
+                                WearableListenerViewModel.EXTRA_STATUS,
+                                ActionStatus::class.java
+                            )
 
                         if (status == ActionStatus.SUCCESS) {
                             navController.navigate(

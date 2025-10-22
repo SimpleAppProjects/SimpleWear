@@ -57,6 +57,7 @@ import com.thewizrd.shared_resources.actions.ToggleAction
 import com.thewizrd.shared_resources.controls.ActionButtonViewModel
 import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.shared_resources.utils.JSONParser
+import com.thewizrd.shared_resources.utils.getSerializableCompat
 import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.ui.components.ConfirmationOverlay
 import com.thewizrd.simplewear.ui.components.HorizontalPagerScreen
@@ -127,7 +128,8 @@ fun TimedActionSetupUi(
             timedActionUiViewModel.eventFlow.collect { event ->
                 when (event.eventType) {
                     WearableHelper.TimedActionAddPath -> {
-                        val status = event.data.getSerializable(EXTRA_STATUS) as ActionStatus
+                        val status =
+                            event.data.getSerializableCompat(EXTRA_STATUS, ActionStatus::class.java)
 
                         when (status) {
                             ActionStatus.SUCCESS -> {

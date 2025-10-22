@@ -109,6 +109,7 @@ import com.thewizrd.shared_resources.helpers.MediaHelper
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
 import com.thewizrd.shared_resources.media.PlaybackState
 import com.thewizrd.shared_resources.utils.JSONParser
+import com.thewizrd.shared_resources.utils.getSerializableCompat
 import com.thewizrd.simplewear.PhoneSyncActivity
 import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.controls.AppItemViewModel
@@ -314,7 +315,10 @@ fun MediaPlayerUi(
                     MediaHelper.MediaPlayerConnectPath,
                     MediaHelper.MediaPlayerAutoLaunchPath -> {
                         val actionStatus =
-                            event.data.getSerializable(WearableListenerViewModel.EXTRA_STATUS) as ActionStatus
+                            event.data.getSerializableCompat(
+                                WearableListenerViewModel.EXTRA_STATUS,
+                                ActionStatus::class.java
+                            )
 
                         if (actionStatus == ActionStatus.PERMISSION_DENIED) {
                             confirmationViewModel.showOpenOnPhoneForFailure(
@@ -329,7 +333,10 @@ fun MediaPlayerUi(
 
                     MediaHelper.MediaPlayPath -> {
                         val actionStatus =
-                            event.data.getSerializable(WearableListenerViewModel.EXTRA_STATUS) as ActionStatus
+                            event.data.getSerializableCompat(
+                                WearableListenerViewModel.EXTRA_STATUS,
+                                ActionStatus::class.java
+                            )
 
                         if (actionStatus == ActionStatus.TIMEOUT) {
                             confirmationViewModel.showFailure(message = context.getString(R.string.error_playback_failed))

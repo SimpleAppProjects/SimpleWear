@@ -67,6 +67,7 @@ import com.thewizrd.shared_resources.actions.GestureActionState
 import com.thewizrd.shared_resources.helpers.GestureUIHelper
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
 import com.thewizrd.shared_resources.utils.JSONParser
+import com.thewizrd.shared_resources.utils.getSerializableCompat
 import com.thewizrd.simplewear.PhoneSyncActivity
 import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.ui.components.ConfirmationOverlay
@@ -230,7 +231,10 @@ fun GesturesUi(
 
                     GestureUIHelper.GestureStatusPath -> {
                         val status =
-                            event.data.getSerializable(WearableListenerViewModel.EXTRA_STATUS) as ActionStatus
+                            event.data.getSerializableCompat(
+                                WearableListenerViewModel.EXTRA_STATUS,
+                                ActionStatus::class.java
+                            )
 
                         if (status == ActionStatus.PERMISSION_DENIED) {
                             confirmationViewModel.showOpenOnPhoneForFailure(

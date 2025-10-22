@@ -1,6 +1,5 @@
 package com.thewizrd.simplewear.ui.simplewear
 
-import android.os.Build
 import android.os.Bundle
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -20,6 +19,7 @@ import com.thewizrd.shared_resources.actions.AudioStreamType
 import com.thewizrd.shared_resources.actions.TimedAction
 import com.thewizrd.shared_resources.utils.AnalyticsLogger
 import com.thewizrd.shared_resources.utils.JSONParser
+import com.thewizrd.shared_resources.utils.getSerializableCompat
 import com.thewizrd.simplewear.media.MediaPlayerActivity
 import com.thewizrd.simplewear.ui.navigation.Screen
 import com.thewizrd.simplewear.ui.theme.WearAppTheme
@@ -68,14 +68,10 @@ fun SimpleWearApp(
                     val actionType = backstackEntry.arguments?.getInt("actionId")?.let {
                         Actions.valueOf(it)
                     }
-                    val streamType = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                        backstackEntry.arguments?.getSerializable(
-                            "streamType",
-                            AudioStreamType::class.java
-                        )
-                    } else {
-                        backstackEntry.arguments?.getSerializable("streamType") as AudioStreamType
-                    }
+                    val streamType = backstackEntry.arguments?.getSerializableCompat(
+                        "streamType",
+                        AudioStreamType::class.java
+                    )
 
                     ValueActionScreen(
                         actionType = actionType ?: Actions.VOLUME,
