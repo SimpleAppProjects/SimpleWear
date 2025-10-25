@@ -173,7 +173,7 @@ class ActionButtonViewModel(val action: Action) {
             }
 
             Actions.LOCKSCREEN -> {
-                drawableResId = R.drawable.ic_lock_outline_white_24dp
+                drawableResId = R.drawable.ic_lock_white_24dp
                 actionLabelResId = R.string.action_lockscreen
                 stateLabelResId = 0
             }
@@ -216,7 +216,7 @@ class ActionButtonViewModel(val action: Action) {
 
                     DNDChoice.SILENCE -> {
                         drawableResId =
-                            R.drawable.ic_notifications_off_white_24dp
+                            R.drawable.ic_do_not_disturb_silence_white_24dp
                         stateLabelResId = R.string.dndstate_silence
                     }
                 }

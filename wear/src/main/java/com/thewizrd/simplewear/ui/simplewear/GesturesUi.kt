@@ -24,12 +24,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.automirrored.outlined.ArrowBack
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
+import androidx.compose.material.icons.rounded.Home
+import androidx.compose.material.icons.rounded.KeyboardArrowDown
+import androidx.compose.material.icons.rounded.KeyboardArrowUp
+import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -394,7 +395,7 @@ private fun GestureScreen(
                 .clickable(uiState.actionState.dpadSupported) {
                     onDPadDirection(KeyEvent.KEYCODE_DPAD_UP)
                 },
-            imageVector = Icons.Filled.KeyboardArrowUp,
+            imageVector = Icons.Rounded.KeyboardArrowUp,
             tint = MaterialTheme.colorScheme.primary,
             contentDescription = stringResource(R.string.label_arrow_up)
         )
@@ -406,7 +407,7 @@ private fun GestureScreen(
                 .clickable(uiState.actionState.dpadSupported) {
                     onDPadDirection(KeyEvent.KEYCODE_DPAD_DOWN)
                 },
-            imageVector = Icons.Filled.KeyboardArrowDown,
+            imageVector = Icons.Rounded.KeyboardArrowDown,
             tint = MaterialTheme.colorScheme.primary,
             contentDescription = stringResource(R.string.label_arrow_down)
         )
@@ -418,7 +419,7 @@ private fun GestureScreen(
                 .clickable(uiState.actionState.dpadSupported) {
                     onDPadDirection(KeyEvent.KEYCODE_DPAD_LEFT)
                 },
-            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+            imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowLeft,
             tint = MaterialTheme.colorScheme.primary,
             contentDescription = stringResource(R.string.label_arrow_left)
         )
@@ -430,7 +431,7 @@ private fun GestureScreen(
                 .clickable(uiState.actionState.dpadSupported) {
                     onDPadDirection(KeyEvent.KEYCODE_DPAD_RIGHT)
                 },
-            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+            imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
             tint = MaterialTheme.colorScheme.primary,
             contentDescription = stringResource(R.string.label_arrow_right)
         )
@@ -476,7 +477,7 @@ private fun ButtonScreen(
             FilledIconButton(
                 content = {
                     Icon(
-                        imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
+                        imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
                         contentDescription = stringResource(id = R.string.label_back)
                     )
                 },
@@ -487,7 +488,7 @@ private fun ButtonScreen(
             FilledIconButton(
                 content = {
                     Icon(
-                        imageVector = Icons.Outlined.Home,
+                        imageVector = Icons.Rounded.Home,
                         contentDescription = stringResource(id = R.string.label_home),
                     )
                 },
@@ -498,7 +499,7 @@ private fun ButtonScreen(
             FilledIconButton(
                 content = {
                     Icon(
-                        painter = painterResource(R.drawable.ic_outline_view_apps),
+                        painter = painterResource(R.drawable.ic_view_apps_filled),
                         contentDescription = stringResource(id = R.string.label_recents),
                     )
                 },
@@ -538,7 +539,7 @@ private fun NoAccessibilityScreen(
                 },
                 icon = {
                     Icon(
-                        painter = painterResource(id = R.drawable.ic_baseline_refresh_24),
+                        imageVector = Icons.Rounded.Refresh,
                         contentDescription = stringResource(id = R.string.action_refresh)
                     )
                 },

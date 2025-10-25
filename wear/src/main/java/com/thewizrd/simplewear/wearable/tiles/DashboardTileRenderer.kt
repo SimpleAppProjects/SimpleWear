@@ -161,12 +161,12 @@ class DashboardTileRenderer(context: Context, debugResourceMode: Boolean = false
 
             ID_FLASHLIGHT to R.drawable.ic_lightbulb_outline_white_24dp,
 
-            ID_LOCK to R.drawable.ic_lock_outline_white_24dp,
+            ID_LOCK to R.drawable.ic_lock_white_24dp,
 
             ID_DND_OFF to R.drawable.ic_do_not_disturb_off_white_24dp,
             ID_DND_PRIORITY to R.drawable.ic_error_white_24dp,
             ID_DND_ALARMS to R.drawable.ic_alarm_white_24dp,
-            ID_DND_SILENCE to R.drawable.ic_notifications_off_white_24dp,
+            ID_DND_SILENCE to R.drawable.ic_do_not_disturb_silence_white_24dp,
 
             ID_RINGER_VIB to R.drawable.ic_vibration_white_24dp,
             ID_RINGER_SOUND to R.drawable.ic_notifications_active_white_24dp,

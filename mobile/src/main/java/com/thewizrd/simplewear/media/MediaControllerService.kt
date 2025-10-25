@@ -188,7 +188,7 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
 
     private fun createForegroundNotification(context: Context): Notification {
         val notif = NotificationCompat.Builder(context, NOT_CHANNEL_ID).apply {
-            setSmallIcon(R.drawable.ic_baseline_music_note_24)
+            setSmallIcon(R.drawable.ic_music_note_white_24dp)
             setContentTitle(context.getString(R.string.not_title_mediacontroller_running))
             setOnlyAlertOnce(true)
             setSilent(true)
@@ -1071,7 +1071,7 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
                     runCatching {
                         val iconDrawable = ContextCompat.getDrawable(
                             applicationContext,
-                            R.drawable.ic_baseline_play_circle_filled_24
+                            R.drawable.ic_play_circle_filled_white_24dp
                         )
                         actions.add(
                             ActionItem(

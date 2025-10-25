@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -271,7 +273,7 @@ private fun AppLauncherScreen(
                                 },
                                 icon = {
                                     Icon(
-                                        painter = painterResource(id = R.drawable.ic_baseline_refresh_24),
+                                        imageVector = Icons.Rounded.Refresh,
                                         contentDescription = stringResource(id = R.string.action_refresh)
                                     )
                                 },

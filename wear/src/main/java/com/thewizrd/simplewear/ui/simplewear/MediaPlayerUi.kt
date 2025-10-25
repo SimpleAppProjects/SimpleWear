@@ -22,6 +22,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
@@ -484,7 +488,7 @@ private fun MediaPlayerControlsPage(
                             },
                             icon = {
                                 Icon(
-                                    painter = painterResource(id = R.drawable.ic_baseline_refresh_24),
+                                    imageVector = Icons.Rounded.Refresh,
                                     contentDescription = stringResource(id = R.string.action_retry)
                                 )
                             },
@@ -1055,7 +1059,7 @@ private fun MediaBrowserPage(
                             if (item.id == MediaHelper.ACTIONITEM_BACK) {
                                 Icon(
                                     modifier = Modifier.size(ButtonDefaults.IconSize),
-                                    painter = painterResource(id = R.drawable.ic_baseline_arrow_back_24),
+                                    imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
                                     contentDescription = stringResource(id = R.string.label_back)
                                 )
                             } else {

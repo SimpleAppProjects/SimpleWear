@@ -9,6 +9,11 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Arrangement
@@ -20,15 +25,19 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Sync
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -56,6 +65,7 @@ import androidx.wear.compose.material3.ScreenScaffold
 import androidx.wear.compose.material3.Text
 import androidx.wear.compose.ui.tooling.preview.WearPreviewFontScales
 import com.google.accompanist.drawablepainter.rememberDrawablePainter
+import com.google.android.horologist.images.base.paintable.ImageVectorPaintable.Companion.asPaintable
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
 import com.thewizrd.shared_resources.utils.JSONParser
 import com.thewizrd.simplewear.R
@@ -315,30 +325,35 @@ private fun PhoneSyncUi(
                         modifier = Modifier.requiredSize(IconButtonDefaults.ExtraSmallButtonSize),
                         onClick = onSyncButtonClicked
                     ) {
+                        // Allow resume on rotation
+                        var currentRotation by remember { mutableFloatStateOf(0f) }
+                        val rotation = remember { Animatable(currentRotation) }
+
                         Icon(
-                            modifier = Modifier.requiredSize(IconButtonDefaults.SmallIconSize - 4.dp),
+                            modifier = Modifier
+                                .requiredSize(IconButtonDefaults.SmallIconSize - 4.dp)
+                                .rotate(
+                                    when (uiState.connectionStatus) {
+                                        WearConnectionStatus.DISCONNECTED,
+                                        WearConnectionStatus.APPNOTINSTALLED -> 0f
+
+                                        else -> rotation.value
+                                    }
+                                ),
                             painter = when (uiState.connectionStatus) {
                                 WearConnectionStatus.DISCONNECTED -> {
                                     painterResource(id = R.drawable.ic_phonelink_erase_white_24dp)
                                 }
 
                                 WearConnectionStatus.CONNECTING, WearConnectionStatus.CONNECTED -> {
-                                    val drawable = remember(context) {
-                                        ContextCompat.getDrawable(
-                                            context,
-                                            android.R.drawable.ic_popup_sync
-                                        )
-                                    }
-                                    rememberDrawablePainter(
-                                        drawable = drawable
-                                    )
+                                    Icons.Rounded.Sync.asPaintable().rememberPainter()
                                 }
 
                                 WearConnectionStatus.APPNOTINSTALLED -> {
                                     painterResource(id = R.drawable.common_full_open_on_phone)
                                 }
 
-                                null -> painterResource(id = R.drawable.ic_sync_24dp)
+                                null -> Icons.Rounded.Sync.asPaintable().rememberPainter()
                             },
                             contentDescription = when (uiState.connectionStatus) {
                                 WearConnectionStatus.DISCONNECTED -> stringResource(R.string.status_disconnected)
@@ -348,6 +363,18 @@ private fun PhoneSyncUi(
                                 null -> null
                             }
                         )
+
+                        LaunchedEffect(Unit) {
+                            rotation.animateTo(
+                                targetValue = currentRotation + 360f,
+                                animationSpec = infiniteRepeatable(
+                                    animation = tween(1200, easing = LinearEasing),
+                                    repeatMode = RepeatMode.Restart
+                                )
+                            ) {
+                                currentRotation = value
+                            }
+                        }
                     }
                 }
 

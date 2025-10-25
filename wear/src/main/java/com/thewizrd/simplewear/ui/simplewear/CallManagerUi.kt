@@ -24,8 +24,9 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.VolumeUp
-import androidx.compose.material.icons.outlined.MicOff
+import androidx.compose.material.icons.rounded.CallEnd
 import androidx.compose.material.icons.rounded.Dialpad
+import androidx.compose.material.icons.rounded.MicOff
 import androidx.compose.material.icons.rounded.MoreHoriz
 import androidx.compose.material.icons.rounded.SpeakerPhone
 import androidx.compose.runtime.Composable
@@ -48,7 +49,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
@@ -436,7 +436,7 @@ private fun CallManagerUi(
                 verticalAlignment = Alignment.Top
             ) {
                 CallUiButton(
-                    imageVector = Icons.Outlined.MicOff,
+                    imageVector = Icons.Rounded.MicOff,
                     buttonSize = buttonSize,
                     isChecked = uiState.isMuted,
                     onClick = onMute,
@@ -480,7 +480,7 @@ private fun CallManagerUi(
             ) {
                 Icon(
                     modifier = Modifier.size(IconButtonDefaults.iconSizeFor(buttonSize)),
-                    painter = painterResource(id = R.drawable.ic_call_end_24dp),
+                    imageVector = Icons.Rounded.CallEnd,
                     contentDescription = stringResource(id = R.string.action_hangup)
                 )
             }

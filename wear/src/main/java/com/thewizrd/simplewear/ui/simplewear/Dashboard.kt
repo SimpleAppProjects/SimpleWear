@@ -17,7 +17,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.rounded.Info
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -116,7 +116,7 @@ fun Dashboard(
         },
         icon = {
             Icon(
-                painter = rememberVectorPainter(image = Icons.Default.Info),
+                painter = rememberVectorPainter(image = Icons.Rounded.Info),
                 contentDescription = null
             )
         },

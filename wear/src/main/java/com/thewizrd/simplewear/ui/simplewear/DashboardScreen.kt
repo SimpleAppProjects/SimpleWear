@@ -23,6 +23,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ViewList
+import androidx.compose.material.icons.rounded.Apps
+import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.ViewList
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
@@ -70,6 +75,7 @@ import androidx.wear.compose.material3.SwitchButton
 import androidx.wear.compose.material3.Text
 import androidx.wear.compose.material3.TimeText
 import androidx.wear.compose.material3.contentColorFor
+import com.google.android.horologist.images.base.paintable.ImageVectorPaintable.Companion.asPaintable
 import com.thewizrd.shared_resources.actions.Actions
 import com.thewizrd.shared_resources.actions.BatteryStatus
 import com.thewizrd.shared_resources.controls.ActionButtonViewModel
@@ -296,7 +302,13 @@ private fun BatteryStatusChip(
             modifier = Modifier.weight(1f, fill = true),
             icon = {
                 Icon(
-                    painter = painterResource(id = R.drawable.ic_battery_std_white_24dp),
+                    painter = painterResource(
+                        id = if (batteryStatus?.isCharging == true) {
+                            R.drawable.ic_battery_charging_white_24dp
+                        } else {
+                            R.drawable.ic_battery_std_white_24dp
+                        }
+                    ),
                     contentDescription = stringResource(R.string.title_batt_state)
                 )
             },
@@ -574,7 +586,7 @@ private fun LayoutPreferenceButton(
                 painter = if (isGridLayout) {
                     painterResource(id = R.drawable.ic_apps_white_24dp)
                 } else {
-                    painterResource(id = R.drawable.ic_view_list_white_24dp)
+                    Icons.AutoMirrored.Rounded.ViewList.asPaintable().rememberPainter()
                 },
                 contentDescription = if (isGridLayout) {
                     stringResource(id = R.string.option_grid)
@@ -608,7 +620,7 @@ private fun DashboardConfigButton(
         },
         icon = {
             Icon(
-                painter = painterResource(id = R.drawable.ic_baseline_edit_24),
+                painter = painterResource(id = R.drawable.ic_mode_edit),
                 contentDescription = stringResource(id = R.string.pref_title_dasheditor)
             )
         },
@@ -627,7 +639,7 @@ private fun TileDashboardConfigButton(
         },
         icon = {
             Icon(
-                painter = painterResource(id = R.drawable.ic_baseline_edit_24),
+                painter = painterResource(id = R.drawable.ic_mode_edit),
                 contentDescription = stringResource(id = R.string.pref_title_tiledasheditor)
             )
         },

@@ -18,6 +18,9 @@ import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.RestartAlt
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -237,7 +240,7 @@ private fun DashboardConfigUi(
                         },
                         icon = {
                             Icon(
-                                painter = painterResource(id = R.drawable.ic_add_white_24dp),
+                                imageVector = Icons.Rounded.Add,
                                 contentDescription = stringResource(id = R.string.action_add_batt_state)
                             )
                         },
@@ -341,7 +344,7 @@ private fun DashboardConfigUi(
                             )
                         ) {
                             Icon(
-                                painter = painterResource(id = R.drawable.ic_add_white_24dp),
+                                imageVector = Icons.Rounded.Add,
                                 contentDescription = stringResource(id = R.string.action_add_batt_state)
                             )
                         }
@@ -364,7 +367,7 @@ private fun DashboardConfigUi(
                         content = {
                             Icon(
                                 modifier = Modifier.size(28.dp),
-                                painter = painterResource(id = R.drawable.ic_baseline_restart_alt_24),
+                                imageVector = Icons.Rounded.RestartAlt,
                                 contentDescription = stringResource(R.string.message_reset_to_default),
                             )
                         }

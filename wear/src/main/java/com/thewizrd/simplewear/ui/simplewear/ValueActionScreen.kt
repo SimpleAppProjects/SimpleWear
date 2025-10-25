@@ -4,6 +4,9 @@ import android.content.Intent
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Remove
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -277,7 +280,7 @@ fun ValueActionScreen(
                 )
             } else {
                 Icon(
-                    painter = painterResource(id = R.drawable.ic_add_white_24dp),
+                    imageVector = Icons.Rounded.Add,
                     contentDescription = stringResource(id = R.string.wear_m3c_slider_increase_content_description)
                 )
             }
@@ -290,7 +293,7 @@ fun ValueActionScreen(
                 )
             } else {
                 Icon(
-                    painter = painterResource(id = R.drawable.ic_remove_white_24dp),
+                    imageVector = Icons.Rounded.Remove,
                     contentDescription = stringResource(id = R.string.wear_m3c_slider_decrease_content_description)
                 )
             }
@@ -332,7 +335,7 @@ fun ValueActionScreen(
                                 id = when (uiState.streamType) {
                                     AudioStreamType.MUSIC -> R.drawable.ic_music_note_white_24dp
                                     AudioStreamType.RINGTONE -> R.drawable.ic_baseline_ring_volume_24dp
-                                    AudioStreamType.VOICE_CALL -> R.drawable.ic_baseline_call_24dp
+                                    AudioStreamType.VOICE_CALL -> R.drawable.ic_phone_24dp
                                     AudioStreamType.ALARM -> R.drawable.ic_alarm_white_24dp
                                     null -> R.drawable.ic_volume_up_white_24dp
                                 }

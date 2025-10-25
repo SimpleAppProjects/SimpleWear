@@ -13,7 +13,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -216,7 +217,7 @@ private fun TimedActionUi(
         edgeButton = {
             EdgeButton(onClick = onAddAction) {
                 Icon(
-                    painter = painterResource(id = R.drawable.ic_add_white_24dp),
+                    imageVector = Icons.Rounded.Add,
                     contentDescription = stringResource(id = R.string.label_add_action)
                 )
             }
@@ -286,7 +287,7 @@ private fun EmptyTimedActionUi(
                 onClick = onAddAction
             ) {
                 Icon(
-                    painter = painterResource(id = R.drawable.ic_add_white_24dp),
+                    imageVector = Icons.Rounded.Add,
                     contentDescription = stringResource(R.string.label_add_action)
                 )
             }
@@ -324,7 +325,7 @@ private fun TimedActionChip(
                 },
                 icon = {
                     Icon(
-                        imageVector = Icons.Outlined.Delete,
+                        imageVector = Icons.Rounded.DeleteOutline,
                         contentDescription = stringResource(id = R.string.action_delete)
                     )
                 },

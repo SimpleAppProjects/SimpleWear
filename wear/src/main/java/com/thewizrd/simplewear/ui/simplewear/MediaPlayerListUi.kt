@@ -11,6 +11,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.ClearAll
+import androidx.compose.material.icons.rounded.FilterList
+import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -304,7 +308,7 @@ private fun MediaPlayerListScreen(
                             },
                             icon = {
                                 Icon(
-                                    painter = painterResource(id = R.drawable.ic_baseline_refresh_24),
+                                    imageVector = Icons.Rounded.Refresh,
                                     contentDescription = stringResource(id = R.string.action_refresh)
                                 )
                             },
@@ -425,7 +429,7 @@ private fun MediaPlayerListSettings(
                     },
                     icon = {
                         Icon(
-                            painter = painterResource(id = R.drawable.ic_baseline_filter_list_24),
+                            imageVector = Icons.Rounded.FilterList,
                             contentDescription = stringResource(id = R.string.title_filter_apps)
                         )
                     }
@@ -523,7 +527,7 @@ private fun MediaPlayerFilterScreen(
                 },
                 icon = {
                     Icon(
-                        painter = painterResource(id = R.drawable.ic_clear_all_24dp),
+                        imageVector = Icons.Rounded.ClearAll,
                         contentDescription = stringResource(id = R.string.clear_all)
                     )
                 },
