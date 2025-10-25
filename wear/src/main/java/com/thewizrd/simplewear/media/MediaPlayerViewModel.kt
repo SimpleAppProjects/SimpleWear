@@ -86,6 +86,8 @@ data class PlayerState(
     val positionState: PositionState? = null
 ) {
     fun isEmpty(): Boolean = title.isNullOrEmpty() && artist.isNullOrEmpty()
+
+    val key = "${title}|${artist}"
 }
 
 data class MediaPagerState(

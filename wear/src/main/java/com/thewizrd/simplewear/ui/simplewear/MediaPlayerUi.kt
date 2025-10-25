@@ -4,9 +4,14 @@ package com.thewizrd.simplewear.ui.simplewear
 
 import android.content.Intent
 import android.graphics.Bitmap
+import android.widget.Toast
+import androidx.compose.animation.graphics.res.animatedVectorResource
+import androidx.compose.animation.graphics.res.rememberAnimatedVectorPainter
+import androidx.compose.animation.graphics.vector.AnimatedImageVector
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -18,21 +23,25 @@ import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -65,12 +74,16 @@ import androidx.wear.compose.foundation.pager.rememberPagerState
 import androidx.wear.compose.foundation.rotary.rotaryScrollable
 import androidx.wear.compose.material3.Button
 import androidx.wear.compose.material3.ButtonDefaults
+import androidx.wear.compose.material3.ButtonGroup
+import androidx.wear.compose.material3.ButtonGroupDefaults
 import androidx.wear.compose.material3.CompactButton
+import androidx.wear.compose.material3.FilledIconButton
 import androidx.wear.compose.material3.FilledTonalButton
 import androidx.wear.compose.material3.Icon
 import androidx.wear.compose.material3.IconButtonDefaults
 import androidx.wear.compose.material3.ListHeader
 import androidx.wear.compose.material3.ListHeaderDefaults
+import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.material3.PageIndicatorDefaults
 import androidx.wear.compose.material3.ScreenScaffold
 import androidx.wear.compose.material3.SurfaceTransformation
@@ -134,6 +147,10 @@ import com.thewizrd.simplewear.ui.components.LoadingContent
 import com.thewizrd.simplewear.ui.navigation.Screen
 import com.thewizrd.simplewear.ui.theme.findActivity
 import com.thewizrd.simplewear.ui.tools.WearPreviewDevices
+import com.thewizrd.simplewear.ui.utils.DynamicThemePrimaryColorsFromImage
+import com.thewizrd.simplewear.ui.utils.MinContrastOfPrimaryVsBackground
+import com.thewizrd.simplewear.ui.utils.contrastAgainst
+import com.thewizrd.simplewear.ui.utils.rememberDominantColorState
 import com.thewizrd.simplewear.ui.utils.rememberFocusRequester
 import com.thewizrd.simplewear.viewmodels.ConfirmationData
 import com.thewizrd.simplewear.viewmodels.ConfirmationViewModel
@@ -206,48 +223,52 @@ fun MediaPlayerUi(
             }
         }
 
-        HorizontalPagerScreen(
-            modifier = modifier,
-            pagerState = pagerState,
-            hidePagerIndicator = ambientState.isAmbient || uiState.isLoading || !uiState.isPlayerAvailable,
-            pagerKey = keyFunc,
-            pagerIndicatorBackgroundColor = PageIndicatorDefaults.backgroundColor.copy(alpha = 0.5f)
-        ) { pageIdx ->
-            val key = keyFunc(pageIdx)
+        PlayerDynamicTheme(
+            uiState = uiState
+        ) {
+            HorizontalPagerScreen(
+                modifier = modifier,
+                pagerState = pagerState,
+                hidePagerIndicator = ambientState.isAmbient || uiState.isLoading || !uiState.isPlayerAvailable,
+                pagerKey = keyFunc,
+                pagerIndicatorBackgroundColor = PageIndicatorDefaults.backgroundColor.copy(alpha = 0.5f)
+            ) { pageIdx ->
+                val key = keyFunc(pageIdx)
 
-            when (key) {
-                MediaPageType.Player -> {
-                    MediaPlayerControlsPage(
-                        mediaPlayerViewModel = mediaPlayerViewModel,
-                        volumeViewModel = volumeViewModel,
-                        navController = navController,
-                        ambientState = ambientState
-                    )
+                when (key) {
+                    MediaPageType.Player -> {
+                        MediaPlayerControlsPage(
+                            mediaPlayerViewModel = mediaPlayerViewModel,
+                            volumeViewModel = volumeViewModel,
+                            navController = navController,
+                            ambientState = ambientState
+                        )
+                    }
+
+                    MediaPageType.CustomControls -> {
+                        MediaCustomControlsPage(
+                            mediaPlayerViewModel = mediaPlayerViewModel
+                        )
+                    }
+
+                    MediaPageType.Browser -> {
+                        MediaBrowserPage(
+                            mediaPlayerViewModel = mediaPlayerViewModel
+                        )
+                    }
+
+                    MediaPageType.Queue -> {
+                        MediaQueuePage(
+                            mediaPlayerViewModel = mediaPlayerViewModel
+                        )
+                    }
                 }
 
-                MediaPageType.CustomControls -> {
-                    MediaCustomControlsPage(
-                        mediaPlayerViewModel = mediaPlayerViewModel
-                    )
-                }
-
-                MediaPageType.Browser -> {
-                    MediaBrowserPage(
-                        mediaPlayerViewModel = mediaPlayerViewModel
-                    )
-                }
-
-                MediaPageType.Queue -> {
-                    MediaQueuePage(
-                        mediaPlayerViewModel = mediaPlayerViewModel
-                    )
-                }
-            }
-
-            LaunchedEffect(pagerState, pagerState.targetPage, pagerState.currentPage) {
-                val targetPageKey = keyFunc(pagerState.targetPage)
-                if (mediaPagerState.currentPageKey != targetPageKey) {
-                    mediaPlayerViewModel.updateCurrentPage(targetPageKey)
+                LaunchedEffect(pagerState, pagerState.targetPage, pagerState.currentPage) {
+                    val targetPageKey = keyFunc(pagerState.targetPage)
+                    if (mediaPagerState.currentPageKey != targetPageKey) {
+                        mediaPlayerViewModel.updateCurrentPage(targetPageKey)
+                    }
                 }
             }
         }
@@ -882,6 +903,9 @@ private fun MediaCustomControlsPage(
     focusRequester: FocusRequester = rememberFocusRequester(),
     onItemClick: (MediaItemModel) -> Unit = {}
 ) {
+    val context = LocalContext.current
+    val compositionScope = rememberCoroutineScope()
+
     LoadingContent(
         empty = false,
         emptyContent = {},
@@ -894,9 +918,22 @@ private fun MediaCustomControlsPage(
         )
         val transformationSpec = rememberTransformationSpec()
 
+        val buttonGroupItems = remember(uiState.mediaCustomItems) {
+            if (uiState.mediaCustomItems.size > 3) {
+                uiState.mediaCustomItems.filter { it.id != MediaHelper.ACTIONITEM_PLAY && it.icon != null }
+                    .take(3)
+            } else {
+                emptyList()
+            }
+        }
+        val listItems by remember(uiState.mediaCustomItems) {
+            derivedStateOf { uiState.mediaCustomItems.filterNot { buttonGroupItems.contains(it) } }
+        }
+
         ScreenScaffold(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = contentPadding
+            contentPadding = contentPadding,
+            scrollState = columnState
         ) { contentPadding ->
             TransformingLazyColumn(
                 modifier = Modifier
@@ -927,7 +964,53 @@ private fun MediaCustomControlsPage(
                     }
                 }
 
-                items(uiState.mediaCustomItems) { item ->
+                if (buttonGroupItems.isNotEmpty()) {
+                    item {
+                        Column {
+                            ButtonGroup(
+                                modifier = Modifier.fillMaxWidth(),
+                                contentPadding = ButtonGroupDefaults.fullWidthPaddings()
+                            ) {
+                                buttonGroupItems.forEach {
+                                    val interactionSource = remember { MutableInteractionSource() }
+
+                                    FilledIconButton(
+                                        modifier = Modifier.animateWidth(interactionSource),
+                                        onClick = {
+                                            onItemClick(it)
+                                        },
+                                        interactionSource = interactionSource,
+                                        content = {
+                                            it.icon?.let { bmp ->
+                                                Icon(
+                                                    modifier = Modifier.size(ButtonDefaults.IconSize),
+                                                    bitmap = bmp.asImageBitmap(),
+                                                    contentDescription = it.title
+                                                )
+                                            }
+                                        },
+                                        onLongClickLabel = it.title,
+                                        onLongClick = {
+                                            compositionScope.launch {
+                                                if (isActive && !it.title.isNullOrEmpty()) {
+                                                    Toast.makeText(
+                                                        context,
+                                                        it.title,
+                                                        Toast.LENGTH_SHORT
+                                                    ).show()
+                                                }
+                                            }
+                                        }
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(4.dp))
+                        }
+                    }
+                }
+
+                items(listItems) { item ->
                     FilledTonalButton(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -1004,7 +1087,8 @@ private fun MediaBrowserPage(
 
     ScreenScaffold(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = contentPadding
+        contentPadding = contentPadding,
+        scrollState = columnState
     ) { contentPadding ->
         LoadingContent(
             empty = false,
@@ -1136,7 +1220,8 @@ private fun MediaQueuePage(
 
     ScreenScaffold(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = contentPadding
+        contentPadding = contentPadding,
+        scrollState = columnState
     ) { contentPadding ->
         LoadingContent(
             empty = false,
@@ -1194,11 +1279,20 @@ private fun MediaQueuePage(
                         } ?: run {
                             if (item.id.toLong() == uiState.activeQueueItemId) {
                                 {
+                                    val image =
+                                        AnimatedImageVector.animatedVectorResource(R.drawable.equalizer_animated)
+                                    var atEnd by remember { mutableStateOf(false) }
+
                                     Icon(
                                         modifier = Modifier.size(ButtonDefaults.IconSize),
-                                        painter = painterResource(id = R.drawable.rounded_equalizer_24),
+                                        painter = rememberAnimatedVectorPainter(image, atEnd),
                                         contentDescription = item.title
                                     )
+
+                                    LaunchedEffect(uiState.playerState) {
+                                        atEnd =
+                                            uiState.playerState.playbackState == PlaybackState.PLAYING
+                                    }
                                 }
                             } else {
                                 null
@@ -1231,6 +1325,42 @@ private fun MediaQueuePage(
                 }
             }
         }
+    }
+}
+
+/**
+ * Theme that updates the colors dynamically depending on the image
+ * Source: Jetcaster (https://github.com/android/compose-samples/blob/main/Jetcaster/app/src/main/java/com/example/jetcaster/ui/player/PlayerScreen.kt)
+ */
+@Composable
+private fun PlayerDynamicTheme(
+    uiState: MediaPlayerUiState,
+    content: @Composable () -> Unit
+) {
+    val surfaceColor = MaterialTheme.colorScheme.background
+    val dominantColorState = rememberDominantColorState(
+        defaultColor = MaterialTheme.colorScheme.background,
+        defaultOnColor = MaterialTheme.colorScheme.onBackground
+    ) { color ->
+        // We want a color which has sufficient contrast against the surface color
+        color.contrastAgainst(surfaceColor) >= MinContrastOfPrimaryVsBackground
+    }
+    DynamicThemePrimaryColorsFromImage(dominantColorState) {
+        // Update the dominantColorState with colors coming from the image
+        LaunchedEffect(uiState.playerState.artworkBitmap) {
+            val key = uiState.playerState.key
+
+            if (uiState.playerState.artworkBitmap != null) {
+                dominantColorState.updateColorsFromImage(
+                    key,
+                    uiState.playerState.artworkBitmap,
+                    false
+                )
+            } else {
+                dominantColorState.reset()
+            }
+        }
+        content()
     }
 }
 

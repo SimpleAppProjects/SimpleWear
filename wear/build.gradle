@@ -80,6 +80,7 @@ dependencies {
     implementation "androidx.core:core-splashscreen:$coresplash_version"
     implementation "androidx.navigation:navigation-runtime-ktx:$navigation_version"
     implementation "androidx.datastore:datastore:$datastore_version"
+    implementation "androidx.palette:palette-ktx:1.0.0"
 
     implementation platform("com.google.firebase:firebase-bom:$firebase_version")
     implementation 'com.google.firebase:firebase-analytics'

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/rounded_equalizer_24">
+    <target
+        android:name="bar1"
+        android:animation="@animator/bar1_animator" />
+    <target
+        android:name="bar2"
+        android:animation="@animator/bar2_animator" />
+    <target
+        android:name="bar3"
+        android:animation="@animator/bar3_animator" />
+</animated-vector>

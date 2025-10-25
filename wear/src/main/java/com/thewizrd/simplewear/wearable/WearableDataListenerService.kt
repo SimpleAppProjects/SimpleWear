@@ -577,6 +577,7 @@ class WearableDataListenerService : WearableListenerService() {
 
         val ongoingActivity = OngoingActivity.Builder(applicationContext, 1001, notifBuilder)
             .setStaticIcon(R.drawable.ic_music_note_white_24dp)
+            .setAnimatedIcon(R.drawable.music_note_bounce_animated)
             .setTouchIntent(getMediaControllerIntent())
             //.setStatus(ongoingActivityStatus) // Uses content text from notif
             .setTitle(notifTitle)
