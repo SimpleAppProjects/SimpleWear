@@ -65,7 +65,7 @@ import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.preferences.Settings
 import com.thewizrd.simplewear.ui.compose.LazyGridScrollIndicator
 import com.thewizrd.simplewear.ui.compose.LazyGridScrollInfoProvider
-import com.thewizrd.simplewear.ui.tools.WearPreviewDevices
+import com.thewizrd.simplewear.ui.compose.tools.WearPreviewDevices
 import com.thewizrd.simplewear.ui.utils.ReorderHapticFeedbackType
 import com.thewizrd.simplewear.ui.utils.rememberFocusRequester
 import com.thewizrd.simplewear.ui.utils.rememberReorderHapticFeedback

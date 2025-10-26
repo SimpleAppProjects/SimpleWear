@@ -1,21 +1,22 @@
+@file:OptIn(ProtoLayoutExperimental::class)
+@file:kotlin.OptIn(ExperimentalHorologistApi::class)
+@file:Suppress("FunctionName")
+
 package com.thewizrd.simplewear.wearable.tiles.layouts
 
 import android.content.Context
-import android.graphics.Color
 import androidx.annotation.OptIn
-import androidx.core.content.ContextCompat
 import androidx.wear.protolayout.ActionBuilders
-import androidx.wear.protolayout.ColorBuilders
 import androidx.wear.protolayout.DeviceParametersBuilders.DeviceParameters
-import androidx.wear.protolayout.DimensionBuilders
 import androidx.wear.protolayout.DimensionBuilders.dp
+import androidx.wear.protolayout.DimensionBuilders.expand
 import androidx.wear.protolayout.DimensionBuilders.sp
+import androidx.wear.protolayout.LayoutElementBuilders.Column
 import androidx.wear.protolayout.LayoutElementBuilders.FONT_VARIANT_BODY
 import androidx.wear.protolayout.LayoutElementBuilders.FONT_WEIGHT_MEDIUM
 import androidx.wear.protolayout.LayoutElementBuilders.FontStyle
 import androidx.wear.protolayout.LayoutElementBuilders.HORIZONTAL_ALIGN_CENTER
 import androidx.wear.protolayout.LayoutElementBuilders.LayoutElement
-import androidx.wear.protolayout.LayoutElementBuilders.Spacer
 import androidx.wear.protolayout.LayoutElementBuilders.SpanImage
 import androidx.wear.protolayout.LayoutElementBuilders.SpanText
 import androidx.wear.protolayout.LayoutElementBuilders.Spannable
@@ -27,25 +28,38 @@ import androidx.wear.protolayout.expression.AppDataKey
 import androidx.wear.protolayout.expression.DynamicBuilders
 import androidx.wear.protolayout.expression.DynamicDataBuilders
 import androidx.wear.protolayout.expression.ProtoLayoutExperimental
-import androidx.wear.protolayout.material.Button
-import androidx.wear.protolayout.material.ButtonColors
-import androidx.wear.protolayout.material.ChipColors
-import androidx.wear.protolayout.material.Colors
-import androidx.wear.protolayout.material.CompactChip
-import androidx.wear.protolayout.material.Text
-import androidx.wear.protolayout.material.Typography
-import androidx.wear.protolayout.material.layouts.MultiButtonLayout
-import androidx.wear.protolayout.material.layouts.MultiButtonLayout.FIVE_BUTTON_DISTRIBUTION_TOP_HEAVY
-import androidx.wear.protolayout.material.layouts.PrimaryLayout
+import androidx.wear.protolayout.material3.ButtonDefaults.filledTonalButtonColors
+import androidx.wear.protolayout.material3.ButtonGroupDefaults.DEFAULT_SPACER_BETWEEN_BUTTON_GROUPS
+import androidx.wear.protolayout.material3.MaterialScope
+import androidx.wear.protolayout.material3.buttonGroup
+import androidx.wear.protolayout.material3.icon
+import androidx.wear.protolayout.material3.iconButton
+import androidx.wear.protolayout.material3.iconEdgeButton
+import androidx.wear.protolayout.material3.materialScope
+import androidx.wear.protolayout.material3.primaryLayout
+import androidx.wear.protolayout.material3.text
+import androidx.wear.protolayout.modifiers.LayoutModifier
+import androidx.wear.protolayout.modifiers.clickable
+import androidx.wear.protolayout.modifiers.contentDescription
+import androidx.wear.protolayout.types.LayoutColor
+import androidx.wear.protolayout.types.layoutString
+import com.google.android.horologist.annotations.ExperimentalHorologistApi
+import com.google.android.horologist.compose.tools.tileRendererPreviewData
 import com.thewizrd.shared_resources.actions.Actions
+import com.thewizrd.shared_resources.actions.BatteryStatus
 import com.thewizrd.shared_resources.actions.DNDChoice
 import com.thewizrd.shared_resources.actions.LocationState
 import com.thewizrd.shared_resources.actions.MultiChoiceAction
+import com.thewizrd.shared_resources.actions.NormalAction
 import com.thewizrd.shared_resources.actions.RingerChoice
 import com.thewizrd.shared_resources.actions.ToggleAction
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
 import com.thewizrd.simplewear.R
+import com.thewizrd.simplewear.ui.theme.wearTileColorScheme
+import com.thewizrd.simplewear.ui.tiles.tools.WearPreviewDevices
+import com.thewizrd.simplewear.wearable.tiles.DashboardTileRenderer
 import com.thewizrd.simplewear.wearable.tiles.DashboardTileRenderer.Companion.ID_BATTERY
+import com.thewizrd.simplewear.wearable.tiles.DashboardTileRenderer.Companion.ID_BATTERY_CHARGING
 import com.thewizrd.simplewear.wearable.tiles.DashboardTileRenderer.Companion.ID_BT_OFF
 import com.thewizrd.simplewear.wearable.tiles.DashboardTileRenderer.Companion.ID_BT_ON
 import com.thewizrd.simplewear.wearable.tiles.DashboardTileRenderer.Companion.ID_DATA_OFF
@@ -71,94 +85,76 @@ import com.thewizrd.simplewear.wearable.tiles.DashboardTileRenderer.Companion.ID
 import com.thewizrd.simplewear.wearable.tiles.DashboardTileState
 import java.util.Locale
 
-private val CIRCLE_SIZE = dp(48f)
-private val SMALL_CIRCLE_SIZE = dp(40f)
-
-private val ICON_SIZE = dp(24f)
-private val SMALL_ICON_SIZE = dp(20f)
-
-private val COLORS = Colors(
-    0xff91cfff.toInt(), 0xff000000.toInt(),
-    0xff202124.toInt(), 0xffffffff.toInt()
-)
-
-@OptIn(ProtoLayoutExperimental::class)
 internal fun DashboardTileLayout(
     context: Context,
     deviceParameters: DeviceParameters,
     state: DashboardTileState
-): LayoutElement {
-    return if (state.connectionStatus != WearConnectionStatus.CONNECTED) {
-        PrimaryLayout.Builder(deviceParameters)
-            .apply {
-                when (state.connectionStatus) {
-                    WearConnectionStatus.APPNOTINSTALLED -> {
-                        setContent(
-                            Text.Builder(context, context.getString(R.string.error_notinstalled))
-                                .setTypography(Typography.TYPOGRAPHY_CAPTION1)
-                                .setColor(
-                                    ColorBuilders.argb(
-                                        ContextCompat.getColor(context, R.color.colorSecondary)
-                                    )
-                                )
-                                .setMultilineAlignment(TEXT_ALIGN_CENTER)
-                                .setMaxLines(3)
-                                .build()
-                        )
-
-                        setPrimaryChipContent(
-                            IconButton(
-                                context,
-                                ID_OPENONPHONE,
-                                context.getString(R.string.common_open_on_phone),
-                                Clickable.Builder()
+): LayoutElement =
+    materialScope(context, deviceParameters, defaultColorScheme = wearTileColorScheme) {
+        if (state.connectionStatus != WearConnectionStatus.CONNECTED) {
+            when (state.connectionStatus) {
+                WearConnectionStatus.APPNOTINSTALLED -> {
+                    primaryLayout(
+                        mainSlot = {
+                            text(
+                                text = context.getString(R.string.error_notinstalled).layoutString,
+                                color = colorScheme.secondary,
+                                alignment = TEXT_ALIGN_CENTER,
+                                maxLines = 3
+                            )
+                        },
+                        bottomSlot = {
+                            iconEdgeButton(
+                                modifier = LayoutModifier.contentDescription(context.getString(R.string.common_open_on_phone)),
+                                onClick = Clickable.Builder()
                                     .setId(ID_OPENONPHONE)
                                     .setOnClick(
                                         ActionBuilders.LoadAction.Builder()
                                             .build()
                                     )
                                     .build(),
-                                size = SMALL_CIRCLE_SIZE,
-                                iconSize = SMALL_ICON_SIZE
+                                iconContent = {
+                                    icon(ID_OPENONPHONE)
+                                }
                             )
+                        }
+                    )
+                }
+
+                else -> {
+                    primaryLayout(
+                        mainSlot = {
+                            text(
+                                text = context.getString(R.string.status_disconnected).layoutString,
+                                color = colorScheme.secondary,
+                                alignment = TEXT_ALIGN_CENTER,
+                                maxLines = 3
+                            )
+                        },
+                        bottomSlot = {
+                            iconEdgeButton(
+                                modifier = LayoutModifier.contentDescription(context.getString(R.string.status_disconnected)),
+                                onClick = Clickable.Builder().build(),
+                                iconContent = {
+                                    icon(ID_PHONEDISCONNECTED)
+                                }
                         )
                     }
-
-                    else -> {
-                        setContent(
-                            Text.Builder(context, context.getString(R.string.status_disconnected))
-                                .setTypography(Typography.TYPOGRAPHY_CAPTION1)
-                                .setColor(
-                                    ColorBuilders.argb(
-                                        ContextCompat.getColor(context, R.color.colorSecondary)
-                                    )
-                                )
-                                .setMultilineAlignment(TEXT_ALIGN_CENTER)
-                                .setMaxLines(3)
-                                .build()
-                        )
-
-                        setPrimaryChipContent(
-                            IconButton(
-                                context,
-                                resourceId = ID_PHONEDISCONNECTED,
-                                contentDescription = context.getString(R.string.status_disconnected),
-                                size = SMALL_CIRCLE_SIZE,
-                                iconSize = SMALL_ICON_SIZE
-                            )
-                        )
-                    }
+                    )
                 }
             }
-            .build()
     } else {
-        return PrimaryLayout.Builder(deviceParameters)
-            .setPrimaryLabelTextContent(
-                if (state.showBatteryStatus) {
+            primaryLayout(
+                titleSlot = state.takeIf { it.showBatteryStatus }?.let { state ->
+                    {
                     Spannable.Builder()
                         .addSpan(
                             SpanImage.Builder()
-                                .setResourceId(ID_BATTERY)
+                                .setResourceId(
+                                    state.batteryStatus?.let { status ->
+                                        if (status.isCharging) ID_BATTERY_CHARGING else ID_BATTERY
+                                    } ?: ID_BATTERY
+                                )
                                 .setWidth(dp(16f))
                                 .setHeight(dp(16f))
                                 .build()
@@ -192,55 +188,46 @@ internal fun DashboardTileLayout(
                         .setMultilineAlignment(HORIZONTAL_ALIGN_CENTER)
                         .setOverflow(TEXT_OVERFLOW_MARQUEE)
                         .build()
-                } else {
-                    Spacer.Builder().build()
                 }
-            )
-            .setContent(
-                MultiButtonLayout.Builder()
-                    .setFiveButtonDistribution(FIVE_BUTTON_DISTRIBUTION_TOP_HEAVY)
+                },
+                mainSlot = {
+                    Column.Builder()
+                        .setWidth(expand())
+                        .setHeight(expand())
                     .apply {
-                        state.actions.forEach { (actionType, _) ->
-                            addButtonContent(
-                                ActionButton(context, deviceParameters, state, actionType)
+                        val chunks = state.actions.toList().chunked(3)
+                        chunks.forEachIndexed { index, chunk ->
+                            addContent(
+                                buttonGroup {
+                                    chunk.forEach { (actionType, _) ->
+                                        buttonGroupItem {
+                                            ActionButton(state, actionType)
+                                        }
+                                    }
+                                }
                             )
+
+                            if (index < chunks.size - 1) {
+                                addContent(DEFAULT_SPACER_BETWEEN_BUTTON_GROUPS)
+                            }
                         }
                     }
-                    .build()
+                        .build()
+                }
             )
-            .build()
-    }
-}
-
-private fun IconButton(
-    context: Context,
-    resourceId: String,
-    contentDescription: String = "",
-    clickable: Clickable = Clickable.Builder().build(),
-    size: DimensionBuilders.DpProp? = CIRCLE_SIZE,
-    iconSize: DimensionBuilders.DpProp = ICON_SIZE
-) = Button.Builder(context, clickable)
-    .setContentDescription(contentDescription)
-    .setButtonColors(ButtonColors.primaryButtonColors(COLORS))
-    .setIconContent(resourceId, iconSize)
-    .apply {
-        if (size != null) {
-            setSize(size)
         }
     }
-    .build()
 
-private fun ActionButton(
-    context: Context,
-    deviceParameters: DeviceParameters,
+private fun MaterialScope.ActionButton(
     state: DashboardTileState,
     action: Actions
-) = Button.Builder(
-    context,
-    Clickable.Builder()
-        .setId(action.name)
-        .setOnClick(
-            ActionBuilders.LoadAction.Builder()
+): LayoutElement {
+    val isEnabled = state.isActionEnabled(action)
+
+    return iconButton(
+        onClick = clickable(
+            id = action.name,
+            action = ActionBuilders.LoadAction.Builder()
                 .setRequestState(
                     StateBuilders.State.Builder()
                         .addKeyToValueMapping(
@@ -252,53 +239,44 @@ private fun ActionButton(
                         .build()
                 )
                 .build()
-        )
-        .build()
-)
-    .setButtonColors(
-        ButtonColors(
-            ColorBuilders.ColorProp.Builder(
-                ContextCompat.getColor(context, R.color.buttonDisabled)
+        ),
+        width = expand(),
+        height = expand(),
+        iconContent = {
+            icon(protoLayoutResourceId = getResourceIdForAction(state, action))
+        },
+        colors = filledTonalButtonColors().copy(
+            containerColor = LayoutColor(
+                staticArgb = if (isEnabled) {
+                    colorScheme.primaryContainer.staticArgb
+                } else {
+                    colorScheme.surfaceContainer.staticArgb
+                },
+                dynamicArgb = DynamicBuilders.DynamicColor
+                    .onCondition(
+                        DynamicBuilders.DynamicBool.from(AppDataKey(action.name))
+                    )
+                    .use(colorScheme.primaryContainer.staticArgb)
+                    .elseUse(colorScheme.surfaceContainer.staticArgb)
+                    .animate()
+            ),
+            iconColor = LayoutColor(
+                staticArgb = if (isEnabled) {
+                    colorScheme.onPrimaryContainer.staticArgb
+                } else {
+                    colorScheme.onSurface.staticArgb
+                },
+                dynamicArgb = DynamicBuilders.DynamicColor
+                    .onCondition(
+                        DynamicBuilders.DynamicBool.from(AppDataKey(action.name))
+                    )
+                    .use(colorScheme.onPrimaryContainer.staticArgb)
+                    .elseUse(colorScheme.onSurface.staticArgb)
+                    .animate()
             )
-                .setDynamicValue(
-                    DynamicBuilders.DynamicColor
-                        .onCondition(
-                            DynamicBuilders.DynamicBool.from(AppDataKey(action.name))
-                        )
-                        .use(ContextCompat.getColor(context, R.color.colorPrimary))
-                        .elseUse(ContextCompat.getColor(context, R.color.buttonDisabled))
-                        .animate()
-                )
-                .build(),
-            ColorBuilders.argb(Color.WHITE)
         )
     )
-    .apply {
-        val isSmol =
-            minOf(deviceParameters.screenHeightDp, deviceParameters.screenWidthDp) <= 192f
-        setIconContent(
-            getResourceIdForAction(state, action),
-            if (isSmol) SMALL_ICON_SIZE else ICON_SIZE
-        )
-        setSize(if (isSmol) SMALL_CIRCLE_SIZE else CIRCLE_SIZE)
-    }
-    .build()
-
-private fun CompactChipButton(
-    context: Context,
-    deviceParameters: DeviceParameters,
-    text: String,
-    iconResourceId: String? = null,
-    clickable: Clickable = Clickable.Builder().build()
-) = CompactChip.Builder(
-    context, text, clickable, deviceParameters
-).setChipColors(
-    ChipColors.primaryChipColors(COLORS)
-).apply {
-    if (iconResourceId != null) {
-        setIconContent(iconResourceId)
-    }
-}.build()
+}
 
 private fun getResourceIdForAction(state: DashboardTileState, action: Actions): String {
     return when (action) {
@@ -371,3 +349,77 @@ private fun getResourceIdForAction(state: DashboardTileState, action: Actions): 
         else -> ""
     }
 }
+
+@WearPreviewDevices
+private fun DashboardTilePreview(context: Context) = tileRendererPreviewData(
+    renderer = DashboardTileRenderer(context, debugResourceMode = true),
+    tileState = DashboardTileState(
+        connectionStatus = WearConnectionStatus.CONNECTED,
+        batteryStatus = BatteryStatus(100, true),
+        actions = mapOf(
+            Actions.WIFI to ToggleAction(Actions.WIFI, true),
+            Actions.BLUETOOTH to ToggleAction(Actions.BLUETOOTH, true),
+            Actions.LOCKSCREEN to NormalAction(Actions.LOCKSCREEN),
+            Actions.DONOTDISTURB to MultiChoiceAction(
+                Actions.DONOTDISTURB,
+                DNDChoice.OFF.value
+            ),
+            Actions.RINGER to MultiChoiceAction(Actions.RINGER, RingerChoice.VIBRATION.value),
+            Actions.TORCH to NormalAction(Actions.TORCH)
+        )
+    ),
+    resourceState = Unit
+)
+
+@WearPreviewDevices
+private fun DashboardLoadingTilePreview(context: Context) = tileRendererPreviewData(
+    renderer = DashboardTileRenderer(context, debugResourceMode = true),
+    tileState = DashboardTileState(
+        connectionStatus = WearConnectionStatus.CONNECTED,
+        batteryStatus = null,
+        actions = emptyMap()
+    ),
+    resourceState = Unit
+)
+
+@WearPreviewDevices
+private fun DashboardDisconnectTilePreview(context: Context) = tileRendererPreviewData(
+    renderer = DashboardTileRenderer(context, debugResourceMode = true),
+    tileState = DashboardTileState(
+        connectionStatus = WearConnectionStatus.DISCONNECTED,
+        batteryStatus = BatteryStatus(100, true),
+        actions = mapOf(
+            Actions.WIFI to ToggleAction(Actions.WIFI, true),
+            Actions.BLUETOOTH to ToggleAction(Actions.BLUETOOTH, true),
+            Actions.LOCKSCREEN to NormalAction(Actions.LOCKSCREEN),
+            Actions.DONOTDISTURB to MultiChoiceAction(
+                Actions.DONOTDISTURB,
+                DNDChoice.OFF.value
+            ),
+            Actions.RINGER to MultiChoiceAction(Actions.RINGER, RingerChoice.VIBRATION.value),
+            Actions.TORCH to NormalAction(Actions.TORCH)
+        )
+    ),
+    resourceState = Unit
+)
+
+@WearPreviewDevices
+private fun DashboardNotInstalledTilePreview(context: Context) = tileRendererPreviewData(
+    renderer = DashboardTileRenderer(context, debugResourceMode = true),
+    tileState = DashboardTileState(
+        connectionStatus = WearConnectionStatus.APPNOTINSTALLED,
+        batteryStatus = BatteryStatus(100, true),
+        actions = mapOf(
+            Actions.WIFI to ToggleAction(Actions.WIFI, true),
+            Actions.BLUETOOTH to ToggleAction(Actions.BLUETOOTH, true),
+            Actions.LOCKSCREEN to NormalAction(Actions.LOCKSCREEN),
+            Actions.DONOTDISTURB to MultiChoiceAction(
+                Actions.DONOTDISTURB,
+                DNDChoice.OFF.value
+            ),
+            Actions.RINGER to MultiChoiceAction(Actions.RINGER, RingerChoice.VIBRATION.value),
+            Actions.TORCH to NormalAction(Actions.TORCH)
+        )
+    ),
+    resourceState = Unit
+)

@@ -1,7 +1,9 @@
 package com.thewizrd.simplewear.ui.theme
 
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.wear.compose.material3.ColorScheme
+import androidx.wear.protolayout.types.LayoutColor
 
 internal val wearColorScheme: ColorScheme = ColorScheme(
     primary = Color(0xFFA2C9FD),
@@ -39,4 +41,40 @@ internal val wearColorScheme: ColorScheme = ColorScheme(
 
     outline = Color(0xFF8D9199),
     outlineVariant = Color(0xFF43474E),
+)
+
+val wearTileColorScheme = androidx.wear.protolayout.material3.ColorScheme(
+    primary = LayoutColor(wearColorScheme.primary.toArgb()),
+    onPrimary = LayoutColor(wearColorScheme.onPrimary.toArgb()),
+    primaryContainer = LayoutColor(wearColorScheme.primaryContainer.toArgb()),
+    onPrimaryContainer = LayoutColor(wearColorScheme.onPrimaryContainer.toArgb()),
+    primaryDim = LayoutColor(wearColorScheme.primaryDim.toArgb()),
+
+    secondary = LayoutColor(wearColorScheme.secondary.toArgb()),
+    onSecondary = LayoutColor(wearColorScheme.onSecondary.toArgb()),
+    secondaryContainer = LayoutColor(wearColorScheme.secondaryContainer.toArgb()),
+    onSecondaryContainer = LayoutColor(wearColorScheme.onSecondaryContainer.toArgb()),
+    secondaryDim = LayoutColor(wearColorScheme.secondaryDim.toArgb()),
+
+    tertiary = LayoutColor(wearColorScheme.tertiary.toArgb()),
+    onTertiary = LayoutColor(wearColorScheme.onTertiary.toArgb()),
+    tertiaryContainer = LayoutColor(wearColorScheme.tertiaryContainer.toArgb()),
+    onTertiaryContainer = LayoutColor(wearColorScheme.onTertiaryContainer.toArgb()),
+    tertiaryDim = LayoutColor(wearColorScheme.tertiaryDim.toArgb()),
+
+    surfaceContainer = LayoutColor(wearColorScheme.surfaceContainer.toArgb()),
+    surfaceContainerHigh = LayoutColor(wearColorScheme.surfaceContainerHigh.toArgb()),
+    surfaceContainerLow = LayoutColor(wearColorScheme.surfaceContainerLow.toArgb()),
+    onSurface = LayoutColor(wearColorScheme.onSurface.toArgb()),
+    onSurfaceVariant = LayoutColor(wearColorScheme.onSurfaceVariant.toArgb()),
+
+    outline = LayoutColor(wearColorScheme.outline.toArgb()),
+    outlineVariant = LayoutColor(wearColorScheme.outlineVariant.toArgb()),
+
+    error = LayoutColor(wearColorScheme.error.toArgb()),
+    onError = LayoutColor(wearColorScheme.onError.toArgb()),
+    errorContainer = LayoutColor(wearColorScheme.errorContainer.toArgb()),
+    onErrorContainer = LayoutColor(wearColorScheme.onErrorContainer.toArgb()),
+
+    errorDim = LayoutColor(wearColorScheme.errorDim.toArgb()),
 )

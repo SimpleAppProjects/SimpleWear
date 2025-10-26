@@ -144,9 +144,9 @@ import com.thewizrd.simplewear.ui.ambient.ambientMode
 import com.thewizrd.simplewear.ui.components.ConfirmationOverlay
 import com.thewizrd.simplewear.ui.components.HorizontalPagerScreen
 import com.thewizrd.simplewear.ui.components.LoadingContent
+import com.thewizrd.simplewear.ui.compose.tools.WearPreviewDevices
 import com.thewizrd.simplewear.ui.navigation.Screen
 import com.thewizrd.simplewear.ui.theme.findActivity
-import com.thewizrd.simplewear.ui.tools.WearPreviewDevices
 import com.thewizrd.simplewear.ui.utils.DynamicThemePrimaryColorsFromImage
 import com.thewizrd.simplewear.ui.utils.MinContrastOfPrimaryVsBackground
 import com.thewizrd.simplewear.ui.utils.contrastAgainst
@@ -1202,7 +1202,6 @@ private fun MediaQueuePage(
     focusRequester: FocusRequester = rememberFocusRequester(),
     onItemClick: (MediaItemModel) -> Unit = {}
 ) {
-    val context = LocalContext.current
     val activeQueueItemIndex = remember(uiState.activeQueueItemId, uiState.mediaQueueItems) {
         (uiState.activeQueueItemId.takeIf { it > -1L }?.let { activeId ->
             uiState.mediaQueueItems.indexOfFirst { it.id.toLong() == activeId }.takeIf { it > 0 }
