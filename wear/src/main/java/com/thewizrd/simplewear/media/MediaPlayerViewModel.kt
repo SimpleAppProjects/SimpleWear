@@ -443,7 +443,7 @@ class MediaPlayerViewModel(app: Application) : WearableListenerViewModel(app) {
                 sendMessage(
                     mPhoneNodeWithApp!!.id,
                     MediaHelper.MediaPlayerConnectPath,
-                    if (state.isAutoLaunch) state.isAutoLaunch.booleanToBytes() else state.mediaPlayerDetails.packageName?.stringToBytes()
+                    if (state.isAutoLaunch) true.booleanToBytes() else state.mediaPlayerDetails.packageName?.stringToBytes()
                 )
             }
         }

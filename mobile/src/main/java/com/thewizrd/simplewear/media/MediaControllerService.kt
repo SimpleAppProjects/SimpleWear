@@ -271,18 +271,18 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
                 val isAutoLaunch = intent.getBooleanExtra(EXTRA_AUTOLAUNCH, false)
                 val isSoftLaunch = intent.getBooleanExtra(EXTRA_SOFTLAUNCH, false)
 
-                scope.launch {
-                    if ((isAutoLaunch || selectedPackageName == mSelectedMediaApp?.packageName) && mController != null) return@launch
-
-                    if (!selectedPackageName.isNullOrBlank()) {
-                        mSelectedMediaApp = mAvailableMediaApps.find {
-                            it.packageName == selectedPackageName
+                if (!(isAutoLaunch && mController != null && mSelectedMediaApp?.packageName != mController?.packageName) && !(selectedPackageName != null && selectedPackageName == mSelectedMediaApp?.packageName && mController?.packageName == selectedPackageName)) {
+                    scope.launch {
+                        if (!selectedPackageName.isNullOrBlank()) {
+                            mSelectedMediaApp = mAvailableMediaApps.find {
+                                it.packageName == selectedPackageName
+                            }
+                            mSelectedPackageName = mSelectedMediaApp?.packageName
+                            connectMediaSession(isSoftLaunch)
+                        } else {
+                            mSelectedPackageName = null
+                            findActiveMediaSession()
                         }
-                        mSelectedPackageName = mSelectedMediaApp?.packageName
-                        connectMediaSession(isSoftLaunch)
-                    } else {
-                        mSelectedPackageName = null
-                        findActiveMediaSession()
                     }
                 }
             }
@@ -376,8 +376,7 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
                 // Check if active session has changed
                 if (mSelectedPackageName == null) {
                     // If so reset
-                    disconnectMedia(invalidateData = true)
-                    mSelectedPackageName = firstActiveCtrlr.packageName
+                    mSelectedPackageName = null
                     mSelectedMediaApp = null
                 }
             }
@@ -391,8 +390,11 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
                     activeSessions, packageManager, resources
                 )
 
-            val activeMediaApp =
+            val activeMediaApp = if (mSelectedPackageName != null) {
                 actionSessionDetails.find { it.packageName == mSelectedPackageName }
+            } else {
+                actionSessionDetails.find { it.packageName == firstActiveCtrlr?.packageName }
+            }
 
             if (activeMediaApp?.sessionToken != null || mBrowser?.isConnected == true) {
                 if (activeMediaApp != null) mSelectedMediaApp = activeMediaApp
@@ -423,7 +425,7 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
 
             if (!isActive) return@launch
 
-            if (!mediaBrowserServices.isNullOrEmpty()) {
+            if (mediaBrowserServices.isNotEmpty()) {
                 mediaBrowserServices.forEach { s ->
                     mAvailableMediaApps.add(
                         MediaAppDetails(
@@ -436,7 +438,7 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
             }
 
             if (!mSelectedPackageName.isNullOrBlank()) {
-                mAvailableMediaApps.find {
+                mSelectedMediaApp = mAvailableMediaApps.find {
                     it.packageName == mSelectedPackageName
                 }
 
@@ -632,7 +634,7 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
 
     private fun sendControllerUnavailable() {
         scope.launch {
-            sendMediaPlayerState()
+            disconnectMedia(invalidateData = true)
         }
     }
 
