@@ -250,7 +250,7 @@
 
             <meta-data
                 android:name="androidx.wear.tiles.PREVIEW"
-                android:resource="@drawable/mediatile_preview" />
+                android:resource="@drawable/nowplaying_preview" />
         </service>
 
         <service

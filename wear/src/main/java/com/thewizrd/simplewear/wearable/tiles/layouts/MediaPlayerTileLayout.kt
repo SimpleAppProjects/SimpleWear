@@ -394,7 +394,7 @@ internal fun MediaPlayerTileLayout(
 private fun MaterialScope.SettingsButtonLayout(
     state: MediaPlayerTileState
 ): LayoutElement {
-    return if (deviceConfiguration.screenShape == SCREEN_SHAPE_ROUND) {
+    return if (deviceConfiguration.screenShape == SCREEN_SHAPE_ROUND || deviceConfiguration.squareNotSupported()) {
         val isLargeWidth = deviceConfiguration.isLargeWidth()
         val horizontalSpacerPercentage = if (isLargeWidth) 11f else 14.5f
 
@@ -495,7 +495,8 @@ private fun MaterialScope.getSideButtonsPadding(
         5.2f
     }
 
-    val adj = if (deviceConfiguration.screenShape == SCREEN_SHAPE_ROUND) {
+    val adj =
+        if (deviceConfiguration.screenShape == SCREEN_SHAPE_ROUND || deviceConfiguration.squareNotSupported()) {
         0f
     } else {
         if (deviceConfiguration.isLargeWidth()) 2f else 4f
@@ -691,7 +692,7 @@ private fun MaterialScope.VolumeButton(
     .setHeight(expand())
     .setHorizontalAlignment(HORIZONTAL_ALIGN_CENTER)
     .setVerticalAlignment(
-        if (deviceConfiguration.screenShape == SCREEN_SHAPE_ROUND) {
+        if (deviceConfiguration.screenShape == SCREEN_SHAPE_ROUND || deviceConfiguration.squareNotSupported()) {
             VERTICAL_ALIGN_TOP
         } else {
             VERTICAL_ALIGN_CENTER
@@ -699,8 +700,8 @@ private fun MaterialScope.VolumeButton(
     )
     .addContent(
         Box.Builder()
-            .setWidth(dp(40f))
-            .setHeight(dp(32f))
+            .setWidth(getSettingsIconWidth())
+            .setHeight(getSettingsIconHeight())
             .setModifiers(
                 Modifiers.Builder()
                     .setBackground(
@@ -749,7 +750,7 @@ private fun MaterialScope.BrandIcon(
     .setWidth(weight(1f))
     .setHeight(expand())
     .apply {
-        if (deviceConfiguration.screenShape == SCREEN_SHAPE_ROUND) {
+        if (deviceConfiguration.screenShape == SCREEN_SHAPE_ROUND || deviceConfiguration.squareNotSupported()) {
             setModifiers(
                 Modifiers.Builder()
                     .setPadding(padding(bottom = deviceConfiguration.screenHeightDp * 0.03f))
@@ -761,11 +762,27 @@ private fun MaterialScope.BrandIcon(
     .addContent(
         icon(
             protoLayoutResourceId = resourceId,
-            width = dp(32f),
-            height = dp(32f)
+            width = getSettingsIconHeight(),
+            height = getSettingsIconHeight()
         )
     )
     .build()
+
+private fun MaterialScope.getSettingsIconHeight(): DimensionBuilders.DpProp {
+    return if (!deviceConfiguration.isSmallWatch()) {
+        dp(32f)
+    } else {
+        dp(24f)
+    }
+}
+
+private fun MaterialScope.getSettingsIconWidth(): DimensionBuilders.DpProp {
+    return if (!deviceConfiguration.isSmallWatch()) {
+        dp(40f)
+    } else {
+        dp(32f)
+    }
+}
 
 private fun getResourceIdForPlayerAction(action: PlayerAction): String {
     return when (action) {
