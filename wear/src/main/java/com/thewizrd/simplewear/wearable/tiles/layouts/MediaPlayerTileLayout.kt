@@ -40,6 +40,8 @@ import androidx.wear.protolayout.ModifiersBuilders.Padding
 import androidx.wear.protolayout.expression.DynamicBuilders.DynamicFloat
 import androidx.wear.protolayout.expression.DynamicBuilders.DynamicInstant
 import androidx.wear.protolayout.expression.ProtoLayoutExperimental
+import androidx.wear.protolayout.material3.CardDefaults.filledTonalCardColors
+import androidx.wear.protolayout.material3.DataCardStyle
 import androidx.wear.protolayout.material3.MaterialScope
 import androidx.wear.protolayout.material3.ProgressIndicatorColors
 import androidx.wear.protolayout.material3.Typography.BODY_MEDIUM
@@ -52,6 +54,7 @@ import androidx.wear.protolayout.material3.iconEdgeButton
 import androidx.wear.protolayout.material3.materialScope
 import androidx.wear.protolayout.material3.primaryLayout
 import androidx.wear.protolayout.material3.text
+import androidx.wear.protolayout.material3.textDataCard
 import androidx.wear.protolayout.material3.textEdgeButton
 import androidx.wear.protolayout.modifiers.LayoutModifier
 import androidx.wear.protolayout.modifiers.clickable
@@ -100,24 +103,31 @@ internal fun MediaPlayerTileLayout(
             when (state.connectionStatus) {
                 WearConnectionStatus.APPNOTINSTALLED -> {
                     primaryLayout(
+                        titleSlot = {
+                            text(text = context.getString(R.string.title_media_controller).layoutString)
+                        },
                         mainSlot = {
-                            text(
-                                text = context.getString(R.string.error_notinstalled).layoutString,
-                                color = colorScheme.secondary,
-                                alignment = TEXT_ALIGN_CENTER,
-                                maxLines = 3
+                            textDataCard(
+                                onClick = clickable(
+                                    action = MediaPlayerTileRenderer.getTapAction(context)
+                                ),
+                                width = expand(),
+                                height = expand(),
+                                title = {
+                                    text(
+                                        text = context.getString(R.string.error_notinstalled).layoutString,
+                                        typography = BODY_MEDIUM,
+                                        maxLines = 3
+                                    )
+                                },
+                                colors = filledTonalCardColors(),
+                                style = DataCardStyle.smallDataCardStyle()
                             )
                         },
                         bottomSlot = {
                             iconEdgeButton(
                                 modifier = LayoutModifier.contentDescription(context.getString(R.string.common_open_on_phone)),
-                                onClick = Clickable.Builder()
-                                    .setId(ID_OPENONPHONE)
-                                    .setOnClick(
-                                        ActionBuilders.LoadAction.Builder()
-                                            .build()
-                                    )
-                                    .build(),
+                                onClick = clickable(id = ID_OPENONPHONE),
                                 iconContent = {
                                     icon(ID_OPENONPHONE)
                                 }
@@ -128,34 +138,60 @@ internal fun MediaPlayerTileLayout(
 
                 else -> {
                     primaryLayout(
+                        titleSlot = {
+                            text(text = context.getString(R.string.title_media_controller).layoutString)
+                        },
                         mainSlot = {
-                            text(
-                                text = context.getString(R.string.status_disconnected).layoutString,
-                                color = colorScheme.secondary,
-                                alignment = TEXT_ALIGN_CENTER,
-                                maxLines = 3
+                            textDataCard(
+                                onClick = clickable(
+                                    action = MediaPlayerTileRenderer.getTapAction(context)
+                                ),
+                                width = expand(),
+                                height = expand(),
+                                title = {
+                                    text(
+                                        text = context.getString(R.string.status_disconnected).layoutString,
+                                        typography = BODY_MEDIUM,
+                                        maxLines = 3
+                                    )
+                                },
+                                colors = filledTonalCardColors(),
+                                style = DataCardStyle.smallDataCardStyle()
                             )
                         },
                         bottomSlot = {
                             iconEdgeButton(
                                 modifier = LayoutModifier.contentDescription(context.getString(R.string.status_disconnected)),
-                                onClick = Clickable.Builder().build(),
+                                onClick = clickable(id = ID_PHONEDISCONNECTED),
                                 iconContent = {
                                     icon(ID_PHONEDISCONNECTED)
                                 }
-                        )
-                    }
+                            )
+                        }
                     )
                 }
             }
-    } else if (state.isEmpty || state.playbackState == null || state.playbackState == PlaybackState.NONE) {
+        } else if (state.isEmpty || state.playbackState == null || state.playbackState == PlaybackState.NONE) {
             primaryLayout(
+                titleSlot = {
+                    text(text = context.getString(R.string.title_media_controller).layoutString)
+                },
                 mainSlot = {
-                    text(
-                        text = context.getString(R.string.message_playback_stopped).layoutString,
-                        color = colorScheme.secondary,
-                        alignment = TEXT_ALIGN_CENTER,
-                        maxLines = 3
+                    textDataCard(
+                        onClick = clickable(
+                            action = MediaPlayerTileRenderer.getTapAction(context)
+                        ),
+                        width = expand(),
+                        height = expand(),
+                        title = {
+                            text(
+                                text = context.getString(R.string.message_playback_stopped).layoutString,
+                                typography = BODY_MEDIUM,
+                                maxLines = 3
+                            )
+                        },
+                        colors = filledTonalCardColors(),
+                        style = DataCardStyle.smallDataCardStyle()
                     )
                 },
                 bottomSlot = {
@@ -167,190 +203,190 @@ internal fun MediaPlayerTileLayout(
                     )
                 }
             )
-    } else {
+        } else {
             Box.Builder()
-            .setWidth(expand())
-            .setHeight(expand())
-            .addContent(
-                Image.Builder()
-                    .setResourceId(ID_ARTWORK)
-                    .setWidth(expand())
-                    .setHeight(expand())
-                    .setContentScaleMode(CONTENT_SCALE_MODE_FIT)
-                    .build()
-            )
-            .addContent(
-                Box.Builder()
-                    .setWidth(expand())
-                    .setHeight(expand())
-                    .setModifiers(
-                        Modifiers.Builder()
-                            .setBackground(
-                                Background.Builder()
-                                    .setColor(
-                                        ColorProp.Builder(0xAA000000.toInt())
-                                            .build()
-                                    )
-                                    .build()
-                            )
-                            .build()
-                    )
-                    .addContent(
-                        Column.Builder()
-                            .setWidth(expand())
-                            .setHeight(expand())
-                            .addContent(
-                                Box.Builder()
-                                    .setWidth(expand())
-                                    .setHeight(
-                                        WrappedDimensionProp.Builder()
-                                            .apply {
-                                                if (deviceParameters.isLargeHeight()) {
-                                                    setMinimumSize(dp(0f))
-                                                } else {
-                                                    setMinimumSize(dp(68f))
+                .setWidth(expand())
+                .setHeight(expand())
+                .addContent(
+                    Image.Builder()
+                        .setResourceId(ID_ARTWORK)
+                        .setWidth(expand())
+                        .setHeight(expand())
+                        .setContentScaleMode(CONTENT_SCALE_MODE_FIT)
+                        .build()
+                )
+                .addContent(
+                    Box.Builder()
+                        .setWidth(expand())
+                        .setHeight(expand())
+                        .setModifiers(
+                            Modifiers.Builder()
+                                .setBackground(
+                                    Background.Builder()
+                                        .setColor(
+                                            ColorProp.Builder(0xAA000000.toInt())
+                                                .build()
+                                        )
+                                        .build()
+                                )
+                                .build()
+                        )
+                        .addContent(
+                            Column.Builder()
+                                .setWidth(expand())
+                                .setHeight(expand())
+                                .addContent(
+                                    Box.Builder()
+                                        .setWidth(expand())
+                                        .setHeight(
+                                            WrappedDimensionProp.Builder()
+                                                .apply {
+                                                    if (deviceParameters.isLargeHeight()) {
+                                                        setMinimumSize(dp(0f))
+                                                    } else {
+                                                        setMinimumSize(dp(68f))
+                                                    }
                                                 }
-                                            }
-                                            .build()
-                                    )
-                                    .setHorizontalAlignment(HORIZONTAL_ALIGN_CENTER)
-                                    .setVerticalAlignment(VERTICAL_ALIGN_BOTTOM)
-                                    .setModifiers(
-                                        Modifiers.Builder()
-                                            .setPadding(
-                                                padding(
-                                                    top = deviceParameters.getScreenSizeInDpFromPercentage(
-                                                        if (deviceParameters.isLargeHeight()) {
-                                                            13.2f
-                                                        } else {
-                                                            12f
-                                                        }
-                                                    ),
-                                                    bottom = deviceParameters.getScreenSizeInDpFromPercentage(
-                                                        if (deviceParameters.isLargeHeight()) {
-                                                            6f
-                                                        } else {
-                                                            2f
-                                                        }
-                                                    ),
+                                                .build()
+                                        )
+                                        .setHorizontalAlignment(HORIZONTAL_ALIGN_CENTER)
+                                        .setVerticalAlignment(VERTICAL_ALIGN_BOTTOM)
+                                        .setModifiers(
+                                            Modifiers.Builder()
+                                                .setPadding(
+                                                    padding(
+                                                        top = deviceParameters.getScreenSizeInDpFromPercentage(
+                                                            if (deviceParameters.isLargeHeight()) {
+                                                                13.2f
+                                                            } else {
+                                                                12f
+                                                            }
+                                                        ),
+                                                        bottom = deviceParameters.getScreenSizeInDpFromPercentage(
+                                                            if (deviceParameters.isLargeHeight()) {
+                                                                6f
+                                                            } else {
+                                                                2f
+                                                            }
+                                                        ),
+                                                    )
                                                 )
-                                            )
-                                            .build()
-                                    )
-                                    .addContent(
-                                        Column.Builder()
-                                            .setHeight(dp(38f))
-                                            .apply {
-                                                if (!state.title.isNullOrBlank()) {
-                                                    addContent(
-                                                        Box.Builder()
-                                                            .setWidth(
-                                                                dp(
-                                                                    deviceParameters.getScreenWidthInDpFromPercentage(
-                                                                        66.72f
+                                                .build()
+                                        )
+                                        .addContent(
+                                            Column.Builder()
+                                                .setHeight(dp(38f))
+                                                .apply {
+                                                    if (!state.title.isNullOrBlank()) {
+                                                        addContent(
+                                                            Box.Builder()
+                                                                .setWidth(
+                                                                    dp(
+                                                                        deviceParameters.getScreenWidthInDpFromPercentage(
+                                                                            66.72f
+                                                                        )
                                                                     )
                                                                 )
-                                                            )
-                                                            .setHeight(dp(20f))
-                                                            .setHorizontalAlignment(
-                                                                HORIZONTAL_ALIGN_CENTER
-                                                            )
-                                                            .addContent(
-                                                                text(
-                                                                    text = state.title.layoutString,
-                                                                    maxLines = 1,
-                                                                    alignment = TEXT_ALIGN_CENTER,
-                                                                    overflow = TEXT_OVERFLOW_MARQUEE,
-                                                                    typography = TITLE_MEDIUM,
-                                                                    color = colorScheme.onSurface
+                                                                .setHeight(dp(20f))
+                                                                .setHorizontalAlignment(
+                                                                    HORIZONTAL_ALIGN_CENTER
                                                                 )
-                                                            )
-                                                            .build()
-                                                    )
-                                                }
-
-                                                if (!state.artist.isNullOrBlank()) {
-                                                    addContent(
-                                                        Box.Builder()
-                                                            .setWidth(
-                                                                dp(
-                                                                    deviceConfiguration.getScreenWidthInDpFromPercentage(
-                                                                        if (deviceConfiguration.isLargeWidth()) {
-                                                                            71f
-                                                                        } else {
-                                                                            75f
-                                                                        }
+                                                                .addContent(
+                                                                    text(
+                                                                        text = state.title.layoutString,
+                                                                        maxLines = 1,
+                                                                        alignment = TEXT_ALIGN_CENTER,
+                                                                        overflow = TEXT_OVERFLOW_MARQUEE,
+                                                                        typography = TITLE_MEDIUM,
+                                                                        color = colorScheme.onSurface
                                                                     )
                                                                 )
-                                                            )
-                                                            .setHeight(dp(18f))
-                                                            .setHorizontalAlignment(
-                                                                HORIZONTAL_ALIGN_CENTER
-                                                            )
-                                                            .addContent(
-                                                                text(
-                                                                    text = state.artist.layoutString,
-                                                                    maxLines = 1,
-                                                                    alignment = TEXT_ALIGN_CENTER,
-                                                                    overflow = TEXT_OVERFLOW_MARQUEE,
-                                                                    typography = BODY_MEDIUM,
-                                                                    color = colorScheme.onSurface
+                                                                .build()
+                                                        )
+                                                    }
+
+                                                    if (!state.artist.isNullOrBlank()) {
+                                                        addContent(
+                                                            Box.Builder()
+                                                                .setWidth(
+                                                                    dp(
+                                                                        deviceConfiguration.getScreenWidthInDpFromPercentage(
+                                                                            if (deviceConfiguration.isLargeWidth()) {
+                                                                                71f
+                                                                            } else {
+                                                                                75f
+                                                                            }
+                                                                        )
+                                                                    )
                                                                 )
-                                                            )
-                                                            .build()
-                                                    )
+                                                                .setHeight(dp(18f))
+                                                                .setHorizontalAlignment(
+                                                                    HORIZONTAL_ALIGN_CENTER
+                                                                )
+                                                                .addContent(
+                                                                    text(
+                                                                        text = state.artist.layoutString,
+                                                                        maxLines = 1,
+                                                                        alignment = TEXT_ALIGN_CENTER,
+                                                                        overflow = TEXT_OVERFLOW_MARQUEE,
+                                                                        typography = BODY_MEDIUM,
+                                                                        color = colorScheme.onSurface
+                                                                    )
+                                                                )
+                                                                .build()
+                                                        )
+                                                    }
+                                                }
+                                                .build()
+                                        )
+                                        .build()
+                                )
+                                .addContent(
+                                    Box.Builder()
+                                        .setWidth(expand())
+                                        .setHeight(
+                                            WrappedDimensionProp.Builder()
+                                                .apply {
+                                                    if (deviceParameters.isLargeHeight()) {
+                                                        setMinimumSize(dp(80f))
+                                                    } else {
+                                                        setMinimumSize(dp(64f))
+                                                    }
+                                                }
+                                                .build()
+                                        )
+                                        .addContent(
+                                            buttonGroup(
+                                                height = middleButtonSize(),
+                                                width = expand(),
+                                                spacing = 0f
+                                            ) {
+                                                buttonGroupItem {
+                                                    PlayerButton(action = PlayerAction.PREVIOUS)
+                                                }
+
+                                                buttonGroupItem {
+                                                    PlayPauseButton(state)
+                                                }
+
+                                                buttonGroupItem {
+                                                    PlayerButton(action = PlayerAction.NEXT)
                                                 }
                                             }
-                                            .build()
-                                    )
-                                    .build()
-                            )
-                            .addContent(
-                                Box.Builder()
-                                    .setWidth(expand())
-                                    .setHeight(
-                                        WrappedDimensionProp.Builder()
-                                            .apply {
-                                                if (deviceParameters.isLargeHeight()) {
-                                                    setMinimumSize(dp(80f))
-                                                } else {
-                                                    setMinimumSize(dp(64f))
-                                                }
-                                            }
-                                            .build()
-                                    )
-                                    .addContent(
-                                        buttonGroup(
-                                            height = middleButtonSize(),
-                                            width = expand(),
-                                            spacing = 0f
-                                        ) {
-                                            buttonGroupItem {
-                                                PlayerButton(action = PlayerAction.PREVIOUS)
-                                            }
-
-                                            buttonGroupItem {
-                                                PlayPauseButton(state)
-                                            }
-
-                                            buttonGroupItem {
-                                                PlayerButton(action = PlayerAction.NEXT)
-                                            }
-                                        }
-                                    )
-                                    .build()
-                            )
-                            .addContent(
-                                Box.Builder()
-                                    .setWidth(expand())
-                                    .setHeight(weight(1f))
-                                    .addContent(SettingsButtonLayout(state))
-                                    .build()
-                            )
-                            .build()
-                    )
-                    .build()
-            )
+                                        )
+                                        .build()
+                                )
+                                .addContent(
+                                    Box.Builder()
+                                        .setWidth(expand())
+                                        .setHeight(weight(1f))
+                                        .addContent(SettingsButtonLayout(state))
+                                        .build()
+                                )
+                                .build()
+                        )
+                        .build()
+                )
                 .build()
         }
     }
@@ -772,7 +808,7 @@ private fun MediaPlayerTilePreview(context: Context): TilePreviewData {
 @WearPreviewDevices
 private fun MediaPlayerEmptyTilePreview(context: Context): TilePreviewData {
     val state = MediaPlayerTileState(
-        connectionStatus = WearConnectionStatus.CONNECTED,
+        connectionStatus = WearConnectionStatus.DISCONNECTED,
         title = null,
         artist = null,
         playbackState = null,

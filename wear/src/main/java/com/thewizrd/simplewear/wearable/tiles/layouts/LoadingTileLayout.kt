@@ -2,11 +2,15 @@ package com.thewizrd.simplewear.wearable.tiles.layouts
 
 import android.content.Context
 import androidx.wear.protolayout.DeviceParametersBuilders.DeviceParameters
+import androidx.wear.protolayout.DimensionBuilders.expand
 import androidx.wear.protolayout.LayoutElementBuilders.LayoutElement
-import androidx.wear.protolayout.LayoutElementBuilders.TEXT_ALIGN_CENTER
+import androidx.wear.protolayout.material3.CardDefaults.filledTonalCardColors
+import androidx.wear.protolayout.material3.DataCardStyle
+import androidx.wear.protolayout.material3.Typography.BODY_MEDIUM
 import androidx.wear.protolayout.material3.materialScope
 import androidx.wear.protolayout.material3.primaryLayout
 import androidx.wear.protolayout.material3.text
+import androidx.wear.protolayout.material3.textDataCard
 import androidx.wear.protolayout.material3.textEdgeButton
 import androidx.wear.protolayout.modifiers.clickable
 import androidx.wear.protolayout.modifiers.loadAction
@@ -19,15 +23,30 @@ import com.thewizrd.simplewear.ui.tiles.tools.WearPreviewDevices
 
 internal fun LoadingTileLayout(
     context: Context,
-    deviceParameters: DeviceParameters
+    deviceParameters: DeviceParameters,
+    title: String? = null
 ): LayoutElement =
     materialScope(context, deviceParameters, defaultColorScheme = wearTileColorScheme) {
         primaryLayout(
+            titleSlot = title?.let {
+                {
+                    text(text = it.layoutString)
+                }
+            },
             mainSlot = {
-                text(
-                    text = context.getString(R.string.state_loading).layoutString,
-                    alignment = TEXT_ALIGN_CENTER,
-                    maxLines = 3
+                textDataCard(
+                    onClick = clickable(loadAction()),
+                    width = expand(),
+                    height = expand(),
+                    title = {
+                        text(
+                            text = context.getString(R.string.state_loading).layoutString,
+                            typography = BODY_MEDIUM,
+                            maxLines = 3
+                        )
+                    },
+                    colors = filledTonalCardColors(),
+                    style = DataCardStyle.smallDataCardStyle()
                 )
             },
             bottomSlot = {

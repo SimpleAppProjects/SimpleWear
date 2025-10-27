@@ -20,9 +20,7 @@ import androidx.wear.protolayout.LayoutElementBuilders.LayoutElement
 import androidx.wear.protolayout.LayoutElementBuilders.SpanImage
 import androidx.wear.protolayout.LayoutElementBuilders.SpanText
 import androidx.wear.protolayout.LayoutElementBuilders.Spannable
-import androidx.wear.protolayout.LayoutElementBuilders.TEXT_ALIGN_CENTER
 import androidx.wear.protolayout.LayoutElementBuilders.TEXT_OVERFLOW_MARQUEE
-import androidx.wear.protolayout.ModifiersBuilders.Clickable
 import androidx.wear.protolayout.StateBuilders
 import androidx.wear.protolayout.expression.AppDataKey
 import androidx.wear.protolayout.expression.DynamicBuilders
@@ -30,7 +28,10 @@ import androidx.wear.protolayout.expression.DynamicDataBuilders
 import androidx.wear.protolayout.expression.ProtoLayoutExperimental
 import androidx.wear.protolayout.material3.ButtonDefaults.filledTonalButtonColors
 import androidx.wear.protolayout.material3.ButtonGroupDefaults.DEFAULT_SPACER_BETWEEN_BUTTON_GROUPS
+import androidx.wear.protolayout.material3.CardDefaults.filledTonalCardColors
+import androidx.wear.protolayout.material3.DataCardStyle
 import androidx.wear.protolayout.material3.MaterialScope
+import androidx.wear.protolayout.material3.Typography.BODY_MEDIUM
 import androidx.wear.protolayout.material3.buttonGroup
 import androidx.wear.protolayout.material3.icon
 import androidx.wear.protolayout.material3.iconButton
@@ -38,6 +39,7 @@ import androidx.wear.protolayout.material3.iconEdgeButton
 import androidx.wear.protolayout.material3.materialScope
 import androidx.wear.protolayout.material3.primaryLayout
 import androidx.wear.protolayout.material3.text
+import androidx.wear.protolayout.material3.textDataCard
 import androidx.wear.protolayout.modifiers.LayoutModifier
 import androidx.wear.protolayout.modifiers.clickable
 import androidx.wear.protolayout.modifiers.contentDescription
@@ -95,24 +97,33 @@ internal fun DashboardTileLayout(
             when (state.connectionStatus) {
                 WearConnectionStatus.APPNOTINSTALLED -> {
                     primaryLayout(
+                        titleSlot = {
+                            text(text = context.getString(R.string.title_activity_dashboard).layoutString)
+                        },
                         mainSlot = {
-                            text(
-                                text = context.getString(R.string.error_notinstalled).layoutString,
-                                color = colorScheme.secondary,
-                                alignment = TEXT_ALIGN_CENTER,
-                                maxLines = 3
+                            textDataCard(
+                                onClick = clickable(
+                                    action = DashboardTileRenderer.getTapAction(
+                                        context
+                                    )
+                                ),
+                                width = expand(),
+                                height = expand(),
+                                title = {
+                                    text(
+                                        text = context.getString(R.string.error_notinstalled).layoutString,
+                                        typography = BODY_MEDIUM,
+                                        maxLines = 3
+                                    )
+                                },
+                                colors = filledTonalCardColors(),
+                                style = DataCardStyle.smallDataCardStyle()
                             )
                         },
                         bottomSlot = {
                             iconEdgeButton(
                                 modifier = LayoutModifier.contentDescription(context.getString(R.string.common_open_on_phone)),
-                                onClick = Clickable.Builder()
-                                    .setId(ID_OPENONPHONE)
-                                    .setOnClick(
-                                        ActionBuilders.LoadAction.Builder()
-                                            .build()
-                                    )
-                                    .build(),
+                                onClick = clickable(id = ID_OPENONPHONE),
                                 iconContent = {
                                     icon(ID_OPENONPHONE)
                                 }
@@ -123,23 +134,38 @@ internal fun DashboardTileLayout(
 
                 else -> {
                     primaryLayout(
+                        titleSlot = {
+                            text(text = context.getString(R.string.title_activity_dashboard).layoutString)
+                        },
                         mainSlot = {
-                            text(
-                                text = context.getString(R.string.status_disconnected).layoutString,
-                                color = colorScheme.secondary,
-                                alignment = TEXT_ALIGN_CENTER,
-                                maxLines = 3
+                            textDataCard(
+                                onClick = clickable(
+                                    action = DashboardTileRenderer.getTapAction(
+                                        context
+                                    )
+                                ),
+                                width = expand(),
+                                height = expand(),
+                                title = {
+                                    text(
+                                        text = context.getString(R.string.status_disconnected).layoutString,
+                                        typography = BODY_MEDIUM,
+                                        maxLines = 3
+                                    )
+                                },
+                                colors = filledTonalCardColors(),
+                                style = DataCardStyle.smallDataCardStyle()
                             )
                         },
                         bottomSlot = {
                             iconEdgeButton(
                                 modifier = LayoutModifier.contentDescription(context.getString(R.string.status_disconnected)),
-                                onClick = Clickable.Builder().build(),
+                                onClick = clickable(id = ID_PHONEDISCONNECTED),
                                 iconContent = {
                                     icon(ID_PHONEDISCONNECTED)
                                 }
-                        )
-                    }
+                            )
+                        }
                     )
                 }
             }

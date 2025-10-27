@@ -58,6 +58,12 @@ class DashboardTileRenderer(context: Context, debugResourceMode: Boolean = false
         // Background drawables
         internal const val ID_BUTTON_ENABLED = "round_button_enabled"
         internal const val ID_BUTTON_DISABLED = "round_button_disabled"
+
+        fun getTapAction(context: Context): ActionBuilders.Action {
+            return ActionBuilders.launchAction(
+                ComponentName(context, PhoneSyncActivity::class.java)
+            )
+        }
     }
 
     override fun createState(state: DashboardTileState): StateBuilders.State {
@@ -95,7 +101,11 @@ class DashboardTileRenderer(context: Context, debugResourceMode: Boolean = false
             )
             .addContent(
                 if (state.isEmpty) {
-                    LoadingTileLayout(context, deviceParameters)
+                    LoadingTileLayout(
+                        context,
+                        deviceParameters,
+                        title = context.getString(R.string.title_activity_dashboard)
+                    )
                 } else {
                     DashboardTileLayout(context, deviceParameters, state)
                 }
@@ -154,11 +164,5 @@ class DashboardTileRenderer(context: Context, debugResourceMode: Boolean = false
                 addIdToImageMapping(key, drawableResToImageResource(resId))
             }
         }
-    }
-
-    private fun getTapAction(context: Context): ActionBuilders.Action {
-        return ActionBuilders.launchAction(
-            ComponentName(context, PhoneSyncActivity::class.java)
-        )
     }
 }

@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalHorologistApi::class)
+
 package com.thewizrd.simplewear.wearable.tiles
 
 import android.content.ComponentName
@@ -13,6 +15,7 @@ import androidx.wear.protolayout.ResourceBuilders
 import androidx.wear.protolayout.ResourceBuilders.IMAGE_FORMAT_UNDEFINED
 import androidx.wear.protolayout.ResourceBuilders.ImageResource
 import androidx.wear.protolayout.ResourceBuilders.InlineImageResource
+import androidx.wear.protolayout.expression.ProtoLayoutExperimental
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
 import com.google.android.horologist.tiles.images.drawableResToImageResource
 import com.google.android.horologist.tiles.render.SingleTileLayoutRendererWithState
@@ -21,11 +24,10 @@ import com.thewizrd.shared_resources.utils.ContextUtils.dpToPx
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.simplewear.BuildConfig
 import com.thewizrd.simplewear.R
-import com.thewizrd.simplewear.wearable.tiles.layouts.MediaPlayerTileLayout
+import com.thewizrd.simplewear.wearable.tiles.layouts.NowPlayingTileLayout
 import kotlin.math.min
 
-@OptIn(ExperimentalHorologistApi::class)
-class MediaPlayerTileRenderer(context: Context, debugResourceMode: Boolean = false) :
+class NowPlayingTileRenderer(context: Context, debugResourceMode: Boolean = false) :
     SingleTileLayoutRendererWithState<MediaPlayerTileState, MediaPlayerTileState>(
         context,
         debugResourceMode
@@ -36,13 +38,8 @@ class MediaPlayerTileRenderer(context: Context, debugResourceMode: Boolean = fal
         internal const val ID_PHONEDISCONNECTED = "phone_disconn"
 
         internal const val ID_ARTWORK = "artwork"
-        internal const val ID_PREVIOUS = "prev"
-        internal const val ID_PLAY = "play"
-        internal const val ID_PAUSE = "pause"
-        internal const val ID_SKIP = "skip"
-        internal const val ID_VOL_UP = "vol_up"
-        internal const val ID_VOL_DOWN = "vol_down"
         internal const val ID_APPICON = "app_icon"
+        internal const val ID_PLAYINGICON = "playing_icon"
 
         fun getTapAction(context: Context): ActionBuilders.Action {
             return ActionBuilders.launchAction(
@@ -72,11 +69,12 @@ class MediaPlayerTileRenderer(context: Context, debugResourceMode: Boolean = fal
                     .build()
             )
             .addContent(
-                MediaPlayerTileLayout(context, deviceParameters, state)
+                NowPlayingTileLayout(context, deviceParameters, state)
             )
             .build()
     }
 
+    @androidx.annotation.OptIn(ProtoLayoutExperimental::class)
     override fun ResourceBuilders.Resources.Builder.produceRequestedResources(
         resourceState: MediaPlayerTileState,
         deviceParameters: DeviceParametersBuilders.DeviceParameters,
@@ -86,15 +84,7 @@ class MediaPlayerTileRenderer(context: Context, debugResourceMode: Boolean = fal
 
         val resources = mapOf(
             ID_OPENONPHONE to R.drawable.common_full_open_on_phone,
-            ID_PHONEDISCONNECTED to R.drawable.ic_phonelink_erase_white_24dp,
-
-            ID_PLAY to R.drawable.ic_play_arrow_white_24dp,
-            ID_PAUSE to R.drawable.ic_baseline_pause_24,
-            ID_PREVIOUS to R.drawable.ic_baseline_skip_previous_24,
-            ID_SKIP to R.drawable.ic_baseline_skip_next_24,
-
-            ID_VOL_UP to R.drawable.ic_volume_up_white_24dp,
-            ID_VOL_DOWN to R.drawable.ic_baseline_volume_down_24
+            ID_PHONEDISCONNECTED to R.drawable.ic_phonelink_erase_white_24dp
         )
 
         (resourceIds.takeIf { it.isNotEmpty() } ?: resources.keys).forEach { key ->
@@ -139,6 +129,19 @@ class MediaPlayerTileRenderer(context: Context, debugResourceMode: Boolean = fal
                         .build()
                 )
             }
+        }
+
+        if (resourceIds.isEmpty() || resourceIds.contains(ID_PLAYINGICON)) {
+            addIdToImageMapping(
+                ID_PLAYINGICON,
+                ImageResource.Builder()
+                    .setAndroidResourceByResId(
+                        ResourceBuilders.AndroidImageResourceByResId.Builder()
+                            .setResourceId(R.drawable.equalizer_animated)
+                            .build()
+                    )
+                    .build()
+            )
         }
     }
 

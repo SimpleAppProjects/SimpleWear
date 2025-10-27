@@ -62,6 +62,7 @@ import com.thewizrd.simplewear.viewmodels.WearableListenerViewModel
 import com.thewizrd.simplewear.wearable.complications.BatteryStatusComplicationService
 import com.thewizrd.simplewear.wearable.tiles.DashboardTileProviderService
 import com.thewizrd.simplewear.wearable.tiles.MediaPlayerTileProviderService
+import com.thewizrd.simplewear.wearable.tiles.NowPlayingTileProviderService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.firstOrNull
@@ -178,6 +179,7 @@ class WearableDataListenerService : WearableListenerService() {
 
                         if (!mLegacyTilesEnabled && (playerState?.key != currentState?.mediaPlayerState?.key || (playerState?.playbackState == PlaybackState.PLAYING && playerState.mediaMetaData?.positionState != currentState?.mediaPlayerState?.mediaMetaData?.positionState))) {
                             MediaPlayerTileProviderService.requestTileUpdate(appLib.context)
+                            NowPlayingTileProviderService.requestTileUpdate(appLib.context)
                         }
                     }.onFailure {
                         Logger.error(TAG, it)
@@ -198,6 +200,7 @@ class WearableDataListenerService : WearableListenerService() {
 
                         if (!mLegacyTilesEnabled && !artworkBytes.contentEquals(currentState)) {
                             MediaPlayerTileProviderService.requestTileUpdate(appLib.context)
+                            NowPlayingTileProviderService.requestTileUpdate(appLib.context)
                         }
                     }.onFailure {
                         Logger.error(TAG, it)
@@ -227,6 +230,7 @@ class WearableDataListenerService : WearableListenerService() {
 
                         if (!mLegacyTilesEnabled && appInfo?.key != currentState?.key) {
                             MediaPlayerTileProviderService.requestTileUpdate(appLib.context)
+                            NowPlayingTileProviderService.requestTileUpdate(appLib.context)
                         }
                     }.onFailure {
                         Logger.error(TAG, it)

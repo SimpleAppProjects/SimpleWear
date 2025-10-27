@@ -238,6 +238,22 @@
         </service>
 
         <service
+            android:icon="@drawable/ic_play_circle_simpleblue"
+            android:label="@string/title_nowplaying"
+            android:permission="com.google.android.wearable.permission.BIND_TILE_PROVIDER"
+            android:enabled="@bool/enable_official_tiles"
+            android:exported="@bool/enable_official_tiles"
+            android:name=".wearable.tiles.NowPlayingTileProviderService">
+            <intent-filter>
+                <action android:name="androidx.wear.tiles.action.BIND_TILE_PROVIDER" />
+            </intent-filter>
+
+            <meta-data
+                android:name="androidx.wear.tiles.PREVIEW"
+                android:resource="@drawable/mediatile_preview" />
+        </service>
+
+        <service
             android:icon="@drawable/ic_charging_station_24dp"
             android:label="@string/pref_title_phone_batt_state"
             android:permission="com.google.android.wearable.permission.BIND_COMPLICATION_PROVIDER"
