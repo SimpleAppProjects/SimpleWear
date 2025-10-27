@@ -5,7 +5,7 @@ apply plugin: 'com.google.gms.google-services'
 apply plugin: 'com.google.firebase.crashlytics'
 
 android {
-    compileSdk rootProject.compileSdkVersion
+    compileSdk = rootProject.compileSdkVersion
 
     defaultConfig {
         applicationId "com.thewizrd.simplewear"
@@ -22,7 +22,7 @@ android {
         targetSdkVersion rootProject.targetSdkVersion
         // NOTE: Version Code Format [TargetSDK, Version Name, Build Number, Variant Code (Android: 0, WearOS: 1)]
         // NOTE: update SUPPORTED_VERSION_CODE if needed
-        versionCode 341916050
+        versionCode 351916050
         versionName "1.16.1"
 
         vectorDrawables.useSupportLibrary = true
@@ -33,13 +33,13 @@ android {
             applicationIdSuffix ".debug"
             debuggable true
             minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
         release {
             minifyEnabled true
             shrinkResources true
             crunchPngs true
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
 

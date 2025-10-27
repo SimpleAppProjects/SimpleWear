@@ -6,14 +6,14 @@ apply plugin: 'com.google.firebase.crashlytics'
 apply plugin: 'org.jetbrains.kotlin.plugin.compose'
 
 android {
-    compileSdk rootProject.compileSdkVersion
+    compileSdk = rootProject.compileSdkVersion
 
     defaultConfig {
         applicationId "com.thewizrd.simplewear"
         minSdkVersion 26
         targetSdkVersion rootProject.targetSdkVersion
         // NOTE: Version Code Format (TargetSDK, Version Name, Build Number, Variant Code (Android: 0, WearOS: 1)
-        versionCode 341916051
+        versionCode 351916051
         versionName "1.16.1"
 
         vectorDrawables.useSupportLibrary = true
