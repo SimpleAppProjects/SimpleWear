@@ -1,68 +1,17 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 
 buildscript {
-    ext {
-        compileSdkVersion = 36
-        minSdkVersion = 24
-        targetSdkVersion = 35
-
-        kotlin_version = '2.1.20'
-        kotlinx_version = '1.10.2'
-
-        desugar_version = '2.1.5'
-
-        firebase_version = '34.4.0'
-
-        activity_version = '1.11.0'
-        appcompat_version = '1.7.1'
-        constraintlayout_version = '2.2.1'
-        core_version = '1.17.0'
-        fragment_version = '1.8.9'
-        lifecycle_version = '2.9.4'
-        preference_version = '1.2.1'
-        recyclerview_version = '1.4.0'
-        coresplash_version = '1.0.1'
-        work_version = '2.11.0'
-        navigation_version = '2.9.5'
-        datastore_version = '1.1.7'
-
-        test_core_version = '1.7.0'
-        test_runner_version = '1.7.0'
-        test_rules_version = '1.7.0'
-        junit_version = '1.3.0'
-        androidx_truth_version = '1.7.0'
-        google_truth_version = '1.4.5'
-
-        material_version = '1.14.0-alpha06'
-        material_compose_version = '1.5.0-alpha06'
-
-        compose_bom_version = '2025.10.00'
-        compose_compiler_version = '1.5.15'
-        wear_compose_version = '1.5.4'
-        wear_tiles_version = '1.5.0'
-        wear_watchface_version = '1.2.1'
-        horologist_version = '0.7.15'
-        accompanist_version = '0.37.3'
-
-        gson_version = '2.13.2'
-        timber_version = '5.0.1'
-
-        // Shizuku
-        shizuku_version = '13.1.5'
-        refine_version = '4.4.0'
-    }
-
     repositories {
         mavenCentral()
         google()
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:8.13.0'
-        classpath 'com.google.gms:google-services:4.4.4'
-        classpath 'com.google.firebase:firebase-crashlytics-gradle:3.0.6'
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-        classpath "org.jetbrains.kotlin:compose-compiler-gradle-plugin:$kotlin_version"
+        classpath libs.gradle
+        classpath libs.google.services
+        classpath libs.firebase.crashlytics.gradle
+        classpath libs.kotlin.gradle.plugin
+        classpath libs.compose.compiler.gradle.plugin
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
     }

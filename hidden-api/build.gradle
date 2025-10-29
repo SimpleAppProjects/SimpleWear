@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    compileSdk rootProject.compileSdkVersion
+    compileSdk = libs.versions.compileSdkVersion.get().toInteger()
 
     defaultConfig {
-        minSdkVersion rootProject.minSdkVersion
-        targetSdkVersion rootProject.targetSdkVersion
+        minSdkVersion libs.versions.minSdkVersion.get().toInteger()
+        targetSdkVersion libs.versions.targetSdkVersion.get().toInteger()
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles "consumer-rules.pro"
@@ -38,7 +38,7 @@ android {
 }
 
 dependencies {
-    annotationProcessor 'dev.rikka.tools.refine:annotation-processor:4.4.0'
-    compileOnly 'dev.rikka.tools.refine:annotation:4.4.0'
-    implementation 'androidx.annotation:annotation:1.9.1'
+    annotationProcessor libs.refine.annotation.processor
+    compileOnly libs.refine.annotation
+    implementation libs.androidx.annotation
 }

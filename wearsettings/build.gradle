@@ -1,15 +1,15 @@
 plugins {
     id('com.android.application')
     id('kotlin-android')
-    id('dev.rikka.tools.refine') version "$refine_version"
+    id('dev.rikka.tools.refine') version libs.versions.refine.version
 }
 
 android {
-    compileSdk = rootProject.compileSdkVersion
+    compileSdk = libs.versions.compileSdkVersion.get().toInteger()
 
     defaultConfig {
         applicationId "com.thewizrd.wearsettings"
-        minSdk rootProject.minSdkVersion
+        minSdk libs.versions.minSdkVersion.get().toInteger()
         //noinspection ExpiredTargetSdkVersion
         targetSdk 28
         // NOTE: update SUPPORTED_VERSION_CODE if needed
@@ -57,34 +57,34 @@ dependencies {
     implementation project(":shared_resources")
     compileOnly project(':hidden-api')
 
-    coreLibraryDesugaring "com.android.tools:desugar_jdk_libs:$desugar_version"
+    coreLibraryDesugaring libs.desugar.jdk.libs
 
     // Unit Testing
-    androidTestImplementation "androidx.test:core:$test_core_version"
+    androidTestImplementation libs.test.core
 
     // AndroidJUnitRunner and JUnit Rules
-    androidTestImplementation "androidx.test:runner:$test_runner_version"
-    androidTestImplementation "androidx.test:rules:$test_rules_version"
+    androidTestImplementation libs.test.runner
+    androidTestImplementation libs.test.rules
 
     // Assertions
-    androidTestImplementation "androidx.test.ext:junit:$junit_version"
-    androidTestImplementation "androidx.test.ext:truth:$androidx_truth_version"
-    androidTestImplementation "com.google.truth:truth:$google_truth_version"
+    androidTestImplementation libs.androidx.junit
+    androidTestImplementation libs.androidx.truth
+    androidTestImplementation libs.google.truth
 
-    implementation "androidx.core:core-ktx:$core_version"
-    implementation "androidx.appcompat:appcompat:$appcompat_version"
-    implementation "androidx.constraintlayout:constraintlayout:$constraintlayout_version"
+    implementation libs.core.ktx
+    implementation libs.appcompat
+    implementation libs.constraintlayout
 
-    implementation "com.google.android.material:material:$material_version"
+    implementation libs.material
 
-    implementation "com.jakewharton.timber:timber:$timber_version"
+    implementation libs.timber
 
     // Root
-    implementation 'com.github.topjohnwu.libsu:core:3.1.2'
+    implementation libs.libsu.core
 
     // Shizuku
-    implementation "dev.rikka.shizuku:api:$shizuku_version"
-    implementation "dev.rikka.shizuku:provider:$shizuku_version"
-    implementation "dev.rikka.tools.refine:runtime:$refine_version"
-    implementation 'org.lsposed.hiddenapibypass:hiddenapibypass:6.1'
+    implementation libs.shizuki.api
+    implementation libs.shizuki.provider
+    implementation libs.refine.runtime
+    implementation libs.hiddenapibypass
 }

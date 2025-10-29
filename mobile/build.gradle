@@ -5,7 +5,7 @@ apply plugin: 'com.google.gms.google-services'
 apply plugin: 'com.google.firebase.crashlytics'
 
 android {
-    compileSdk = rootProject.compileSdkVersion
+    compileSdk = libs.versions.compileSdkVersion.get().toInteger()
 
     defaultConfig {
         applicationId "com.thewizrd.simplewear"
@@ -18,8 +18,8 @@ android {
         // that the app's state is completely cleared between tests.
         testInstrumentationRunnerArguments clearPackageData: 'true'
 
-        minSdkVersion rootProject.minSdkVersion
-        targetSdkVersion rootProject.targetSdkVersion
+        minSdkVersion libs.versions.minSdkVersion.get().toInteger()
+        targetSdkVersion libs.versions.targetSdkVersion.get().toInteger()
         // NOTE: Version Code Format [TargetSDK, Version Name, Build Number, Variant Code (Android: 0, WearOS: 1)]
         // NOTE: update SUPPORTED_VERSION_CODE if needed
         versionCode 351917000
@@ -66,47 +66,47 @@ android {
 dependencies {
     implementation project(":shared_resources")
 
-    coreLibraryDesugaring "com.android.tools:desugar_jdk_libs:$desugar_version"
+    coreLibraryDesugaring libs.desugar.jdk.libs
 
     // Unit Testing
-    androidTestImplementation "androidx.test:core:$test_core_version"
+    androidTestImplementation libs.test.core
 
     // AndroidJUnitRunner and JUnit Rules
-    androidTestImplementation "androidx.test:runner:$test_runner_version"
-    androidTestImplementation "androidx.test:rules:$test_rules_version"
+    androidTestImplementation libs.test.runner
+    androidTestImplementation libs.test.rules
 
     // Assertions
-    androidTestImplementation "androidx.test.ext:junit:$junit_version"
-    androidTestImplementation "androidx.test.ext:truth:$androidx_truth_version"
-    androidTestImplementation "com.google.truth:truth:$google_truth_version"
+    androidTestImplementation libs.androidx.junit
+    androidTestImplementation libs.androidx.truth
+    androidTestImplementation libs.google.truth
 
     // Kotlin
-    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinx_version"
-    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$kotlinx_version"
-    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-play-services:$kotlinx_version"
+    implementation libs.kotlinx.coroutines.core
+    implementation libs.kotlinx.coroutines.android
+    implementation libs.kotlinx.coroutines.play.services
 
-    implementation "androidx.core:core-ktx:$core_version"
-    implementation "androidx.preference:preference-ktx:$preference_version"
-    implementation "androidx.lifecycle:lifecycle-runtime-ktx:$lifecycle_version"
-    implementation "androidx.work:work-runtime-ktx:$work_version"
-    implementation "androidx.core:core-splashscreen:$coresplash_version"
+    implementation libs.core.ktx
+    implementation libs.preference.ktx
+    implementation libs.lifecycle.runtime.ktx
+    implementation libs.work.runtime.ktx
+    implementation libs.core.splashscreen
 
-    implementation 'com.google.android.gms:play-services-wearable:19.0.0'
-    implementation 'com.google.android.play:app-update-ktx:2.1.0'
+    implementation libs.play.services.wearable
+    implementation libs.app.update.ktx
 
-    implementation platform("com.google.firebase:firebase-bom:$firebase_version")
-    implementation 'com.google.firebase:firebase-analytics'
-    implementation 'com.google.firebase:firebase-crashlytics'
-    implementation 'com.google.firebase:firebase-config'
+    implementation platform(libs.firebase.bom)
+    implementation libs.firebase.analytics
+    implementation libs.firebase.crashlytics
+    implementation libs.firebase.config
 
-    implementation "androidx.appcompat:appcompat:$appcompat_version"
-    implementation "androidx.constraintlayout:constraintlayout:$constraintlayout_version"
-    implementation "androidx.recyclerview:recyclerview-selection:1.2.0"
-    implementation 'androidx.media:media:1.7.1'
+    implementation libs.appcompat
+    implementation libs.constraintlayout
+    implementation libs.recyclerview.selection
+    implementation libs.media
 
-    implementation "com.google.android.material:material:$material_version"
+    implementation libs.material
 
-    implementation "com.jakewharton.timber:timber:$timber_version"
-    implementation "com.google.code.gson:gson:$gson_version"
-    implementation 'com.linkedin.dexmaker:dexmaker:2.28.6'
+    implementation libs.timber
+    implementation libs.gson
+    implementation libs.dexmaker
 }
