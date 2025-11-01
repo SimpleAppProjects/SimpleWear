@@ -1,16 +1,58 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:background="@color/design_default_color_surface"
-    tools:theme="@style/Theme.Material3.DayNight.NoActionBar">
+    android:background="?colorSurfaceContainer"
+    tools:context=".TimedActionsFragment"
+    tools:theme="@style/Theme.Material3Expressive.DayNight.NoActionBar">
+
+    <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/app_bar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?colorSurfaceContainer"
+        android:fitsSystemWindows="true"
+        app:expanded="false"
+        app:liftOnScroll="false"
+        app:liftOnScrollTargetViewId="@id/recycler_view"
+        tools:expanded="true"
+        tools:stateListAnimator="@null">
+
+        <com.google.android.material.appbar.CollapsingToolbarLayout
+            android:id="@+id/collapsing_toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/collapsingToolbarLayoutLargeSize"
+            app:layout_scrollFlags="scroll|exitUntilCollapsed|snap"
+            app:collapsedTitleTextAppearance="?textAppearanceTitleLargeEmphasized"
+            app:collapsedSubtitleTextAppearance="?textAppearanceTitleSmall"
+            app:expandedTitleTextAppearance="?textAppearanceDisplaySmallEmphasized"
+            app:expandedSubtitleTextAppearance="?textAppearanceTitleMedium"
+            style="?collapsingToolbarLayoutLargeStyle"
+            app:titleCollapseMode="fade"
+            app:expandedTitleMarginStart="24dp"
+            app:expandedTitleMarginBottom="32dp"
+            app:titleMaxLines="2">
+
+            <com.google.android.material.appbar.MaterialToolbar
+                android:id="@+id/toolbar"
+                android:layout_width="match_parent"
+                android:layout_height="?actionBarSize"
+                android:elevation="0dp"
+                app:layout_collapseMode="pin"
+                app:navigationIcon="?android:attr/homeAsUpIndicator"
+                app:title="@string/app_name" />
+
+        </com.google.android.material.appbar.CollapsingToolbarLayout>
+
+    </com.google.android.material.appbar.AppBarLayout>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recycler_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        app:layout_behavior="com.google.android.material.appbar.AppBarLayout$ScrollingViewBehavior"
         tools:listitem="@layout/layout_action_item" />
 
     <TextView
@@ -19,9 +61,61 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center"
         android:gravity="center"
-        android:text="No actions scheduled"
+        android:text="@string/prompt_no_actions_scheduled"
         android:visibility="gone"
         style="?textAppearanceBodyLarge"
         tools:visibility="visible" />
 
-</FrameLayout>
+    <com.google.android.material.floatingtoolbar.FloatingToolbarLayout
+        android:id="@+id/floating_toolbar"
+        style="?floatingToolbarVibrantStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|center"
+        android:layout_margin="16dp"
+        android:visibility="gone">
+
+        <com.google.android.material.overflow.OverflowLinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/selection_count"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minHeight="48dp"
+                android:minWidth="36dp"
+                android:includeFontPadding="false"
+                android:paddingHorizontal="16dp"
+                android:gravity="center"
+                android:layout_gravity="center"
+                android:textAlignment="center"
+                android:textAppearance="?textAppearanceBodyLargeEmphasized" />
+
+            <Button
+                android:id="@+id/action_delete"
+                style="?attr/materialIconButtonStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:contentDescription="@string/action_delete"
+                app:icon="@drawable/ic_delete_outline"
+                app:layout_overflowText="@string/action_delete"
+                app:layout_overflowIcon="@drawable/ic_delete_outline" />
+
+            <Button
+                android:id="@+id/action_selectAll"
+                style="?attr/materialIconButtonStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:contentDescription="@android:string/selectAll"
+                app:icon="@drawable/ic_select_all"
+                app:layout_overflowText="@android:string/selectAll"
+                app:layout_overflowIcon="@drawable/ic_select_all" />
+
+        </com.google.android.material.overflow.OverflowLinearLayout>
+
+    </com.google.android.material.floatingtoolbar.FloatingToolbarLayout>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

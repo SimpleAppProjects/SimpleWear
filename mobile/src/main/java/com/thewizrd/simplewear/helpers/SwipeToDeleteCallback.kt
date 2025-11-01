@@ -5,9 +5,9 @@ import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.PorterDuff
 import android.graphics.PorterDuffXfermode
-import android.graphics.drawable.ColorDrawable
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.DrawableCompat
+import androidx.core.graphics.drawable.toDrawable
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
 import com.thewizrd.shared_resources.utils.ContextUtils.getAttrColor
@@ -18,7 +18,7 @@ abstract class SwipeToDeleteCallback(context: Context) :
     private val deleteIcon = DrawableCompat.wrap(
         ContextCompat.getDrawable(context, R.drawable.ic_delete_outline)!!.mutate()
     )
-    private val deleteBackground = ColorDrawable(context.getAttrColor(R.attr.colorError))
+    private val deleteBackground = context.getAttrColor(R.attr.colorError).toDrawable()
     private val clearPaint = Paint().apply {
         xfermode = PorterDuffXfermode(PorterDuff.Mode.CLEAR)
     }

@@ -60,15 +60,15 @@ class TimedActionsAdapter : ListAdapter<TimedAction, TimedActionsAdapter.TimedAc
             binding.root.isChecked = isSelected
             if (isSelected) {
                 binding.actionIcon.setImageResource(R.drawable.ic_check_white_24dp)
-                binding.actionIcon.setBackgroundColor(itemView.context.getAttrColor(R.attr.colorSecondary))
+                binding.actionIcon.setBackgroundColor(itemView.context.getAttrColor(R.attr.colorPrimaryContainer))
                 binding.actionIcon.imageTintList =
-                    itemView.context.getAttrColorStateList(R.attr.colorOnSecondary)
+                    itemView.context.getAttrColorStateList(R.attr.colorOnPrimaryContainer)
                 binding.root.setCardBackgroundColor(itemView.context.getAttrColorStateList(R.attr.colorSurfaceContainerHighest))
             } else {
                 binding.actionIcon.setImageResource(model.drawableResId)
-                binding.actionIcon.setBackgroundColor(itemView.context.getAttrColor(R.attr.colorPrimary))
+                binding.actionIcon.setBackgroundColor(itemView.context.getAttrColor(R.attr.colorPrimaryContainer))
                 binding.actionIcon.imageTintList =
-                    itemView.context.getAttrColorStateList(R.attr.colorOnPrimary)
+                    itemView.context.getAttrColorStateList(R.attr.colorOnPrimaryContainer)
                 binding.root.setCardBackgroundColor(itemView.context.getAttrColorStateList(R.attr.colorSurfaceContainer))
             }
         }

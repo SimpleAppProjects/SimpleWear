@@ -76,5 +76,6 @@
 
     <string name="permission_exact_alarms_enabled">Schedule action permission enabled</string>
     <string name="permission_exact_alarms_disabled">Schedule action permission disabled</string>
+    <string name="prompt_no_actions_scheduled">No actions scheduled</string>
 
 </resources>
