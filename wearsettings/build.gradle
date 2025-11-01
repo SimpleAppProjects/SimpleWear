@@ -55,6 +55,7 @@ android {
 
 dependencies {
     implementation project(":shared_resources")
+    implementation project(":common")
     compileOnly project(':hidden-api')
 
     coreLibraryDesugaring libs.desugar.jdk.libs

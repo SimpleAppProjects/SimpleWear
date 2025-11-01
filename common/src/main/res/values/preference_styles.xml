@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="Permissions" />
+
+    <style name="Permissions.Preference">
+        <item name="android:minHeight">60dp</item>
+        <item name="android:paddingStart">16dp</item>
+        <item name="android:paddingTop">16dp</item>
+        <item name="android:paddingEnd">16dp</item>
+        <item name="android:paddingBottom">16dp</item>
+        <item name="android:background">?selectableItemBackground</item>
+    </style>
+
+    <style name="Permissions.Preference.Expressive">
+        <item name="android:minHeight">72dp</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:paddingStart">16dp</item>
+        <item name="android:paddingTop">16dp</item>
+        <item name="android:paddingEnd">16dp</item>
+        <item name="android:paddingBottom">16dp</item>
+        <item name="android:background">?android:attr/selectableItemBackground</item>
+        <item name="android:clipToPadding">false</item>
+        <item name="android:baselineAligned">false</item>
+        <item name="android:filterTouchesWhenObscured">false</item>
+        <item name="android:orientation">vertical</item>
+    </style>
+
+    <style name="Permissions.Preference.Title">
+        <item name="android:minHeight">0dp</item>
+        <item name="android:paddingStart">0dp</item>
+        <item name="android:paddingTop">0dp</item>
+        <item name="android:paddingEnd">0dp</item>
+        <item name="android:paddingBottom">0dp</item>
+        <item name="android:background">@null</item>
+        <item name="android:textAppearance">?attr/textAppearanceTitleMedium</item>
+    </style>
+
+    <style name="Permissions.Preference.Title.Expressive">
+        <item name="android:layout_gravity">start</item>
+        <item name="android:textAlignment">viewStart</item>
+        <item name="android:maxLines">2</item>
+        <item name="android:textAppearance">?attr/textAppearanceTitleMedium</item>
+        <item name="android:ellipsize">marquee</item>
+        <item name="android:paddingStart">16dp</item>
+        <item name="android:paddingTop">0dp</item>
+        <item name="android:paddingEnd">16dp</item>
+        <item name="android:paddingBottom">0dp</item>
+    </style>
+
+    <style name="Permissions.Preference.Summary">
+        <item name="android:minHeight">0dp</item>
+        <item name="android:paddingStart">0dp</item>
+        <item name="android:paddingTop">0dp</item>
+        <item name="android:paddingEnd">0dp</item>
+        <item name="android:paddingBottom">0dp</item>
+        <item name="android:background">@null</item>
+        <item name="android:maxLines">4</item>
+        <item name="android:textAppearance">?android:attr/textAppearanceSmall</item>
+    </style>
+
+    <style name="Permissions.Preference.Summary.Expressive">
+        <item name="android:layout_gravity">start</item>
+        <item name="android:textAlignment">viewStart</item>
+        <item name="android:textAppearance">?attr/textAppearanceBodyMedium</item>
+        <item name="android:textColor">?android:attr/textColorSecondary</item>
+        <item name="android:maxLines">10</item>
+        <item name="android:paddingStart">16dp</item>
+        <item name="android:paddingTop">0dp</item>
+        <item name="android:paddingEnd">16dp</item>
+        <item name="android:paddingBottom">0dp</item>
+    </style>
+
+    <style name="Permissions.Preference.Category">
+        <item name="android:minHeight">0dp</item>
+        <item name="android:background">@null</item>
+        <item name="android:paddingStart">16dp</item>
+        <item name="android:paddingTop">0dp</item>
+        <item name="android:paddingEnd">0dp</item>
+        <item name="android:paddingBottom">0dp</item>
+    </style>
+
+    <style name="Permissions.Preference.Category.Expressive">
+        <item name="android:paddingStart">16dp</item>
+        <item name="android:paddingEnd">16dp</item>
+        <item name="android:background">?android:attr/selectableItemBackground</item>
+        <item name="android:baselineAligned">false</item>
+        <item name="android:layout_marginTop">0dp</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:filterTouchesWhenObscured">false</item>
+    </style>
+
+    <style name="Permissions.Preference.Category.Title">
+        <item name="android:layout_gravity">start</item>
+        <item name="android:layout_marginTop">16dp</item>
+        <item name="android:paddingStart">0dp</item>
+        <item name="android:paddingEnd">?android:attr/listPreferredItemPaddingRight</item>
+        <item name="android:textAlignment">viewStart</item>
+        <item name="android:textAppearance">?textAppearanceBodyMedium</item>
+        <item name="android:textColor">?colorPrimary</item>
+    </style>
+
+    <style name="Permissions.Preference.Category.Title.Expressive">
+        <item name="android:layout_gravity">start</item>
+        <item name="android:paddingStart">8dp</item>
+        <item name="android:paddingTop">8dp</item>
+        <item name="android:paddingBottom">8dp</item>
+        <item name="android:paddingEnd">?android:attr/listPreferredItemPaddingRight</item>
+        <item name="android:textAppearance">?textAppearanceBodyMediumEmphasized</item>
+        <item name="android:textColor">?colorPrimary</item>
+    </style>
+</resources>

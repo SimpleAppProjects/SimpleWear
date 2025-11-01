@@ -826,7 +826,11 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
                 ColorUtils.blendARGB(Color.GREEN, Color.BLACK, 0.25f)
             }
 
-            false -> Color.RED
+            false -> if ((context.resources.configuration.uiMode and UI_MODE_NIGHT_MASK) == UI_MODE_NIGHT_YES) {
+                ColorUtils.blendARGB(Color.RED, Color.WHITE, 0.25f)
+            } else {
+                Color.RED
+            }
         }
     }
 

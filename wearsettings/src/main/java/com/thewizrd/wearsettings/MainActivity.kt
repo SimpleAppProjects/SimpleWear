@@ -3,17 +3,25 @@ package com.thewizrd.wearsettings
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.ComponentName
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.res.Configuration.UI_MODE_NIGHT_MASK
+import android.content.res.Configuration.UI_MODE_NIGHT_YES
 import android.graphics.Color
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
 import android.provider.Settings
 import android.util.Log
+import android.view.ViewGroup
+import androidx.activity.enableEdgeToEdge
+import androidx.annotation.ColorInt
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.PermissionChecker
+import androidx.core.graphics.ColorUtils
+import androidx.core.net.toUri
+import androidx.core.view.children
 import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -32,6 +40,11 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
     companion object {
         private const val BTCONNECT_REQCODE = 0
         private const val SHIZUKU_REQCODE = 1
+
+        private const val CORNERS_FULL = 0
+        private const val CORNERS_TOP = 1
+        private const val CORNERS_CENTER = 2
+        private const val CORNERS_BOTTOM = 3
     }
 
     private lateinit var binding: ActivityMainBinding
@@ -40,6 +53,7 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
 
     @SuppressLint("BatteryLife")
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
         mPowerMgr = getSystemService(PowerManager::class.java)
@@ -47,12 +61,20 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        binding.scrollView.children.firstOrNull().let { root ->
+            val parent = root as ViewGroup
+
+            parent.viewTreeObserver.addOnGlobalLayoutListener {
+                updateRoundedBackground(parent)
+            }
+        }
+
         binding.bgoptsPref.setOnClickListener {
             if (!mPowerMgr.isIgnoringBatteryOptimizations(this.packageName)) {
                 runCatching {
                     startActivity(
                         Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
-                            data = Uri.parse("package:${packageName}")
+                            data = "package:${packageName}".toUri()
                         }
                     )
                 }
@@ -67,7 +89,7 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
             if (!checkSecureSettingsPermission(this)) {
                 // Show a dialog detailing how to set this permission
                 startActivity(Intent(Intent.ACTION_VIEW).apply {
-                    data = Uri.parse(getString(R.string.url_secure_settings_help))
+                    data = getString(R.string.url_secure_settings_help).toUri()
                 })
             }
         }
@@ -80,7 +102,7 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
                     if (!RootHelper.isRootEnabled()) {
                         // Show dialog about root access
                         startActivity(Intent(Intent.ACTION_VIEW).apply {
-                            data = Uri.parse(getString(R.string.url_root_access_help))
+                            data = getString(R.string.url_root_access_help).toUri()
                         })
                     } else {
                         SettingsHelper.setRootAccessEnabled(true)
@@ -137,7 +159,7 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
                                 setAction(R.string.title_settings) {
                                     runCatching {
                                         startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                                            data = Uri.parse("package:${it.context.packageName}")
+                                            data = "package:${it.context.packageName}".toUri()
                                             flags = Intent.FLAG_ACTIVITY_NEW_TASK
                                         })
                                     }
@@ -199,12 +221,22 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
 
     private fun updateBgOptsPref(enabled: Boolean) {
         binding.bgoptsPrefSummary.setText(if (enabled) R.string.message_bgopts_enabled else R.string.message_bgopts_disabled)
-        binding.bgoptsPrefSummary.setTextColor(if (enabled) Color.GREEN else Color.RED)
+        binding.bgoptsPrefSummary.setTextColor(
+            getTextColor(
+                binding.bgoptsPrefSummary.context,
+                enabled
+            )
+        )
     }
 
     private fun updateSecureSettingsPref(enabled: Boolean) {
         binding.securesettingsPrefSummary.setText(if (enabled) R.string.message_securesettings_enabled else R.string.message_securesettings_disabled)
-        binding.securesettingsPrefSummary.setTextColor(if (enabled) Color.GREEN else Color.RED)
+        binding.securesettingsPrefSummary.setTextColor(
+            getTextColor(
+                binding.securesettingsPrefSummary.context,
+                enabled
+            )
+        )
     }
 
     private fun updateRootAccessPref(enabled: Boolean) {
@@ -218,7 +250,7 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
 
     private fun updateBTPref(enabled: Boolean) {
         binding.btPrefSummary.setText(if (enabled) R.string.permission_bt_enabled else R.string.permission_bt_disabled)
-        binding.btPrefSummary.setTextColor(if (enabled) Color.GREEN else Color.RED)
+        binding.btPrefSummary.setTextColor(getTextColor(binding.btPrefSummary.context, enabled))
     }
 
     private fun updateShizukuPref(state: ShizukuState) {
@@ -230,7 +262,12 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
                 ShizukuState.RUNNING -> R.string.message_shizuku_running
             }
         )
-        binding.shizukuPrefSummary.setTextColor(if (state == ShizukuState.RUNNING) Color.GREEN else Color.RED)
+        binding.shizukuPrefSummary.setTextColor(
+            getTextColor(
+                binding.shizukuPrefSummary.context,
+                state == ShizukuState.RUNNING
+            )
+        )
     }
 
     private fun isLauncherIconEnabled(): Boolean {
@@ -282,5 +319,52 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
     override fun onDestroy() {
         Shizuku.removeRequestPermissionResultListener(this)
         super.onDestroy()
+    }
+
+    @ColorInt
+    private fun getTextColor(context: Context, enabled: Boolean): Int {
+        return when (enabled) {
+            true -> if ((context.resources.configuration.uiMode and UI_MODE_NIGHT_MASK) == UI_MODE_NIGHT_YES) {
+                Color.GREEN
+            } else {
+                ColorUtils.blendARGB(Color.GREEN, Color.BLACK, 0.25f)
+            }
+
+            false -> if ((context.resources.configuration.uiMode and UI_MODE_NIGHT_MASK) == UI_MODE_NIGHT_YES) {
+                ColorUtils.blendARGB(Color.RED, Color.WHITE, 0.25f)
+            } else {
+                Color.RED
+            }
+        }
+    }
+
+    private fun updateRoundedBackground(parent: ViewGroup) {
+        val permissionsPreferences =
+            parent.children.filter { it.tag == "permissions" && it.isVisible }.toList()
+
+        permissionsPreferences.forEachIndexed { index, view ->
+            val cornerType = when {
+                permissionsPreferences.size <= 1 -> CORNERS_FULL
+                index == 0 -> CORNERS_TOP
+                index == permissionsPreferences.size - 1 -> CORNERS_BOTTOM
+                else -> CORNERS_CENTER
+            }
+
+            when (cornerType) {
+                CORNERS_FULL -> view.setBackgroundResource(
+                    R.drawable.preference_round_background
+                )
+
+                CORNERS_TOP -> view.setBackgroundResource(
+                    R.drawable.preference_round_background_top
+                )
+
+                CORNERS_BOTTOM -> view.setBackgroundResource(
+                    R.drawable.preference_round_background_bottom
+                )
+
+                CORNERS_CENTER -> view.setBackgroundResource(R.drawable.preference_round_background_center)
+            }
+        }
     }
 }
