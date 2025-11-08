@@ -3,6 +3,8 @@ package com.thewizrd.simplewear.adapters
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.ViewGroup
+import androidx.core.view.isGone
+import androidx.core.view.isVisible
 import androidx.recyclerview.selection.ItemDetailsLookup.ItemDetails
 import androidx.recyclerview.selection.SelectionTracker
 import androidx.recyclerview.widget.DiffUtil
@@ -49,7 +51,13 @@ class TimedActionsAdapter : ListAdapter<TimedAction, TimedActionsAdapter.TimedAc
             val model = ActionButtonViewModel(action.action)
 
             binding.actionTitle.setText(model.actionLabelResId)
-            binding.actionState.setText(model.stateLabelResId)
+            if (model.stateLabelResId != 0) {
+                binding.actionState.setText(model.stateLabelResId)
+                binding.actionState.isVisible = true
+            } else {
+                binding.actionState.text = null
+                binding.actionState.isGone = true
+            }
             binding.actionTime.text = DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT).format(
                 LocalTime.ofInstant(
                     Instant.ofEpochMilli(action.timeInMillis),

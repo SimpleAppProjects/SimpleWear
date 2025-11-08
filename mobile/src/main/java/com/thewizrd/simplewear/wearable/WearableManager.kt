@@ -933,6 +933,16 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
                 )
             }
 
+            Actions.SLEEPTIMER -> {
+                nA = action as NormalAction
+                nA.setActionSuccessful(PhoneStatusHelper.sendPauseMusicCommand(mContext))
+                sendMessage(
+                    nodeID,
+                    WearableHelper.ActionsPath,
+                    JSONParser.serializer(nA, Action::class.java).stringToBytes()
+                )
+            }
+
             Actions.TIMEDACTION -> {
                 val timedAction = action as TimedAction
 

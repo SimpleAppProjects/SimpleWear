@@ -667,6 +667,13 @@ class WearableDataListenerService : WearableListenerService() {
             // Disconnect or dismiss any ongoing activity
             dismissMediaOngoingActivity()
             dismissCallOngoingActivity()
+        } else {
+            if (DashboardTileProviderService.isInFocus) {
+                DashboardTileProviderService.requestTileUpdate(this)
+            }
+            if (MediaPlayerTileProviderService.isInFocus) {
+                MediaPlayerTileProviderService.requestTileUpdate(this)
+            }
         }
     }
 

@@ -14,6 +14,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -178,7 +179,8 @@ private fun TimedActionSetupUi(
     onAddAction: (Action?, TimedAction) -> Unit = { _, _ -> },
     onCancel: () -> Unit = {}
 ) {
-    val lifecycleOwner = LocalLifecycleOwner.current
+    val isPreview = LocalInspectionMode.current
+
     val compositionScope = rememberCoroutineScope()
 
     var scheduledTime by remember { mutableLongStateOf(System.currentTimeMillis()) }
@@ -200,18 +202,26 @@ private fun TimedActionSetupUi(
             when (pageIdx) {
                 // Time
                 0 -> {
-                    TimePicker(
-                        onTimePicked = {
-                            scheduledTime = System.currentTimeMillis() +
-                                    TimeUnit.HOURS.toMillis(it.hour.toLong()) +
-                                    TimeUnit.MINUTES.toMillis(it.minute.toLong())
-                            compositionScope.launch {
-                                pagerState.animateScrollToPage(pageIdx + 1)
-                            }
-                        },
-                        initialTime = LocalTime.of(0, 15),
-                        timePickerType = TimePickerType.HoursMinutes24H
-                    )
+                    if (!isPreview) {
+                        TimePicker(
+                            onTimePicked = {
+                                scheduledTime = System.currentTimeMillis() +
+                                        TimeUnit.HOURS.toMillis(it.hour.toLong()) +
+                                        TimeUnit.MINUTES.toMillis(it.minute.toLong())
+                                compositionScope.launch {
+                                    pagerState.animateScrollToPage(pageIdx + 1)
+                                }
+                            },
+                            initialTime = LocalTime.of(0, 15),
+                            timePickerType = TimePickerType.HoursMinutes24H
+                        )
+                    } else {
+                        com.google.android.horologist.composables.TimePicker(
+                            onTimeConfirm = {},
+                            time = LocalTime.of(0, 15),
+                            showSeconds = false
+                        )
+                    }
                 }
                 // Actions
                 1 -> {
@@ -371,22 +381,24 @@ private fun TimedActionSetupUi(
                                 )
                             }
 
-                            item {
-                                SwitchButton(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .transformedHeight(this, transformationSpec),
-                                    transformation = SurfaceTransformation(transformationSpec),
-                                    checked = shouldSetInitialAction,
-                                    onCheckedChange = {
-                                        initialAction =
-                                            Action.getDefaultAction(selectedAction.actionType)
-                                        shouldSetInitialAction = it
-                                    },
-                                    label = {
-                                        Text(text = stringResource(id = R.string.title_set_initial_state))
-                                    }
-                                )
+                            if (selectedAction.actionType != Actions.SLEEPTIMER) {
+                                item {
+                                    SwitchButton(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .transformedHeight(this, transformationSpec),
+                                        transformation = SurfaceTransformation(transformationSpec),
+                                        checked = shouldSetInitialAction,
+                                        onCheckedChange = {
+                                            initialAction =
+                                                Action.getDefaultAction(selectedAction.actionType)
+                                            shouldSetInitialAction = it
+                                        },
+                                        label = {
+                                            Text(text = stringResource(id = R.string.title_set_initial_state))
+                                        }
+                                    )
+                                }
                             }
 
                             if (shouldSetInitialAction) {
@@ -470,94 +482,96 @@ private fun TimedActionSetupUi(
                                 }
                             }
 
-                            item {
-                                ListHeader(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .transformedHeight(this, transformationSpec),
-                                    transformation = SurfaceTransformation(transformationSpec),
-                                ) {
-                                    Text(
-                                        text = stringResource(id = R.string.title_scheduled_state),
-                                        style = MaterialTheme.typography.labelSmall
-                                    )
-                                }
-                            }
-
-                            when (selectedAction) {
-                                is ToggleAction -> {
-                                    item {
-                                        val tA = remember(selectedAction, actionState) {
-                                            selectedAction as ToggleAction
-                                        }
-
-                                        SwitchButton(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .transformedHeight(this, transformationSpec),
-                                            transformation = SurfaceTransformation(
-                                                transformationSpec
-                                            ),
-                                            checked = tA.isEnabled,
-                                            onCheckedChange = {
-                                                tA.isEnabled = it
-                                                actionState = it
-                                            },
-                                            label = {
-                                                Text(text = stringResource(id = model.stateLabelResId))
-                                            }
+                            if (selectedAction.actionType != Actions.SLEEPTIMER) {
+                                item {
+                                    ListHeader(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .transformedHeight(this, transformationSpec),
+                                        transformation = SurfaceTransformation(transformationSpec),
+                                    ) {
+                                        Text(
+                                            text = stringResource(id = R.string.title_scheduled_state),
+                                            style = MaterialTheme.typography.labelSmall
                                         )
                                     }
                                 }
 
-                                is MultiChoiceAction -> {
-                                    items((selectedAction as MultiChoiceAction).numberOfStates) { choice ->
-                                        val mA = remember(selectedAction, actionState) {
-                                            selectedAction as MultiChoiceAction
-                                        }
-                                        val multiActionModel = remember(mA, choice) {
-                                            ActionButtonViewModel(
-                                                MultiChoiceAction(
-                                                    mA.actionType,
-                                                    choice
-                                                )
+                                when (selectedAction) {
+                                    is ToggleAction -> {
+                                        item {
+                                            val tA = remember(selectedAction, actionState) {
+                                                selectedAction as ToggleAction
+                                            }
+
+                                            SwitchButton(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .transformedHeight(this, transformationSpec),
+                                                transformation = SurfaceTransformation(
+                                                    transformationSpec
+                                                ),
+                                                checked = tA.isEnabled,
+                                                onCheckedChange = {
+                                                    tA.isEnabled = it
+                                                    actionState = it
+                                                },
+                                                label = {
+                                                    Text(text = stringResource(id = model.stateLabelResId))
+                                                }
                                             )
                                         }
-
-                                        RadioButton(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .transformedHeight(this, transformationSpec),
-                                            transformation = SurfaceTransformation(
-                                                transformationSpec
-                                            ),
-                                            selected = mA.choice == choice,
-                                            onSelect = {
-                                                mA.choice = choice
-                                                actionState = choice
-                                            },
-                                            label = {
-                                                Text(text = stringResource(id = multiActionModel.stateLabelResId))
-                                            }
-                                        )
                                     }
-                                }
 
-                                else -> {
-                                    item {
-                                        Button(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .transformedHeight(this, transformationSpec),
-                                            transformation = SurfaceTransformation(
-                                                transformationSpec
-                                            ),
-                                            label = {
-                                                Text(text = stringResource(id = R.string.label_action_not_supported))
-                                            },
-                                            onClick = {},
-                                            enabled = false
-                                        )
+                                    is MultiChoiceAction -> {
+                                        items((selectedAction as MultiChoiceAction).numberOfStates) { choice ->
+                                            val mA = remember(selectedAction, actionState) {
+                                                selectedAction as MultiChoiceAction
+                                            }
+                                            val multiActionModel = remember(mA, choice) {
+                                                ActionButtonViewModel(
+                                                    MultiChoiceAction(
+                                                        mA.actionType,
+                                                        choice
+                                                    )
+                                                )
+                                            }
+
+                                            RadioButton(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .transformedHeight(this, transformationSpec),
+                                                transformation = SurfaceTransformation(
+                                                    transformationSpec
+                                                ),
+                                                selected = mA.choice == choice,
+                                                onSelect = {
+                                                    mA.choice = choice
+                                                    actionState = choice
+                                                },
+                                                label = {
+                                                    Text(text = stringResource(id = multiActionModel.stateLabelResId))
+                                                }
+                                            )
+                                        }
+                                    }
+
+                                    else -> {
+                                        item {
+                                            Button(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .transformedHeight(this, transformationSpec),
+                                                transformation = SurfaceTransformation(
+                                                    transformationSpec
+                                                ),
+                                                label = {
+                                                    Text(text = stringResource(id = R.string.label_action_not_supported))
+                                                },
+                                                onClick = {},
+                                                enabled = false
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -566,7 +580,7 @@ private fun TimedActionSetupUi(
                                 Spacer(modifier = Modifier.size(16.dp))
                             }
 
-                            if (selectedAction is ToggleAction || selectedAction is MultiChoiceAction) {
+                            if (selectedAction is ToggleAction || selectedAction is MultiChoiceAction || selectedAction.actionType == Actions.SLEEPTIMER) {
                                 item {
                                     FilledIconButton(
                                         content = {

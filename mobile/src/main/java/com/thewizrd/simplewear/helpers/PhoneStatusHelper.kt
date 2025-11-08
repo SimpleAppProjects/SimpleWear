@@ -17,6 +17,7 @@ import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.hardware.camera2.CameraManager
 import android.location.LocationManager
+import android.media.AudioFocusRequest
 import android.media.AudioManager
 import android.net.wifi.WifiManager
 import android.os.BatteryManager
@@ -582,6 +583,34 @@ object PhoneStatusHelper {
 
         val musicActive = audioMan.isMusicActive
         return if (musicActive) ActionStatus.SUCCESS else ActionStatus.FAILURE
+    }
+
+    suspend fun sendPauseMusicCommand(context: Context): ActionStatus {
+        // Send pause event to which ever player has audio focus
+        val audioMan = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        if (audioMan.isMusicActive) {
+            val event = KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_MEDIA_PAUSE)
+            audioMan.dispatchMediaKeyEvent(event)
+        }
+
+        // Use AudioFocus as a fallback
+        if (audioMan.isMusicActive) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                val request = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+                    .build()
+                audioMan.requestAudioFocus(request)
+                audioMan.abandonAudioFocusRequest(request)
+            } else {
+                audioMan.requestAudioFocus(
+                    null,
+                    AudioManager.STREAM_MUSIC,
+                    AudioManager.AUDIOFOCUS_GAIN
+                )
+                audioMan.abandonAudioFocus(null)
+            }
+        }
+
+        return if (!audioMan.isMusicActive) ActionStatus.SUCCESS else ActionStatus.FAILURE
     }
 
     suspend fun isMusicActive(context: Context, delay: Boolean = true): ActionStatus {

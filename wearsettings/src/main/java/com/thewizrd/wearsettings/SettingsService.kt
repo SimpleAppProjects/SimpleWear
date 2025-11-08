@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package com.thewizrd.wearsettings
 
 import android.app.Activity.RESULT_CANCELED
@@ -6,7 +8,12 @@ import android.app.IntentService
 import android.content.Intent
 import android.os.Bundle
 import android.os.ResultReceiver
-import com.thewizrd.shared_resources.actions.*
+import com.thewizrd.shared_resources.actions.Action
+import com.thewizrd.shared_resources.actions.ActionStatus
+import com.thewizrd.shared_resources.actions.EXTRA_ACTION_CALLINGPKG
+import com.thewizrd.shared_resources.actions.EXTRA_ACTION_DATA
+import com.thewizrd.shared_resources.actions.EXTRA_ACTION_ERROR
+import com.thewizrd.shared_resources.actions.RemoteAction
 import com.thewizrd.shared_resources.utils.JSONParser
 import com.thewizrd.shared_resources.wearsettings.PackageValidator
 import com.thewizrd.wearsettings.actions.ActionHelper
@@ -14,11 +21,13 @@ import com.thewizrd.wearsettings.actions.ActionHelper
 class SettingsService : IntentService("SettingsService") {
     private lateinit var mPackageValidator: PackageValidator
 
+    @Deprecated("Deprecated in Java")
     override fun onCreate() {
         super.onCreate()
         mPackageValidator = PackageValidator(this)
     }
 
+    @Deprecated("Deprecated in Java")
     override fun onHandleIntent(intent: Intent?) {
         if (intent == null) return
 
