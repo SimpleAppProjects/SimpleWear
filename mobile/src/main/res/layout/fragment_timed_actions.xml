@@ -30,7 +30,7 @@
             app:expandedTitleTextAppearance="?textAppearanceDisplaySmallEmphasized"
             app:expandedSubtitleTextAppearance="?textAppearanceTitleMedium"
             style="?collapsingToolbarLayoutLargeStyle"
-            app:titleCollapseMode="fade"
+            app:titleCollapseMode="scale"
             app:expandedTitleMarginStart="24dp"
             app:expandedTitleMarginBottom="32dp"
             app:titleMaxLines="2">
