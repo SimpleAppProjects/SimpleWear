@@ -16,7 +16,7 @@ enum class WearConnectionStatus(val value: Int) {
         }
 
         init {
-            for (connectionStatus in values()) {
+            for (connectionStatus in entries) {
                 map.put(connectionStatus.value, connectionStatus)
             }
         }

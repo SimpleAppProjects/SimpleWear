@@ -624,7 +624,11 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
 
         private fun onUpdateQueue() {
             mController?.let {
-                mQueueItemsAdapter.setQueueItems(it, it.queue)
+                val queueItems = runCatching {
+                    it.queue
+                }.getOrDefault(emptyList())
+
+                mQueueItemsAdapter.setQueueItems(it, queueItems)
             } ?: run {
                 Logger.error(TAG, "Failed to update queue info, null MediaController.")
                 mQueueItemsAdapter.clear()

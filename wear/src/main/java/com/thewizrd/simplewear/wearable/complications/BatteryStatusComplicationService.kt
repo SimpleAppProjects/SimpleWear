@@ -93,7 +93,7 @@ class BatteryStatusComplicationService : SuspendingComplicationDataSourceService
         return scope.async {
             val batteryStatus = latestStatus() ?: return@async NoDataComplicationData()
 
-            val batteryLvl = batteryStatus.batteryLevel
+            val batteryLvl = batteryStatus.batteryLevel.coerceIn(0, 100)
             val statusText = if (batteryStatus.isCharging) {
                 getString(R.string.batt_state_charging)
             } else {

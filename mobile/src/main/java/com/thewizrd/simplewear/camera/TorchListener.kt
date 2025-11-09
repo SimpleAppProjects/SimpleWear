@@ -20,10 +20,12 @@ object TorchListener {
     var isRegistered = false
         private set
 
+    private var primaryCameraId: String? = null
+
     private val torchCallback = lazy {
         object : CameraManager.TorchCallback() {
             override fun onTorchModeChanged(cameraId: String, enabled: Boolean) {
-                if (cameraId == primaryCameraId.value) {
+                if (cameraId == getPrimaryCameraId()) {
                     val context = appLib.context
 
                     isTorchEnabled = enabled
@@ -38,9 +40,12 @@ object TorchListener {
         }
     }
 
-    private val primaryCameraId = lazy {
+    private fun getPrimaryCameraId(): String? {
+        if (primaryCameraId != null) return primaryCameraId
+
         val cameraMgr = appLib.context.getSystemService(Context.CAMERA_SERVICE) as CameraManager
-        cameraMgr.cameraIdList[0]
+        primaryCameraId = cameraMgr.cameraIdList.firstOrNull()
+        return primaryCameraId
     }
 
     fun registerListener(context: Context): Boolean {

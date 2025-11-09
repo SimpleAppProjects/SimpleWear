@@ -7,6 +7,9 @@
     <string name="status_connecting">Connecting…</string>
     <string name="status_connected">Connected</string>
 
+    <string name="status_unsupported_device">Connected device is not supported</string>
+    <string name="status_device_disconnected_notinstalled">Device is not connected or app is not installed on device...</string>
+
     <!-- Setup -->
     <string name="message_gettingstatus">Getting connection status…</string>
     <string name="error_notinstalled">Install app on device and try again</string>

@@ -36,6 +36,7 @@ import com.thewizrd.shared_resources.utils.JSONParser
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.shared_resources.utils.bytesToString
 import com.thewizrd.shared_resources.utils.stringToBytes
+import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.utils.ErrorMessage
 import com.thewizrd.simplewear.viewmodels.WearableListenerViewModel.Companion.ACTION_OPENONPHONE
 import kotlinx.coroutines.channels.BufferOverflow
@@ -99,7 +100,7 @@ abstract class WearableListenerViewModel(private val app: Application) : Android
             connect()
 
             if (mPhoneNodeWithApp == null) {
-                _errorMessagesFlow.tryEmit(ErrorMessage.String("Device is not connected or app is not installed on device..."))
+                _errorMessagesFlow.tryEmit(ErrorMessage.Resource(R.string.status_device_disconnected_notinstalled))
 
                 when (PhoneTypeHelper.getPhoneDeviceType(appContext)) {
                     PhoneTypeHelper.DEVICE_TYPE_ANDROID -> {
@@ -107,21 +108,22 @@ abstract class WearableListenerViewModel(private val app: Application) : Android
                     }
 
                     PhoneTypeHelper.DEVICE_TYPE_IOS -> {
-                        _errorMessagesFlow.tryEmit(ErrorMessage.String("Connected device is not supported"))
+                        _errorMessagesFlow.tryEmit(ErrorMessage.Resource(R.string.status_unsupported_device))
                     }
 
                     else -> {
-                        _errorMessagesFlow.tryEmit(ErrorMessage.String("Connected device is not supported"))
+                        _errorMessagesFlow.tryEmit(ErrorMessage.Resource(R.string.status_unsupported_device))
                     }
                 }
             } else {
                 // Send message to device to start activity
-                val result = sendMessage(
-                    mPhoneNodeWithApp!!.id,
-                    WearableHelper.StartActivityPath,
-                    ByteArray(0)
-                )
-                val success = result != -1
+                val success = runCatching {
+                    val intent = WearableHelper.createRemoteActivityIntent(
+                        WearableHelper.getPackageName(),
+                        "${WearableHelper.PACKAGE_NAME}.MainActivity"
+                    )
+                    startRemoteActivity(intent)
+                }.getOrDefault(false)
 
                 if (showAnimation) {
                     sendConfirmationEvent(success)

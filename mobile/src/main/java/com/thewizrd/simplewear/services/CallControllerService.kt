@@ -703,10 +703,14 @@ class CallControllerService : LifecycleService(), MessageClient.OnMessageReceive
     @get:SuppressLint("MissingPermission")
     private val TelephonyManager.callStateCompat: Int
         get() {
-            return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                this.callStateForSubscription
-            } else {
-                this.callState
-            }
+            return runCatching {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    this.callStateForSubscription
+                } else {
+                    this.callState
+                }
+            }.onFailure {
+                Logger.error(TAG, it)
+            }.getOrDefault(TelephonyManager.CALL_STATE_IDLE)
         }
 }

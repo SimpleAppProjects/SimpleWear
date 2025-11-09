@@ -19,7 +19,7 @@ enum class ActionStatus(val value: Int) {
         }
 
         init {
-            for (status in values()) {
+            for (status in entries) {
                 map.put(status.value, status)
             }
         }

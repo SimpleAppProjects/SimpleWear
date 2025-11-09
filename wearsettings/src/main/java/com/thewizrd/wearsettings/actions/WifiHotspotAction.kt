@@ -116,6 +116,7 @@ object WifiHotspotAction {
 
                             TETHER_ERROR_NO_CHANGE_TETHERING_PERMISSION -> {
                                 // retry
+                                Logger.warn(TAG, "TETHER_ERROR_NO_CHANGE_TETHERING_PERMISSION")
                                 setHotspotEnabledShizuku(enabled, false, shouldShowEntitlementUi)
                             }
 
