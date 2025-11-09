@@ -865,11 +865,59 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
             Actions.DONOTDISTURB -> {
                 if (action is MultiChoiceAction) {
                     mA = action
-                    mA.setActionSuccessful(PhoneStatusHelper.setDNDState(mContext, DNDChoice.valueOf(mA.choice)))
+                    /**
+                     * Starting with Vanilla, calls to change DND state could be ignored if we have no companion associations
+                     * If so call companion settings app or else continue as usual
+                     */
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM && !PhoneStatusHelper.companionDeviceAssociated(
+                            mContext
+                        ) && WearSettingsHelper.isWearSettingsInstalled()
+                    ) {
+                        val status = performRemoteAction(action)
+                        if (status == ActionStatus.REMOTE_FAILURE ||
+                            status == ActionStatus.REMOTE_PERMISSION_DENIED
+                        ) {
+                            mA.setActionSuccessful(
+                                PhoneStatusHelper.setDNDState(
+                                    mContext,
+                                    DNDChoice.valueOf(mA.choice)
+                                )
+                            )
+                        }
+                    } else {
+                        mA.setActionSuccessful(
+                            PhoneStatusHelper.setDNDState(
+                                mContext,
+                                DNDChoice.valueOf(mA.choice)
+                            )
+                        )
+                    }
                     sendMessage(nodeID, WearableHelper.ActionsPath, JSONParser.serializer(mA, Action::class.java).stringToBytes())
                 } else if (action is ToggleAction) {
                     tA = action
-                    tA.setActionSuccessful(PhoneStatusHelper.setDNDState(mContext, tA.isEnabled))
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM && !PhoneStatusHelper.companionDeviceAssociated(
+                            mContext
+                        ) && WearSettingsHelper.isWearSettingsInstalled()
+                    ) {
+                        val status = performRemoteAction(action)
+                        if (status == ActionStatus.REMOTE_FAILURE ||
+                            status == ActionStatus.REMOTE_PERMISSION_DENIED
+                        ) {
+                            tA.setActionSuccessful(
+                                PhoneStatusHelper.setDNDState(
+                                    mContext,
+                                    tA.isEnabled
+                                )
+                            )
+                        }
+                    } else {
+                        tA.setActionSuccessful(
+                            PhoneStatusHelper.setDNDState(
+                                mContext,
+                                tA.isEnabled
+                            )
+                        )
+                    }
                     sendMessage(
                         nodeID,
                         WearableHelper.ActionsPath,

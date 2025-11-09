@@ -42,6 +42,10 @@ object ActionHelper {
                 LockScreenAction.executeAction(context, action)
             }
 
+            Actions.DONOTDISTURB -> {
+                DoNotDisturbAction.executeAction(context, action)
+            }
+
             else -> ActionStatus.FAILURE
         }
     }

@@ -2,6 +2,7 @@ package com.thewizrd.wearsettings
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.app.NotificationManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -133,6 +134,14 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
 
         binding.btPref.isVisible = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
 
+        binding.dndPref.setOnClickListener {
+            if (!isNotificationAccessAllowed()) {
+                runCatching {
+                    startActivity(Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS))
+                }
+            }
+        }
+
         binding.shizukuPref.setOnClickListener {
             runCatching {
                 val shizukuState = ShizukuUtils.getShizukuState(this)
@@ -202,6 +211,7 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
             val rootEnabled = SettingsHelper.isRootAccessEnabled() && RootHelper.isRootEnabled()
             val shizukuState = ShizukuUtils.getShizukuState(this@MainActivity)
             updateBTPref(isBluetoothConnectPermGranted() || rootEnabled || shizukuState == ShizukuState.RUNNING)
+            updateDNDAccessText(isNotificationAccessAllowed() || rootEnabled || shizukuState == ShizukuState.RUNNING)
             updateSecureSettingsPref(checkSecureSettingsPermission(this@MainActivity) || rootEnabled || shizukuState == ShizukuState.RUNNING)
             updateRootAccessPref(rootEnabled)
             updateShizukuPref(shizukuState)
@@ -217,6 +227,12 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
         } else {
             true
         }
+    }
+
+    private fun isNotificationAccessAllowed(): Boolean {
+        val notMan =
+            applicationContext.getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+        return notMan.isNotificationPolicyAccessGranted
     }
 
     private fun updateBgOptsPref(enabled: Boolean) {
@@ -251,6 +267,11 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
     private fun updateBTPref(enabled: Boolean) {
         binding.btPrefSummary.setText(if (enabled) R.string.permission_bt_enabled else R.string.permission_bt_disabled)
         binding.btPrefSummary.setTextColor(getTextColor(binding.btPrefSummary.context, enabled))
+    }
+
+    private fun updateDNDAccessText(enabled: Boolean) {
+        binding.dndSummary.setText(if (enabled) R.string.permission_dnd_enabled else R.string.permission_dnd_disabled)
+        binding.dndSummary.setTextColor(getTextColor(binding.dndSummary.context, enabled))
     }
 
     private fun updateShizukuPref(state: ShizukuState) {

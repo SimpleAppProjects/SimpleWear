@@ -146,6 +146,29 @@
             </LinearLayout>
 
             <LinearLayout
+                android:id="@+id/dnd_pref"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                style="@style/Permissions.Preference.Expressive"
+                android:tag="permissions">
+
+                <TextView
+                    android:id="@+id/dnd_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    style="@style/Permissions.Preference.Title.Expressive"
+                    android:text="@string/action_dnd" />
+
+                <TextView
+                    android:id="@+id/dnd_summary"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    style="@style/Permissions.Preference.Summary.Expressive"
+                    tools:text="@string/permission_dnd_disabled" />
+
+            </LinearLayout>
+
+            <LinearLayout
                 android:id="@+id/shizuku_pref"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
