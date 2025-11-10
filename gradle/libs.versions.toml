@@ -9,7 +9,7 @@ kotlinx_version = '1.10.2'
 
 desugar_version = '2.1.5'
 
-firebase_version = '34.4.0'
+firebase_version = "34.5.0"
 firebaseCrashlyticsGradleVersion = "3.0.6"
 googleServicesVersion = "4.4.4"
 play_services_wearable_version = "19.0.0"
@@ -25,9 +25,9 @@ lifecycle_version = '2.9.4'
 preference_version = '1.2.1'
 recyclerview_version = '1.4.0'
 recyclerview_selection_version = "1.2.0"
-coresplash_version = '1.0.1'
+coresplash_version = "1.2.0"
 work_version = '2.11.0'
-navigation_version = '2.9.5'
+navigation_version = "2.9.6"
 datastore_version = '1.1.7'
 media_version = "1.7.1"
 palette_version = "1.0.0"
@@ -40,9 +40,9 @@ androidx_truth_version = '1.7.0'
 google_truth_version = '1.4.5'
 
 material_version = '1.14.0-alpha06'
-material_compose_version = "1.5.0-alpha07"
+material_compose_version = "1.5.0-alpha08"
 
-compose_bom_version = "2025.10.01"
+compose_bom_version = "2025.11.00"
 compose_compiler_version = '1.5.15'
 
 wearableVersion = "2.9.0"
@@ -53,7 +53,7 @@ wear_remote_interactions_version = "1.1.0"
 wear_tooling_preview_version = "1.0.0"
 reorderable_version = "3.0.0"
 
-wear_compose_version = '1.5.4'
+wear_compose_version = "1.5.5"
 wear_tiles_version = '1.5.0'
 wear_watchface_version = '1.2.1'
 horologist_version = '0.7.15'

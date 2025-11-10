@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources xmlns:tools="http://schemas.android.com/tools">
+<resources>
     <dimen name="inner_layout_padding">8dp</dimen>
     <dimen name="conf_overlay_image_size">32dp</dimen>
 
@@ -15,10 +15,6 @@
     <dimen name="button_corner_radius">26dp</dimen>
     <integer name="button_gradient_angle">135</integer>
     <integer name="button_gradient_angle_rtl">45</integer>
-
-    <dimen name="splashscreen_icon_size" tools:override="true">48dp</dimen>
-    <dimen name="splashscreen_icon_size_no_background" tools:override="true">48dp</dimen>
-    <dimen name="splashscreen_icon_size_with_background" tools:override="true">48dp</dimen>
 
     <dimen name="dashboard_top_margin">8dp</dimen>
 
