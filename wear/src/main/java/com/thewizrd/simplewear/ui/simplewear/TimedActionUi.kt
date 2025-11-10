@@ -166,7 +166,7 @@ fun TimedActionUi(
                             ActionStatus.PERMISSION_DENIED -> {
                                 confirmationViewModel.showOpenOnPhoneForFailure(
                                     message = context.getString(
-                                        R.string.error_permissiondenied
+                                        R.string.error_permissiondenied_wear
                                     )
                                 )
 
@@ -451,7 +451,7 @@ fun TimedActionDetailUi(
                             ActionStatus.PERMISSION_DENIED -> {
                                 confirmationViewModel.showOpenOnPhoneForFailure(
                                     message = context.getString(
-                                        R.string.error_permissiondenied
+                                        R.string.error_permissiondenied_wear
                                     )
                                 )
 

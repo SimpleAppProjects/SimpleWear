@@ -1,4 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="preference_title_wearsettings">WiFi, NFC, Location and Mobile Data</string>
+    <string name="preference_title_wearsettings" translatable="false">@string/preference_title_wearsettings_v29</string>
 </resources>

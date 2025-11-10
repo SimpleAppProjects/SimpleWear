@@ -350,7 +350,7 @@ fun Dashboard(
                                     } else {
                                         confirmationViewModel.showFailure(
                                             message = context.getString(
-                                                R.string.error_permissiondenied
+                                                R.string.error_permissiondenied_wear
                                             )
                                         )
                                     }
@@ -367,7 +367,7 @@ fun Dashboard(
                                 }
 
                                 ActionStatus.REMOTE_PERMISSION_DENIED -> {
-                                    confirmationViewModel.showFailure(message = context.getString(R.string.error_permissiondenied))
+                                    confirmationViewModel.showFailure(message = context.getString(R.string.error_permissiondenied_wear))
                                     dashboardViewModel.openAppOnPhone(false)
                                 }
 

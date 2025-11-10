@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">SimpleWear</string>
+    <string name="app_name" translatable="false">SimpleWear</string>
 
     <string name="not_channel_name_torch">Flashlight notification</string>
 

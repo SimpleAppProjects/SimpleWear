@@ -240,7 +240,7 @@ fun GesturesUi(
                         if (status == ActionStatus.PERMISSION_DENIED) {
                             confirmationViewModel.showOpenOnPhoneForFailure(
                                 message = context.getString(
-                                    R.string.error_permissiondenied
+                                    R.string.error_permissiondenied_wear
                                 )
                             )
 

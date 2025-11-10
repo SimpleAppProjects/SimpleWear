@@ -170,7 +170,7 @@ fun AppLauncherScreen(
                             }
 
                             ActionStatus.PERMISSION_DENIED -> {
-                                confirmationViewModel.showFailure(message = context.getString(R.string.error_permissiondenied))
+                                confirmationViewModel.showFailure(message = context.getString(R.string.error_permissiondenied_wear))
 
                                 appLauncherViewModel.openAppOnPhone(false)
                             }

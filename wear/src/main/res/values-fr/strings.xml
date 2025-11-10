@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="message_openedonphone">"Ouvert sur le téléphone…"</string>
+
+    <!-- Connection Status -->
+    <string name="status_disconnected">"Appareil non connecté"</string>
+    <string name="status_connecting">"Connexion…"</string>
+    <string name="status_connected">"Connecté"</string>
+    <string name="status_unsupported_device">"L'appareil connecté n'est pas pris en charge"</string>
+    <string name="status_device_disconnected_notinstalled">"L'appareil n'est pas connecté ou l'application n'est pas installée sur l'appareil..."</string>
+
+    <!-- Setup -->
+    <string name="message_gettingstatus">"Obtention de l'état de la connexion…"</string>
+    <string name="error_notinstalled">"Installer l'application sur l'appareil et réessayer"</string>
+    <string name="error_syncing">"Impossible de synchroniser les données"</string>
+
+    <!-- Activity -->
+    <string name="title_activity_dashboard">"Tableau de bord"</string>
+    <string name="batt_state_charging">"En charge"</string>
+    <string name="batt_state_discharging">"Décharge"</string>
+    <string name="state_unknown">"Inconnu"</string>
+    <string name="title_actions">"Actions"</string>
+    <string name="state_syncing">"Synchronisation…"</string>
+    <string name="error_torch_action">"Autorisation d'accès à la caméra désactivée. Veuillez vérifier l'autorisation sur l'application téléphonique"</string>
+    <string name="error_sendmessage">"Aucune réponse. Veuillez vérifier la connexion"</string>
+    <string name="error_actionfailed">"Échec de l'exécution de l'action"</string>
+    <string name="error_remoteactionfailed">"Échec de l'exécution de l'action. Veuillez vérifier l'autorisation sur l'application téléphonique"</string>
+    <string name="pref_layout">"Disposition des actions"</string>
+    <string name="option_grid">"Grille"</string>
+    <string name="option_list">"Liste"</string>
+    <string name="title_launchmediacontrols">"Lancer les contrôles multimédias"</string>
+    <string name="title_autolaunchmediactrls">"Lancer automatiquement les contrôles multimédias"</string>
+    <string name="action_failed_playmusic">"Impossible de lire le contenu multimédia. Veuillez réessayer."</string>
+    <string name="error_nomusicplayers">"Impossible de trouver un lecteur multimédia"</string>
+    <string name="shortcut_label_playmusic">"Lire le contenu multimédia sur le téléphone"</string>
+    <string name="error_sleeptimer_notinstalled">"L'application SleepTimer n'est pas installée.
+Veuillez l'installer pour continuer."</string>
+    <string name="title_filter_apps">"Filtrer les applications"</string>
+    <string name="clear_all">"Tout effacer"</string>
+    <string name="message_playback_stopped">"Lecture arrêtée"</string>
+    <string name="error_playback_failed">"Impossible de lire. Veuillez vérifier la file d'attente multimédia"</string>
+    <string name="label_back">"Retour"</string>
+    <string name="message_enablebt">"Veuillez activer Bluetooth pour une connexion fiable"</string>
+    <string name="message_nocall_active">"Aucun appel actif"</string>
+    <string name="error_noapps">"Impossible de récupérer les applications"</string>
+    <string name="pref_loadicons_title">"Charger les icônes d'application"</string>
+    <string name="action_launchcontroller">"Lancer le contrôleur"</string>
+    <string name="title_nowplaying">"Lecture en cours"</string>
+    <string name="title_dashtile_config">"Configurer la vignette"</string>
+    <string name="message_reset_to_default">"Restaurer les paramètres par défaut ?"</string>
+    <string name="pref_title_tiledasheditor">"Éditeur de vignette"</string>
+    <string name="title_dash_config">"Configurer le tableau de bord"</string>
+    <string name="pref_title_dasheditor">"Éditeur de tableau de bord"</string>
+    <string name="pref_title_mediacontroller_launcher">"Ajouter un contrôleur multimédia au lanceur"</string>
+    <string name="pref_title_phone_batt_state">"État de la batterie du téléphone"</string>
+    <string name="title_batt_state">"État de la batterie"</string>
+    <string name="state_loading">"Chargement…"</string>
+    <string name="action_refresh">"Actualiser"</string>
+    <string name="action_retry">"Réessayer"</string>
+    <string name="action_play">"Lecture"</string>
+    <string name="action_add_batt_state">"Ajouter l'état de la batterie"</string>
+    <string name="action_remove_batt_state">"Supprimer l'état de la batterie"</string>
+    <string name="message_accessibility_svc_disabled">"Service d'accessibilité désactivé"</string>
+
+    <!-- Timed Actions -->
+    <string name="title_schedule_action">"Planifier une nouvelle action"</string>
+    <string name="title_confirm_action">"Confirmer l'action"</string>
+    <string name="title_edit_action">"Modifier l'action"</string>
+    <string name="title_set_initial_state">"Définir l'état initial"</string>
+    <string name="title_initial_state">"État initial"</string>
+    <string name="title_scheduled_state">"État planifié"</string>
+
+    <!-- Content Descriptions -->
+    <string name="label_mute">"Muet"</string>
+    <string name="label_keypad">"Clavier"</string>
+    <string name="desc_speakerphone_on">"Haut-parleur activé"</string>
+    <string name="desc_speakerphone_off">"Haut-parleur désactivé"</string>
+    <string name="desc_contact_photo">"Photo du contact"</string>
+    <string name="desc_phone_state">"État de l'appareil"</string>
+    <string name="label_arrow_up">"Flèche vers le haut"</string>
+    <string name="label_arrow_down">"Flèche vers le bas"</string>
+    <string name="label_arrow_left">"Flèche vers la gauche"</string>
+    <string name="label_arrow_right">"Flèche vers la droite"</string>
+    <string name="label_dpad_center">"Centre du pavé directionnel"</string>
+    <string name="desc_open_player_list">"Ouvrir la liste des lecteurs"</string>
+    <string name="desc_artwork">"Illustration"</string>
+    <string name="label_add_action">"Ajouter une action"</string>
+    <string name="error_permissiondenied_wear">"Autorisation refusée pour l'action. Veuillez vérifier l'autorisation sur l'application du téléphone"</string>
+</resources>

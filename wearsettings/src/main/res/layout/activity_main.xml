@@ -42,7 +42,7 @@
                 android:layout_height="?actionBarSize"
                 android:elevation="0dp"
                 app:layout_collapseMode="pin"
-                app:title="@string/app_name" />
+                app:title="@string/app_name_settings" />
 
         </com.google.android.material.appbar.CollapsingToolbarLayout>
 

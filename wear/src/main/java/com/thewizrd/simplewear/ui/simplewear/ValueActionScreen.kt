@@ -158,7 +158,7 @@ fun ValueActionScreen(
                                     ActionStatus.PERMISSION_DENIED -> {
                                         confirmationViewModel.showFailure(
                                             message = context.getString(
-                                                R.string.error_permissiondenied
+                                                R.string.error_permissiondenied_wear
                                             )
                                         )
 
@@ -193,7 +193,7 @@ fun ValueActionScreen(
                             }
 
                             ActionStatus.PERMISSION_DENIED -> {
-                                confirmationViewModel.showFailure(message = context.getString(R.string.error_permissiondenied))
+                                confirmationViewModel.showFailure(message = context.getString(R.string.error_permissiondenied_wear))
 
                                 valueActionViewModel.openAppOnPhone(false)
                             }

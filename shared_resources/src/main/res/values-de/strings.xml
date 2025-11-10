@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="not_channel_name_torch">"Taschenlampen-Benachrichtigung"</string>
+    <string name="cat_title_permissions">"Berechtigungen"</string>
+    <string name="action_wifi">"WLAN"</string>
+    <string name="action_bt">"Bluetooth"</string>
+    <string name="action_mobiledata">"Mobile Daten"</string>
+    <string name="action_location">"Standort"</string>
+    <string name="locationstate_sensorsonly">"Nur Sensoren"</string>
+    <string name="locationstate_batterysaving">"Akkusparen"</string>
+    <string name="locationstate_highaccuracy">"Hohe Genauigkeit"</string>
+    <string name="action_torch">"Taschenlampe"</string>
+    <string name="not_torch_turnoff_summary">"Zum Ausschalten tippen"</string>
+    <string name="action_lockscreen">"Bildschirm sperren"</string>
+    <string name="action_volume">"Lautstärke"</string>
+    <string name="action_dnd">"Bitte nicht stören"</string>
+    <string name="dndstate_priority">"Nur Priorität"</string>
+    <string name="dndstate_alarms">"Nur Alarme"</string>
+    <string name="dndstate_silence">"Totale Stille"</string>
+    <string name="action_ringer">"Klingelton"</string>
+    <string name="ringerstate_vib">"Vibrieren"</string>
+    <string name="ringerstate_sound">"Ton"</string>
+    <string name="ringerstate_silent">"Lautlos"</string>
+    <string name="state_off">"Aus"</string>
+    <string name="state_on">"An"</string>
+    <string name="volstate_muted">"Stummgeschaltet"</string>
+    <string name="action_musicplayback">"Medien abspielen"</string>
+    <string name="title_media_controller">"Mediensteuerung"</string>
+    <string name="action_sleeptimer">"Sleep-Timer"</string>
+    <string name="title_settings">"Einstellungen"</string>
+    <string name="action_apps">"Apps"</string>
+    <string name="action_phone">"Telefon"</string>
+    <string name="title_callcontroller">"Anrufsteuerung"</string>
+    <string name="message_callactive">"Anruf läuft…"</string>
+    <string name="action_hangup">"Auflegen"</string>
+    <string name="action_brightness">"Helligkeit"</string>
+    <string name="action_hotspot">"WLAN-Hotspot"</string>
+    <string name="action_gestures">"Gesten"</string>
+    <string name="action_nfc">"NFC"</string>
+    <string name="action_batterysaver">"Energiesparmodus"</string>
+
+    <!-- In-App Updates -->
+    <string name="message_wearappupdate_available">"App-Update auf der Uhr verfügbar. Bitte aktualisieren Sie, um fortzufahren…"</string>
+    <string name="message_phoneappupdate_available">"App-Update auf dem Telefon verfügbar. Bitte aktualisieren Sie, um fortzufahren…"</string>
+    <string name="action_update">"Aktualisieren"</string>
+    <string name="action_timedaction">"Zeitgesteuerte Aktionen"</string>
+    <string name="action_delete">"Löschen"</string>
+    <string name="label_state">"Status"</string>
+    <string name="label_action">"Aktion"</string>
+    <string name="label_time">"Zeit"</string>
+    <string name="label_action_not_supported">"Aktion nicht unterstützt"</string>
+    <string name="label_home">"Home"</string>
+    <string name="label_recents">"Letzte Apps"</string>
+</resources>
