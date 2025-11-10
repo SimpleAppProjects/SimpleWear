@@ -15,8 +15,14 @@ import com.android.dx.stock.ProxyBuilder
 import com.thewizrd.shared_resources.actions.ActionStatus
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.simplewear.helpers.PhoneStatusHelper.isWriteSystemSettingsPermissionEnabled
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withTimeout
 import java.lang.reflect.Proxy
 import java.util.concurrent.Executor
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 
 object TetherHelper {
     private const val TAG = "TetherHelper"
@@ -182,35 +188,7 @@ object TetherHelper {
                 return false
             }
 
-            val codeCacheDir = context.applicationContext.codeCacheDir
-            val proxy = try {
-                ProxyBuilder.forClass(getConnMgrOnStartTetheringCallbackClass())
-                    .dexCache(codeCacheDir)
-                    .handler { proxy, method, args ->
-                        when (method?.name) {
-                            "onTetheringStarted" -> {
-                                Logger.info("Proxy", "onTetheringStarted")
-                            }
-
-                            "onTetheringFailed" -> {
-                                Logger.error(
-                                    "Proxy",
-                                    "onTetheringFailed: args = ${args.contentToString()}"
-                                )
-                            }
-
-                            else -> {
-                                ProxyBuilder.callSuper(proxy, method, args)
-                            }
-                        }
-
-                        null
-                    }.build()
-            } catch (e: Exception) {
-                Logger.error(TAG, e, "startTethering: Error ProxyBuilder")
-                return@runCatching false
-            }
-
+            val startTetherCallbackClass = getConnMgrOnStartTetheringCallbackClass()
             val cm =
                 context.applicationContext.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
 
@@ -218,11 +196,57 @@ object TetherHelper {
                 "startTethering",
                 Int::class.java, /* type */
                 Boolean::class.java, /* showProvisioningUi */
-                getConnMgrOnStartTetheringCallbackClass(),
+                startTetherCallbackClass,
                 Handler::class.java
             )
-            method.invoke(cm, TETHERING_WIFI, false, proxy, null)
-            true
+
+            runBlocking {
+                withTimeout(10000) {
+                    suspendCancellableCoroutine { continuation ->
+                        val codeCacheDir = context.applicationContext.codeCacheDir
+                        val proxy = try {
+                            ProxyBuilder.forClass(startTetherCallbackClass)
+                                .dexCache(codeCacheDir)
+                                .handler { _, method, args ->
+                                    when (method?.name) {
+                                        "onTetheringStarted" -> {
+                                            Logger.info("Proxy", "onTetheringStarted")
+                                            if (isActive) {
+                                                continuation.resume(true)
+                                            }
+                                        }
+
+                                        "onTetheringFailed" -> {
+                                            Logger.error(
+                                                "Proxy",
+                                                "onTetheringFailed: args = ${args.contentToString()}"
+                                            )
+                                            if (isActive) {
+                                                continuation.resume(false)
+                                            }
+                                        }
+
+                                        else -> {
+                                            if (isActive) {
+                                                continuation.resume(false)
+                                            }
+                                        }
+                                    }
+
+                                    null
+                                }.build()
+                        } catch (e: Exception) {
+                            Logger.error(TAG, e, "startTethering: Error ProxyBuilder")
+                            if (isActive) {
+                                continuation.resumeWithException(e)
+                            } else {
+                            }
+                        }
+
+                        method.invoke(cm, TETHERING_WIFI, false, proxy, null)
+                    }
+                }
+            }
         }.getOrElse {
             if (it is SecurityException || it.cause is SecurityException) {
                 Logger.error(TAG, it, "Permission denied starting tethering")
@@ -294,7 +318,8 @@ object TetherHelper {
     private fun startTethering(
         context: Context,
         exemptFromEntitlementCheck: Boolean = true,
-        shouldShowEntitlementUi: Boolean = false
+        shouldShowEntitlementUi: Boolean = false,
+        retry: Boolean = true
     ): Boolean {
         Logger.info(TAG, "entering startTethering...")
 
@@ -305,35 +330,6 @@ object TetherHelper {
             }
 
             val tetherCallbackIface = getTetherMgrStartTetheringCallbackInterface()
-            val proxy = try {
-                Proxy.newProxyInstance(
-                    tetherCallbackIface.classLoader,
-                    arrayOf(tetherCallbackIface)
-                ) { _, method, args ->
-                    when (method?.name) {
-                        "onTetheringStarted" -> {
-                            Logger.info("Proxy", "onTetheringStarted")
-                        }
-
-                        "onTetheringFailed" -> {
-                            val resultCode = args[0] as Int
-
-                            if (resultCode == TETHER_ERROR_NO_CHANGE_TETHERING_PERMISSION) {
-                                // retry
-                                startTethering(context, false, shouldShowEntitlementUi)
-                            } else {
-                                Logger.error("Proxy", "onTetheringFailed: code = $resultCode")
-                            }
-                        }
-                    }
-
-                    null
-                }
-            } catch (e: Exception) {
-                Logger.error(TAG, e, "startTethering: Error Proxy")
-                return@runCatching false
-            }
-
             val tetheringMgr = context.applicationContext.getSystemService(TETHERING_SERVICE)
             val tetheringMgrClass = Class.forName("android.net.TetheringManager")
 
@@ -341,15 +337,70 @@ object TetherHelper {
                 "startTethering",
                 Class.forName("android.net.TetheringManager\$TetheringRequest"), /* request */
                 Executor::class.java,
-                getTetherMgrStartTetheringCallbackInterface()
+                tetherCallbackIface
             )
-            method.invoke(
-                tetheringMgr,
-                createTetheringRequest(exemptFromEntitlementCheck, shouldShowEntitlementUi),
-                Executor { it.run() },
-                proxy
-            )
-            true
+
+            runBlocking {
+                withTimeout(10000) {
+                    suspendCancellableCoroutine { continuation ->
+                        val proxy = try {
+                            Proxy.newProxyInstance(
+                                tetherCallbackIface.classLoader,
+                                arrayOf(tetherCallbackIface)
+                            ) { _, method, args ->
+                                when (method?.name) {
+                                    "onTetheringStarted" -> {
+                                        Logger.info("Proxy", "onTetheringStarted")
+                                        if (isActive) {
+                                            continuation.resume(true)
+                                        }
+                                    }
+
+                                    "onTetheringFailed" -> {
+                                        val resultCode = args[0] as Int
+
+                                        if (resultCode == TETHER_ERROR_NO_CHANGE_TETHERING_PERMISSION && retry) {
+                                            // retry
+                                            startTethering(
+                                                context,
+                                                exemptFromEntitlementCheck = false,
+                                                shouldShowEntitlementUi = shouldShowEntitlementUi,
+                                                retry = false
+                                            )
+                                        } else {
+                                            Logger.error(
+                                                "Proxy",
+                                                "onTetheringFailed: code = $resultCode"
+                                            )
+                                            if (isActive) {
+                                                continuation.resume(false)
+                                            }
+                                        }
+                                    }
+                                }
+
+                                null
+                            }
+                        } catch (e: Exception) {
+                            Logger.error(TAG, e, "startTethering: Error Proxy")
+                            if (isActive) {
+                                continuation.resumeWithException(e)
+                            } else {
+                            }
+                        }
+
+                        method.invoke(
+                            tetheringMgr,
+                            createTetheringRequest(
+                                exemptFromEntitlementCheck,
+                                shouldShowEntitlementUi
+                            ),
+                            Executor { it.run() },
+                            proxy
+                        )
+                    }
+                }
+            }
         }.getOrElse {
             if (it is SecurityException || it.cause is SecurityException) {
                 Logger.error(TAG, it, "Permission denied starting tethering")

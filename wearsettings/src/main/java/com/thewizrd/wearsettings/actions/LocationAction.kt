@@ -38,6 +38,7 @@ object LocationAction {
             }
         } else if (action is ToggleAction) {
             return if (ShizukuUtils.isRunning(context)) {
+                context.grantSecureSettingsPermission()
                 setLocationEnabledShizuku(context, action.isEnabled)
             } else if (checkSecureSettingsPermission(context)) {
                 setLocationEnabled(context, action.isEnabled)

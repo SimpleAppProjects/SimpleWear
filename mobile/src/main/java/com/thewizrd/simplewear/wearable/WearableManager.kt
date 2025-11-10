@@ -963,25 +963,35 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
 
             Actions.HOTSPOT -> {
                 tA = action as ToggleAction
-                if (WearSettingsHelper.isWearSettingsInstalled()) {
-                    val status = performRemoteAction(action)
-                    if (status == ActionStatus.REMOTE_FAILURE ||
-                        status == ActionStatus.REMOTE_PERMISSION_DENIED
-                    ) {
-                        tA.setActionSuccessful(
-                            PhoneStatusHelper.setWifiApEnabled(
-                                mContext,
-                                tA.isEnabled
-                            )
-                        )
+                /* As of Android 15 (SDK 35) QPR2 Hotspot toggle doesn't work w/o root */
+                if (Build.VERSION.SDK_INT_FULL >= (Build.VERSION_CODES_FULL.VANILLA_ICE_CREAM + 2)) {
+                    if (WearSettingsHelper.isWearSettingsInstalled()) {
+                        val status = performRemoteAction(action)
+                        if (status == ActionStatus.REMOTE_FAILURE ||
+                            status == ActionStatus.REMOTE_PERMISSION_DENIED
+                        ) {
+                            tA.setActionSuccessful(status)
+                            WearSettingsHelper.launchWearSettings()
+                        }
+                    } else {
+                        tA.setActionSuccessful(PhoneStatusHelper.openWirelessSettings(mContext))
+                        tA.isEnabled = PhoneStatusHelper.isWifiApEnabled(mContext)
                     }
                 } else {
-                    tA.setActionSuccessful(
-                        PhoneStatusHelper.setWifiApEnabled(
-                            mContext,
-                            tA.isEnabled
+                    if (WearSettingsHelper.isWearSettingsInstalled()) {
+                        val status = performRemoteAction(action)
+                        if (status == ActionStatus.REMOTE_FAILURE ||
+                            status == ActionStatus.REMOTE_PERMISSION_DENIED
+                        ) {
+                            tA.setActionSuccessful(
+                                PhoneStatusHelper.setWifiApEnabled(mContext, tA.isEnabled)
+                            )
+                        }
+                    } else {
+                        tA.setActionSuccessful(
+                            PhoneStatusHelper.setWifiApEnabled(mContext, tA.isEnabled)
                         )
-                    )
+                    }
                 }
                 sendMessage(
                     nodeID,

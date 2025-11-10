@@ -727,6 +727,19 @@ object PhoneStatusHelper {
         }
     }
 
+    fun openWirelessSettings(context: Context): ActionStatus {
+        return try {
+            context.startActivity(
+                Intent(Settings.ACTION_WIRELESS_SETTINGS)
+                    .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            )
+            ActionStatus.SUCCESS
+        } catch (e: Exception) {
+            Logger.writeLine(Log.ERROR, e)
+            ActionStatus.FAILURE
+        }
+    }
+
     fun isWriteSystemSettingsPermissionEnabled(context: Context): Boolean {
         return Settings.System.canWrite(context)
     }
