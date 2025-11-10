@@ -9,7 +9,11 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import androidx.activity.OnBackPressedCallback
+import androidx.coordinatorlayout.widget.CoordinatorLayout
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
+import androidx.core.view.updateLayoutParams
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.selection.ItemDetailsLookup
 import androidx.recyclerview.selection.SelectionPredicates
@@ -48,6 +52,15 @@ class TimedActionsFragment : Fragment(), SharedPreferences.OnSharedPreferenceCha
         savedInstanceState: Bundle?
     ): View {
         binding = FragmentTimedActionsBinding.inflate(inflater, container, false)
+
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { _, insets ->
+            binding.recyclerView.updateLayoutParams<CoordinatorLayout.LayoutParams> {
+                val sysBarInsets = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+                bottomMargin = sysBarInsets.top + sysBarInsets.bottom
+            }
+
+            insets
+        }
 
         binding.recyclerView.layoutManager = LinearLayoutManager(requireContext())
 

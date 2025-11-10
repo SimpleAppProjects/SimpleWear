@@ -35,8 +35,11 @@ import androidx.annotation.ColorInt
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.ColorUtils
 import androidx.core.net.toUri
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.children
 import androidx.core.view.isVisible
+import androidx.core.view.updateLayoutParams
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.thewizrd.shared_resources.helpers.WearSettingsHelper
@@ -195,6 +198,16 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
     ): View {
         // Inflate the layout for this fragment
         binding = FragmentPermcheckBinding.inflate(inflater, container, false)
+
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, insets ->
+            binding.bottom.updateLayoutParams {
+                val sysBarInsets = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+                height = sysBarInsets.top + sysBarInsets.bottom
+            }
+
+            insets
+        }
+
         binding.toolbar.setOnMenuItemClickListener { menuItem ->
             when (menuItem.itemId) {
                 R.id.timed_actions -> {

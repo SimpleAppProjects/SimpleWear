@@ -499,6 +499,7 @@
             </RelativeLayout>
 
             <Space
+                android:id="@+id/bottom"
                 android:layout_width="wrap_content"
                 android:layout_height="24dp" />
 
