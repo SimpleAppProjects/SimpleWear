@@ -120,6 +120,7 @@ import com.google.android.horologist.media.ui.state.LocalTimestampProvider
 import com.google.android.horologist.media.ui.state.mapper.TrackPositionUiModelMapper
 import com.google.android.horologist.media.ui.state.model.MediaUiModel
 import com.thewizrd.shared_resources.actions.ActionStatus
+import com.thewizrd.shared_resources.actions.Actions
 import com.thewizrd.shared_resources.actions.AudioStreamState
 import com.thewizrd.shared_resources.actions.AudioStreamType
 import com.thewizrd.shared_resources.helpers.MediaHelper
@@ -438,6 +439,11 @@ private fun MediaPlayerControlsPage(
                     .build()
             )
         },
+        onOpenVolume = {
+            navController.navigate(
+                Screen.ValueAction.getRoute(Actions.VOLUME, AudioStreamType.MUSIC)
+            )
+        },
         onVolumeUp = {
             volumeViewModel.increaseVolume()
         },
@@ -464,6 +470,7 @@ private fun MediaPlayerControlsPage(
     ambientState: AmbientState = AmbientState.Interactive,
     onRefresh: () -> Unit = {},
     onOpenPlayerList: () -> Unit = {},
+    onOpenVolume: () -> Unit = {},
     onVolumeUp: () -> Unit = {},
     onVolumeDown: () -> Unit = {},
     playerUiController: PlayerUiController = NoopPlayerUiController(),
@@ -629,7 +636,8 @@ private fun MediaPlayerControlsPage(
                                 onClick = onVolumeUp,
                                 imageVector = ImageVector.vectorResource(id = R.drawable.ic_volume_up_white_24dp),
                                 contentDescription = stringResource(R.string.horologist_volume_screen_volume_up_content_description)
-                            )
+                            ),
+                            onOpenVolume = onOpenVolume
                         )
                     },
                     background = {
@@ -671,6 +679,7 @@ private fun SettingsButtonsLayout(
     leftButton: SettingsButtonData,
     brandImage: BrandImageData,
     rightButton: SettingsButtonData,
+    onOpenVolume: () -> Unit = {},
 ) {
     val isRound = LocalConfiguration.current.isScreenRound
 
@@ -680,7 +689,8 @@ private fun SettingsButtonsLayout(
             isAmbient = isAmbient,
             leftButton = leftButton,
             brandImage = brandImage,
-            rightButton = rightButton
+            rightButton = rightButton,
+            onOpenVolume = onOpenVolume
         )
     } else {
         SimpleSettingsButtonsLayout(
@@ -765,6 +775,7 @@ private fun RoundSettingsButtonsLayout(
     leftButton: SettingsButtonData,
     brandImage: BrandImageData,
     rightButton: SettingsButtonData,
+    onOpenVolume: () -> Unit = {},
 ) {
     val screenHeightDp = LocalConfiguration.current.screenHeightDp
     val isLargeWidth = LocalConfiguration.current.screenWidthDp >= 225
@@ -828,7 +839,7 @@ private fun RoundSettingsButtonsLayout(
             SettingsButton(
                 modifier = Modifier.weight(1f),
                 alignment = Alignment.TopCenter,
-                onClick = rightButton.onClick,
+                onClick = if (isLargeWidth) rightButton.onClick else onOpenVolume,
                 imageVector = rightButton.imageVector,
                 contentDescription = rightButton.contentDescription,
                 iconSize = ButtonDefaults.ExtraSmallIconSize,

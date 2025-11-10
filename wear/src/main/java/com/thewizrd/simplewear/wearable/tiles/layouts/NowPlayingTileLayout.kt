@@ -8,6 +8,7 @@ import androidx.annotation.OptIn
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmapOrNull
 import androidx.wear.protolayout.DeviceParametersBuilders.DeviceParameters
+import androidx.wear.protolayout.DimensionBuilders.dp
 import androidx.wear.protolayout.DimensionBuilders.expand
 import androidx.wear.protolayout.LayoutElementBuilders.CONTENT_SCALE_MODE_CROP
 import androidx.wear.protolayout.LayoutElementBuilders.LayoutElement
@@ -44,6 +45,7 @@ import com.thewizrd.simplewear.ui.tiles.tools.WearPreviewDevices
 import com.thewizrd.simplewear.wearable.tiles.MediaPlayerTileMessenger.PlayerAction
 import com.thewizrd.simplewear.wearable.tiles.MediaPlayerTileState
 import com.thewizrd.simplewear.wearable.tiles.NowPlayingTileRenderer
+import com.thewizrd.simplewear.wearable.tiles.NowPlayingTileRenderer.Companion.ID_APPICON
 import com.thewizrd.simplewear.wearable.tiles.NowPlayingTileRenderer.Companion.ID_ARTWORK
 import com.thewizrd.simplewear.wearable.tiles.NowPlayingTileRenderer.Companion.ID_OPENONPHONE
 import com.thewizrd.simplewear.wearable.tiles.NowPlayingTileRenderer.Companion.ID_PHONEDISCONNECTED
@@ -190,6 +192,15 @@ internal fun NowPlayingTileLayout(
                                 text(
                                     text = it.layoutString,
                                     color = colorScheme.onSurfaceVariant
+                                )
+                            }
+                        },
+                        time = state.appIcon?.let {
+                            {
+                                icon(
+                                    protoLayoutResourceId = ID_APPICON,
+                                    width = dp(24f),
+                                    height = dp(24f)
                                 )
                             }
                         },
