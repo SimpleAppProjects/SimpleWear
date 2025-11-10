@@ -304,6 +304,14 @@ class ActionButtonViewModel(val action: Action) {
                 stateLabelResId =
                     if (tA.isEnabled) R.string.state_on else R.string.state_off
             }
+
+            Actions.BATTERYSAVER -> {
+                tA = action as ToggleAction
+                drawableResId = R.drawable.ic_battery_saver
+                actionLabelResId = R.string.action_batterysaver
+                stateLabelResId =
+                    if (tA.isEnabled) R.string.state_on else R.string.state_off
+            }
         }
     }
 

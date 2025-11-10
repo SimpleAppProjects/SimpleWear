@@ -75,11 +75,20 @@ class App : Application(), ActivityLifecycleCallbacks {
 
         if (com.thewizrd.simplewear.preferences.Settings.getVersionCode() < versionCode) {
             // Add NFC Option
-            if (com.thewizrd.simplewear.preferences.Settings.getVersionCode() < 361917000) {
+            if (com.thewizrd.simplewear.preferences.Settings.getVersionCode() < 361917001) {
                 val dashConfig = com.thewizrd.simplewear.preferences.Settings.getDashboardConfig()
                     ?.toMutableList()
                 if (dashConfig != null && !dashConfig.contains(Actions.NFC)) {
                     dashConfig.add(Actions.NFC)
+                    com.thewizrd.simplewear.preferences.Settings.setDashboardConfig(dashConfig)
+                }
+            }
+            // Add Battery Saver Option
+            if (com.thewizrd.simplewear.preferences.Settings.getVersionCode() < 361917011) {
+                val dashConfig = com.thewizrd.simplewear.preferences.Settings.getDashboardConfig()
+                    ?.toMutableList()
+                if (dashConfig != null && !dashConfig.contains(Actions.BATTERYSAVER)) {
+                    dashConfig.add(Actions.BATTERYSAVER)
                     com.thewizrd.simplewear.preferences.Settings.setDashboardConfig(dashConfig)
                 }
             }

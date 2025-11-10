@@ -14,7 +14,8 @@ class TimedAction(var timeInMillis: Long, val action: Action) : Action(Actions.T
                     Actions.RINGER,
                     Actions.HOTSPOT,
                     Actions.SLEEPTIMER,
-                    Actions.NFC -> true
+                    Actions.NFC,
+                    Actions.BATTERYSAVER -> true
 
                     else -> false
                 }

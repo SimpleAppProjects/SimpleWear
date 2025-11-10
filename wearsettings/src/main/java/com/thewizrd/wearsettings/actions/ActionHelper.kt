@@ -50,6 +50,10 @@ object ActionHelper {
                 NfcAction.executeAction(context, action)
             }
 
+            Actions.BATTERYSAVER -> {
+                BatterySaverAction.executeAction(context, action)
+            }
+
             else -> ActionStatus.FAILURE
         }
     }

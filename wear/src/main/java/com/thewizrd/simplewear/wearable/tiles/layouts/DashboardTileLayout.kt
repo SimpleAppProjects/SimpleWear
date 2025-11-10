@@ -62,6 +62,7 @@ import com.thewizrd.simplewear.ui.tiles.tools.WearPreviewDevices
 import com.thewizrd.simplewear.wearable.tiles.DashboardTileRenderer
 import com.thewizrd.simplewear.wearable.tiles.DashboardTileRenderer.Companion.ID_BATTERY
 import com.thewizrd.simplewear.wearable.tiles.DashboardTileRenderer.Companion.ID_BATTERY_CHARGING
+import com.thewizrd.simplewear.wearable.tiles.DashboardTileRenderer.Companion.ID_BATTERY_SAVER
 import com.thewizrd.simplewear.wearable.tiles.DashboardTileRenderer.Companion.ID_BT_OFF
 import com.thewizrd.simplewear.wearable.tiles.DashboardTileRenderer.Companion.ID_BT_ON
 import com.thewizrd.simplewear.wearable.tiles.DashboardTileRenderer.Companion.ID_DATA_OFF
@@ -378,6 +379,8 @@ private fun getResourceIdForAction(state: DashboardTileState, action: Actions): 
         Actions.NFC -> {
             if ((state.getAction(action) as? ToggleAction)?.isEnabled == true) ID_NFC_ON else ID_NFC_OFF
         }
+
+        Actions.BATTERYSAVER -> ID_BATTERY_SAVER
 
         else -> ""
     }

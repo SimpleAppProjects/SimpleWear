@@ -29,7 +29,8 @@ abstract class Action(_action: Actions) {
                 Actions.MOBILEDATA,
                 Actions.TORCH,
                 Actions.HOTSPOT,
-                Actions.NFC ->
+                Actions.NFC,
+                Actions.BATTERYSAVER ->
                     ToggleAction(action, true)
 
                 Actions.LOCATION ->

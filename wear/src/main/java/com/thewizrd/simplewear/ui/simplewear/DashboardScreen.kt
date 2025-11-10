@@ -813,7 +813,7 @@ private fun PreviewDashboardScreen_Indeterminate() {
 
 private fun ActionButtonViewModel.getItemViewType(): Int {
     return when (this.actionType) {
-        Actions.WIFI, Actions.BLUETOOTH, Actions.MOBILEDATA, Actions.TORCH, Actions.HOTSPOT, Actions.NFC -> {
+        Actions.WIFI, Actions.BLUETOOTH, Actions.MOBILEDATA, Actions.TORCH, Actions.HOTSPOT, Actions.NFC, Actions.BATTERYSAVER -> {
             ActionItemType.TOGGLE_ACTION
         }
 

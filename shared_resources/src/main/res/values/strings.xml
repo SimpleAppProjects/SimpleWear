@@ -51,6 +51,7 @@
     <string name="action_hotspot">WiFi Hotspot</string>
     <string name="action_gestures">Gestures</string>
     <string name="action_nfc">NFC</string>
+    <string name="action_batterysaver">Battery Saver</string>
 
     <!-- In-App Updates -->
     <string name="message_wearappupdate_available">App update available on watch. Please update to continue…</string>

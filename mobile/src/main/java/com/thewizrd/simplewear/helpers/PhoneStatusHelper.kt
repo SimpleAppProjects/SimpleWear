@@ -1078,4 +1078,30 @@ object PhoneStatusHelper {
             return ActionStatus.PERMISSION_DENIED
         }
     }
+
+    fun isBatterySaverEnabled(context: Context): Boolean {
+        val powerManager = context.getSystemService(Context.POWER_SERVICE) as PowerManager
+        return powerManager.isPowerSaveMode
+    }
+
+    fun setBatterySaverEnabled(context: Context, enable: Boolean): ActionStatus {
+        return if (checkSecureSettingsPermission(context)) {
+            try {
+                val success = Settings.Global.putInt(
+                    context.contentResolver, "low_power", if (enable) 1 else 0
+                )
+
+                if (success) {
+                    ActionStatus.SUCCESS
+                } else {
+                    ActionStatus.FAILURE
+                }
+            } catch (e: SecurityException) {
+                Logger.writeLine(Log.ERROR, e)
+                ActionStatus.PERMISSION_DENIED
+            }
+        } else {
+            ActionStatus.PERMISSION_DENIED
+        }
+    }
 }

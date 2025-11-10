@@ -22,6 +22,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.os.PowerManager
 import android.provider.Settings
 import android.telephony.TelephonyManager
 import android.util.Log
@@ -185,6 +186,9 @@ class App : Application(), ActivityLifecycleCallbacks, Configuration.Provider {
                     NfcAdapter.ACTION_ADAPTER_STATE_CHANGED -> {
                         WearableWorker.sendActionUpdate(context, Actions.NFC)
                     }
+                    PowerManager.ACTION_POWER_SAVE_MODE_CHANGED -> {
+                        WearableWorker.sendActionUpdate(context, Actions.BATTERYSAVER)
+                    }
                 }
             }
         }
@@ -199,6 +203,7 @@ class App : Application(), ActivityLifecycleCallbacks, Configuration.Provider {
             addAction(BluetoothAdapter.ACTION_STATE_CHANGED)
             addAction("android.media.VOLUME_CHANGED_ACTION")
             addAction(NfcAdapter.ACTION_ADAPTER_STATE_CHANGED)
+            addAction(PowerManager.ACTION_POWER_SAVE_MODE_CHANGED)
         }
         // Receiver exported for system broadcasts
         ContextCompat.registerReceiver(

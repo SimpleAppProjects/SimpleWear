@@ -56,6 +56,7 @@ class DashboardTileRenderer(context: Context, debugResourceMode: Boolean = false
         internal const val ID_HOTSPOT = "hotspot"
         internal const val ID_NFC_ON = "nfc_on"
         internal const val ID_NFC_OFF = "nfc_off"
+        internal const val ID_BATTERY_SAVER = "battery_saver"
 
         // Background drawables
         internal const val ID_BUTTON_ENABLED = "round_button_enabled"
@@ -159,6 +160,8 @@ class DashboardTileRenderer(context: Context, debugResourceMode: Boolean = false
 
             ID_NFC_ON to R.drawable.ic_nfc_on,
             ID_NFC_OFF to R.drawable.ic_nfc_off,
+
+            ID_BATTERY_SAVER to R.drawable.ic_battery_saver,
 
             ID_BUTTON_ENABLED to R.drawable.round_button_enabled,
             ID_BUTTON_DISABLED to R.drawable.round_button_disabled

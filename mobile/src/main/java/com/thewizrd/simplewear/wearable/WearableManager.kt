@@ -692,6 +692,15 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
                 )
             }
 
+            Actions.BATTERYSAVER -> {
+                action = ToggleAction(act, PhoneStatusHelper.isBatterySaverEnabled(mContext))
+                sendMessage(
+                    nodeID,
+                    WearableHelper.ActionsPath,
+                    JSONParser.serializer(action, Action::class.java).stringToBytes()
+                )
+            }
+
             else -> {}
         }
     }
@@ -1039,12 +1048,37 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
                     if (status == ActionStatus.REMOTE_FAILURE ||
                         status == ActionStatus.REMOTE_PERMISSION_DENIED
                     ) {
-                        tA.setActionSuccessful(
-                            PhoneStatusHelper.setNfcEnabled(mContext, tA.isEnabled)
-                        )
+                        tA.setActionSuccessful(status)
+                        WearSettingsHelper.launchWearSettings()
                     }
                 } else {
                     tA.setActionSuccessful(PhoneStatusHelper.setNfcEnabled(mContext, tA.isEnabled))
+                }
+                sendMessage(
+                    nodeID,
+                    WearableHelper.ActionsPath,
+                    JSONParser.serializer(tA, Action::class.java).stringToBytes()
+                )
+            }
+
+            Actions.BATTERYSAVER -> {
+                tA = action as ToggleAction
+                if (WearSettingsHelper.isWearSettingsInstalled()) {
+                    val status = performRemoteAction(action)
+
+                    if (status == ActionStatus.REMOTE_FAILURE ||
+                        status == ActionStatus.REMOTE_PERMISSION_DENIED
+                    ) {
+                        tA.setActionSuccessful(status)
+                        WearSettingsHelper.launchWearSettings()
+                    }
+                } else {
+                    tA.setActionSuccessful(
+                        PhoneStatusHelper.setBatterySaverEnabled(
+                            mContext,
+                            tA.isEnabled
+                        )
+                    )
                 }
                 sendMessage(
                     nodeID,
