@@ -115,7 +115,7 @@ object DoNotDisturbAction {
             val ret = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
                 notificationMgr.setInterruptionFilter("com.android.shell", interruptionFilter, true)
                 true
-            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            } else if (Build.VERSION.SDK_INT_FULL >= (Build.VERSION_CODES_FULL.UPSIDE_DOWN_CAKE + 3)) {
                 runCatching {
                     notificationMgr.setInterruptionFilter("com.android.system", interruptionFilter)
                 }.onFailure {
