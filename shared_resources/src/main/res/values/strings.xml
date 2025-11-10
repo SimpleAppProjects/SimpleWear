@@ -49,8 +49,8 @@
 
     <string name="action_brightness">Brightness</string>
     <string name="action_hotspot">WiFi Hotspot</string>
-
     <string name="action_gestures">Gestures</string>
+    <string name="action_nfc">NFC</string>
 
     <!-- In-App Updates -->
     <string name="message_wearappupdate_available">App update available on watch. Please update to continue…</string>

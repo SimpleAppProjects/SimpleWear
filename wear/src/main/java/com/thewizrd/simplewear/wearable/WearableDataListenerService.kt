@@ -361,7 +361,8 @@ class WearableDataListenerService : WearableListenerService() {
                     Actions.LOCATION,
                     Actions.LOCKSCREEN,
                     Actions.PHONE,
-                    Actions.HOTSPOT -> {
+                    Actions.HOTSPOT,
+                    Actions.NFC -> {
                         appLib.appScope.launch {
                             runCatching {
                                 val dashboardDataStore = appLib.context.dashboardDataStore

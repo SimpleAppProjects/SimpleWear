@@ -77,6 +77,8 @@ import com.thewizrd.simplewear.wearable.tiles.DashboardTileRenderer.Companion.ID
 import com.thewizrd.simplewear.wearable.tiles.DashboardTileRenderer.Companion.ID_LOCATION_OFF
 import com.thewizrd.simplewear.wearable.tiles.DashboardTileRenderer.Companion.ID_LOCATION_SENSORSONLY
 import com.thewizrd.simplewear.wearable.tiles.DashboardTileRenderer.Companion.ID_LOCK
+import com.thewizrd.simplewear.wearable.tiles.DashboardTileRenderer.Companion.ID_NFC_OFF
+import com.thewizrd.simplewear.wearable.tiles.DashboardTileRenderer.Companion.ID_NFC_ON
 import com.thewizrd.simplewear.wearable.tiles.DashboardTileRenderer.Companion.ID_OPENONPHONE
 import com.thewizrd.simplewear.wearable.tiles.DashboardTileRenderer.Companion.ID_PHONEDISCONNECTED
 import com.thewizrd.simplewear.wearable.tiles.DashboardTileRenderer.Companion.ID_RINGER_SILENT
@@ -372,6 +374,11 @@ private fun getResourceIdForAction(state: DashboardTileState, action: Actions): 
         }
 
         Actions.HOTSPOT -> ID_HOTSPOT
+
+        Actions.NFC -> {
+            if ((state.getAction(action) as? ToggleAction)?.isEnabled == true) ID_NFC_ON else ID_NFC_OFF
+        }
+
         else -> ""
     }
 }

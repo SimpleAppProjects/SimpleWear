@@ -199,6 +199,17 @@ class DashboardTileMessenger(
                 requestAction(ToggleAction(Actions.HOTSPOT, !hotspotAction.isEnabled))
             }
 
+            Actions.NFC -> run {
+                val nfcAction = state.getAction(Actions.NFC) as? ToggleAction
+
+                if (nfcAction == null) {
+                    requestUpdate()
+                    return@run
+                }
+
+                requestAction(ToggleAction(Actions.NFC, !nfcAction.isEnabled))
+            }
+
             else -> {
                 // ignore unsupported actions
             }

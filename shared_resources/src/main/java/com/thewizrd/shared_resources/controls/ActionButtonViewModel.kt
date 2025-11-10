@@ -295,6 +295,15 @@ class ActionButtonViewModel(val action: Action) {
                 actionLabelResId = R.string.action_timedaction
                 stateLabelResId = 0
             }
+
+            Actions.NFC -> {
+                tA = action as ToggleAction
+                drawableResId =
+                    if (tA.isEnabled) R.drawable.ic_nfc_on else R.drawable.ic_nfc_off
+                actionLabelResId = R.string.action_nfc
+                stateLabelResId =
+                    if (tA.isEnabled) R.string.state_on else R.string.state_off
+            }
         }
     }
 

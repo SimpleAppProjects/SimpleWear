@@ -16,6 +16,7 @@ import android.location.LocationManager
 import android.media.AudioManager
 import android.net.Uri
 import android.net.wifi.WifiManager
+import android.nfc.NfcAdapter
 import android.os.BatteryManager
 import android.os.Build
 import android.os.Bundle
@@ -181,6 +182,9 @@ class App : Application(), ActivityLifecycleCallbacks, Configuration.Provider {
                             }
                         }
                     }
+                    NfcAdapter.ACTION_ADAPTER_STATE_CHANGED -> {
+                        WearableWorker.sendActionUpdate(context, Actions.NFC)
+                    }
                 }
             }
         }
@@ -194,6 +198,7 @@ class App : Application(), ActivityLifecycleCallbacks, Configuration.Provider {
             addAction(WifiManager.WIFI_STATE_CHANGED_ACTION)
             addAction(BluetoothAdapter.ACTION_STATE_CHANGED)
             addAction("android.media.VOLUME_CHANGED_ACTION")
+            addAction(NfcAdapter.ACTION_ADAPTER_STATE_CHANGED)
         }
         // Receiver exported for system broadcasts
         ContextCompat.registerReceiver(

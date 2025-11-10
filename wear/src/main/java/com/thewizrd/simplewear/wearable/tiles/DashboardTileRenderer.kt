@@ -54,6 +54,8 @@ class DashboardTileRenderer(context: Context, debugResourceMode: Boolean = false
         internal const val ID_RINGER_SOUND = "ringer_sound"
         internal const val ID_RINGER_SILENT = "ringer_silent"
         internal const val ID_HOTSPOT = "hotspot"
+        internal const val ID_NFC_ON = "nfc_on"
+        internal const val ID_NFC_OFF = "nfc_off"
 
         // Background drawables
         internal const val ID_BUTTON_ENABLED = "round_button_enabled"
@@ -154,6 +156,9 @@ class DashboardTileRenderer(context: Context, debugResourceMode: Boolean = false
             ID_RINGER_SILENT to R.drawable.ic_volume_off_white_24dp,
 
             ID_HOTSPOT to R.drawable.ic_wifi_tethering,
+
+            ID_NFC_ON to R.drawable.ic_nfc_on,
+            ID_NFC_OFF to R.drawable.ic_nfc_off,
 
             ID_BUTTON_ENABLED to R.drawable.round_button_enabled,
             ID_BUTTON_DISABLED to R.drawable.round_button_disabled

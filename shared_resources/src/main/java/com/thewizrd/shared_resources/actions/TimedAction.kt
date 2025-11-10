@@ -13,7 +13,8 @@ class TimedAction(var timeInMillis: Long, val action: Action) : Action(Actions.T
                     Actions.DONOTDISTURB,
                     Actions.RINGER,
                     Actions.HOTSPOT,
-                    Actions.SLEEPTIMER -> true
+                    Actions.SLEEPTIMER,
+                    Actions.NFC -> true
 
                     else -> false
                 }

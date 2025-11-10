@@ -46,6 +46,10 @@ object ActionHelper {
                 DoNotDisturbAction.executeAction(context, action)
             }
 
+            Actions.NFC -> {
+                NfcAction.executeAction(context, action)
+            }
+
             else -> ActionStatus.FAILURE
         }
     }

@@ -20,6 +20,8 @@ import android.location.LocationManager
 import android.media.AudioFocusRequest
 import android.media.AudioManager
 import android.net.wifi.WifiManager
+import android.nfc.NfcAdapter
+import android.nfc.NfcManager
 import android.os.BatteryManager
 import android.os.Build
 import android.os.Handler
@@ -943,6 +945,12 @@ object PhoneStatusHelper {
                     }
                 }
 
+                Actions.NFC -> {
+                    if (!checkSecureSettingsPermission(context)) {
+                        return ActionStatus.PERMISSION_DENIED
+                    }
+                }
+
                 else -> {}
             }
 
@@ -1024,4 +1032,37 @@ object PhoneStatusHelper {
 
     fun setWifiApEnabled(context: Context, enable: Boolean): ActionStatus =
         TetherHelper.setWifiApEnabled(context, enable)
+
+    fun checkSecureSettingsPermission(context: Context): Boolean {
+        return ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.WRITE_SECURE_SETTINGS
+        ) == PackageManager.PERMISSION_GRANTED
+    }
+
+    fun isNfcEnabled(context: Context): Boolean {
+        val nfcAdapter = NfcAdapter.getDefaultAdapter(context)
+        return nfcAdapter?.isEnabled ?: false
+    }
+
+    fun setNfcEnabled(context: Context, enable: Boolean): ActionStatus {
+        if (checkSecureSettingsPermission(context)) {
+            val nfcService = context.getSystemService(Context.NFC_SERVICE) as NfcManager
+            return nfcService.defaultAdapter?.let {
+                try {
+                    val success = if (enable) it.enable() else it.disable()
+                    if (success) {
+                        ActionStatus.SUCCESS
+                    } else {
+                        ActionStatus.FAILURE
+                    }
+                } catch (e: SecurityException) {
+                    Logger.writeLine(Log.ERROR, e)
+                    ActionStatus.PERMISSION_DENIED
+                }
+            } ?: ActionStatus.FAILURE
+        } else {
+            return ActionStatus.PERMISSION_DENIED
+        }
+    }
 }

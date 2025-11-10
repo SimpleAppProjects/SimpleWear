@@ -23,6 +23,7 @@ object Settings {
     const val KEY_SHOWBATSTATUS = "key_showbatstatus"
     const val KEY_SHOWTILEBATSTATUS = "key_showtilebatstatus"
     private const val KEY_LASTUPDATECHECK = "key_lastupdatecheck"
+    private const val KEY_VERSIONCODE = "key_versioncode"
 
     fun useGridLayout(): Boolean {
         return appLib.preferences.getBoolean(KEY_LAYOUTMODE, true)
@@ -164,6 +165,16 @@ object Settings {
     fun setLastUpdateCheckTime(value: Instant) {
         appLib.preferences.edit {
             putLong(KEY_LASTUPDATECHECK, value.epochSecond)
+        }
+    }
+
+    fun getVersionCode(): Long {
+        return appLib.preferences.getLong(KEY_VERSIONCODE, 0)
+    }
+
+    fun setVersionCode(value: Long) {
+        appLib.preferences.edit {
+            putLong(KEY_VERSIONCODE, value)
         }
     }
 }

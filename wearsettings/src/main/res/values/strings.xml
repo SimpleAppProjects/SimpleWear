@@ -6,7 +6,7 @@
     <string name="message_bgopts_enabled">Background access enabled</string>
 
     <string name="permission_title_securesettings">Set Secure Settings</string>
-    <string name="message_securesettings_disabled">Needed to set mobile data and location settings</string>
+    <string name="message_securesettings_disabled">Needed to set NFC, mobile data and location settings</string>
     <string name="message_securesettings_enabled">Settings access enabled</string>
 
     <string name="permission_title_rootaccess">Enable Root Access</string>

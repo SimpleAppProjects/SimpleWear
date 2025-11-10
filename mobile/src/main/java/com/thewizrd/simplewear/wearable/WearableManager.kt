@@ -683,6 +683,15 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
                 )
             }
 
+            Actions.NFC -> {
+                action = ToggleAction(act, PhoneStatusHelper.isNfcEnabled(mContext))
+                sendMessage(
+                    nodeID,
+                    WearableHelper.ActionsPath,
+                    JSONParser.serializer(action, Action::class.java).stringToBytes()
+                )
+            }
+
             else -> {}
         }
     }
@@ -1009,6 +1018,28 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
                     nodeID,
                     WearableHelper.ActionsPath,
                     JSONParser.serializer(timedAction, Action::class.java).stringToBytes()
+                )
+            }
+
+            Actions.NFC -> {
+                tA = action as ToggleAction
+                if (WearSettingsHelper.isWearSettingsInstalled()) {
+                    val status = performRemoteAction(action)
+
+                    if (status == ActionStatus.REMOTE_FAILURE ||
+                        status == ActionStatus.REMOTE_PERMISSION_DENIED
+                    ) {
+                        tA.setActionSuccessful(
+                            PhoneStatusHelper.setNfcEnabled(mContext, tA.isEnabled)
+                        )
+                    }
+                } else {
+                    tA.setActionSuccessful(PhoneStatusHelper.setNfcEnabled(mContext, tA.isEnabled))
+                }
+                sendMessage(
+                    nodeID,
+                    WearableHelper.ActionsPath,
+                    JSONParser.serializer(tA, Action::class.java).stringToBytes()
                 )
             }
 
