@@ -26,7 +26,7 @@ object WearableHelper {
     const val PACKAGE_NAME = "com.thewizrd.simplewear"
     private const val PLAY_STORE_APP_URI = "market://details?id=$PACKAGE_NAME"
 
-    private const val SUPPORTED_VERSION_CODE: Long = 341916050
+    private const val SUPPORTED_VERSION_CODE: Long = 361917010
 
     fun getPlayStoreURI(): Uri = Uri.parse(PLAY_STORE_APP_URI)
 
