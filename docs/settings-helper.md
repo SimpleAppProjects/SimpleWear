@@ -8,11 +8,11 @@ permalink: /settings-helper
 
 Companion app for SimpleWear
 
-Latest version: [SimpleWear Settings v1.3.1]({{
-site.github.repository_url}}/releases/download/v1.16.1_release/wearsettings-release-1.3.1.apk)
+Latest version: [SimpleWear Settings v1.4.0]({{
+site.github.repository_url}}/releases/download/v1.17.0_release/wearsettings-release-1.4.0.apk)
 
-Previous version: [SimpleWear Settings v1.3.0]({{
-site.github.repository_url}}/releases/download/v1.16.0_beta/wearsettings-release-1.3.0.apk)
+Previous version: [SimpleWear Settings v1.3.1]({{
+site.github.repository_url}}/releases/download/v1.16.1_release/wearsettings-release-1.3.1.apk)
 
 ## WiFi and Location Toggle
 
