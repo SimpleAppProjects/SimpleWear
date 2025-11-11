@@ -17,6 +17,9 @@ import androidx.annotation.MainThread
 import androidx.annotation.RequiresApi
 import androidx.lifecycle.MutableLiveData
 import com.thewizrd.shared_resources.utils.Logger
+import com.thewizrd.simplewear.helpers.ListChangedArgs
+import com.thewizrd.simplewear.helpers.ObservableArrayList
+import com.thewizrd.simplewear.helpers.OnListChangedListener
 import java.util.concurrent.Executors
 
 class InCallManagerService : InCallService() {
@@ -210,6 +213,7 @@ object OngoingCall {
     val callLiveData = MutableLiveData<Call?>()
     val callState = MutableLiveData<Int>()
     val callAudioState = MutableLiveData<CallAudioState?>()
+    val callNotificationLiveData = MutableLiveData<NotificationListener.CallNotificationData?>()
 
     private val callback = object : Call.Callback() {
         override fun onStateChanged(call: Call?, state: Int) {
@@ -225,20 +229,52 @@ object OngoingCall {
             callLiveData.postValue(value)
             if (value != null) {
                 value.registerCallback(callback)
-                callState.postValue(
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                        value.details.state
-                    } else {
-                        value.state
-                    }
-                )
+                callState.postValue(value.callStateCompat)
             } else {
                 callState.postValue(TelephonyManager.CALL_STATE_IDLE)
             }
             field = value
         }
 
-    fun hangup() {
-        call?.disconnect()
+    internal val callNotifications =
+        ObservableArrayList<NotificationListener.CallNotificationData>()
+
+    var currentCallNotification: NotificationListener.CallNotificationData? = null
+        internal set(value) {
+            if (value?.key != field?.key) {
+                callNotificationLiveData.postValue(value)
+                field = value
+            }
+        }
+
+    @Suppress("DEPRECATION")
+    val Call.callStateCompat: Int
+        get() {
+            val state = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                this.details.state
+            } else {
+                this.state
+            }
+
+            return when (state) {
+                Call.STATE_DIALING,
+                Call.STATE_HOLDING,
+                Call.STATE_ACTIVE -> TelephonyManager.CALL_STATE_OFFHOOK
+
+                Call.STATE_RINGING -> TelephonyManager.CALL_STATE_RINGING
+                else -> TelephonyManager.CALL_STATE_IDLE
+            }
+        }
+
+    init {
+        callNotifications.addOnListChangedCallback(object :
+            OnListChangedListener<NotificationListener.CallNotificationData> {
+            override fun onChanged(
+                sender: ArrayList<NotificationListener.CallNotificationData>,
+                args: ListChangedArgs<NotificationListener.CallNotificationData>
+            ) {
+                currentCallNotification = sender.lastOrNull()
+            }
+        })
     }
 }

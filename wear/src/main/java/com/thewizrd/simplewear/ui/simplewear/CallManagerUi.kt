@@ -1,7 +1,6 @@
 package com.thewizrd.simplewear.ui.simplewear
 
 import android.content.Intent
-import android.graphics.Bitmap
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.basicMarquee
@@ -24,6 +23,7 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.VolumeUp
+import androidx.compose.material.icons.rounded.Call
 import androidx.compose.material.icons.rounded.CallEnd
 import androidx.compose.material.icons.rounded.Dialpad
 import androidx.compose.material.icons.rounded.MicOff
@@ -56,6 +56,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.toBitmap
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -105,6 +107,7 @@ import com.thewizrd.simplewear.ui.theme.findActivity
 import com.thewizrd.simplewear.ui.utils.rememberFocusRequester
 import com.thewizrd.simplewear.viewmodels.CallManagerUiState
 import com.thewizrd.simplewear.viewmodels.CallManagerViewModel
+import com.thewizrd.simplewear.viewmodels.CallUiState
 import com.thewizrd.simplewear.viewmodels.ConfirmationData
 import com.thewizrd.simplewear.viewmodels.ConfirmationViewModel
 import com.thewizrd.simplewear.viewmodels.ValueActionViewModel
@@ -284,46 +287,64 @@ fun CallManagerUi(
 
     var showKeyPadUi by remember { mutableStateOf(false) }
 
-    CallManagerUi(
-        modifier = modifier
-            .requestFocusOnHierarchyActive()
-            .rotaryScrollable(
-                focusRequester = rememberFocusRequester(),
-                behavior = volumeRotaryBehavior(
-                    volumeUiStateProvider = { volumeUiState },
-                    onRotaryVolumeInput = { newValue -> volumeViewModel.setVolume(newValue) }
+    if (uiState.callUiState == CallUiState.INCOMING) {
+        IncomingCallUi(
+            modifier = modifier,
+            uiState = uiState,
+            onVolume = {
+                navController.navigate(
+                    Screen.ValueAction.getRoute(Actions.VOLUME, AudioStreamType.VOICE_CALL)
                 )
-            ),
-        uiState = uiState,
-        onShowKeypadUi = {
-            showKeyPadUi = true
-        },
-        onMute = {
-            callManagerViewModel.setMuteEnabled(!uiState.isMuted)
-        },
-        onSpeakerPhone = {
-            callManagerViewModel.enableSpeakerphone(!uiState.isSpeakerPhoneOn)
-        },
-        onVolume = {
-            navController.navigate(
-                Screen.ValueAction.getRoute(Actions.VOLUME, AudioStreamType.VOICE_CALL)
-            )
-        },
-        onEndCall = {
-            callManagerViewModel.endCall()
-        }
-    )
-
-    Dialog(
-        modifier = Modifier.fillMaxSize(),
-        visible = showKeyPadUi,
-        onDismissRequest = { showKeyPadUi = false }
-    ) {
-        KeypadScreen(
-            onKeyPressed = { digit ->
-                callManagerViewModel.requestSendDTMFTone(digit)
+            },
+            onAnswerCall = {
+                callManagerViewModel.answerCall()
+            },
+            onEndCall = {
+                callManagerViewModel.endCall()
             }
         )
+    } else {
+        CallManagerUi(
+            modifier = modifier
+                .requestFocusOnHierarchyActive()
+                .rotaryScrollable(
+                    focusRequester = rememberFocusRequester(),
+                    behavior = volumeRotaryBehavior(
+                        volumeUiStateProvider = { volumeUiState },
+                        onRotaryVolumeInput = { newValue -> volumeViewModel.setVolume(newValue) }
+                    )
+                ),
+            uiState = uiState,
+            onShowKeypadUi = {
+                showKeyPadUi = true
+            },
+            onMute = {
+                callManagerViewModel.setMuteEnabled(!uiState.isMuted)
+            },
+            onSpeakerPhone = {
+                callManagerViewModel.enableSpeakerphone(!uiState.isSpeakerPhoneOn)
+            },
+            onVolume = {
+                navController.navigate(
+                    Screen.ValueAction.getRoute(Actions.VOLUME, AudioStreamType.VOICE_CALL)
+                )
+            },
+            onEndCall = {
+                callManagerViewModel.endCall()
+            }
+        )
+
+        Dialog(
+            modifier = Modifier.fillMaxSize(),
+            visible = showKeyPadUi,
+            onDismissRequest = { showKeyPadUi = false }
+        ) {
+            KeypadScreen(
+                onKeyPressed = { digit ->
+                    callManagerViewModel.requestSendDTMFTone(digit)
+                }
+            )
+        }
     }
 }
 
@@ -364,18 +385,19 @@ private fun CallManagerUi(
                 alpha = 0.6f,
                 modifier =
                     modifier
-                        .fillMaxSize()
+                        .fillMaxSize(0.65f)
+                        .align(Alignment.Center)
                         .drawWithCache {
                             val gradientBrush =
                                 Brush.radialGradient(
-                                    0.65f to Color.Transparent,
+                                    0.95f to Color.Transparent,
                                     1f to colorScheme.background,
                                 )
                             onDrawWithContent {
                                 drawRect(colorScheme.background)
                                 drawContent()
-                                drawRect(color = colorScheme.primaryContainer, alpha = 0.3f)
-                                drawRect(color = colorScheme.onPrimary, alpha = 0.6f)
+                                drawRect(color = colorScheme.primaryContainer, alpha = 0.05f)
+                                drawRect(color = colorScheme.onPrimary, alpha = 0.35f)
                                 drawRect(gradientBrush)
                             }
                         },
@@ -604,10 +626,158 @@ private fun CallManagerUi(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class, ExperimentalLayoutApi::class)
+@Composable
+private fun IncomingCallUi(
+    modifier: Modifier = Modifier,
+    uiState: CallManagerUiState,
+    onVolume: () -> Unit = {},
+    onAnswerCall: () -> Unit = {},
+    onEndCall: () -> Unit = {}
+) {
+    val isPreview = LocalInspectionMode.current
+    val isRound = LocalConfiguration.current.isScreenRound
+
+    val isLargeHeight = LocalConfiguration.current.screenHeightDp >= 225
+    val isLargeWidth = LocalConfiguration.current.screenWidthDp >= 225
+
+    val buttonSize = if (isLargeWidth || isLargeHeight) {
+        IconButtonDefaults.SmallButtonSize
+    } else {
+        40.dp
+    }
+
+    val buttonRowPadding = if (isRound) 16.dp else 8.dp
+
+    Box(modifier = modifier.fillMaxSize()) {
+        if (uiState.callerBitmap != null) {
+            val colorScheme = MaterialTheme.colorScheme
+            Image(
+                bitmap = uiState.callerBitmap.asImageBitmap(),
+                contentDescription = stringResource(R.string.desc_contact_photo),
+                contentScale = ContentScale.Crop,
+                alpha = 0.6f,
+                modifier =
+                    modifier
+                        .fillMaxSize(0.65f)
+                        .align(Alignment.Center)
+                        .drawWithCache {
+                            val gradientBrush =
+                                Brush.radialGradient(
+                                    0.95f to Color.Transparent,
+                                    1f to colorScheme.background,
+                                )
+                            onDrawWithContent {
+                                drawRect(colorScheme.background)
+                                drawContent()
+                                drawRect(color = colorScheme.primaryContainer, alpha = 0.05f)
+                                drawRect(color = colorScheme.onPrimary, alpha = 0.35f)
+                                drawRect(gradientBrush)
+                            }
+                        },
+            )
+        }
+
+        if (isPreview) {
+            TimeText()
+        }
+
+        Column(modifier = Modifier.fillMaxSize()) {
+            Box(
+                modifier = Modifier
+                    .weight(1f, fill = true)
+                    .fillMaxWidth()
+                    .padding(ListHeaderDefaults.ContentPadding),
+                contentAlignment = Alignment.BottomCenter
+            ) {
+                Text(
+                    modifier = Modifier
+                        .wrapContentHeight()
+                        .basicMarquee(iterations = Int.MAX_VALUE),
+                    text = uiState.callerName ?: stringResource(id = R.string.message_callactive),
+                    style = if (isLargeWidth || isLargeHeight) {
+                        MaterialTheme.typography.labelLarge
+                    } else {
+                        MaterialTheme.typography.labelMedium
+                    },
+                    maxLines = 1,
+                    overflow = TextOverflow.Visible,
+                    textAlign = TextAlign.Center
+                )
+            }
+
+            Text(
+                modifier = Modifier.fillMaxWidth(),
+                text = stringResource(R.string.call_notification_incoming_text),
+                style = if (isLargeWidth || isLargeHeight) {
+                    MaterialTheme.typography.bodySmall
+                } else {
+                    MaterialTheme.typography.bodyExtraSmall
+                },
+                textAlign = TextAlign.Center
+            )
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = buttonRowPadding, end = buttonRowPadding, top = 8.dp)
+                    .weight(1f, fill = true),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
+            ) {
+                FilledIconButton(
+                    modifier = Modifier.touchTargetAwareSize(buttonSize),
+                    colors = IconButtonDefaults.filledIconButtonColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer,
+                        contentColor = MaterialTheme.colorScheme.onErrorContainer
+                    ),
+                    onClick = onEndCall
+                ) {
+                    Icon(
+                        modifier = Modifier.size(IconButtonDefaults.iconSizeFor(buttonSize)),
+                        imageVector = Icons.Rounded.CallEnd,
+                        contentDescription = stringResource(id = R.string.action_hangup)
+                    )
+                }
+
+                CallUiButton(
+                    isEnabled = false,
+                    imageVector = Icons.AutoMirrored.Rounded.VolumeUp,
+                    buttonSize = buttonSize,
+                    onClick = onVolume,
+                    contentDescription = stringResource(R.string.action_volume)
+                )
+            }
+        }
+
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = if (buttonSize > 40.dp) 4.dp else 0.dp),
+        ) {
+            FilledIconButton(
+                modifier = Modifier.touchTargetAwareSize(buttonSize),
+                colors = IconButtonDefaults.filledIconButtonColors(
+                    containerColor = Color(0xFF1E8D41),
+                    contentColor = Color.White
+                ),
+                onClick = onAnswerCall
+            ) {
+                Icon(
+                    modifier = Modifier.size(IconButtonDefaults.iconSizeFor(buttonSize)),
+                    imageVector = Icons.Rounded.Call,
+                    contentDescription = stringResource(id = R.string.call_notification_answer_action)
+                )
+            }
+        }
+    }
+}
+
 @Composable
 private fun CallUiButton(
     modifier: Modifier = Modifier,
     buttonSize: Dp = IconButtonDefaults.DefaultButtonSize,
+    isEnabled: Boolean = true,
     isChecked: Boolean = false,
     imageVector: ImageVector,
     contentDescription: String?,
@@ -616,6 +786,7 @@ private fun CallUiButton(
     FilledIconButton(
         modifier = modifier.touchTargetAwareSize(buttonSize),
         onClick = onClick,
+        enabled = isEnabled,
         colors = if (isChecked) {
             IconButtonDefaults.filledIconButtonColors()
         } else {
@@ -768,8 +939,10 @@ private fun KeypadScreen(
 @WearPreviewFontScales
 @Composable
 private fun PreviewCallManagerUi() {
-    val bmp = remember {
-        Bitmap.createBitmap(intArrayOf(0x50400080), 1, 1, Bitmap.Config.ARGB_8888)
+    val context = LocalContext.current
+
+    val background = remember(context) {
+        ContextCompat.getDrawable(context, R.drawable.sample_image)?.toBitmap()
     }
 
     val uiState = remember {
@@ -780,10 +953,11 @@ private fun PreviewCallManagerUi() {
             } else {
                 null
             },
-            callerBitmap = bmp,
+            callerBitmap = background,
             callStartTime = System.currentTimeMillis() - TimeUnit.SECONDS.toMillis(60),
             isSpeakerPhoneOn = true,
             isCallActive = true,
+            callUiState = CallUiState.ONGOING,
             isMuted = true,
             supportsSpeaker = true,
             canSendDTMFKeys = true
@@ -791,4 +965,36 @@ private fun PreviewCallManagerUi() {
     }
 
     CallManagerUi(uiState = uiState)
+}
+
+@WearPreviewDevices
+@WearPreviewFontScales
+@Composable
+private fun PreviewIncomingCallUi() {
+    val context = LocalContext.current
+
+    val background = remember(context) {
+        ContextCompat.getDrawable(context, R.drawable.sample_image)?.toBitmap()
+    }
+
+    val uiState = remember {
+        CallManagerUiState(
+            connectionStatus = WearConnectionStatus.CONNECTED,
+            callerName = if (Random.nextInt(0, 2) == 1) {
+                "(123) 456-7890"
+            } else {
+                null
+            },
+            callerBitmap = background,
+            callStartTime = System.currentTimeMillis() - TimeUnit.SECONDS.toMillis(60),
+            isSpeakerPhoneOn = true,
+            isCallActive = true,
+            callUiState = CallUiState.INCOMING,
+            isMuted = true,
+            supportsSpeaker = true,
+            canSendDTMFKeys = true
+        )
+    }
+
+    IncomingCallUi(uiState = uiState)
 }

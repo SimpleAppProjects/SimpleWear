@@ -16,6 +16,7 @@ import android.os.Handler
 import android.os.Looper
 import android.telecom.CallAudioState
 import android.telecom.TelecomManager
+import android.telecom.VideoProfile
 import android.telephony.PhoneStateListener
 import android.telephony.TelephonyCallback
 import android.telephony.TelephonyManager
@@ -25,6 +26,7 @@ import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.toBitmapOrNull
 import androidx.lifecycle.LifecycleService
 import com.google.android.gms.wearable.MessageClient
 import com.google.android.gms.wearable.MessageEvent
@@ -32,6 +34,7 @@ import com.google.android.gms.wearable.Wearable
 import com.thewizrd.shared_resources.data.CallState
 import com.thewizrd.shared_resources.helpers.InCallUIHelper
 import com.thewizrd.shared_resources.helpers.toImmutableCompatFlag
+import com.thewizrd.shared_resources.utils.ImageUtils.toByteArray
 import com.thewizrd.shared_resources.utils.JSONParser
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.shared_resources.utils.booleanToBytes
@@ -39,10 +42,13 @@ import com.thewizrd.shared_resources.utils.bytesToBool
 import com.thewizrd.shared_resources.utils.bytesToChar
 import com.thewizrd.shared_resources.utils.stringToBytes
 import com.thewizrd.simplewear.R
+import com.thewizrd.simplewear.helpers.ContactsHelper
 import com.thewizrd.simplewear.helpers.PhoneStatusHelper
 import com.thewizrd.simplewear.preferences.Settings
+import com.thewizrd.simplewear.services.OngoingCall.callStateCompat
 import com.thewizrd.simplewear.wearable.WearableManager
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.asCoroutineDispatcher
@@ -50,6 +56,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.concurrent.Executors
 
 class CallControllerService : LifecycleService(), MessageClient.OnMessageReceivedListener,
@@ -87,6 +94,7 @@ class CallControllerService : LifecycleService(), MessageClient.OnMessageReceive
         const val ACTION_DISCONNECTCONTROLLER = "SimpleWear.Droid.action.DISCONNECT_CONTROLLER"
         private const val ACTION_TOGGLEMUTE = "SimpleWear.Droid.action.TOGGLE_MUTE"
         private const val ACTION_TOGGLESPEAKER = "SimpleWear.Droid.action.TOGGLE_SPEAKER"
+        private const val ACTION_ANSWERCALL = "SimpleWear.Droid.action.ANSWER_CALL"
         private const val ACTION_HANGUPCALL = "SimpleWear.Droid.action.HANGUP_CALL"
         private const val EXTRA_TOGGLESTATE = "SimpleWear.Droid.extra.TOGGLE_STATE"
 
@@ -163,7 +171,9 @@ class CallControllerService : LifecycleService(), MessageClient.OnMessageReceive
         return mForegroundNotification!!
     }
 
-    private fun updateNotification(context: Context, callActive: Boolean) {
+    private fun updateNotification(context: Context, callState: Int) {
+        val callActive = callState != TelephonyManager.CALL_STATE_IDLE
+
         val notif = NotificationCompat.Builder(context, NOT_CHANNEL_ID).apply {
             setSmallIcon(R.drawable.ic_settings_phone_24dp)
             setContentTitle(context.getString(if (callActive) R.string.message_callactive else R.string.not_title_callcontroller_running))
@@ -199,6 +209,18 @@ class CallControllerService : LifecycleService(), MessageClient.OnMessageReceive
                             Intent(context, CallControllerService::class.java)
                                 .setAction(ACTION_TOGGLESPEAKER)
                                 .putExtra(EXTRA_TOGGLESTATE, !speakerOn),
+                            PendingIntent.FLAG_UPDATE_CURRENT.toImmutableCompatFlag()
+                        )
+                    )
+                }
+                if (callState == TelephonyManager.CALL_STATE_RINGING) {
+                    addAction(
+                        0,
+                        context.getString(R.string.call_notification_answer_action),
+                        PendingIntent.getService(
+                            context, ACTION_ANSWERCALL.hashCode(),
+                            Intent(context, CallControllerService::class.java)
+                                .setAction(ACTION_ANSWERCALL),
                             PendingIntent.FLAG_UPDATE_CURRENT.toImmutableCompatFlag()
                         )
                     )
@@ -256,13 +278,7 @@ class CallControllerService : LifecycleService(), MessageClient.OnMessageReceive
         registerPhoneStateListener()
         OngoingCall.callLiveData.observe(this) {
             scope.launch {
-                sendCallState(
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                        it?.details?.state
-                    } else {
-                        it?.state
-                    }
-                )
+                sendCallState(it?.callStateCompat)
             }
         }
         OngoingCall.callState.observe(this) {
@@ -283,6 +299,13 @@ class CallControllerService : LifecycleService(), MessageClient.OnMessageReceive
                         InCallUIHelper.SpeakerphoneStatusPath,
                         (it.route == CallAudioState.ROUTE_SPEAKER).booleanToBytes()
                     )
+                }
+            }
+        }
+        OngoingCall.callNotificationLiveData.observe(this) {
+            scope.launch {
+                if (isInCall()) {
+                    sendCallState(it?.callState)
                 }
             }
         }
@@ -416,14 +439,12 @@ class CallControllerService : LifecycleService(), MessageClient.OnMessageReceive
                 mPhoneStateListener = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                     object : PhoneStateListener(Executors.newSingleThreadExecutor()) {
                         override fun onCallStateChanged(state: Int, phoneNumber: String?) {
-                            super.onCallStateChanged(state, phoneNumber)
                             this@CallControllerService.onCallStateChanged(state, phoneNumber)
                         }
                     }
                 } else {
                     object : PhoneStateListener() {
                         override fun onCallStateChanged(state: Int, phoneNumber: String?) {
-                            super.onCallStateChanged(state, phoneNumber)
                             this@CallControllerService.onCallStateChanged(state, phoneNumber)
                         }
                     }
@@ -497,7 +518,7 @@ class CallControllerService : LifecycleService(), MessageClient.OnMessageReceive
         scope.launch {
             sendCallState(newState, phoneNo)
         }
-        updateNotification(this, newState != TelephonyManager.CALL_STATE_IDLE)
+        updateNotification(this, newState)
     }
 
     private suspend fun sendCallState(state: Int? = null, phoneNo: String? = null) {
@@ -505,21 +526,20 @@ class CallControllerService : LifecycleService(), MessageClient.OnMessageReceive
             OngoingCall.call?.details?.contactDisplayName
         } else {
             null
-        } ?: OngoingCall.call?.details?.callerDisplayName ?: getContactName(phoneNo) ?: ""
+        } ?: OngoingCall.call?.details?.callerDisplayName
+        ?: OngoingCall.currentCallNotification?.callerName
+        ?: getContactName(phoneNo) ?: ""
 
         val callStartTime = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             OngoingCall.call?.details?.creationTimeMillis
         } else {
             OngoingCall.call?.details?.connectTimeMillis
-        } ?: -1L
+        } ?: OngoingCall.currentCallNotification?.notifWhen ?: -1L
 
-        val callState = state ?: OngoingCall.call?.let {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                it.details.state
-            } else {
-                it.state
-            }
-        } ?: TelephonyManager.CALL_STATE_IDLE
+        val callState = state
+            ?: OngoingCall.call?.callStateCompat
+            ?: OngoingCall.currentCallNotification?.callState
+            ?: TelephonyManager.CALL_STATE_IDLE
 
         val callActive = callState != TelephonyManager.CALL_STATE_IDLE || isInCall()
 
@@ -531,9 +551,31 @@ class CallControllerService : LifecycleService(), MessageClient.OnMessageReceive
             supportedFeatures += InCallUIHelper.INCALL_FEATURE_DTMF
         }
 
+        var callerBitmap: ByteArray? = null
+
+        runCatching {
+            val contactPhotoUri = OngoingCall.call?.details?.contactPhotoUri
+
+            callerBitmap = if (contactPhotoUri != null) {
+                withContext(Dispatchers.IO) {
+                    ContactsHelper.getContactPhotoData(applicationContext, contactPhotoUri)
+                }
+            } else {
+                OngoingCall.currentCallNotification?.callerPhotoIcon?.let {
+                    withContext(Dispatchers.IO) {
+                        it.loadDrawable(applicationContext)
+                            ?.toBitmapOrNull()
+                            ?.toByteArray()
+                    }
+                }
+            }
+        }
+
         val callStateData = CallState(
             callerName = callerName,
+            callerBitmap = callerBitmap,
             callActive = callActive,
+            callState = callState,
             callStartTime = callStartTime,
             supportedFeatures = supportedFeatures
         )
@@ -564,6 +606,9 @@ class CallControllerService : LifecycleService(), MessageClient.OnMessageReceive
                 scope.launch {
                     sendCallState(mTelephonyManager.callStateCompat)
                 }
+            }
+            InCallUIHelper.AnswerCallPath -> {
+                sendAnswerEvent()
             }
             InCallUIHelper.EndCallPath -> {
                 sendHangupEvent()
@@ -616,6 +661,25 @@ class CallControllerService : LifecycleService(), MessageClient.OnMessageReceive
         }
     }
 
+    private fun sendAnswerEvent() {
+        OngoingCall.call?.let {
+            it.answer(it.details?.videoState ?: VideoProfile.STATE_AUDIO_ONLY)
+        } ?: run {
+            mTelecomMediaCtrlr?.dispatchMediaButtonEvent(
+                KeyEvent(
+                    KeyEvent.ACTION_DOWN,
+                    KeyEvent.KEYCODE_HEADSETHOOK
+                )
+            )
+            mTelecomMediaCtrlr?.dispatchMediaButtonEvent(
+                KeyEvent(
+                    KeyEvent.ACTION_UP,
+                    KeyEvent.KEYCODE_HEADSETHOOK
+                )
+            )
+        }
+    }
+
     private fun sendHangupEvent() {
         OngoingCall.call?.disconnect() ?: run {
             mTelecomMediaCtrlr?.dispatchMediaButtonEvent(
@@ -646,7 +710,7 @@ class CallControllerService : LifecycleService(), MessageClient.OnMessageReceive
                 isMicrophoneMute().booleanToBytes()
             )
         }
-        updateNotification(this, isInCall())
+        updateNotification(this, mTelephonyManager.callStateCompat)
     }
 
     private fun isMicrophoneMute(): Boolean {
@@ -666,7 +730,7 @@ class CallControllerService : LifecycleService(), MessageClient.OnMessageReceive
                 isSpeakerPhoneEnabled().booleanToBytes()
             )
         }
-        updateNotification(this, isInCall())
+        updateNotification(this, mTelephonyManager.callStateCompat)
     }
 
     private fun isSpeakerPhoneEnabled(): Boolean {
@@ -704,11 +768,11 @@ class CallControllerService : LifecycleService(), MessageClient.OnMessageReceive
     private val TelephonyManager.callStateCompat: Int
         get() {
             return runCatching {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                /*if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                     this.callStateForSubscription
-                } else {
+                } else {*/
                     this.callState
-                }
+                //}
             }.onFailure {
                 Logger.error(TAG, it)
             }.getOrDefault(TelephonyManager.CALL_STATE_IDLE)

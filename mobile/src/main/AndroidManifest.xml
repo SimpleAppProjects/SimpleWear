@@ -143,6 +143,9 @@
             <intent-filter>
                 <action android:name="android.service.notification.NotificationListenerService" />
             </intent-filter>
+            <meta-data
+                android:name="android.service.notification.disabled_filter_types"
+                android:value="conversations"></meta-data>
         </service>
         <service
             android:name=".media.MediaControllerService"
