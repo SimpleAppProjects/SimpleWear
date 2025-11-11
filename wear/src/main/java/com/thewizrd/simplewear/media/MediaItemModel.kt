@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 data class MediaItemModel(val id: String) {
     var icon: Bitmap? = null
     var title: String? = null
+    var subTitle: String? = null
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -15,6 +16,7 @@ data class MediaItemModel(val id: String) {
         if (id != other.id) return false
         if (icon != other.icon) return false
         if (title != other.title) return false
+        if (subTitle != other.subTitle) return false
 
         return true
     }
@@ -23,6 +25,7 @@ data class MediaItemModel(val id: String) {
         var result = id.hashCode()
         result = 31 * result + (icon?.hashCode() ?: 0)
         result = 31 * result + (title?.hashCode() ?: 0)
+        result = 31 * result + (subTitle?.hashCode() ?: 0)
         return result
     }
 }

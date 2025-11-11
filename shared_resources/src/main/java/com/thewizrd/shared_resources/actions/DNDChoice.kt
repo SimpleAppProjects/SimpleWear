@@ -16,7 +16,7 @@ enum class DNDChoice(val value: Int) {
         }
 
         init {
-            for (choice in values()) {
+            for (choice in entries) {
                 map.put(choice.value, choice)
             }
         }

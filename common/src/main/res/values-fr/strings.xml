@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="permission_title_bt">"Bluetooth"</string>
+    <string name="permission_bt_enabled">"Autorisation Bluetooth activée"</string>
+    <string name="permission_bt_disabled">"Autorisation Bluetooth désactivée"</string>
+    <string name="permission_dnd_enabled">"Accès Ne pas déranger activé"</string>
+    <string name="permission_dnd_disabled">"Accès Ne pas déranger désactivé. Veuillez cliquer pour autoriser la modification du paramètre Ne pas déranger depuis votre appareil WearOS"</string>
+</resources>

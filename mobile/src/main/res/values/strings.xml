@@ -12,9 +12,6 @@
     <string name="lockscreen_choice_device_admin">Lock Screen Device Admin Service</string>
     <string name="title_lockscreen_choice">Choose a lock service</string>
 
-    <string name="permission_dnd_enabled">Do not Disturb access enabled</string>
-    <string name="permission_dnd_disabled">Do not Disturb access disabled. Please click to enable changing Do not Disturb setting from your WearOS device</string>
-
     <string name="permission_title_pairdevice">Pair with WearOS device</string>
     <string name="permission_pairdevice_enabled">App is paired with WearOS device</string>
     <string name="permission_pairdevice_disabled">WearOS device not paired with app. Please click to pair device. This is needed to manage calls</string>
@@ -50,7 +47,9 @@
     <string name="preference_title_callbridge">Bridge call notifications</string>
     <string name="preference_summary_callbridge">Show call notification on watch when there is an active call</string>
 
-    <string name="preference_title_wearsettings">Location and Mobile Data</string>
+    <string name="preference_title_wearsettings">NFC, Location and Mobile Data</string>
+    <string name="preference_title_wearsettings_v29">WiFi, NFC, Location and Mobile Data</string>
+    <string name="preference_title_wearsettings_v33">WiFi, NFC, Bluetooth, Location and Mobile Data</string>
     <string name="preference_summary_wearsettings_notinstalled">SimpleWear helper app required to toggle system settings</string>
     <string name="preference_summary_wearsettings_installed">SimpleWear helper app installed</string>
     <string name="preference_summary_wearsettings_outdated">SimpleWear helper app not up-to-date</string>
@@ -65,10 +64,6 @@
     <string name="permission_notifications_enabled">Notification permission enabled</string>
     <string name="permission_notifications_disabled">Notification permission disabled</string>
 
-    <string name="permission_title_bt">Bluetooth</string>
-    <string name="permission_bt_enabled">Bluetooth permission enabled</string>
-    <string name="permission_bt_disabled">Bluetooth permission disabled</string>
-
     <string name="accessibility_svc_description">Allows you to perform gestures, turn off your screen and lock your device from your WearOS device</string>
     <string name="prompt_alert_message_accessibility_svc">Please enable the accessibility service to use this feature. This service is only used to perform actions like lock screen and gestures; no user data is collected. Please note that if the app is force-closed, the accessibility service will need to be re-enabled.</string>
     <string name="permission_gestures_enabled">Accessibility service enabled</string>
@@ -76,5 +71,6 @@
 
     <string name="permission_exact_alarms_enabled">Schedule action permission enabled</string>
     <string name="permission_exact_alarms_disabled">Schedule action permission disabled</string>
+    <string name="prompt_no_actions_scheduled">No actions scheduled</string>
 
 </resources>

@@ -18,6 +18,8 @@ enum class Actions(val value: Int) {
     PHONE(12),
     BRIGHTNESS(13),
     HOTSPOT(14),
+    NFC(17),
+    BATTERYSAVER(18),
     GESTURES(15),
     TIMEDACTION(16);
 

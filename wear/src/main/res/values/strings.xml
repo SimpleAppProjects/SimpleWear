@@ -7,6 +7,9 @@
     <string name="status_connecting">Connecting…</string>
     <string name="status_connected">Connected</string>
 
+    <string name="status_unsupported_device">Connected device is not supported</string>
+    <string name="status_device_disconnected_notinstalled">Device is not connected or app is not installed on device...</string>
+
     <!-- Setup -->
     <string name="message_gettingstatus">Getting connection status…</string>
     <string name="error_notinstalled">Install app on device and try again</string>
@@ -21,7 +24,7 @@
     <string name="state_syncing">Syncing…</string>
 
     <string name="error_torch_action">Camera permission disabled. Please check permission on phone app</string>
-    <string name="error_permissiondenied">Permission denied for action. Please check permission on phone app</string>
+    <string name="error_permissiondenied_wear">Permission denied for action. Please check permission on phone app</string>
     <string name="error_sendmessage">No response. Please check connection</string>
     <string name="error_actionfailed">Failed to perform action</string>
     <string name="error_remoteactionfailed">Failed to perform action. Please check permission on phone app</string>

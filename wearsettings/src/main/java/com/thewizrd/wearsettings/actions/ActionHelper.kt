@@ -42,6 +42,18 @@ object ActionHelper {
                 LockScreenAction.executeAction(context, action)
             }
 
+            Actions.DONOTDISTURB -> {
+                DoNotDisturbAction.executeAction(context, action)
+            }
+
+            Actions.NFC -> {
+                NfcAction.executeAction(context, action)
+            }
+
+            Actions.BATTERYSAVER -> {
+                BatterySaverAction.executeAction(context, action)
+            }
+
             else -> ActionStatus.FAILURE
         }
     }

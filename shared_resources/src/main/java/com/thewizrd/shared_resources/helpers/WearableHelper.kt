@@ -11,6 +11,7 @@ import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.GoogleApiAvailability
 import com.google.android.gms.wearable.Node
 import com.google.android.gms.wearable.PutDataRequest
+import com.thewizrd.shared_resources.BuildConfig
 import com.thewizrd.shared_resources.sharedDeps
 import com.thewizrd.shared_resources.utils.Logger
 
@@ -22,9 +23,10 @@ object WearableHelper {
     const val CAPABILITY_WEAR_APP = "com.thewizrd.simplewear_wear_app"
 
     // Link to Play Store listing
-    private const val PLAY_STORE_APP_URI = "market://details?id=com.thewizrd.simplewear"
+    const val PACKAGE_NAME = "com.thewizrd.simplewear"
+    private const val PLAY_STORE_APP_URI = "market://details?id=$PACKAGE_NAME"
 
-    private const val SUPPORTED_VERSION_CODE: Long = 341916050
+    private const val SUPPORTED_VERSION_CODE: Long = 361917010
 
     fun getPlayStoreURI(): Uri = Uri.parse(PLAY_STORE_APP_URI)
 
@@ -158,6 +160,12 @@ object WearableHelper {
 
     fun getBLEServiceUUID(): ParcelUuid =
         ParcelUuid.fromString("0000DA28-0000-1000-8000-00805F9B34FB")
+
+    fun getPackageName(): String {
+        var packageName = PACKAGE_NAME
+        if (BuildConfig.DEBUG) packageName += ".debug"
+        return packageName
+    }
 
     fun isAppUpToDate(versionCode: Long): Boolean {
         return versionCode >= SUPPORTED_VERSION_CODE

@@ -5,7 +5,7 @@
         android:name="com.google.android.gms.permission.AD_ID"
         tools:node="remove" />
 
-    <application>
+    <application android:localeConfig="@xml/locales_config">
         <meta-data
             android:name="google_analytics_adid_collection_enabled"
             android:value="false" />

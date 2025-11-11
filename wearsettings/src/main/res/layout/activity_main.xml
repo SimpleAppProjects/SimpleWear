@@ -1,38 +1,60 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:background="?colorSurfaceContainer"
+    android:fitsSystemWindows="true"
     tools:context=".MainActivity"
-    android:fitsSystemWindows="true">
+    tools:theme="@style/Theme.Material3Expressive.DayNight.NoActionBar">
 
     <com.google.android.material.appbar.AppBarLayout
         android:id="@+id/app_bar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:background="?colorSurfaceContainer"
         android:fitsSystemWindows="true"
-        app:liftOnScroll="true"
-        tools:visibility="gone">
+        app:expanded="false"
+        app:liftOnScroll="false"
+        app:liftOnScrollTargetViewId="@id/scrollView"
+        tools:expanded="true"
+        tools:stateListAnimator="@null">
 
-        <com.google.android.material.appbar.MaterialToolbar
-            android:id="@+id/toolbar"
+        <com.google.android.material.appbar.CollapsingToolbarLayout
+            android:id="@+id/collapsing_toolbar"
             android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            app:title="@string/title_settings"
-            app:layout_collapseMode="pin" />
+            android:layout_height="?attr/collapsingToolbarLayoutLargeSize"
+            app:layout_scrollFlags="scroll|exitUntilCollapsed|snap"
+            app:collapsedTitleTextAppearance="?textAppearanceTitleLargeEmphasized"
+            app:collapsedSubtitleTextAppearance="?textAppearanceTitleSmall"
+            app:expandedTitleTextAppearance="?textAppearanceDisplaySmallEmphasized"
+            app:expandedSubtitleTextAppearance="?textAppearanceTitleMedium"
+            style="?collapsingToolbarLayoutLargeStyle"
+            app:titleCollapseMode="scale"
+            app:expandedTitleMarginStart="24dp"
+            app:expandedTitleMarginBottom="32dp"
+            app:titleMaxLines="2">
+
+            <com.google.android.material.appbar.MaterialToolbar
+                android:id="@+id/toolbar"
+                android:layout_width="match_parent"
+                android:layout_height="?actionBarSize"
+                android:elevation="0dp"
+                app:layout_collapseMode="pin"
+                app:title="@string/app_name_settings" />
+
+        </com.google.android.material.appbar.CollapsingToolbarLayout>
 
     </com.google.android.material.appbar.AppBarLayout>
 
-    <ScrollView
-        android:id="@+id/fragment_container"
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/scrollView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:fillViewport="true"
         android:scrollbars="vertical"
-        app:layout_anchor="@id/app_bar"
-        app:layout_anchorGravity="bottom"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+        app:layout_behavior="com.google.android.material.appbar.AppBarLayout$ScrollingViewBehavior">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -43,254 +65,228 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:paddingStart="16dp"
-                android:paddingEnd="0dp">
+                style="@style/Permissions.Preference.Category.Expressive">
 
                 <TextView
                     android:id="@+id/perms_cat_title"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_gravity="start"
-                    android:layout_marginTop="16dp"
-                    android:paddingStart="0dp"
-                    android:paddingEnd="?android:attr/listPreferredItemPaddingRight"
-                    android:text="@string/cat_title_permissions"
-                    android:textAlignment="viewStart"
-                    android:textAppearance="?textAppearanceBodyMedium"
-                    android:textColor="?attr/colorPrimary" />
+                    style="@style/Permissions.Preference.Category.Title.Expressive"
+                    android:text="@string/cat_title_permissions" />
 
             </LinearLayout>
 
-            <RelativeLayout
+            <LinearLayout
                 android:id="@+id/bgopts_pref"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:minHeight="64dp"
-                android:padding="16dp"
-                android:background="?selectableItemBackground">
+                style="@style/Permissions.Preference.Expressive"
+                android:tag="permissions">
 
                 <TextView
                     android:id="@+id/bgopts_pref_title"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_alignParentStart="true"
-                    android:layout_alignParentTop="true"
-                    android:ellipsize="marquee"
-                    android:fadingEdge="horizontal"
-                    android:singleLine="true"
-                    android:text="@string/permission_title_bgopts"
-                    android:textAppearance="?textAppearanceTitleMedium"
-                    android:textSize="18sp" />
+                    style="@style/Permissions.Preference.Title.Expressive"
+                    android:text="@string/permission_title_bgopts" />
 
                 <TextView
                     android:id="@+id/bgopts_pref_summary"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_below="@+id/bgopts_pref_title"
-                    android:layout_alignStart="@+id/bgopts_pref_title"
-                    android:maxLines="4"
-                    android:text="@string/message_bgopts_disabled"
-                    android:textAppearance="?android:textAppearanceSmall" />
+                    style="@style/Permissions.Preference.Summary.Expressive"
+                    android:text="@string/message_bgopts_disabled" />
 
-            </RelativeLayout>
+            </LinearLayout>
 
-            <RelativeLayout
+            <LinearLayout
                 android:id="@+id/securesettings_pref"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:minHeight="64dp"
-                android:padding="16dp"
-                android:background="?selectableItemBackground">
+                style="@style/Permissions.Preference.Expressive"
+                android:tag="permissions">
 
                 <TextView
                     android:id="@+id/securesettings_pref_title"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_alignParentStart="true"
-                    android:layout_alignParentTop="true"
-                    android:ellipsize="marquee"
-                    android:fadingEdge="horizontal"
-                    android:singleLine="true"
-                    android:text="@string/permission_title_securesettings"
-                    android:textAppearance="?textAppearanceTitleMedium"
-                    android:textSize="18sp" />
+                    style="@style/Permissions.Preference.Title.Expressive"
+                    android:text="@string/permission_title_securesettings" />
 
                 <TextView
                     android:id="@+id/securesettings_pref_summary"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_below="@+id/securesettings_pref_title"
-                    android:layout_alignStart="@+id/securesettings_pref_title"
-                    android:maxLines="4"
-                    android:text="@string/message_securesettings_disabled"
-                    android:textAppearance="?android:textAppearanceSmall" />
+                    style="@style/Permissions.Preference.Summary.Expressive"
+                    android:text="@string/message_securesettings_disabled" />
 
-            </RelativeLayout>
+            </LinearLayout>
 
-            <RelativeLayout
+            <LinearLayout
                 android:id="@+id/bt_pref"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:minHeight="64dp"
-                android:padding="16dp"
-                android:background="?selectableItemBackground"
-                android:visibility="gone"
-                tools:visibility="visible">
+                style="@style/Permissions.Preference.Expressive"
+                android:tag="permissions">
 
                 <TextView
                     android:id="@+id/bt_pref_title"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_alignParentStart="true"
-                    android:layout_alignParentTop="true"
-                    android:ellipsize="marquee"
-                    android:fadingEdge="horizontal"
-                    android:singleLine="true"
-                    android:text="@string/permission_title_bt"
-                    android:textAppearance="?textAppearanceTitleMedium"
-                    android:textSize="18sp" />
+                    style="@style/Permissions.Preference.Title.Expressive"
+                    android:text="@string/permission_title_bt" />
 
                 <TextView
                     android:id="@+id/bt_pref_summary"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_below="@+id/bt_pref_title"
-                    android:layout_alignStart="@+id/bt_pref_title"
-                    android:maxLines="4"
-                    android:text="@string/permission_bt_disabled"
-                    android:textAppearance="?android:textAppearanceSmall" />
+                    style="@style/Permissions.Preference.Summary.Expressive"
+                    android:text="@string/permission_bt_disabled" />
 
-            </RelativeLayout>
+            </LinearLayout>
 
-            <RelativeLayout
+            <LinearLayout
+                android:id="@+id/dnd_pref"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                style="@style/Permissions.Preference.Expressive"
+                android:tag="permissions">
+
+                <TextView
+                    android:id="@+id/dnd_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    style="@style/Permissions.Preference.Title.Expressive"
+                    android:text="@string/action_dnd" />
+
+                <TextView
+                    android:id="@+id/dnd_summary"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    style="@style/Permissions.Preference.Summary.Expressive"
+                    tools:text="@string/permission_dnd_disabled" />
+
+            </LinearLayout>
+
+            <LinearLayout
                 android:id="@+id/shizuku_pref"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:minHeight="64dp"
-                android:padding="16dp"
-                android:background="?selectableItemBackground">
+                style="@style/Permissions.Preference.Expressive"
+                android:tag="permissions">
 
                 <TextView
                     android:id="@+id/shizuku_pref_title"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_alignParentStart="true"
-                    android:layout_alignParentTop="true"
-                    android:ellipsize="marquee"
-                    android:fadingEdge="horizontal"
-                    android:singleLine="true"
-                    android:text="@string/permission_title_shizuku"
-                    android:textAppearance="?textAppearanceTitleMedium"
-                    android:textSize="18sp" />
+                    style="@style/Permissions.Preference.Title.Expressive"
+                    android:text="@string/permission_title_shizuku" />
 
                 <TextView
                     android:id="@+id/shizuku_pref_summary"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_below="@+id/shizuku_pref_title"
-                    android:layout_alignStart="@+id/shizuku_pref_title"
-                    android:maxLines="4"
-                    android:text="@string/message_shizuku_not_installed"
-                    android:textAppearance="?android:textAppearanceSmall" />
+                    style="@style/Permissions.Preference.Summary.Expressive"
+                    android:text="@string/message_shizuku_not_installed" />
 
-            </RelativeLayout>
+            </LinearLayout>
 
-            <RelativeLayout
+            <LinearLayout
                 android:id="@+id/rootaccess_pref"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:minHeight="64dp"
-                android:padding="16dp"
-                android:background="?selectableItemBackground">
+                android:orientation="horizontal"
+                style="@style/Permissions.Preference.Expressive"
+                android:tag="permissions">
 
-                <TextView
-                    android:id="@+id/rootaccess_pref_title"
-                    android:layout_width="wrap_content"
+                <LinearLayout
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_alignParentStart="true"
-                    android:layout_alignParentTop="true"
-                    android:ellipsize="marquee"
-                    android:fadingEdge="horizontal"
-                    android:singleLine="true"
-                    android:text="@string/permission_title_rootaccess"
-                    android:textAppearance="?textAppearanceTitleMedium"
-                    android:layout_toStartOf="@id/rootaccess_pref_toggle"
-                    android:textSize="18sp" />
+                    android:layout_weight="1"
+                    android:orientation="vertical">
 
-                <TextView
-                    android:id="@+id/rootaccess_pref_summary"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_below="@+id/rootaccess_pref_title"
-                    android:layout_alignStart="@+id/rootaccess_pref_title"
-                    android:layout_toStartOf="@id/rootaccess_pref_toggle"
-                    android:maxLines="4"
-                    android:text="@string/message_rootaccess_disabled"
-                    android:textAppearance="?android:textAppearanceSmall" />
+                    <TextView
+                        android:id="@+id/rootaccess_pref_title"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        style="@style/Permissions.Preference.Title.Expressive"
+                        android:text="@string/permission_title_rootaccess" />
+
+                    <TextView
+                        android:id="@+id/rootaccess_pref_summary"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        style="@style/Permissions.Preference.Summary.Expressive"
+                        android:text="@string/message_rootaccess_disabled" />
+
+                </LinearLayout>
 
                 <com.google.android.material.materialswitch.MaterialSwitch
                     android:id="@+id/rootaccess_pref_toggle"
                     android:duplicateParentState="true"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:paddingStart="0dp"
+                    android:paddingEnd="16dp"
                     android:checked="false"
                     android:clickable="false"
                     android:focusable="false"
                     android:focusableInTouchMode="false"
-                    android:layout_alignParentEnd="true"
-                    android:layout_centerInParent="true" />
+                    app:thumbIcon="@drawable/ic_check_white_24dp" />
 
-            </RelativeLayout>
+            </LinearLayout>
 
-            <RelativeLayout
+            <LinearLayout
                 android:id="@+id/hidelauncher_pref"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:minHeight="64dp"
-                android:padding="16dp"
-                android:background="?selectableItemBackground">
+                android:orientation="horizontal"
+                style="@style/Permissions.Preference.Expressive"
+                android:tag="permissions">
 
-                <TextView
-                    android:id="@+id/hidelauncher_pref_title"
-                    android:layout_width="wrap_content"
+                <LinearLayout
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_alignParentStart="true"
-                    android:layout_alignParentTop="true"
-                    android:layout_toStartOf="@id/hidelauncher_pref_toggle"
-                    android:ellipsize="marquee"
-                    android:fadingEdge="horizontal"
-                    android:singleLine="true"
-                    android:text="@string/pref_title_showlauncher"
-                    android:textAppearance="?textAppearanceTitleMedium"
-                    android:textSize="18sp" />
+                    android:layout_weight="1"
+                    android:orientation="vertical">
 
-                <TextView
-                    android:id="@+id/hidelauncher_pref_summary"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_below="@+id/hidelauncher_pref_title"
-                    android:layout_alignStart="@+id/hidelauncher_pref_title"
-                    android:layout_toStartOf="@id/hidelauncher_pref_toggle"
-                    android:maxLines="4"
-                    android:text="@string/pref_summary_showlauncher"
-                    android:textAppearance="?android:textAppearanceSmall" />
+                    <TextView
+                        android:id="@+id/hidelauncher_pref_title"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        style="@style/Permissions.Preference.Title.Expressive"
+                        android:text="@string/pref_title_showlauncher" />
+
+                    <TextView
+                        android:id="@+id/hidelauncher_pref_summary"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        style="@style/Permissions.Preference.Summary.Expressive"
+                        android:text="@string/pref_summary_showlauncher" />
+
+                </LinearLayout>
 
                 <com.google.android.material.materialswitch.MaterialSwitch
                     android:id="@+id/hidelauncher_pref_toggle"
                     android:duplicateParentState="true"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:paddingStart="0dp"
+                    android:paddingEnd="16dp"
                     android:checked="false"
                     android:clickable="false"
                     android:focusable="false"
                     android:focusableInTouchMode="false"
-                    android:layout_alignParentEnd="true"
-                    android:layout_centerInParent="true" />
+                    app:thumbIcon="@drawable/ic_check_white_24dp" />
 
-            </RelativeLayout>
+            </LinearLayout>
+
+            <Space
+                android:layout_width="wrap_content"
+                android:layout_height="24dp" />
 
         </LinearLayout>
 
-    </ScrollView>
+    </androidx.core.widget.NestedScrollView>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

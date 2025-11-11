@@ -6,13 +6,15 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.os.SystemClock
+import androidx.concurrent.futures.SuspendToFutureAdapter
 import androidx.lifecycle.lifecycleScope
 import androidx.wear.protolayout.ResourceBuilders
-import androidx.wear.tiles.EventBuilders
+import androidx.wear.tiles.EventBuilders.TileInteractionEvent
 import androidx.wear.tiles.RequestBuilders
 import androidx.wear.tiles.TileBuilders
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
 import com.google.android.horologist.tiles.SuspendingTileService
+import com.google.common.util.concurrent.ListenableFuture
 import com.thewizrd.shared_resources.actions.Action
 import com.thewizrd.shared_resources.actions.Actions
 import com.thewizrd.shared_resources.actions.NormalAction
@@ -114,9 +116,7 @@ class DashboardTileProviderService : SuspendingTileService() {
         super.onDestroy()
     }
 
-    override fun onTileEnterEvent(requestParams: EventBuilders.TileEnterEvent) {
-        super.onTileEnterEvent(requestParams)
-
+    private fun onTileInteractionEnterEvent(requestParams: TileInteractionEvent) {
         Logger.debug(TAG, "onTileEnterEvent called with: tileId = ${requestParams.tileId}")
         AnalyticsLogger.logEvent("on_tile_enter", Bundle().apply {
             putString("tile", TAG)
@@ -134,10 +134,30 @@ class DashboardTileProviderService : SuspendingTileService() {
         }
     }
 
-    override fun onTileLeaveEvent(requestParams: EventBuilders.TileLeaveEvent) {
-        super.onTileLeaveEvent(requestParams)
+    private fun onTileInteractionLeaveEvent(requestParams: TileInteractionEvent) {
         Logger.debug(TAG, "$TAG: onTileLeaveEvent called with: tileId = ${requestParams.tileId}")
         isInFocus = false
+    }
+
+    override fun onRecentInteractionEventsAsync(events: List<TileInteractionEvent>): ListenableFuture<Void?> {
+        return SuspendToFutureAdapter.launchFuture {
+            val lastEvent = events.lastOrNull()
+
+            when (lastEvent?.eventType) {
+                TileInteractionEvent.ENTER -> {
+                    onTileInteractionEnterEvent(lastEvent)
+                }
+
+                TileInteractionEvent.LEAVE -> {
+                    onTileInteractionLeaveEvent(lastEvent)
+                }
+
+                TileInteractionEvent.UNKNOWN -> { /* no-op */
+                }
+            }
+
+            null
+        }
     }
 
     override suspend fun tileRequest(requestParams: RequestBuilders.TileRequest): TileBuilders.Tile {

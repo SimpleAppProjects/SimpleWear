@@ -1,19 +1,24 @@
+@file:OptIn(ProtoLayoutExperimental::class)
+@file:kotlin.OptIn(ExperimentalHorologistApi::class)
+@file:Suppress("FunctionName")
+
 package com.thewizrd.simplewear.wearable.tiles.layouts
 
+import android.annotation.SuppressLint
 import android.content.Context
-import android.graphics.Color
 import androidx.annotation.OptIn
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.ColorUtils
 import androidx.core.graphics.drawable.toBitmapOrNull
 import androidx.wear.protolayout.ActionBuilders
-import androidx.wear.protolayout.ColorBuilders
 import androidx.wear.protolayout.ColorBuilders.ColorProp
 import androidx.wear.protolayout.DeviceParametersBuilders.DeviceParameters
 import androidx.wear.protolayout.DeviceParametersBuilders.SCREEN_SHAPE_ROUND
 import androidx.wear.protolayout.DimensionBuilders
+import androidx.wear.protolayout.DimensionBuilders.WrappedDimensionProp
 import androidx.wear.protolayout.DimensionBuilders.dp
 import androidx.wear.protolayout.DimensionBuilders.expand
-import androidx.wear.protolayout.DimensionBuilders.wrap
+import androidx.wear.protolayout.DimensionBuilders.weight
 import androidx.wear.protolayout.LayoutElementBuilders.Box
 import androidx.wear.protolayout.LayoutElementBuilders.CONTENT_SCALE_MODE_FIT
 import androidx.wear.protolayout.LayoutElementBuilders.Column
@@ -24,34 +29,50 @@ import androidx.wear.protolayout.LayoutElementBuilders.Row
 import androidx.wear.protolayout.LayoutElementBuilders.Spacer
 import androidx.wear.protolayout.LayoutElementBuilders.TEXT_ALIGN_CENTER
 import androidx.wear.protolayout.LayoutElementBuilders.TEXT_OVERFLOW_MARQUEE
+import androidx.wear.protolayout.LayoutElementBuilders.VERTICAL_ALIGN_BOTTOM
 import androidx.wear.protolayout.LayoutElementBuilders.VERTICAL_ALIGN_CENTER
+import androidx.wear.protolayout.LayoutElementBuilders.VERTICAL_ALIGN_TOP
 import androidx.wear.protolayout.ModifiersBuilders.Background
 import androidx.wear.protolayout.ModifiersBuilders.Clickable
 import androidx.wear.protolayout.ModifiersBuilders.Corner
 import androidx.wear.protolayout.ModifiersBuilders.Modifiers
 import androidx.wear.protolayout.ModifiersBuilders.Padding
-import androidx.wear.protolayout.TypeBuilders.FloatProp
 import androidx.wear.protolayout.expression.DynamicBuilders.DynamicFloat
 import androidx.wear.protolayout.expression.DynamicBuilders.DynamicInstant
 import androidx.wear.protolayout.expression.ProtoLayoutExperimental
-import androidx.wear.protolayout.material.Button
-import androidx.wear.protolayout.material.ButtonColors
-import androidx.wear.protolayout.material.CircularProgressIndicator
-import androidx.wear.protolayout.material.Colors
-import androidx.wear.protolayout.material.CompactChip
-import androidx.wear.protolayout.material.ProgressIndicatorColors
-import androidx.wear.protolayout.material.Text
-import androidx.wear.protolayout.material.Typography
-import androidx.wear.protolayout.material.layouts.MultiSlotLayout
-import androidx.wear.protolayout.material.layouts.PrimaryLayout
+import androidx.wear.protolayout.material3.CardDefaults.filledTonalCardColors
+import androidx.wear.protolayout.material3.DataCardStyle
+import androidx.wear.protolayout.material3.MaterialScope
+import androidx.wear.protolayout.material3.ProgressIndicatorColors
+import androidx.wear.protolayout.material3.Typography.BODY_MEDIUM
+import androidx.wear.protolayout.material3.Typography.TITLE_MEDIUM
+import androidx.wear.protolayout.material3.buttonGroup
+import androidx.wear.protolayout.material3.circularProgressIndicator
+import androidx.wear.protolayout.material3.icon
+import androidx.wear.protolayout.material3.iconButton
+import androidx.wear.protolayout.material3.iconEdgeButton
+import androidx.wear.protolayout.material3.materialScope
+import androidx.wear.protolayout.material3.primaryLayout
+import androidx.wear.protolayout.material3.text
+import androidx.wear.protolayout.material3.textDataCard
+import androidx.wear.protolayout.material3.textEdgeButton
+import androidx.wear.protolayout.modifiers.LayoutModifier
+import androidx.wear.protolayout.modifiers.clickable
+import androidx.wear.protolayout.modifiers.contentDescription
+import androidx.wear.protolayout.modifiers.padding
+import androidx.wear.protolayout.types.layoutString
 import androidx.wear.tiles.tooling.preview.TilePreviewData
+import com.google.android.horologist.annotations.ExperimentalHorologistApi
+import com.google.android.horologist.compose.tools.tileRendererPreviewData
 import com.thewizrd.shared_resources.actions.AudioStreamState
 import com.thewizrd.shared_resources.actions.AudioStreamType
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
 import com.thewizrd.shared_resources.media.PlaybackState
+import com.thewizrd.shared_resources.media.PositionState
 import com.thewizrd.shared_resources.utils.ImageUtils.toByteArray
 import com.thewizrd.simplewear.R
-import com.thewizrd.simplewear.ui.tools.WearTilePreviewDevices
+import com.thewizrd.simplewear.ui.theme.wearTileColorScheme
+import com.thewizrd.simplewear.ui.tiles.tools.WearPreviewDevices
 import com.thewizrd.simplewear.wearable.tiles.MediaPlayerTileMessenger.PlayerAction
 import com.thewizrd.simplewear.wearable.tiles.MediaPlayerTileRenderer
 import com.thewizrd.simplewear.wearable.tiles.MediaPlayerTileRenderer.Companion.ID_APPICON
@@ -67,369 +88,387 @@ import com.thewizrd.simplewear.wearable.tiles.MediaPlayerTileRenderer.Companion.
 import com.thewizrd.simplewear.wearable.tiles.MediaPlayerTileState
 import kotlinx.coroutines.runBlocking
 import java.time.Instant
+import kotlin.math.ceil
+import kotlin.math.max
 
-private val CIRCLE_SIZE = dp(48f)
-private val SMALL_CIRCLE_SIZE = dp(40f)
-
-private val ICON_SIZE = dp(24f)
-private val SMALL_ICON_SIZE = dp(20f)
-
-private val COLORS = Colors(
-    0xff91cfff.toInt(), 0xff000000.toInt(),
-    0xff202124.toInt(), 0xffffffff.toInt()
-)
-
+@SuppressLint("ProtoLayoutPrimaryLayoutResponsive")
 @OptIn(ProtoLayoutExperimental::class)
 internal fun MediaPlayerTileLayout(
     context: Context,
     deviceParameters: DeviceParameters,
     state: MediaPlayerTileState
-): LayoutElement {
-    return if (state.connectionStatus != WearConnectionStatus.CONNECTED) {
-        PrimaryLayout.Builder(deviceParameters)
-            .apply {
-                when (state.connectionStatus) {
-                    WearConnectionStatus.APPNOTINSTALLED -> {
-                        setContent(
-                            Text.Builder(context, context.getString(R.string.error_notinstalled))
-                                .setTypography(Typography.TYPOGRAPHY_CAPTION1)
-                                .setColor(
-                                    ColorBuilders.argb(
-                                        ContextCompat.getColor(context, R.color.colorSecondary)
+): LayoutElement =
+    materialScope(context, deviceParameters, defaultColorScheme = wearTileColorScheme) {
+        if (state.connectionStatus != WearConnectionStatus.CONNECTED) {
+            when (state.connectionStatus) {
+                WearConnectionStatus.APPNOTINSTALLED -> {
+                    primaryLayout(
+                        titleSlot = {
+                            text(text = context.getString(R.string.title_media_controller).layoutString)
+                        },
+                        mainSlot = {
+                            textDataCard(
+                                onClick = clickable(
+                                    action = MediaPlayerTileRenderer.getTapAction(context)
+                                ),
+                                width = expand(),
+                                height = expand(),
+                                title = {
+                                    text(
+                                        text = context.getString(R.string.error_notinstalled).layoutString,
+                                        typography = BODY_MEDIUM,
+                                        maxLines = 3
                                     )
-                                )
-                                .setMultilineAlignment(TEXT_ALIGN_CENTER)
-                                .setMaxLines(3)
-                                .build()
-                        )
-
-                        setPrimaryChipContent(
-                            IconButton(
-                                context,
-                                ID_OPENONPHONE,
-                                context.getString(R.string.common_open_on_phone),
-                                Clickable.Builder()
-                                    .setId(ID_OPENONPHONE)
-                                    .setOnClick(
-                                        ActionBuilders.LoadAction.Builder()
-                                            .build()
-                                    )
-                                    .build(),
-                                size = SMALL_CIRCLE_SIZE,
-                                iconSize = SMALL_ICON_SIZE
+                                },
+                                colors = filledTonalCardColors(),
+                                style = DataCardStyle.smallDataCardStyle()
                             )
-                        )
-                    }
-
-                    else -> {
-                        setContent(
-                            Text.Builder(context, context.getString(R.string.status_disconnected))
-                                .setTypography(Typography.TYPOGRAPHY_CAPTION1)
-                                .setColor(
-                                    ColorBuilders.argb(
-                                        ContextCompat.getColor(context, R.color.colorSecondary)
-                                    )
-                                )
-                                .setMultilineAlignment(TEXT_ALIGN_CENTER)
-                                .setMaxLines(3)
-                                .build()
-                        )
-
-                        setPrimaryChipContent(
-                            IconButton(
-                                context,
-                                resourceId = ID_PHONEDISCONNECTED,
-                                contentDescription = context.getString(R.string.status_disconnected),
-                                size = SMALL_CIRCLE_SIZE,
-                                iconSize = SMALL_ICON_SIZE
+                        },
+                        bottomSlot = {
+                            iconEdgeButton(
+                                modifier = LayoutModifier.contentDescription(context.getString(R.string.common_open_on_phone)),
+                                onClick = clickable(id = ID_OPENONPHONE),
+                                iconContent = {
+                                    icon(ID_OPENONPHONE)
+                                }
                             )
-                        )
-                    }
+                        }
+                    )
+                }
+
+                else -> {
+                    primaryLayout(
+                        titleSlot = {
+                            text(text = context.getString(R.string.title_media_controller).layoutString)
+                        },
+                        mainSlot = {
+                            textDataCard(
+                                onClick = clickable(
+                                    action = MediaPlayerTileRenderer.getTapAction(context)
+                                ),
+                                width = expand(),
+                                height = expand(),
+                                title = {
+                                    text(
+                                        text = context.getString(R.string.status_disconnected).layoutString,
+                                        typography = BODY_MEDIUM,
+                                        maxLines = 3
+                                    )
+                                },
+                                colors = filledTonalCardColors(),
+                                style = DataCardStyle.smallDataCardStyle()
+                            )
+                        },
+                        bottomSlot = {
+                            iconEdgeButton(
+                                modifier = LayoutModifier.contentDescription(context.getString(R.string.status_disconnected)),
+                                onClick = clickable(id = ID_PHONEDISCONNECTED),
+                                iconContent = {
+                                    icon(ID_PHONEDISCONNECTED)
+                                }
+                            )
+                        }
+                    )
                 }
             }
-            .build()
-    } else if (state.isEmpty || state.playbackState == null || state.playbackState == PlaybackState.NONE) {
-        return PrimaryLayout.Builder(deviceParameters)
-            .setContent(
-                Text.Builder(context, context.getString(R.string.message_playback_stopped))
-                    .setMaxLines(1)
-                    .setMultilineAlignment(TEXT_ALIGN_CENTER)
-                    .setOverflow(TEXT_OVERFLOW_MARQUEE)
-                    .setTypography(Typography.TYPOGRAPHY_CAPTION1)
-                    .setColor(
-                        ColorBuilders.argb(
-                            ContextCompat.getColor(context, R.color.colorSecondary)
-                        )
+        } else if (state.isEmpty || state.playbackState == null || state.playbackState == PlaybackState.NONE) {
+            primaryLayout(
+                titleSlot = {
+                    text(text = context.getString(R.string.title_media_controller).layoutString)
+                },
+                mainSlot = {
+                    textDataCard(
+                        onClick = clickable(
+                            action = MediaPlayerTileRenderer.getTapAction(context)
+                        ),
+                        width = expand(),
+                        height = expand(),
+                        title = {
+                            text(
+                                text = context.getString(R.string.message_playback_stopped).layoutString,
+                                typography = BODY_MEDIUM,
+                                maxLines = 3
+                            )
+                        },
+                        colors = filledTonalCardColors(),
+                        style = DataCardStyle.smallDataCardStyle()
                     )
-                    .build()
+                },
+                bottomSlot = {
+                    textEdgeButton(
+                        onClick = clickable(id = PlayerAction.PLAY.name),
+                        labelContent = {
+                            text(context.getString(R.string.action_play).layoutString)
+                        }
+                    )
+                }
             )
-            .setPrimaryChipContent(
-                CompactChip.Builder(
-                    context,
-                    context.getString(R.string.action_play),
-                    Clickable.Builder()
-                        .setId(PlayerAction.PLAY.name)
-                        .setOnClick(
-                            ActionBuilders.LoadAction.Builder()
+        } else {
+            Box.Builder()
+                .setWidth(expand())
+                .setHeight(expand())
+                .addContent(
+                    Image.Builder()
+                        .setResourceId(ID_ARTWORK)
+                        .setWidth(expand())
+                        .setHeight(expand())
+                        .setContentScaleMode(CONTENT_SCALE_MODE_FIT)
+                        .build()
+                )
+                .addContent(
+                    Box.Builder()
+                        .setWidth(expand())
+                        .setHeight(expand())
+                        .setModifiers(
+                            Modifiers.Builder()
+                                .setBackground(
+                                    Background.Builder()
+                                        .setColor(
+                                            ColorProp.Builder(0xAA000000.toInt())
+                                                .build()
+                                        )
+                                        .build()
+                                )
                                 .build()
                         )
-                        .build(),
-                    deviceParameters
+                        .addContent(
+                            Column.Builder()
+                                .setWidth(expand())
+                                .setHeight(expand())
+                                .addContent(
+                                    Box.Builder()
+                                        .setWidth(expand())
+                                        .setHeight(
+                                            WrappedDimensionProp.Builder()
+                                                .apply {
+                                                    if (deviceParameters.isLargeHeight()) {
+                                                        setMinimumSize(dp(0f))
+                                                    } else {
+                                                        setMinimumSize(dp(68f))
+                                                    }
+                                                }
+                                                .build()
+                                        )
+                                        .setHorizontalAlignment(HORIZONTAL_ALIGN_CENTER)
+                                        .setVerticalAlignment(VERTICAL_ALIGN_BOTTOM)
+                                        .setModifiers(
+                                            Modifiers.Builder()
+                                                .setPadding(
+                                                    padding(
+                                                        top = deviceParameters.getScreenSizeInDpFromPercentage(
+                                                            if (deviceParameters.isLargeHeight()) {
+                                                                13.2f
+                                                            } else {
+                                                                12f
+                                                            }
+                                                        ),
+                                                        bottom = deviceParameters.getScreenSizeInDpFromPercentage(
+                                                            if (deviceParameters.isLargeHeight()) {
+                                                                6f
+                                                            } else {
+                                                                2f
+                                                            }
+                                                        ),
+                                                    )
+                                                )
+                                                .build()
+                                        )
+                                        .addContent(
+                                            Column.Builder()
+                                                .setHeight(dp(38f))
+                                                .apply {
+                                                    if (!state.title.isNullOrBlank()) {
+                                                        addContent(
+                                                            Box.Builder()
+                                                                .setWidth(
+                                                                    dp(
+                                                                        deviceParameters.getScreenWidthInDpFromPercentage(
+                                                                            66.72f
+                                                                        )
+                                                                    )
+                                                                )
+                                                                .setHeight(dp(20f))
+                                                                .setHorizontalAlignment(
+                                                                    HORIZONTAL_ALIGN_CENTER
+                                                                )
+                                                                .addContent(
+                                                                    text(
+                                                                        text = state.title.layoutString,
+                                                                        maxLines = 1,
+                                                                        alignment = TEXT_ALIGN_CENTER,
+                                                                        overflow = TEXT_OVERFLOW_MARQUEE,
+                                                                        typography = TITLE_MEDIUM,
+                                                                        color = colorScheme.onSurface
+                                                                    )
+                                                                )
+                                                                .build()
+                                                        )
+                                                    }
+
+                                                    if (!state.artist.isNullOrBlank()) {
+                                                        addContent(
+                                                            Box.Builder()
+                                                                .setWidth(
+                                                                    dp(
+                                                                        deviceConfiguration.getScreenWidthInDpFromPercentage(
+                                                                            if (deviceConfiguration.isLargeWidth()) {
+                                                                                71f
+                                                                            } else {
+                                                                                75f
+                                                                            }
+                                                                        )
+                                                                    )
+                                                                )
+                                                                .setHeight(dp(18f))
+                                                                .setHorizontalAlignment(
+                                                                    HORIZONTAL_ALIGN_CENTER
+                                                                )
+                                                                .addContent(
+                                                                    text(
+                                                                        text = state.artist.layoutString,
+                                                                        maxLines = 1,
+                                                                        alignment = TEXT_ALIGN_CENTER,
+                                                                        overflow = TEXT_OVERFLOW_MARQUEE,
+                                                                        typography = BODY_MEDIUM,
+                                                                        color = colorScheme.onSurface
+                                                                    )
+                                                                )
+                                                                .build()
+                                                        )
+                                                    }
+                                                }
+                                                .build()
+                                        )
+                                        .build()
+                                )
+                                .addContent(
+                                    Box.Builder()
+                                        .setWidth(expand())
+                                        .setHeight(
+                                            WrappedDimensionProp.Builder()
+                                                .apply {
+                                                    if (deviceParameters.isLargeHeight()) {
+                                                        setMinimumSize(dp(80f))
+                                                    } else {
+                                                        setMinimumSize(dp(64f))
+                                                    }
+                                                }
+                                                .build()
+                                        )
+                                        .addContent(
+                                            buttonGroup(
+                                                height = middleButtonSize(),
+                                                width = expand(),
+                                                spacing = 0f
+                                            ) {
+                                                buttonGroupItem {
+                                                    PlayerButton(action = PlayerAction.PREVIOUS)
+                                                }
+
+                                                buttonGroupItem {
+                                                    PlayPauseButton(state)
+                                                }
+
+                                                buttonGroupItem {
+                                                    PlayerButton(action = PlayerAction.NEXT)
+                                                }
+                                            }
+                                        )
+                                        .build()
+                                )
+                                .addContent(
+                                    Box.Builder()
+                                        .setWidth(expand())
+                                        .setHeight(weight(1f))
+                                        .addContent(SettingsButtonLayout(state))
+                                        .build()
+                                )
+                                .build()
+                        )
+                        .build()
                 )
-                    .build()
-            )
-            .build()
-    } else {
-        return Box.Builder()
+                .build()
+        }
+    }
+
+private fun MaterialScope.SettingsButtonLayout(
+    state: MediaPlayerTileState
+): LayoutElement {
+    return if (deviceConfiguration.screenShape == SCREEN_SHAPE_ROUND || deviceConfiguration.squareNotSupported()) {
+        val isLargeWidth = deviceConfiguration.isLargeWidth()
+        val horizontalSpacerPercentage = if (isLargeWidth) 11f else 14.5f
+
+        Box.Builder()
             .setWidth(expand())
             .setHeight(expand())
+            .setVerticalAlignment(VERTICAL_ALIGN_CENTER)
+            .setHorizontalAlignment(HORIZONTAL_ALIGN_CENTER)
             .addContent(
-                Image.Builder()
-                    .setResourceId(ID_ARTWORK)
+                Row.Builder()
                     .setWidth(expand())
                     .setHeight(expand())
-                    .setContentScaleMode(CONTENT_SCALE_MODE_FIT)
-                    .build()
-            )
-            .addContent(
-                Box.Builder()
-                    .setWidth(expand())
-                    .setHeight(expand())
+                    .setVerticalAlignment(VERTICAL_ALIGN_CENTER)
                     .setModifiers(
                         Modifiers.Builder()
-                            .setBackground(
-                                Background.Builder()
-                                    .setColor(
-                                        ColorProp.Builder(0xAA000000.toInt())
-                                            .build()
+                            .setPadding(
+                                padding(
+                                    bottom = deviceConfiguration.getScreenSizeInDpFromPercentage(
+                                        1.2f
                                     )
-                                    .build()
+                                )
                             )
                             .build()
                     )
                     .addContent(
-                        PrimaryLayout.Builder(deviceParameters)
-                            .setPrimaryLabelTextContent(
-                                Column.Builder()
-                                    .setWidth(expand())
-                                    .setHorizontalAlignment(HORIZONTAL_ALIGN_CENTER)
-                                    .apply {
-                                        val isRound =
-                                            deviceParameters.screenShape == SCREEN_SHAPE_ROUND
-
-                                        if (!state.title.isNullOrBlank()) {
-                                            addContent(
-                                                Text.Builder(context, state.title)
-                                                    .setTypography(Typography.TYPOGRAPHY_BUTTON)
-                                                    .setColor(
-                                                        ColorProp.Builder(Color.WHITE)
-                                                            .build()
-                                                    )
-                                                    .setMaxLines(1)
-                                                    .setMultilineAlignment(TEXT_ALIGN_CENTER)
-                                                    .setOverflow(TEXT_OVERFLOW_MARQUEE)
-                                                    .setModifiers(
-                                                        Modifiers.Builder()
-                                                            .setPadding(
-                                                                Padding.Builder()
-                                                                    .setTop(dp(2f))
-                                                                    .setBottom(dp(0.8f))
-                                                                    .setStart(
-                                                                        if (isRound) dp(32f) else dp(
-                                                                            8f
-                                                                        )
-                                                                    )
-                                                                    .setEnd(
-                                                                        if (isRound) dp(32f) else dp(
-                                                                            8f
-                                                                        )
-                                                                    )
-                                                                    .build()
-                                                            )
-                                                            .build()
-                                                    )
-                                                    .build()
-                                            )
-                                        }
-
-                                        if (!state.artist.isNullOrBlank()) {
-                                            addContent(
-                                                Text.Builder(context, state.artist)
-                                                    .setTypography(Typography.TYPOGRAPHY_BODY2)
-                                                    .setColor(
-                                                        ColorProp.Builder(Color.WHITE).build()
-                                                    )
-                                                    .setMaxLines(1)
-                                                    .setMultilineAlignment(TEXT_ALIGN_CENTER)
-                                                    .setOverflow(TEXT_OVERFLOW_MARQUEE)
-                                                    .setModifiers(
-                                                        Modifiers.Builder()
-                                                            .setPadding(
-                                                                Padding.Builder()
-                                                                    .setTop(dp(2f))
-                                                                    .setBottom(dp(0.6f))
-                                                                    .setStart(
-                                                                        if (isRound) dp(32f) else dp(
-                                                                            8f
-                                                                        )
-                                                                    )
-                                                                    .setEnd(
-                                                                        if (isRound) dp(32f) else dp(
-                                                                            8f
-                                                                        )
-                                                                    )
-                                                                    .build()
-                                                            )
-                                                            .build()
-                                                    )
-                                                    .build()
-                                            )
-                                        }
-                                    }
-                                    .build()
+                        Spacer.Builder()
+                            .setWidth(
+                                dp(
+                                    deviceConfiguration.getScreenWidthInDpFromPercentage(
+                                        horizontalSpacerPercentage
+                                    )
+                                )
                             )
-                            .setContent(
-                                MultiSlotLayout.Builder()
-                                    .addSlotContent(
-                                        PlayerButton(deviceParameters, PlayerAction.PREVIOUS)
+                            .build()
+                    )
+                    .addContent(VolumeButton(PlayerAction.VOL_DOWN))
+                    .addContent(BrandIcon(ID_APPICON))
+                    .addContent(VolumeButton(PlayerAction.VOL_UP))
+                    .addContent(
+                        Spacer.Builder()
+                            .setWidth(
+                                dp(
+                                    deviceConfiguration.getScreenWidthInDpFromPercentage(
+                                        horizontalSpacerPercentage
                                     )
-                                    .apply {
-                                        val playerButtonContent =
-                                            if (state.playbackState != PlaybackState.PLAYING) {
-                                            PlayerButton(deviceParameters, PlayerAction.PLAY)
-                                        } else {
-                                            PlayerButton(deviceParameters, PlayerAction.PAUSE)
-                                        }
-
-                                        addSlotContent(
-                                            if (deviceParameters.supportsDynamicValue() && state.positionState != null) {
-                                                val actualPercent =
-                                                    state.positionState.currentPositionMs.toFloat() / state.positionState.durationMs.toFloat()
-
-                                                Box.Builder()
-                                                    .setWidth(dp(56f))
-                                                    .setHeight(dp(56f))
-                                                    .setHorizontalAlignment(HORIZONTAL_ALIGN_CENTER)
-                                                    .setVerticalAlignment(VERTICAL_ALIGN_CENTER)
-                                                    .addContent(playerButtonContent)
-                                                    .addContent(
-                                                        CircularProgressIndicator.Builder()
-                                                            .setStartAngle(0f)
-                                                            .setEndAngle(360f)
-                                                            .setCircularProgressIndicatorColors(
-                                                                ProgressIndicatorColors(
-                                                                    Colors.DEFAULT.primary,
-                                                                    0x25FFFFFF.toInt()
-                                                                )
-                                                            )
-                                                            .setStrokeWidth(dp(3f))
-                                                            .setOuterMarginApplied(false)
-                                                            .setProgress(
-                                                                FloatProp.Builder(actualPercent)
-                                                                    .apply {
-                                                                        if (state.playbackState == PlaybackState.PLAYING) {
-                                                                            val durationFloat =
-                                                                                state.positionState.durationMs.toFloat() / 1000f
-
-                                                                            val positionFractional =
-                                                                                DynamicInstant.withSecondsPrecision(
-                                                                                    Instant.ofEpochMilli(
-                                                                                        state.positionState.currentTimeMs
-                                                                                    )
-                                                                                ).durationUntil(
-                                                                                    DynamicInstant.platformTimeWithSecondsPrecision()
-                                                                                )
-                                                                                    .toIntSeconds()
-                                                                                    .asFloat()
-                                                                                    .times(state.positionState.playbackSpeed)
-                                                                                    .plus(state.positionState.currentPositionMs.toFloat() / 1000f)
-
-                                                                            val predictedPercent =
-                                                                                DynamicFloat.onCondition(
-                                                                                    positionFractional.gt(
-                                                                                        durationFloat
-                                                                                    )
-                                                                                )
-                                                                                    .use(
-                                                                                        durationFloat
-                                                                                    )
-                                                                                    .elseUse(
-                                                                                        positionFractional
-                                                                                    )
-                                                                                    .div(
-                                                                                        durationFloat
-                                                                                    )
-
-                                                                            setDynamicValue(
-                                                                                DynamicFloat.onCondition(
-                                                                                    predictedPercent.gt(
-                                                                                        0f
-                                                                                    )
-                                                                                )
-                                                                                    .use(
-                                                                                        predictedPercent
-                                                                                    )
-                                                                                    .elseUse(0f)
-                                                                                    .animate()
-                                                                            )
-                                                                        }
-                                                                    }
-                                                                    .build()
-                                                            )
-                                                            .build()
-                                                    )
-                                                    .build()
-                                            } else {
-                                                playerButtonContent
-                                            }
-                                        )
-                                    }
-                                    .addSlotContent(
-                                        PlayerButton(deviceParameters, PlayerAction.NEXT)
-                                    )
-                                    .build()
+                                )
                             )
-                            .setPrimaryChipContent(
-                                Row.Builder()
-                                    .setWidth(wrap())
-                                    .setHeight(wrap())
-                                    .setVerticalAlignment(VERTICAL_ALIGN_CENTER)
-                                    .addContent(
-                                        VolumeButton(PlayerAction.VOL_DOWN)
-                                    )
-                                    .apply {
-                                        if (state.appIcon != null) {
-                                            addContent(
-                                                Spacer.Builder()
-                                                    .setWidth(dp(12f))
-                                                    .build()
-                                            )
-                                            addContent(
-                                                Image.Builder()
-                                                    .setResourceId(ID_APPICON)
-                                                    .setWidth(dp(24f))
-                                                    .setHeight(dp(24f))
-                                                    .setContentScaleMode(CONTENT_SCALE_MODE_FIT)
-                                                    .build()
-                                            )
-                                            addContent(
-                                                Spacer.Builder()
-                                                    .setWidth(dp(12f))
-                                                    .build()
-                                            )
-                                        } else {
-                                            addContent(
-                                                Spacer.Builder()
-                                                    .setWidth(dp(24f))
-                                                    .build()
-                                            )
-                                        }
-                                    }
-                                    .addContent(
-                                        VolumeButton(PlayerAction.VOL_UP)
-                                    )
-                                    .build()
-                            )
+                            .build()
+                    )
+                    .build()
+            )
+            .build()
+    } else {
+        Box.Builder()
+            .setWidth(expand())
+            .setHeight(expand())
+            .setVerticalAlignment(VERTICAL_ALIGN_CENTER)
+            .setHorizontalAlignment(HORIZONTAL_ALIGN_CENTER)
+            .addContent(
+                Row.Builder()
+                    .setWidth(expand())
+                    .setHeight(expand())
+                    .setVerticalAlignment(VERTICAL_ALIGN_CENTER)
+                    .addContent(
+                        Spacer.Builder()
+                            .setWidth(dp(deviceConfiguration.getScreenWidthInDpFromPercentage(11f)))
+                            .build()
+                    )
+                    .addContent(VolumeButton(PlayerAction.VOL_DOWN))
+                    .addContent(BrandIcon(ID_APPICON))
+                    .addContent(VolumeButton(PlayerAction.VOL_UP))
+                    .addContent(
+                        Spacer.Builder()
+                            .setWidth(dp(deviceConfiguration.getScreenWidthInDpFromPercentage(11f)))
                             .build()
                     )
                     .build()
@@ -438,118 +477,312 @@ internal fun MediaPlayerTileLayout(
     }
 }
 
-private fun PlayerButton(
-    deviceParameters: DeviceParameters,
+private fun MaterialScope.middleButtonSize(): DimensionBuilders.DpProp =
+    if (deviceConfiguration.isLargeHeight()) {
+        dp(80f)
+    } else {
+        dp(64f)
+    }
+
+private fun MaterialScope.getSideButtonsPadding(
+    isLeftButton: Boolean
+): Padding {
+    val isLargeScreen = deviceConfiguration.isLargeHeight()
+
+    val buttonGroupSpacingPct = if (isLargeScreen) {
+        3f
+    } else {
+        5.2f
+    }
+
+    val adj =
+        if (deviceConfiguration.screenShape == SCREEN_SHAPE_ROUND || deviceConfiguration.squareNotSupported()) {
+        0f
+    } else {
+        if (deviceConfiguration.isLargeWidth()) 2f else 4f
+    }
+
+    return padding(
+        start = max(
+            if (isLeftButton) {
+                deviceConfiguration.getScreenSizeInDpFromPercentage(7.1f)
+            } else {
+                deviceConfiguration.getScreenSizeInDpFromPercentage(buttonGroupSpacingPct)
+            } - adj,
+            0f
+        ),
+        end = max(
+            if (!isLeftButton) {
+                deviceConfiguration.getScreenSizeInDpFromPercentage(7.1f)
+            } else {
+                deviceConfiguration.getScreenSizeInDpFromPercentage(buttonGroupSpacingPct)
+            } - adj,
+            0f
+        ),
+        top = deviceConfiguration.getScreenSizeInDpFromPercentage(
+            if (isLargeScreen) {
+                5.2f
+            } else {
+                4.16f
+            }
+        ),
+        bottom = deviceConfiguration.getScreenSizeInDpFromPercentage(
+            if (isLargeScreen) {
+                5.2f
+            } else {
+                4.16f
+            }
+        ),
+        rtlAware = false
+    )
+}
+
+private fun DeviceParameters.getScreenSizeInDpFromPercentage(
+    percent: Float
+): Float {
+    return ceil(screenHeightDp * percent / 100f)
+}
+
+private fun DeviceParameters.getScreenWidthInDpFromPercentage(
+    percent: Float
+): Float {
+    return ceil(screenWidthDp * percent / 100f)
+}
+
+private fun MaterialScope.PlayerButton(
     action: PlayerAction
 ): LayoutElement {
-    val isPlayPause = action == PlayerAction.PAUSE || action == PlayerAction.PLAY
-    val size = dp(50f)
+    val buttonPadding = getSideButtonsPadding(
+        isLeftButton = action == PlayerAction.PREVIOUS
+    )
+
     return Box.Builder()
-        .setHeight(size)
-        .setWidth(size)
         .setModifiers(
             Modifiers.Builder()
-                .setBackground(
-                    Background.Builder()
-                        .setColor(
-                            ColorProp.Builder(
-                                if (isPlayPause) {
-                                    0x19FFFFFF
-                                } else {
-                                    Color.TRANSPARENT
-                                }
-                            ).build()
-                        )
-                        .setCorner(
-                            Corner.Builder()
-                                .setRadius(size)
-                                .build()
-                        )
-                        .build()
-                )
-                .setClickable(
-                    Clickable.Builder()
-                        .setId(action.name)
-                        .setOnClick(
-                            ActionBuilders.LoadAction.Builder()
-                                .build()
-                        )
-                        .build()
-                )
+                .setPadding(buttonPadding)
                 .build()
         )
-        .setHorizontalAlignment(HORIZONTAL_ALIGN_CENTER)
-        .setVerticalAlignment(VERTICAL_ALIGN_CENTER)
+        .setWidth(expand())
+        .setHeight(expand())
         .addContent(
-            Image.Builder()
-                .setWidth(dp(32f))
-                .setHeight(dp(32f))
-                .setResourceId(getResourceIdForPlayerAction(action))
-                .setContentScaleMode(CONTENT_SCALE_MODE_FIT)
-                .build()
+            iconButton(
+                onClick = clickable(id = action.name),
+                width = expand(),
+                height = expand(),
+                iconContent = {
+                    icon(getResourceIdForPlayerAction(action))
+                }
+            )
         )
         .build()
 }
 
-private fun VolumeButton(
-    action: PlayerAction
-): LayoutElement = Box.Builder()
-    .setHeight(dp(26f))
-    .setWidth(dp(26f))
-    .setModifiers(
-        Modifiers.Builder()
-            .setBackground(
-                Background.Builder()
-                    .setColor(
-                        ColorProp.Builder(Color.TRANSPARENT).build()
-                    )
-                    .setCorner(
-                        Corner.Builder()
-                            .setRadius(dp(26f))
-                            .build()
-                    )
-                    .build()
+private fun MaterialScope.PlayPauseButton(
+    state: MediaPlayerTileState
+): LayoutElement {
+    val middleButtonSize = middleButtonSize()
+
+    val action = if (state.playbackState != PlaybackState.PLAYING) {
+        PlayerAction.PLAY
+    } else {
+        PlayerAction.PAUSE
+    }
+
+    val contentSize = if (deviceConfiguration.isLargeHeight()) {
+        80f
+    } else {
+        64f
+    }
+
+    val playerButtonContent = Box.Builder()
+        .setModifiers(
+            Modifiers.Builder()
+                .build()
+        )
+        .addContent(
+            iconButton(
+                onClick = clickable(id = action.name),
+                width = dp(middleButtonSize.value - 14f),
+                height = dp(middleButtonSize.value - 14f),
+                iconContent = {
+                    icon(getResourceIdForPlayerAction(action))
+                }
             )
-            .setClickable(
-                Clickable.Builder()
-                    .setId(action.name)
-                    .setOnClick(
-                        ActionBuilders.LoadAction.Builder()
-                            .build()
+        )
+        .build()
+
+    return if (deviceConfiguration.supportsDynamicValue() && state.positionState != null) {
+        val actualPercent =
+            state.positionState.currentPositionMs.toFloat() / state.positionState.durationMs.toFloat()
+
+        Box.Builder()
+            .setWidth(WrappedDimensionProp.Builder().setMinimumSize(middleButtonSize).build())
+            .setHeight(WrappedDimensionProp.Builder().setMinimumSize(middleButtonSize).build())
+            .setHorizontalAlignment(HORIZONTAL_ALIGN_CENTER)
+            .setVerticalAlignment(VERTICAL_ALIGN_CENTER)
+            .addContent(playerButtonContent)
+            .addContent(
+                circularProgressIndicator(
+                    staticProgress = actualPercent,
+                    dynamicProgress = if (state.playbackState == PlaybackState.PLAYING) {
+                        val durationFloat =
+                            state.positionState.durationMs.toFloat() / 1000f
+
+                        val positionFractional =
+                            DynamicInstant.withSecondsPrecision(
+                                Instant.ofEpochMilli(
+                                    state.positionState.currentTimeMs
+                                )
+                            ).durationUntil(
+                                DynamicInstant.platformTimeWithSecondsPrecision()
+                            )
+                                .toIntSeconds()
+                                .asFloat()
+                                .times(state.positionState.playbackSpeed)
+                                .plus(state.positionState.currentPositionMs.toFloat() / 1000f)
+
+                        val predictedPercent =
+                            DynamicFloat.onCondition(
+                                positionFractional.gt(
+                                    durationFloat
+                                )
+                            )
+                                .use(
+                                    durationFloat
+                                )
+                                .elseUse(
+                                    positionFractional
+                                )
+                                .div(
+                                    durationFloat
+                                )
+
+                        DynamicFloat.onCondition(
+                            predictedPercent.gt(
+                                0f
+                            )
+                        )
+                            .use(
+                                predictedPercent
+                            )
+                            .elseUse(0f)
+                            .animate()
+                    } else {
+                        null
+                    },
+                    startAngleDegrees = 0f,
+                    endAngleDegrees = 360f,
+                    strokeWidth = 4f,
+                    colors = ProgressIndicatorColors(
+                        colorScheme.onSecondaryContainer,
+                        colorScheme.outline
                     )
-                    .build()
+                )
             )
             .build()
-    )
+    } else {
+        playerButtonContent
+    }
+}
+
+private fun MaterialScope.VolumeButton(
+    action: PlayerAction
+): LayoutElement = Box.Builder()
+    .setWidth(weight(1f))
+    .setHeight(expand())
     .setHorizontalAlignment(HORIZONTAL_ALIGN_CENTER)
-    .setVerticalAlignment(VERTICAL_ALIGN_CENTER)
+    .setVerticalAlignment(
+        if (deviceConfiguration.screenShape == SCREEN_SHAPE_ROUND || deviceConfiguration.squareNotSupported()) {
+            VERTICAL_ALIGN_TOP
+        } else {
+            VERTICAL_ALIGN_CENTER
+        }
+    )
     .addContent(
-        Image.Builder()
-            .setWidth(dp(26f))
-            .setHeight(dp(26f))
-            .setResourceId(getResourceIdForPlayerAction(action))
-            .setContentScaleMode(CONTENT_SCALE_MODE_FIT)
+        Box.Builder()
+            .setWidth(getSettingsIconWidth())
+            .setHeight(getSettingsIconHeight())
+            .setModifiers(
+                Modifiers.Builder()
+                    .setBackground(
+                        Background.Builder()
+                            .setColor(
+                                ColorProp.Builder(
+                                    ColorUtils.setAlphaComponent(
+                                        colorScheme.onSurface.staticArgb,
+                                        (0xFF * 0.24f).toInt()
+                                    )
+                                ).build()
+                            )
+                            .setCorner(
+                                Corner.Builder()
+                                    .setRadius(dp(22f))
+                                    .build()
+                            )
+                            .build()
+                    )
+                    .setClickable(
+                        Clickable.Builder()
+                            .setId(action.name)
+                            .setOnClick(
+                                ActionBuilders.LoadAction.Builder()
+                                    .build()
+                            )
+                            .build()
+                    )
+                    .build()
+            )
+            .addContent(
+                icon(
+                    protoLayoutResourceId = getResourceIdForPlayerAction(action),
+                    width = dp(20f),
+                    height = dp(20f),
+                    tintColor = colorScheme.onSurface
+                )
+            )
             .build()
     )
     .build()
 
-private fun IconButton(
-    context: Context,
-    resourceId: String,
-    contentDescription: String = "",
-    clickable: Clickable = Clickable.Builder().build(),
-    size: DimensionBuilders.DpProp? = CIRCLE_SIZE,
-    iconSize: DimensionBuilders.DpProp = ICON_SIZE
-) = Button.Builder(context, clickable)
-    .setContentDescription(contentDescription)
-    .setButtonColors(ButtonColors.primaryButtonColors(COLORS))
-    .setIconContent(resourceId, iconSize)
+private fun MaterialScope.BrandIcon(
+    resourceId: String
+): LayoutElement = Box.Builder()
+    .setWidth(weight(1f))
+    .setHeight(expand())
     .apply {
-        if (size != null) {
-            setSize(size)
+        if (deviceConfiguration.screenShape == SCREEN_SHAPE_ROUND || deviceConfiguration.squareNotSupported()) {
+            setModifiers(
+                Modifiers.Builder()
+                    .setPadding(padding(bottom = deviceConfiguration.screenHeightDp * 0.03f))
+                    .build()
+            )
+            setVerticalAlignment(VERTICAL_ALIGN_BOTTOM)
         }
     }
+    .addContent(
+        icon(
+            protoLayoutResourceId = resourceId,
+            width = getSettingsIconHeight(),
+            height = getSettingsIconHeight()
+        )
+    )
     .build()
+
+private fun MaterialScope.getSettingsIconHeight(): DimensionBuilders.DpProp {
+    return if (!deviceConfiguration.isSmallWatch()) {
+        dp(32f)
+    } else {
+        dp(24f)
+    }
+}
+
+private fun MaterialScope.getSettingsIconWidth(): DimensionBuilders.DpProp {
+    return if (!deviceConfiguration.isSmallWatch()) {
+        dp(40f)
+    } else {
+        dp(32f)
+    }
+}
 
 private fun getResourceIdForPlayerAction(action: PlayerAction): String {
     return when (action) {
@@ -562,7 +795,7 @@ private fun getResourceIdForPlayerAction(action: PlayerAction): String {
     }
 }
 
-@WearTilePreviewDevices
+@WearPreviewDevices
 private fun MediaPlayerTilePreview(context: Context): TilePreviewData {
     val state = MediaPlayerTileState(
         connectionStatus = WearConnectionStatus.CONNECTED,
@@ -570,8 +803,9 @@ private fun MediaPlayerTilePreview(context: Context): TilePreviewData {
         artist = "Artist",
         playbackState = PlaybackState.PAUSED,
         audioStreamState = AudioStreamState(3, 0, 5, AudioStreamType.MUSIC),
+        positionState = PositionState(100, 50),
         artwork = runBlocking {
-            ContextCompat.getDrawable(context, R.drawable.ws_full_sad)?.toBitmapOrNull()
+            ContextCompat.getDrawable(context, R.drawable.sample_image)?.toBitmapOrNull()
                 ?.toByteArray()
         },
         appIcon = runBlocking {
@@ -580,10 +814,51 @@ private fun MediaPlayerTilePreview(context: Context): TilePreviewData {
                 ?.toByteArray()
         }
     )
-    val renderer = MediaPlayerTileRenderer(context, debugResourceMode = true)
 
-    return TilePreviewData(
-        onTileRequest = { renderer.renderTimeline(state, it) },
-        onTileResourceRequest = { renderer.produceRequestedResources(state, it) }
+    return tileRendererPreviewData(
+        renderer = MediaPlayerTileRenderer(context, debugResourceMode = true),
+        tileState = state,
+        resourceState = state
+    )
+}
+
+@WearPreviewDevices
+private fun MediaPlayerEmptyTilePreview(context: Context): TilePreviewData {
+    val state = MediaPlayerTileState(
+        connectionStatus = WearConnectionStatus.DISCONNECTED,
+        title = null,
+        artist = null,
+        playbackState = null,
+        audioStreamState = null,
+        artwork = null
+    )
+
+    return tileRendererPreviewData(
+        renderer = MediaPlayerTileRenderer(context, debugResourceMode = true),
+        tileState = state,
+        resourceState = state
+    )
+}
+
+@WearPreviewDevices
+private fun MediaPlayerNotPlayingTilePreview(context: Context): TilePreviewData {
+    val state = MediaPlayerTileState(
+        connectionStatus = WearConnectionStatus.CONNECTED,
+        title = null,
+        artist = null,
+        playbackState = PlaybackState.NONE,
+        audioStreamState = AudioStreamState(3, 0, 5, AudioStreamType.MUSIC),
+        artwork = null,
+        appIcon = runBlocking {
+            ContextCompat.getDrawable(context, R.drawable.ic_play_circle_simpleblue)
+                ?.toBitmapOrNull()
+                ?.toByteArray()
+        }
+    )
+
+    return tileRendererPreviewData(
+        renderer = MediaPlayerTileRenderer(context, debugResourceMode = true),
+        tileState = state,
+        resourceState = state,
     )
 }

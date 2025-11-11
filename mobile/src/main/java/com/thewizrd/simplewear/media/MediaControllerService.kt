@@ -34,6 +34,7 @@ import android.util.Log
 import android.util.TypedValue
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
+import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.graphics.scale
@@ -187,7 +188,7 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
 
     private fun createForegroundNotification(context: Context): Notification {
         val notif = NotificationCompat.Builder(context, NOT_CHANNEL_ID).apply {
-            setSmallIcon(R.drawable.ic_baseline_music_note_24)
+            setSmallIcon(R.drawable.ic_music_note_white_24dp)
             setContentTitle(context.getString(R.string.not_title_mediacontroller_running))
             setOnlyAlertOnce(true)
             setSilent(true)
@@ -270,18 +271,18 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
                 val isAutoLaunch = intent.getBooleanExtra(EXTRA_AUTOLAUNCH, false)
                 val isSoftLaunch = intent.getBooleanExtra(EXTRA_SOFTLAUNCH, false)
 
-                scope.launch {
-                    if ((isAutoLaunch || selectedPackageName == mSelectedMediaApp?.packageName) && mController != null) return@launch
-
-                    if (!selectedPackageName.isNullOrBlank()) {
-                        mSelectedMediaApp = mAvailableMediaApps.find {
-                            it.packageName == selectedPackageName
+                if (!(isAutoLaunch && mController != null && mSelectedMediaApp?.packageName != mController?.packageName) && !(selectedPackageName != null && selectedPackageName == mSelectedMediaApp?.packageName && mController?.packageName == selectedPackageName)) {
+                    scope.launch {
+                        if (!selectedPackageName.isNullOrBlank()) {
+                            mSelectedMediaApp = mAvailableMediaApps.find {
+                                it.packageName == selectedPackageName
+                            }
+                            mSelectedPackageName = mSelectedMediaApp?.packageName
+                            connectMediaSession(isSoftLaunch)
+                        } else {
+                            mSelectedPackageName = null
+                            findActiveMediaSession()
                         }
-                        mSelectedPackageName = mSelectedMediaApp?.packageName
-                        connectMediaSession(isSoftLaunch)
-                    } else {
-                        mSelectedPackageName = null
-                        findActiveMediaSession()
                     }
                 }
             }
@@ -311,7 +312,7 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
 
         disconnectMedia(invalidateData = true)
 
-        stopForeground(true)
+        ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
         scope.cancel()
         super.onDestroy()
     }
@@ -375,8 +376,7 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
                 // Check if active session has changed
                 if (mSelectedPackageName == null) {
                     // If so reset
-                    disconnectMedia(invalidateData = true)
-                    mSelectedPackageName = firstActiveCtrlr.packageName
+                    mSelectedPackageName = null
                     mSelectedMediaApp = null
                 }
             }
@@ -390,8 +390,11 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
                     activeSessions, packageManager, resources
                 )
 
-            val activeMediaApp =
+            val activeMediaApp = if (mSelectedPackageName != null) {
                 actionSessionDetails.find { it.packageName == mSelectedPackageName }
+            } else {
+                actionSessionDetails.find { it.packageName == firstActiveCtrlr?.packageName }
+            }
 
             if (activeMediaApp?.sessionToken != null || mBrowser?.isConnected == true) {
                 if (activeMediaApp != null) mSelectedMediaApp = activeMediaApp
@@ -422,7 +425,7 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
 
             if (!isActive) return@launch
 
-            if (!mediaBrowserServices.isNullOrEmpty()) {
+            if (mediaBrowserServices.isNotEmpty()) {
                 mediaBrowserServices.forEach { s ->
                     mAvailableMediaApps.add(
                         MediaAppDetails(
@@ -435,7 +438,7 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
             }
 
             if (!mSelectedPackageName.isNullOrBlank()) {
-                mAvailableMediaApps.find {
+                mSelectedMediaApp = mAvailableMediaApps.find {
                     it.packageName == mSelectedPackageName
                 }
 
@@ -621,7 +624,11 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
 
         private fun onUpdateQueue() {
             mController?.let {
-                mQueueItemsAdapter.setQueueItems(it, it.queue)
+                val queueItems = runCatching {
+                    it.queue
+                }.getOrDefault(emptyList())
+
+                mQueueItemsAdapter.setQueueItems(it, queueItems)
             } ?: run {
                 Logger.error(TAG, "Failed to update queue info, null MediaController.")
                 mQueueItemsAdapter.clear()
@@ -631,7 +638,7 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
 
     private fun sendControllerUnavailable() {
         scope.launch {
-            sendMediaPlayerState()
+            disconnectMedia(invalidateData = true)
         }
     }
 
@@ -1070,7 +1077,7 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
                     runCatching {
                         val iconDrawable = ContextCompat.getDrawable(
                             applicationContext,
-                            R.drawable.ic_baseline_play_circle_filled_24
+                            R.drawable.ic_play_circle_filled_white_24dp
                         )
                         actions.add(
                             ActionItem(
@@ -1198,7 +1205,7 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
 
                 if (!isActive) return@launch
 
-                if (mNodes.size == 0 || mItems.isNullOrEmpty()) {
+                if (mNodes.isEmpty() || mItems.isNullOrEmpty()) {
                     // Remove all items (datamap)
                     sendDataByChannel(itemNodePath, null, BrowseMediaItems::class.java)
                     return@launch
@@ -1206,10 +1213,13 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
 
                 // Send media items to datamap
                 val mediaItems = mItems?.map {
+                    val size = dpToPx(48f).toInt()
+
                     MediaItem(
                         mediaId = it.mediaId ?: "",
                         title = it.description.title.toString(),
-                        icon = it.description.iconBitmap?.toByteArray()
+                        subTitle = it.description.subtitle?.toString(),
+                        icon = it.description.iconBitmap?.scale(size, size)?.toByteArray()
                     )
                 }
 
@@ -1274,7 +1284,7 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
         }
 
         protected open fun unsubscribe() {
-            if (mNodes.size > 0) {
+            if (mNodes.isNotEmpty()) {
                 mBrowser!!.unsubscribe(mNodes.peek(), callback)
             }
             updateItems(null)
@@ -1318,10 +1328,13 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
 
                 // Send action items to datamap
                 val queueItems = mQueueItems.map {
+                    val size = dpToPx(48f).toInt()
+
                     QueueItem(
                         queueId = it.queueId,
                         title = it.description.title.toString(),
-                        icon = it.description.iconBitmap?.toByteArray()
+                        subTitle = it.description.subtitle?.toString(),
+                        icon = it.description.iconBitmap?.scale(size, size)?.toByteArray()
                     )
                 }
 

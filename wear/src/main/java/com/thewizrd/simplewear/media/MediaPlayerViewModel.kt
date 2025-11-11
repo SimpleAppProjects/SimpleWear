@@ -86,6 +86,8 @@ data class PlayerState(
     val positionState: PositionState? = null
 ) {
     fun isEmpty(): Boolean = title.isNullOrEmpty() && artist.isNullOrEmpty()
+
+    val key = "${title}|${artist}"
 }
 
 data class MediaPagerState(
@@ -441,7 +443,7 @@ class MediaPlayerViewModel(app: Application) : WearableListenerViewModel(app) {
                 sendMessage(
                     mPhoneNodeWithApp!!.id,
                     MediaHelper.MediaPlayerConnectPath,
-                    if (state.isAutoLaunch) state.isAutoLaunch.booleanToBytes() else state.mediaPlayerDetails.packageName?.stringToBytes()
+                    if (state.isAutoLaunch) true.booleanToBytes() else state.mediaPlayerDetails.packageName?.stringToBytes()
                 )
             }
         }
@@ -646,6 +648,7 @@ class MediaPlayerViewModel(app: Application) : WearableListenerViewModel(app) {
             MediaItemModel(item.queueId.toString()).apply {
                 this.icon = item.icon?.toBitmap()
                 this.title = item.title
+                this.subTitle = item.subTitle
             }
         }
 

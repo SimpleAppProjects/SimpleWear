@@ -3,7 +3,7 @@ package com.thewizrd.simplewear.viewmodels
 import androidx.annotation.DrawableRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.wear.compose.material.dialog.DialogDefaults
+import androidx.wear.compose.material3.ConfirmationDialogDefaults
 import com.thewizrd.simplewear.R
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -30,7 +30,8 @@ class ConfirmationViewModel : ViewModel() {
         _confirmationEventsFlow.update {
             ConfirmationData(
                 animatedVectorResId = R.drawable.confirmation_animation,
-                title = message
+                confirmationType = ConfirmationType.Success,
+                message = message
             )
         }
     }
@@ -39,7 +40,8 @@ class ConfirmationViewModel : ViewModel() {
         _confirmationEventsFlow.update {
             ConfirmationData(
                 animatedVectorResId = R.drawable.failure_animation,
-                title = message
+                confirmationType = ConfirmationType.Failure,
+                message = message
             )
         }
     }
@@ -48,7 +50,18 @@ class ConfirmationViewModel : ViewModel() {
         _confirmationEventsFlow.update {
             ConfirmationData(
                 animatedVectorResId = R.drawable.open_on_phone_animation,
-                title = message
+                confirmationType = ConfirmationType.OpenOnPhone,
+                message = message
+            )
+        }
+    }
+
+    fun showOpenOnPhoneForFailure(message: String? = null) {
+        _confirmationEventsFlow.update {
+            ConfirmationData(
+                animatedVectorResId = R.drawable.open_on_phone_animation,
+                confirmationType = ConfirmationType.Custom,
+                message = message
             )
         }
     }
@@ -59,8 +72,13 @@ class ConfirmationViewModel : ViewModel() {
 }
 
 data class ConfirmationData(
-    val title: String? = null,
-    @DrawableRes val iconResId: Int? = R.drawable.ws_full_sad,
+    val message: String? = null,
+    @DrawableRes val iconResId: Int? = null,
     @DrawableRes val animatedVectorResId: Int? = null,
-    val durationMs: Long = DialogDefaults.ShortDurationMillis
+    val confirmationType: ConfirmationType = ConfirmationType.Custom,
+    val durationMs: Long = ConfirmationDialogDefaults.DurationMillis
 )
+
+enum class ConfirmationType {
+    Success, Failure, OpenOnPhone, Custom
+}

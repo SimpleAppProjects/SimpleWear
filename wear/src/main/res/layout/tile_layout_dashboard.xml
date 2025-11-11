@@ -131,7 +131,7 @@
                 android:foreground="?android:selectableItemBackgroundBorderless"
                 android:padding="@dimen/tile_action_button_padding"
                 android:scaleType="fitCenter"
-                tools:src="@drawable/ic_lock_outline_white_24dp" />
+                tools:src="@drawable/ic_lock_white_24dp" />
 
         </FrameLayout>
 

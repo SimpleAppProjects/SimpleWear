@@ -23,7 +23,7 @@ data class DashboardTileState(
 
     fun isActionEnabled(action: Actions): Boolean {
         return when (action) {
-            Actions.WIFI, Actions.BLUETOOTH, Actions.MOBILEDATA, Actions.TORCH, Actions.HOTSPOT -> {
+            Actions.WIFI, Actions.BLUETOOTH, Actions.MOBILEDATA, Actions.TORCH, Actions.HOTSPOT, Actions.NFC, Actions.BATTERYSAVER -> {
                 (getAction(action) as? ToggleAction)?.isEnabled == true
             }
 

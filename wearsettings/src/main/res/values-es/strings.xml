@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="permission_title_bgopts">"Permitir acceso en segundo plano"</string>
+    <string name="message_bgopts_disabled">"Necesario para ejecutar las acciones correctamente en segundo plano"</string>
+    <string name="message_bgopts_enabled">"Acceso en segundo plano habilitado"</string>
+    <string name="permission_title_securesettings">"Establecer ajustes seguros"</string>
+    <string name="message_securesettings_disabled">"Necesario para establecer ajustes de NFC, datos móviles y ubicación"</string>
+    <string name="message_securesettings_enabled">"Acceso a ajustes habilitado"</string>
+    <string name="permission_title_rootaccess">"Habilitar acceso Root"</string>
+    <string name="message_rootaccess_disabled">"Acceso Root deshabilitado"</string>
+    <string name="message_rootaccess_enabled">"Acceso Root habilitado"</string>
+    <string name="pref_title_showlauncher">"Mostrar icono de la aplicación"</string>
+    <string name="pref_summary_showlauncher">"Mostrar el icono de la aplicación en el lanzador"</string>
+    <string name="permission_title_shizuku">"Shizuku"</string>
+    <string name="message_shizuku_disabled">"Permiso Shizuku desactivado"</string>
+    <string name="message_shizuku_not_installed">"Shizuku no está instalado"</string>
+    <string name="message_shizuku_not_running">"El servicio Shizuku no se está ejecutando"</string>
+    <string name="message_shizuku_running">"Servicio Shizuku activado"</string>
+    <string name="message_shizuku_alert">"Shizuku puede usarse como una opción para otorgar permisos de sistema a SimpleWear en dispositivos sin acceso root. Dado que esta es una aplicación de terceros, úsela bajo su propia responsabilidad. Tenga en cuenta que el servicio Shizuku deberá reiniciarse manualmente cada vez que se inicie el dispositivo."</string>
+</resources>

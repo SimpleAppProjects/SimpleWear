@@ -9,7 +9,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
-import android.content.pm.ResolveInfo
 import android.graphics.Bitmap
 import android.os.Build
 import android.os.Bundle
@@ -267,29 +266,32 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
     }
 
     suspend fun sendSupportedMusicPlayers(nodeID: String) {
-        val mediaBrowserInfos = mContext.packageManager.queryIntentServices(
+        val appInfos = mutableListOf<ApplicationInfo>()
+
+        mContext.packageManager.queryIntentServices(
             Intent(MediaBrowserServiceCompat.SERVICE_INTERFACE),
             PackageManager.GET_RESOLVED_FILTER
-        )
+        ).mapTo(appInfos) { it.serviceInfo.applicationInfo }
 
         val activeSessions = MediaAppControllerUtils.getActiveMediaSessions(
             mContext,
             NotificationListener.getComponentName(mContext)
         )
-        val activeMediaInfos = MediaAppControllerUtils.getMediaAppsFromControllers(
+        MediaAppControllerUtils.getMediaAppsFromControllers(
             mContext,
             activeSessions
-        )
+        ).run { appInfos.addAll(this) }
+
         val activeController =
             activeSessions.firstOrNull { it.playbackState?.isPlaybackStateActive() == true }
 
         // Sort result
         Collections.sort(
-            mediaBrowserInfos,
-            ResolveInfo.DisplayNameComparator(mContext.packageManager)
+            appInfos,
+            ApplicationInfo.DisplayNameComparator(mContext.packageManager)
         )
 
-        val supportedPlayers = ArrayList<String>(mediaBrowserInfos.size)
+        val supportedPlayers = ArrayList<String>(appInfos.size)
         val musicPlayers = mutableSetOf<AppItemData>()
         var activePlayerKey: String? = null
 
@@ -333,12 +335,7 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
             }
         }
 
-        for (info in mediaBrowserInfos) {
-            val appInfo = info.serviceInfo.applicationInfo
-            addPlayerInfo(appInfo)
-        }
-
-        for (info in activeMediaInfos) {
+        for (info in appInfos) {
             addPlayerInfo(info)
         }
 
@@ -686,6 +683,24 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
                 )
             }
 
+            Actions.NFC -> {
+                action = ToggleAction(act, PhoneStatusHelper.isNfcEnabled(mContext))
+                sendMessage(
+                    nodeID,
+                    WearableHelper.ActionsPath,
+                    JSONParser.serializer(action, Action::class.java).stringToBytes()
+                )
+            }
+
+            Actions.BATTERYSAVER -> {
+                action = ToggleAction(act, PhoneStatusHelper.isBatterySaverEnabled(mContext))
+                sendMessage(
+                    nodeID,
+                    WearableHelper.ActionsPath,
+                    JSONParser.serializer(action, Action::class.java).stringToBytes()
+                )
+            }
+
             else -> {}
         }
     }
@@ -868,11 +883,59 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
             Actions.DONOTDISTURB -> {
                 if (action is MultiChoiceAction) {
                     mA = action
-                    mA.setActionSuccessful(PhoneStatusHelper.setDNDState(mContext, DNDChoice.valueOf(mA.choice)))
+                    /**
+                     * Starting with Vanilla, calls to change DND state could be ignored if we have no companion associations
+                     * If so call companion settings app or else continue as usual
+                     */
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM && !PhoneStatusHelper.companionDeviceAssociated(
+                            mContext
+                        ) && WearSettingsHelper.isWearSettingsInstalled()
+                    ) {
+                        val status = performRemoteAction(action)
+                        if (status == ActionStatus.REMOTE_FAILURE ||
+                            status == ActionStatus.REMOTE_PERMISSION_DENIED
+                        ) {
+                            mA.setActionSuccessful(
+                                PhoneStatusHelper.setDNDState(
+                                    mContext,
+                                    DNDChoice.valueOf(mA.choice)
+                                )
+                            )
+                        }
+                    } else {
+                        mA.setActionSuccessful(
+                            PhoneStatusHelper.setDNDState(
+                                mContext,
+                                DNDChoice.valueOf(mA.choice)
+                            )
+                        )
+                    }
                     sendMessage(nodeID, WearableHelper.ActionsPath, JSONParser.serializer(mA, Action::class.java).stringToBytes())
                 } else if (action is ToggleAction) {
                     tA = action
-                    tA.setActionSuccessful(PhoneStatusHelper.setDNDState(mContext, tA.isEnabled))
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM && !PhoneStatusHelper.companionDeviceAssociated(
+                            mContext
+                        ) && WearSettingsHelper.isWearSettingsInstalled()
+                    ) {
+                        val status = performRemoteAction(action)
+                        if (status == ActionStatus.REMOTE_FAILURE ||
+                            status == ActionStatus.REMOTE_PERMISSION_DENIED
+                        ) {
+                            tA.setActionSuccessful(
+                                PhoneStatusHelper.setDNDState(
+                                    mContext,
+                                    tA.isEnabled
+                                )
+                            )
+                        }
+                    } else {
+                        tA.setActionSuccessful(
+                            PhoneStatusHelper.setDNDState(
+                                mContext,
+                                tA.isEnabled
+                            )
+                        )
+                    }
                     sendMessage(
                         nodeID,
                         WearableHelper.ActionsPath,
@@ -909,30 +972,50 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
 
             Actions.HOTSPOT -> {
                 tA = action as ToggleAction
-                if (WearSettingsHelper.isWearSettingsInstalled()) {
-                    val status = performRemoteAction(action)
-                    if (status == ActionStatus.REMOTE_FAILURE ||
-                        status == ActionStatus.REMOTE_PERMISSION_DENIED
-                    ) {
-                        tA.setActionSuccessful(
-                            PhoneStatusHelper.setWifiApEnabled(
-                                mContext,
-                                tA.isEnabled
-                            )
-                        )
+                /* As of Android 15 (SDK 35) QPR2 Hotspot toggle doesn't work w/o root */
+                if (Build.VERSION.SDK_INT_FULL >= (Build.VERSION_CODES_FULL.VANILLA_ICE_CREAM + 2)) {
+                    if (WearSettingsHelper.isWearSettingsInstalled()) {
+                        val status = performRemoteAction(action)
+                        if (status == ActionStatus.REMOTE_FAILURE ||
+                            status == ActionStatus.REMOTE_PERMISSION_DENIED
+                        ) {
+                            tA.setActionSuccessful(status)
+                            WearSettingsHelper.launchWearSettings()
+                        }
+                    } else {
+                        tA.setActionSuccessful(PhoneStatusHelper.openWirelessSettings(mContext))
+                        tA.isEnabled = PhoneStatusHelper.isWifiApEnabled(mContext)
                     }
                 } else {
-                    tA.setActionSuccessful(
-                        PhoneStatusHelper.setWifiApEnabled(
-                            mContext,
-                            tA.isEnabled
+                    if (WearSettingsHelper.isWearSettingsInstalled()) {
+                        val status = performRemoteAction(action)
+                        if (status == ActionStatus.REMOTE_FAILURE ||
+                            status == ActionStatus.REMOTE_PERMISSION_DENIED
+                        ) {
+                            tA.setActionSuccessful(
+                                PhoneStatusHelper.setWifiApEnabled(mContext, tA.isEnabled)
+                            )
+                        }
+                    } else {
+                        tA.setActionSuccessful(
+                            PhoneStatusHelper.setWifiApEnabled(mContext, tA.isEnabled)
                         )
-                    )
+                    }
                 }
                 sendMessage(
                     nodeID,
                     WearableHelper.ActionsPath,
                     JSONParser.serializer(tA, Action::class.java).stringToBytes()
+                )
+            }
+
+            Actions.SLEEPTIMER -> {
+                nA = action as NormalAction
+                nA.setActionSuccessful(PhoneStatusHelper.sendPauseMusicCommand(mContext))
+                sendMessage(
+                    nodeID,
+                    WearableHelper.ActionsPath,
+                    JSONParser.serializer(nA, Action::class.java).stringToBytes()
                 )
             }
 
@@ -954,6 +1037,53 @@ class WearableManager(private val mContext: Context) : OnCapabilityChangedListen
                     nodeID,
                     WearableHelper.ActionsPath,
                     JSONParser.serializer(timedAction, Action::class.java).stringToBytes()
+                )
+            }
+
+            Actions.NFC -> {
+                tA = action as ToggleAction
+                if (WearSettingsHelper.isWearSettingsInstalled()) {
+                    val status = performRemoteAction(action)
+
+                    if (status == ActionStatus.REMOTE_FAILURE ||
+                        status == ActionStatus.REMOTE_PERMISSION_DENIED
+                    ) {
+                        tA.setActionSuccessful(status)
+                        WearSettingsHelper.launchWearSettings()
+                    }
+                } else {
+                    tA.setActionSuccessful(PhoneStatusHelper.setNfcEnabled(mContext, tA.isEnabled))
+                }
+                sendMessage(
+                    nodeID,
+                    WearableHelper.ActionsPath,
+                    JSONParser.serializer(tA, Action::class.java).stringToBytes()
+                )
+            }
+
+            Actions.BATTERYSAVER -> {
+                tA = action as ToggleAction
+                if (WearSettingsHelper.isWearSettingsInstalled()) {
+                    val status = performRemoteAction(action)
+
+                    if (status == ActionStatus.REMOTE_FAILURE ||
+                        status == ActionStatus.REMOTE_PERMISSION_DENIED
+                    ) {
+                        tA.setActionSuccessful(status)
+                        WearSettingsHelper.launchWearSettings()
+                    }
+                } else {
+                    tA.setActionSuccessful(
+                        PhoneStatusHelper.setBatterySaverEnabled(
+                            mContext,
+                            tA.isEnabled
+                        )
+                    )
+                }
+                sendMessage(
+                    nodeID,
+                    WearableHelper.ActionsPath,
+                    JSONParser.serializer(tA, Action::class.java).stringToBytes()
                 )
             }
 

@@ -1,587 +1,510 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/scrollView"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:fillViewport="true"
-    android:scrollbars="vertical"
+    android:background="?colorSurfaceContainer"
     tools:context=".PermissionCheckFragment"
-    tools:background="@color/design_default_color_surface"
-    tools:theme="@style/Theme.Material3.DayNight.NoActionBar">
+    tools:theme="@style/Theme.Material3Expressive.DayNight.NoActionBar">
 
-    <LinearLayout
+    <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/app_bar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:background="?colorSurfaceContainer"
+        android:fitsSystemWindows="true"
+        app:expanded="false"
+        app:liftOnScroll="false"
+        app:liftOnScrollTargetViewId="@id/scrollView"
+        tools:expanded="true"
+        tools:stateListAnimator="@null">
+
+        <com.google.android.material.appbar.CollapsingToolbarLayout
+            android:id="@+id/collapsing_toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/collapsingToolbarLayoutLargeSize"
+            app:layout_scrollFlags="scroll|exitUntilCollapsed|snap"
+            app:collapsedTitleTextAppearance="?textAppearanceTitleLargeEmphasized"
+            app:collapsedSubtitleTextAppearance="?textAppearanceTitleSmall"
+            app:expandedTitleTextAppearance="?textAppearanceDisplaySmallEmphasized"
+            app:expandedSubtitleTextAppearance="?textAppearanceTitleMedium"
+            style="?collapsingToolbarLayoutLargeStyle"
+            app:titleCollapseMode="scale"
+            app:expandedTitleMarginStart="24dp"
+            app:expandedTitleMarginBottom="32dp"
+            app:titleMaxLines="2">
+
+            <com.google.android.material.appbar.MaterialToolbar
+                android:id="@+id/toolbar"
+                android:layout_width="match_parent"
+                android:layout_height="?actionBarSize"
+                android:elevation="0dp"
+                app:layout_collapseMode="pin"
+                app:menu="@menu/actions"
+                app:title="@string/app_name" />
+
+        </com.google.android.material.appbar.CollapsingToolbarLayout>
+
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/scrollView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true"
+        android:scrollbars="vertical"
+        app:layout_behavior="com.google.android.material.appbar.AppBarLayout$ScrollingViewBehavior">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:paddingStart="16dp">
+            android:orientation="vertical">
 
-            <TextView
-                android:id="@+id/perms_cat_title"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_gravity="start"
-                android:layout_marginTop="16dp"
-                android:paddingStart="0dp"
-                android:paddingEnd="?android:attr/listPreferredItemPaddingRight"
-                android:text="@string/cat_title_permissions"
-                android:textAlignment="viewStart"
-                android:textAppearance="?textAppearanceBodyMedium"
-                android:textColor="?attr/colorPrimary" />
+                android:orientation="vertical"
+                style="@style/Permissions.Preference.Category.Expressive">
 
-        </LinearLayout>
+                <TextView
+                    android:id="@+id/perms_cat_title"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    style="@style/Permissions.Preference.Category.Title.Expressive"
+                    android:text="@string/cat_title_permissions" />
 
-        <RelativeLayout
-            android:id="@+id/notif_pref"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:minHeight="64dp"
-            android:padding="16dp"
-            android:background="?selectableItemBackground"
-            android:visibility="gone"
-            tools:visibility="visible">
+            </LinearLayout>
 
-            <TextView
-                android:id="@+id/notif_pref_title"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentStart="true"
-                android:layout_alignParentTop="true"
-                android:ellipsize="marquee"
-                android:fadingEdge="horizontal"
-                android:singleLine="true"
-                android:text="@string/permission_title_notifications"
-                android:textAppearance="?textAppearanceTitleMedium"
-                android:textSize="18sp" />
-
-            <TextView
-                android:id="@+id/notif_pref_summary"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_below="@+id/notif_pref_title"
-                android:layout_alignStart="@+id/notif_pref_title"
-                android:maxLines="4"
-                android:textAppearance="?android:textAppearanceSmall"
-                tools:text="@string/permission_notifications_disabled" />
-
-        </RelativeLayout>
-
-        <RelativeLayout
-            android:id="@+id/torch_pref"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:minHeight="64dp"
-            android:padding="16dp"
-            android:background="?selectableItemBackground">
-
-            <TextView
-                android:id="@+id/torch_pref_title"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentStart="true"
-                android:layout_alignParentTop="true"
-                android:ellipsize="marquee"
-                android:fadingEdge="horizontal"
-                android:singleLine="true"
-                android:text="@string/action_torch"
-                android:textAppearance="?textAppearanceTitleMedium"
-                android:textSize="18sp" />
-
-            <TextView
-                android:id="@+id/torch_pref_summary"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_below="@+id/torch_pref_title"
-                android:layout_alignStart="@+id/torch_pref_title"
-                android:maxLines="4"
-                android:textAppearance="?android:textAppearanceSmall"
-                tools:text="@string/permission_camera_disabled" />
-
-        </RelativeLayout>
-
-        <RelativeLayout
-            android:id="@+id/lockscreen_pref"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:minHeight="64dp"
-            android:padding="16dp"
-            android:background="?selectableItemBackground">
-
-            <TextView
-                android:id="@+id/lockscreen_title"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentStart="true"
-                android:layout_alignParentTop="true"
-                android:ellipsize="marquee"
-                android:fadingEdge="horizontal"
-                android:singleLine="true"
-                android:text="@string/action_lockscreen"
-                android:textAppearance="?textAppearanceTitleMedium"
-                android:textSize="18sp" />
-
-            <TextView
-                android:id="@+id/lockscreen_summary"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_below="@+id/lockscreen_title"
-                android:layout_alignStart="@+id/lockscreen_title"
-                android:maxLines="4"
-                android:textAppearance="?android:textAppearanceSmall"
-                tools:text="@string/permission_admin_enabled" />
-
-        </RelativeLayout>
-
-        <RelativeLayout
-            android:id="@+id/dnd_pref"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:minHeight="64dp"
-            android:padding="16dp"
-            android:background="?selectableItemBackground">
-
-            <TextView
-                android:id="@+id/dnd_title"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentStart="true"
-                android:layout_alignParentTop="true"
-                android:ellipsize="marquee"
-                android:fadingEdge="horizontal"
-                android:singleLine="true"
-                android:text="@string/action_dnd"
-                android:textAppearance="?textAppearanceTitleMedium"
-                android:textSize="18sp" />
-
-            <TextView
-                android:id="@+id/dnd_summary"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_below="@+id/dnd_title"
-                android:layout_alignStart="@+id/dnd_title"
-                android:maxLines="4"
-                android:textAppearance="?android:textAppearanceSmall"
-                tools:text="@string/permission_dnd_disabled" />
-
-        </RelativeLayout>
-
-        <RelativeLayout
-            android:id="@+id/notiflistener_pref"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:minHeight="64dp"
-            android:padding="16dp"
-            android:background="?selectableItemBackground">
-
-            <TextView
-                android:id="@+id/notiflistener_title"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentStart="true"
-                android:layout_alignParentTop="true"
-                android:ellipsize="marquee"
-                android:fadingEdge="horizontal"
-                android:singleLine="true"
-                android:text="@string/permission_title_notifservice"
-                android:textAppearance="?textAppearanceTitleMedium"
-                android:textSize="18sp" />
-
-            <TextView
-                android:id="@+id/notiflistener_summary"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_below="@+id/notiflistener_title"
-                android:layout_alignStart="@+id/notiflistener_title"
-                android:maxLines="4"
-                android:textAppearance="?android:textAppearanceSmall"
-                tools:text="@string/prompt_notifservice_disabled" />
-
-        </RelativeLayout>
-
-        <LinearLayout
-            android:id="@+id/systemsettings_pref"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:minHeight="64dp"
-            android:padding="16dp"
-            android:gravity="center_vertical"
-            android:orientation="vertical"
-            android:background="?selectableItemBackground">
-
-            <TextView
-                android:id="@+id/systemsettings_pref_title"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:ellipsize="marquee"
-                android:fadingEdge="horizontal"
-                android:singleLine="true"
-                android:text="@string/permission_title_systemsettings"
-                android:textAppearance="?textAppearanceTitleMedium"
-                android:textSize="18sp" />
-
-            <TextView
-                android:id="@+id/systemsettings_pref_summary"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:maxLines="4"
-                android:textAppearance="?android:textAppearanceSmall"
-                tools:text="@string/permission_systemsettings_disabled" />
-
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/wearsettings_pref"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:minHeight="64dp"
-            android:padding="16dp"
-            android:gravity="center_vertical"
-            android:orientation="vertical"
-            android:background="?selectableItemBackground">
-
-            <TextView
-                android:id="@+id/wearsettings_pref_title"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:ellipsize="marquee"
-                android:fadingEdge="horizontal"
-                android:singleLine="true"
-                android:text="@string/preference_title_wearsettings"
-                android:textAppearance="?textAppearanceTitleMedium"
-                android:textSize="18sp" />
-
-            <TextView
-                android:id="@+id/wearsettings_pref_summary"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:maxLines="4"
-                android:textAppearance="?android:textAppearanceSmall"
-                tools:text="@string/preference_summary_wearsettings_notinstalled" />
-
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/bt_pref"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:minHeight="64dp"
-            android:padding="16dp"
-            android:gravity="center_vertical"
-            android:orientation="vertical"
-            android:background="?selectableItemBackground"
-            android:visibility="gone"
-            tools:visibility="visible">
-
-            <TextView
-                android:id="@+id/bt_pref_title"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:ellipsize="marquee"
-                android:fadingEdge="horizontal"
-                android:singleLine="true"
-                android:text="@string/permission_title_bt"
-                android:textAppearance="?textAppearanceTitleMedium"
-                android:textSize="18sp" />
-
-            <TextView
-                android:id="@+id/bt_pref_summary"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:maxLines="4"
-                android:textAppearance="?android:textAppearanceSmall"
-                tools:text="@string/permission_bt_disabled" />
-
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/callcontrol_pref"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:minHeight="64dp"
-            android:padding="16dp"
-            android:gravity="center_vertical"
-            android:orientation="vertical"
-            android:background="?selectableItemBackground">
-
-            <TextView
-                android:id="@+id/callcontrol_title"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:ellipsize="marquee"
-                android:fadingEdge="horizontal"
-                android:singleLine="true"
-                android:text="@string/not_channel_name_callcontroller"
-                android:textAppearance="?textAppearanceTitleMedium"
-                android:textSize="18sp" />
-
-            <TextView
-                android:id="@+id/callcontrol_summary"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:maxLines="4"
-                android:textAppearance="?android:textAppearanceSmall"
-                tools:text="@string/permission_callmanager_disabled" />
-
-        </LinearLayout>
-
-        <RelativeLayout
-            android:id="@+id/companion_pair_pref"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:minHeight="64dp"
-            android:padding="16dp"
-            android:background="?selectableItemBackground"
-            android:visibility="gone"
-            tools:visibility="visible">
-
-            <TextView
-                android:id="@+id/companion_pair_title"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentStart="true"
-                android:layout_alignParentTop="true"
-                android:ellipsize="marquee"
-                android:fadingEdge="horizontal"
-                android:singleLine="true"
-                android:text="@string/permission_title_pairdevice"
-                android:textAppearance="?textAppearanceTitleMedium"
-                android:textSize="18sp" />
-
-            <TextView
-                android:id="@+id/companion_pair_summary"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_below="@+id/companion_pair_title"
-                android:layout_alignStart="@+id/companion_pair_title"
-                android:maxLines="4"
-                android:textAppearance="?android:textAppearanceSmall"
-                tools:text="@string/permission_pairdevice_disabled" />
-
-            <com.google.android.material.progressindicator.LinearProgressIndicator
-                android:id="@+id/companion_pair_progress"
+            <LinearLayout
+                android:id="@+id/notif_pref"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_below="@id/companion_pair_summary"
-                android:layout_alignParentStart="true"
-                android:layout_alignParentEnd="true"
-                android:indeterminate="true"
+                style="@style/Permissions.Preference.Expressive"
+                android:tag="permissions"
                 android:visibility="gone"
-                app:trackCornerRadius="2dp"
-                tools:visibility="visible" />
+                tools:visibility="visible">
 
-        </RelativeLayout>
+                <TextView
+                    android:id="@+id/notif_pref_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    style="@style/Permissions.Preference.Title.Expressive"
+                    android:text="@string/permission_title_notifications" />
 
-        <LinearLayout
-            android:id="@+id/gestures_pref"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:minHeight="64dp"
-            android:padding="16dp"
-            android:gravity="center_vertical"
-            android:orientation="vertical"
-            android:background="?selectableItemBackground">
+                <TextView
+                    android:id="@+id/notif_pref_summary"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    style="@style/Permissions.Preference.Summary.Expressive"
+                    tools:text="@string/permission_notifications_disabled" />
 
-            <TextView
-                android:id="@+id/gestures_title"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:ellipsize="marquee"
-                android:fadingEdge="horizontal"
-                android:singleLine="true"
-                android:text="@string/action_gestures"
-                android:textAppearance="?textAppearanceTitleMedium"
-                android:textSize="18sp" />
+            </LinearLayout>
 
-            <TextView
-                android:id="@+id/gestures_summary"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:maxLines="4"
-                android:textAppearance="?android:textAppearanceSmall"
-                tools:text="@string/permission_gestures_disabled" />
-
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/alarms_pref"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:minHeight="64dp"
-            android:padding="16dp"
-            android:gravity="center_vertical"
-            android:orientation="vertical"
-            android:background="?selectableItemBackground">
-
-            <TextView
-                android:id="@+id/alarms_title"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:ellipsize="marquee"
-                android:fadingEdge="horizontal"
-                android:singleLine="true"
-                android:text="@string/action_timedaction"
-                android:textAppearance="?textAppearanceTitleMedium"
-                android:textSize="18sp" />
-
-            <TextView
-                android:id="@+id/alarms_summary"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:maxLines="4"
-                android:textAppearance="?android:textAppearanceSmall"
-                tools:text="@string/permission_exact_alarms_disabled" />
-
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:paddingStart="16dp">
-
-            <TextView
-                android:id="@+id/settings_cat_title"
+            <LinearLayout
+                android:id="@+id/torch_pref"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_gravity="start"
-                android:layout_marginTop="16dp"
-                android:paddingStart="0dp"
-                android:paddingEnd="?android:attr/listPreferredItemPaddingRight"
-                android:text="@string/title_settings"
-                android:textAlignment="viewStart"
-                android:textAppearance="?textAppearanceBodyMedium"
-                android:textColor="?attr/colorPrimary" />
+                style="@style/Permissions.Preference.Expressive"
+                android:tag="permissions">
 
-        </LinearLayout>
+                <TextView
+                    android:id="@+id/torch_pref_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    style="@style/Permissions.Preference.Title.Expressive"
+                    android:text="@string/action_torch" />
 
-        <LinearLayout
-            android:id="@+id/uninstall_pref"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:minHeight="64dp"
-            android:padding="16dp"
-            android:gravity="center_vertical"
-            android:orientation="vertical"
-            android:background="?selectableItemBackground">
+                <TextView
+                    android:id="@+id/torch_pref_summary"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    style="@style/Permissions.Preference.Summary.Expressive"
+                    tools:text="@string/permission_camera_disabled" />
 
-            <TextView
-                android:id="@+id/uninstall_title"
-                android:layout_width="wrap_content"
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/lockscreen_pref"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:ellipsize="marquee"
-                android:fadingEdge="horizontal"
-                android:singleLine="true"
-                android:text="@string/permission_title_uninstall"
-                android:textAppearance="?textAppearanceTitleMedium"
-                android:textSize="18sp"
-                tools:text="@string/permission_title_deactivate_uninstall" />
+                style="@style/Permissions.Preference.Expressive"
+                android:tag="permissions">
 
-            <TextView
-                android:id="@+id/uninstall_summary"
-                android:layout_width="wrap_content"
+                <TextView
+                    android:id="@+id/lockscreen_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    style="@style/Permissions.Preference.Title.Expressive"
+                    android:text="@string/action_lockscreen" />
+
+                <TextView
+                    android:id="@+id/lockscreen_summary"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    style="@style/Permissions.Preference.Summary.Expressive"
+                    tools:text="@string/permission_admin_enabled" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/dnd_pref"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:maxLines="4"
-                android:textAppearance="?android:textAppearanceSmall"
-                android:text="@string/message_deactivate_deviceadmin"
+                style="@style/Permissions.Preference.Expressive"
+                android:tag="permissions">
+
+                <TextView
+                    android:id="@+id/dnd_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    style="@style/Permissions.Preference.Title.Expressive"
+                    android:text="@string/action_dnd" />
+
+                <TextView
+                    android:id="@+id/dnd_summary"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    style="@style/Permissions.Preference.Summary.Expressive"
+                    tools:text="@string/permission_dnd_disabled" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/notiflistener_pref"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                style="@style/Permissions.Preference.Expressive"
+                android:tag="permissions">
+
+                <TextView
+                    android:id="@+id/notiflistener_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    style="@style/Permissions.Preference.Title.Expressive"
+                    android:text="@string/permission_title_notifservice" />
+
+                <TextView
+                    android:id="@+id/notiflistener_summary"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    style="@style/Permissions.Preference.Summary.Expressive"
+                    tools:text="@string/prompt_notifservice_disabled" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/systemsettings_pref"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                style="@style/Permissions.Preference.Expressive"
+                android:tag="permissions">
+
+                <TextView
+                    android:id="@+id/systemsettings_pref_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    style="@style/Permissions.Preference.Title.Expressive"
+                    android:text="@string/permission_title_systemsettings" />
+
+                <TextView
+                    android:id="@+id/systemsettings_pref_summary"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    style="@style/Permissions.Preference.Summary.Expressive"
+                    tools:text="@string/permission_systemsettings_disabled" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/wearsettings_pref"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                style="@style/Permissions.Preference.Expressive"
+                android:tag="permissions">
+
+                <TextView
+                    android:id="@+id/wearsettings_pref_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    style="@style/Permissions.Preference.Title.Expressive"
+                    android:text="@string/preference_title_wearsettings" />
+
+                <TextView
+                    android:id="@+id/wearsettings_pref_summary"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    style="@style/Permissions.Preference.Summary.Expressive"
+                    tools:text="@string/preference_summary_wearsettings_notinstalled" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/bt_pref"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                style="@style/Permissions.Preference.Expressive"
+                android:tag="permissions"
                 android:visibility="gone"
-                tools:visibility="visible" />
+                tools:visibility="visible">
+
+                <TextView
+                    android:id="@+id/bt_pref_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    style="@style/Permissions.Preference.Title.Expressive"
+                    android:text="@string/permission_title_bt" />
+
+                <TextView
+                    android:id="@+id/bt_pref_summary"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    style="@style/Permissions.Preference.Summary.Expressive"
+                    tools:text="@string/permission_bt_disabled" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/callcontrol_pref"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                style="@style/Permissions.Preference.Expressive"
+                android:tag="permissions">
+
+                <TextView
+                    android:id="@+id/callcontrol_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    style="@style/Permissions.Preference.Title.Expressive"
+                    android:text="@string/not_channel_name_callcontroller" />
+
+                <TextView
+                    android:id="@+id/callcontrol_summary"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    style="@style/Permissions.Preference.Summary.Expressive"
+                    tools:text="@string/permission_callmanager_disabled" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/companion_pair_pref"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                style="@style/Permissions.Preference.Expressive"
+                android:tag="permissions"
+                android:visibility="gone"
+                tools:visibility="visible">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/companion_pair_title"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        style="@style/Permissions.Preference.Title.Expressive"
+                        android:text="@string/permission_title_pairdevice" />
+
+                    <TextView
+                        android:id="@+id/companion_pair_summary"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        style="@style/Permissions.Preference.Summary.Expressive"
+                        tools:text="@string/permission_pairdevice_disabled" />
+
+                </LinearLayout>
+
+                <com.google.android.material.progressindicator.CircularProgressIndicator
+                    android:id="@+id/companion_pair_progress"
+                    style="Widget.Material3Expressive.CircularProgressIndicator.Wavy"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingStart="0dp"
+                    android:paddingEnd="16dp"
+                    android:indeterminate="true"
+                    android:visibility="invisible"
+                    app:trackCornerRadius="2dp"
+                    tools:visibility="visible" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/gestures_pref"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                style="@style/Permissions.Preference.Expressive"
+                android:tag="permissions">
+
+                <TextView
+                    android:id="@+id/gestures_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    style="@style/Permissions.Preference.Title.Expressive"
+                    android:text="@string/action_gestures" />
+
+                <TextView
+                    android:id="@+id/gestures_summary"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    style="@style/Permissions.Preference.Summary.Expressive"
+                    tools:text="@string/permission_gestures_disabled" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/alarms_pref"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                style="@style/Permissions.Preference.Expressive"
+                android:tag="permissions">
+
+                <TextView
+                    android:id="@+id/alarms_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    style="@style/Permissions.Preference.Title.Expressive"
+                    android:text="@string/action_timedaction" />
+
+                <TextView
+                    android:id="@+id/alarms_summary"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    style="@style/Permissions.Preference.Summary.Expressive"
+                    tools:text="@string/permission_exact_alarms_disabled" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                style="@style/Permissions.Preference.Category.Expressive">
+
+                <TextView
+                    android:id="@+id/settings_cat_title"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    style="@style/Permissions.Preference.Category.Title.Expressive"
+                    android:text="@string/title_settings" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/uninstall_pref"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                style="@style/Permissions.Preference.Expressive"
+                android:tag="settings">
+
+                <TextView
+                    android:id="@+id/uninstall_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    style="@style/Permissions.Preference.Title.Expressive"
+                    android:text="@string/permission_title_uninstall"
+                    tools:text="@string/permission_title_deactivate_uninstall" />
+
+                <TextView
+                    android:id="@+id/uninstall_summary"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    style="@style/Permissions.Preference.Summary.Expressive"
+                    android:text="@string/message_deactivate_deviceadmin"
+                    android:visibility="gone"
+                    tools:visibility="visible" />
+
+            </LinearLayout>
+
+            <RelativeLayout
+                android:id="@+id/bridge_media_pref"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                style="@style/Permissions.Preference.Expressive"
+                android:tag="settings">
+
+                <TextView
+                    android:id="@+id/bridge_media_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    style="@style/Permissions.Preference.Title.Expressive"
+                    android:layout_alignParentStart="true"
+                    android:layout_alignParentTop="true"
+                    android:text="@string/preference_title_mediabridge" />
+
+                <TextView
+                    android:id="@+id/bridge_media_summary"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    style="@style/Permissions.Preference.Summary.Expressive"
+                    android:layout_below="@+id/bridge_media_title"
+                    android:layout_alignStart="@+id/bridge_media_title"
+                    android:layout_toStartOf="@id/bridge_media_toggle"
+                    android:text="@string/preference_summary_mediabridge" />
+
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/bridge_media_toggle"
+                    android:duplicateParentState="true"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingStart="0dp"
+                    android:paddingEnd="16dp"
+                    android:checked="true"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    app:thumbIcon="@drawable/ic_check_white_24dp" />
+
+            </RelativeLayout>
+
+            <RelativeLayout
+                android:id="@+id/bridge_calls_pref"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                style="@style/Permissions.Preference.Expressive"
+                android:tag="settings">
+
+                <TextView
+                    android:id="@+id/bridge_calls_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    style="@style/Permissions.Preference.Title.Expressive"
+                    android:text="@string/preference_title_callbridge" />
+
+                <TextView
+                    android:id="@+id/bridge_calls_summary"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    style="@style/Permissions.Preference.Summary.Expressive"
+                    android:layout_below="@+id/bridge_calls_title"
+                    android:layout_alignStart="@+id/bridge_calls_title"
+                    android:layout_toStartOf="@id/bridge_calls_toggle"
+                    android:text="@string/preference_summary_callbridge" />
+
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/bridge_calls_toggle"
+                    android:duplicateParentState="true"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingStart="0dp"
+                    android:paddingEnd="16dp"
+                    android:checked="true"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    app:thumbIcon="@drawable/ic_check_white_24dp" />
+
+            </RelativeLayout>
+
+            <Space
+                android:id="@+id/bottom"
+                android:layout_width="wrap_content"
+                android:layout_height="24dp" />
 
         </LinearLayout>
 
-        <RelativeLayout
-            android:id="@+id/bridge_media_pref"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:minHeight="64dp"
-            android:padding="16dp"
-            android:background="?selectableItemBackground">
+    </androidx.core.widget.NestedScrollView>
 
-            <TextView
-                android:id="@+id/bridge_media_title"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentStart="true"
-                android:layout_alignParentTop="true"
-                android:layout_toStartOf="@id/bridge_media_toggle"
-                android:ellipsize="marquee"
-                android:fadingEdge="horizontal"
-                android:singleLine="true"
-                android:text="@string/preference_title_mediabridge"
-                android:textAppearance="?textAppearanceTitleMedium"
-                android:textSize="18sp" />
-
-            <TextView
-                android:id="@+id/bridge_media_summary"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_below="@+id/bridge_media_title"
-                android:layout_alignStart="@+id/bridge_media_title"
-                android:layout_toStartOf="@id/bridge_media_toggle"
-                android:maxLines="4"
-                android:textAppearance="?android:textAppearanceSmall"
-                android:text="@string/preference_summary_mediabridge" />
-
-            <com.google.android.material.materialswitch.MaterialSwitch
-                android:id="@+id/bridge_media_toggle"
-                android:duplicateParentState="true"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:checked="true"
-                android:layout_alignParentEnd="true"
-                android:layout_centerInParent="true" />
-
-        </RelativeLayout>
-
-        <RelativeLayout
-            android:id="@+id/bridge_calls_pref"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:minHeight="64dp"
-            android:padding="16dp"
-            android:background="?selectableItemBackground">
-
-            <TextView
-                android:id="@+id/bridge_calls_title"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentStart="true"
-                android:layout_alignParentTop="true"
-                android:layout_toStartOf="@id/bridge_calls_toggle"
-                android:ellipsize="marquee"
-                android:fadingEdge="horizontal"
-                android:singleLine="true"
-                android:text="@string/preference_title_callbridge"
-                android:textAppearance="?textAppearanceTitleMedium"
-                android:textSize="18sp" />
-
-            <TextView
-                android:id="@+id/bridge_calls_summary"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_below="@+id/bridge_calls_title"
-                android:layout_alignStart="@+id/bridge_calls_title"
-                android:layout_toStartOf="@id/bridge_calls_toggle"
-                android:maxLines="4"
-                android:textAppearance="?android:textAppearanceSmall"
-                android:text="@string/preference_summary_callbridge" />
-
-            <com.google.android.material.materialswitch.MaterialSwitch
-                android:id="@+id/bridge_calls_toggle"
-                android:duplicateParentState="true"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:checked="true"
-                android:layout_alignParentEnd="true"
-                android:layout_centerInParent="true" />
-
-        </RelativeLayout>
-
-    </LinearLayout>
-
-</ScrollView>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

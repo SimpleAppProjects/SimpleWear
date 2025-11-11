@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="permission_title_bt">Bluetooth</string>
+    <string name="permission_bt_enabled">Bluetooth permission enabled</string>
+    <string name="permission_bt_disabled">Bluetooth permission disabled</string>
+
+    <string name="permission_dnd_enabled">Do not Disturb access enabled</string>
+    <string name="permission_dnd_disabled">Do not Disturb access disabled. Please click to enable changing Do not Disturb setting from your WearOS device</string>
+</resources>

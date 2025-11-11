@@ -8,7 +8,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -19,46 +20,46 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.fastAll
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavController
-import androidx.wear.compose.foundation.SwipeToDismissBoxState
+import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
+import androidx.wear.compose.foundation.lazy.TransformingLazyColumnState
 import androidx.wear.compose.foundation.lazy.items
-import androidx.wear.compose.foundation.rememberSwipeToDismissBoxState
-import androidx.wear.compose.material.Chip
-import androidx.wear.compose.material.ChipDefaults
-import androidx.wear.compose.material.CompactChip
-import androidx.wear.compose.material.Icon
-import androidx.wear.compose.material.PositionIndicator
-import androidx.wear.compose.material.Switch
-import androidx.wear.compose.material.Text
-import androidx.wear.compose.material.TimeText
-import androidx.wear.compose.material.ToggleChip
-import androidx.wear.compose.ui.tooling.preview.WearPreviewDevices
-import com.google.android.horologist.annotations.ExperimentalHorologistApi
-import com.google.android.horologist.compose.layout.ScalingLazyColumn
-import com.google.android.horologist.compose.layout.ScalingLazyColumnDefaults
-import com.google.android.horologist.compose.layout.ScalingLazyColumnState
-import com.google.android.horologist.compose.layout.rememberResponsiveColumnState
-import com.google.android.horologist.compose.layout.scrollAway
-import com.google.android.horologist.compose.material.ListHeaderDefaults.firstItemPadding
-import com.google.android.horologist.compose.material.ResponsiveListHeader
+import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
+import androidx.wear.compose.foundation.pager.rememberPagerState
+import androidx.wear.compose.material3.AnimatedPage
+import androidx.wear.compose.material3.ButtonDefaults
+import androidx.wear.compose.material3.CompactButton
+import androidx.wear.compose.material3.FilledTonalButton
+import androidx.wear.compose.material3.Icon
+import androidx.wear.compose.material3.ListHeader
+import androidx.wear.compose.material3.ScreenScaffold
+import androidx.wear.compose.material3.SurfaceTransformation
+import androidx.wear.compose.material3.SwitchButton
+import androidx.wear.compose.material3.Text
+import androidx.wear.compose.material3.lazy.rememberTransformationSpec
+import androidx.wear.compose.material3.lazy.transformedHeight
+import com.google.android.horologist.compose.layout.ColumnItemType
+import com.google.android.horologist.compose.layout.rememberResponsiveColumnPadding
 import com.thewizrd.shared_resources.actions.ActionStatus
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
 import com.thewizrd.shared_resources.helpers.WearableHelper
+import com.thewizrd.shared_resources.utils.JSONParser
+import com.thewizrd.shared_resources.utils.getSerializableCompat
 import com.thewizrd.simplewear.PhoneSyncActivity
 import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.controls.AppItemViewModel
 import com.thewizrd.simplewear.ui.components.ConfirmationOverlay
+import com.thewizrd.simplewear.ui.components.HorizontalPagerScreen
 import com.thewizrd.simplewear.ui.components.LoadingContent
-import com.thewizrd.simplewear.ui.components.SwipeToDismissPagerScreen
+import com.thewizrd.simplewear.ui.compose.tools.WearPreviewDevices
 import com.thewizrd.simplewear.ui.theme.findActivity
 import com.thewizrd.simplewear.viewmodels.AppLauncherUiState
 import com.thewizrd.simplewear.viewmodels.AppLauncherViewModel
@@ -67,14 +68,9 @@ import com.thewizrd.simplewear.viewmodels.ConfirmationViewModel
 import com.thewizrd.simplewear.viewmodels.WearableListenerViewModel
 import kotlinx.coroutines.launch
 
-@OptIn(
-    ExperimentalHorologistApi::class
-)
 @Composable
 fun AppLauncherScreen(
-    modifier: Modifier = Modifier,
-    navController: NavController,
-    swipeToDismissBoxState: SwipeToDismissBoxState = rememberSwipeToDismissBoxState()
+    modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
     val activity = context.findActivity()
@@ -86,41 +82,26 @@ fun AppLauncherScreen(
     val confirmationViewModel = viewModel<ConfirmationViewModel>()
     val confirmationData by confirmationViewModel.confirmationEventsFlow.collectAsState()
 
-    val scrollState = rememberResponsiveColumnState(
-        contentPadding = ScalingLazyColumnDefaults.padding(
-            first = ScalingLazyColumnDefaults.ItemType.Unspecified,
-            last = ScalingLazyColumnDefaults.ItemType.Chip,
-        )
-    )
-
-    val isRoot = navController.previousBackStackEntry == null
-
     val pagerState = rememberPagerState(
         initialPage = 0,
         pageCount = { 2 }
     )
 
-    SwipeToDismissPagerScreen(
+    HorizontalPagerScreen(
         modifier = modifier,
-        isRoot = isRoot,
-        swipeToDismissBoxState = swipeToDismissBoxState,
-        state = pagerState,
+        pagerState = pagerState,
         hidePagerIndicator = uiState.isLoading,
-        timeText = {
-            if (pagerState.currentPage == 0) {
-                TimeText(modifier = Modifier.scrollAway { scrollState })
-            }
-        }
     ) { pageIdx ->
-        if (pageIdx == 0) {
-            AppLauncherScreen(
-                appLauncherViewModel = appLauncherViewModel,
-                scrollState = scrollState
-            )
-        } else {
-            AppLauncherSettings(
-                appLauncherViewModel = appLauncherViewModel
-            )
+        AnimatedPage(pageIdx, pagerState) {
+            if (pageIdx == 0) {
+                AppLauncherScreen(
+                    appLauncherViewModel = appLauncherViewModel
+                )
+            } else {
+                AppLauncherSettings(
+                    appLauncherViewModel = appLauncherViewModel
+                )
+            }
         }
     }
 
@@ -159,7 +140,7 @@ fun AppLauncherScreen(
 
                             WearConnectionStatus.APPNOTINSTALLED -> {
                                 // Open store on remote device
-                                appLauncherViewModel.openPlayStore(activity)
+                                appLauncherViewModel.openPlayStore()
 
                                 // Navigate
                                 activity.startActivity(
@@ -178,7 +159,10 @@ fun AppLauncherScreen(
 
                     WearableHelper.LaunchAppPath -> {
                         val status =
-                            event.data.getSerializable(WearableListenerViewModel.EXTRA_STATUS) as ActionStatus
+                            event.data.getSerializableCompat(
+                                WearableListenerViewModel.EXTRA_STATUS,
+                                ActionStatus::class.java
+                            )
 
                         when (status) {
                             ActionStatus.SUCCESS -> {
@@ -186,13 +170,9 @@ fun AppLauncherScreen(
                             }
 
                             ActionStatus.PERMISSION_DENIED -> {
-                                confirmationViewModel.showConfirmation(
-                                    ConfirmationData(
-                                        title = context.getString(R.string.error_permissiondenied)
-                                    )
-                                )
+                                confirmationViewModel.showFailure(message = context.getString(R.string.error_permissiondenied_wear))
 
-                                appLauncherViewModel.openAppOnPhone(activity, false)
+                                appLauncherViewModel.openAppOnPhone(false)
                             }
 
                             ActionStatus.FAILURE -> {
@@ -202,6 +182,15 @@ fun AppLauncherScreen(
                             }
 
                             else -> {}
+                        }
+                    }
+
+                    WearableListenerViewModel.ACTION_SHOWCONFIRMATION -> {
+                        val jsonData =
+                            event.data.getString(WearableListenerViewModel.EXTRA_ACTIONDATA)
+
+                        JSONParser.deserializer(jsonData, ConfirmationData::class.java)?.let {
+                            confirmationViewModel.showConfirmation(it)
                         }
                     }
                 }
@@ -215,117 +204,134 @@ fun AppLauncherScreen(
     }
 }
 
-@OptIn(ExperimentalHorologistApi::class)
 @Composable
 private fun AppLauncherScreen(
-    appLauncherViewModel: AppLauncherViewModel,
-    scrollState: ScalingLazyColumnState
+    appLauncherViewModel: AppLauncherViewModel
 ) {
-    val context = LocalContext.current
-    val activity = context.findActivity()
-
     val uiState by appLauncherViewModel.uiState.collectAsState()
 
     AppLauncherScreen(
         uiState = uiState,
-        scrollState = scrollState,
         onItemClicked = {
-            appLauncherViewModel.openRemoteApp(activity, it)
+            appLauncherViewModel.openRemoteApp(it)
         },
         onRefresh = {
             appLauncherViewModel.refreshApps()
         }
     )
+
+    LaunchedEffect(uiState.loadAppIcons) {
+        if (!uiState.isLoading && uiState.loadAppIcons && uiState.appsList.isNotEmpty() && uiState.appsList.fastAll { it.bitmapIcon == null }) {
+            appLauncherViewModel.refreshApps()
+        }
+    }
 }
 
-@OptIn(ExperimentalHorologistApi::class)
 @Composable
 private fun AppLauncherScreen(
     uiState: AppLauncherUiState,
-    scrollState: ScalingLazyColumnState = rememberResponsiveColumnState(),
+    scrollState: TransformingLazyColumnState = rememberTransformingLazyColumnState(),
     onItemClicked: (AppItemViewModel) -> Unit = {},
     onRefresh: () -> Unit = {}
 ) {
-    Box(
-        modifier = Modifier.fillMaxSize()
-    ) {
-        LoadingContent(
-            empty = uiState.appsList.isEmpty(),
-            emptyContent = {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .wrapContentHeight(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            modifier = Modifier.padding(horizontal = 14.dp),
-                            text = stringResource(id = R.string.error_noapps),
-                            textAlign = TextAlign.Center
-                        )
-                        CompactChip(
-                            label = {
-                                Text(text = stringResource(id = R.string.action_refresh))
-                            },
-                            icon = {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.ic_baseline_refresh_24),
-                                    contentDescription = stringResource(id = R.string.action_refresh)
-                                )
-                            },
-                            onClick = onRefresh
-                        )
-                    }
-                }
-            },
-            loading = uiState.isLoading
-        ) {
-            ScalingLazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                columnState = scrollState,
-            ) {
-                item {
-                    ResponsiveListHeader(contentPadding = firstItemPadding()) {
-                        Text(text = stringResource(id = R.string.action_apps))
-                    }
-                }
+    val contentPadding = rememberResponsiveColumnPadding(
+        first = ColumnItemType.ListHeader,
+        last = ColumnItemType.Button
+    )
 
-                items(
-                    items = uiState.appsList,
-                    key = { Pair(it.activityName, it.packageName) }
-                ) { appItem ->
-                    Chip(
-                        modifier = Modifier.fillMaxWidth(),
-                        label = {
-                            Text(text = appItem.appLabel ?: "")
-                        },
-                        icon = if (uiState.loadAppIcons) {
-                            appItem.bitmapIcon?.let {
-                                {
+    val transformationSpec = rememberTransformationSpec()
+
+    ScreenScaffold(
+        scrollState = scrollState,
+        contentPadding = contentPadding
+    ) { contentPadding ->
+        Box(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            LoadingContent(
+                empty = uiState.appsList.isEmpty(),
+                emptyContent = {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .wrapContentHeight(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                modifier = Modifier.padding(horizontal = 14.dp),
+                                text = stringResource(id = R.string.error_noapps),
+                                textAlign = TextAlign.Center
+                            )
+                            CompactButton(
+                                label = {
+                                    Text(text = stringResource(id = R.string.action_refresh))
+                                },
+                                icon = {
                                     Icon(
-                                        modifier = Modifier.requiredSize(ChipDefaults.IconSize),
-                                        bitmap = it.asImageBitmap(),
-                                        contentDescription = appItem.appLabel,
-                                        tint = Color.Unspecified
+                                        imageVector = Icons.Rounded.Refresh,
+                                        contentDescription = stringResource(id = R.string.action_refresh)
                                     )
-                                }
-                            }
-                        } else {
-                            null
-                        },
-                        colors = ChipDefaults.secondaryChipColors(),
-                        onClick = {
-                            onItemClicked(appItem)
+                                },
+                                onClick = onRefresh
+                            )
                         }
-                    )
+                    }
+                },
+                loading = uiState.isLoading
+            ) {
+                TransformingLazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    state = scrollState,
+                    contentPadding = contentPadding
+                ) {
+                    item {
+                        ListHeader(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .transformedHeight(this, transformationSpec),
+                            transformation = SurfaceTransformation(transformationSpec)
+                        ) {
+                            Text(text = stringResource(id = R.string.action_apps))
+                        }
+                    }
+
+                    items(
+                        items = uiState.appsList,
+                        key = { Pair(it.activityName, it.packageName) }
+                    ) { appItem ->
+                        FilledTonalButton(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .transformedHeight(this, transformationSpec),
+                            transformation = SurfaceTransformation(transformationSpec),
+                            label = {
+                                Text(text = appItem.appLabel ?: "")
+                            },
+                            icon = if (uiState.loadAppIcons) {
+                                appItem.bitmapIcon?.let {
+                                    {
+                                        Icon(
+                                            modifier = Modifier.requiredSize(ButtonDefaults.IconSize),
+                                            bitmap = it.asImageBitmap(),
+                                            contentDescription = appItem.appLabel,
+                                            tint = Color.Unspecified
+                                        )
+                                    }
+                                }
+                            } else {
+                                null
+                            },
+                            onClick = {
+                                onItemClicked(appItem)
+                            }
+                        )
+                    }
                 }
             }
-
-            PositionIndicator(scalingLazyListState = scrollState.state)
         }
     }
 }
@@ -344,47 +350,51 @@ private fun AppLauncherSettings(
     )
 }
 
-@OptIn(ExperimentalHorologistApi::class)
 @Composable
 private fun AppLauncherSettings(
     uiState: AppLauncherUiState,
     onCheckChanged: (Boolean) -> Unit = {}
 ) {
-    val scrollState = rememberResponsiveColumnState(
-        contentPadding = ScalingLazyColumnDefaults.padding(
-            first = ScalingLazyColumnDefaults.ItemType.Unspecified,
-            last = ScalingLazyColumnDefaults.ItemType.Chip,
-        )
-    )
+    val columnState = rememberTransformingLazyColumnState()
 
-    ScalingLazyColumn(
-        columnState = scrollState
-    ) {
-        item {
-            ResponsiveListHeader(
-                modifier = Modifier.fillMaxWidth(),
-                contentPadding = firstItemPadding()
-            ) {
-                Text(text = stringResource(id = R.string.title_settings))
-            }
-        }
-        item {
-            ToggleChip(
-                modifier = Modifier.fillMaxWidth(),
-                label = {
-                    Text(text = stringResource(id = R.string.pref_loadicons_title))
-                },
-                checked = uiState.loadAppIcons,
-                onCheckedChange = onCheckChanged,
-                toggleControl = {
-                    Switch(checked = uiState.loadAppIcons)
+    val contentPadding = rememberResponsiveColumnPadding(
+        first = ColumnItemType.ListHeader,
+        last = ColumnItemType.Button,
+    )
+    val transformationSpec = rememberTransformationSpec()
+
+    ScreenScaffold(
+        scrollState = columnState,
+        contentPadding = contentPadding
+    ) { contentPadding ->
+        TransformingLazyColumn(
+            state = columnState,
+            contentPadding = contentPadding
+        ) {
+            item {
+                ListHeader(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .transformedHeight(this, transformationSpec),
+                    transformation = SurfaceTransformation(transformationSpec)
+                ) {
+                    Text(text = stringResource(id = R.string.title_settings))
                 }
-            )
+            }
+            item {
+                SwitchButton(
+                    modifier = Modifier.fillMaxWidth(),
+                    label = {
+                        Text(text = stringResource(id = R.string.pref_loadicons_title))
+                    },
+                    checked = uiState.loadAppIcons,
+                    onCheckedChange = onCheckChanged
+                )
+            }
         }
     }
 }
 
-@OptIn(ExperimentalHorologistApi::class)
 @WearPreviewDevices
 @Composable
 private fun PreviewAppLauncherScreen() {
@@ -408,7 +418,6 @@ private fun PreviewAppLauncherScreen() {
     AppLauncherScreen(uiState = uiState)
 }
 
-@OptIn(ExperimentalHorologistApi::class)
 @WearPreviewDevices
 @Composable
 private fun PreviewLoadingAppLauncherScreen() {
@@ -426,7 +435,6 @@ private fun PreviewLoadingAppLauncherScreen() {
     AppLauncherScreen(uiState = uiState)
 }
 
-@OptIn(ExperimentalHorologistApi::class)
 @WearPreviewDevices
 @Composable
 private fun PreviewNoContentAppLauncherScreen() {

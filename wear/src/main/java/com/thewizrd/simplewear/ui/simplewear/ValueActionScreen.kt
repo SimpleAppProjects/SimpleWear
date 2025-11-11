@@ -1,11 +1,12 @@
-@file:OptIn(ExperimentalWearFoundationApi::class, ExperimentalHorologistApi::class)
-
 package com.thewizrd.simplewear.ui.simplewear
 
 import android.content.Intent
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Remove
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -19,24 +20,16 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.wear.compose.foundation.ExperimentalWearFoundationApi
-import androidx.wear.compose.foundation.rememberActiveFocusRequester
+import androidx.wear.compose.foundation.requestFocusOnHierarchyActive
 import androidx.wear.compose.foundation.rotary.rotaryScrollable
-import androidx.wear.compose.material.Chip
-import androidx.wear.compose.material.ChipDefaults
-import androidx.wear.compose.material.Icon
-import androidx.wear.compose.material.MaterialTheme
-import androidx.wear.compose.material.Scaffold
-import androidx.wear.compose.material.Stepper
-import androidx.wear.compose.material.Text
-import androidx.wear.compose.material.TimeText
-import androidx.wear.compose.material.Vignette
-import androidx.wear.compose.material.VignettePosition
-import androidx.wear.compose.ui.tooling.preview.WearPreviewDevices
-import com.google.android.horologist.annotations.ExperimentalHorologistApi
-import com.google.android.horologist.audio.ui.VolumePositionIndicator
+import androidx.wear.compose.material3.Button
+import androidx.wear.compose.material3.Icon
+import androidx.wear.compose.material3.ScreenScaffold
+import androidx.wear.compose.material3.Stepper
+import androidx.wear.compose.material3.Text
 import com.google.android.horologist.audio.ui.VolumeUiState
-import com.google.android.horologist.audio.ui.volumeRotaryBehavior
+import com.google.android.horologist.audio.ui.material3.VolumeLevelIndicator
+import com.google.android.horologist.audio.ui.material3.volumeRotaryBehavior
 import com.thewizrd.shared_resources.actions.Action
 import com.thewizrd.shared_resources.actions.ActionStatus
 import com.thewizrd.shared_resources.actions.Actions
@@ -46,10 +39,13 @@ import com.thewizrd.shared_resources.controls.ActionButtonViewModel
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
 import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.shared_resources.utils.JSONParser
+import com.thewizrd.shared_resources.utils.getSerializableCompat
 import com.thewizrd.simplewear.PhoneSyncActivity
 import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.ui.components.ConfirmationOverlay
+import com.thewizrd.simplewear.ui.compose.tools.WearPreviewDevices
 import com.thewizrd.simplewear.ui.theme.findActivity
+import com.thewizrd.simplewear.ui.utils.rememberFocusRequester
 import com.thewizrd.simplewear.viewmodels.ConfirmationData
 import com.thewizrd.simplewear.viewmodels.ConfirmationViewModel
 import com.thewizrd.simplewear.viewmodels.ValueActionUiState
@@ -77,14 +73,12 @@ fun ValueActionScreen(
     val confirmationViewModel = viewModel<ConfirmationViewModel>()
     val confirmationData by confirmationViewModel.confirmationEventsFlow.collectAsState()
 
-    Scaffold(
-        modifier = modifier.background(MaterialTheme.colors.background),
-        vignette = { Vignette(vignettePosition = VignettePosition.TopAndBottom) },
-        timeText = {
-            TimeText()
-        },
-    ) {
-        ValueActionScreen(valueActionViewModel, volumeViewModel)
+    ScreenScaffold { contentPadding ->
+        ValueActionScreen(
+            modifier = modifier.padding(contentPadding),
+            valueActionViewModel = valueActionViewModel,
+            volumeViewModel = volumeViewModel
+        )
     }
 
     ConfirmationOverlay(
@@ -126,7 +120,7 @@ fun ValueActionScreen(
 
                             WearConnectionStatus.APPNOTINSTALLED -> {
                                 // Open store on remote device
-                                valueActionViewModel.openPlayStore(activity)
+                                valueActionViewModel.openPlayStore()
 
                                 // Navigate
                                 activity.startActivity(
@@ -154,33 +148,27 @@ fun ValueActionScreen(
                             lifecycleOwner.lifecycleScope.launch {
                                 when (actionStatus) {
                                     ActionStatus.UNKNOWN, ActionStatus.FAILURE -> {
-                                        confirmationViewModel.showConfirmation(
-                                            ConfirmationData(
-                                                iconResId = R.drawable.ws_full_sad,
-                                                title = context.getString(R.string.error_actionfailed),
+                                        confirmationViewModel.showFailure(
+                                            message = context.getString(
+                                                R.string.error_actionfailed
                                             )
                                         )
                                     }
 
                                     ActionStatus.PERMISSION_DENIED -> {
-                                        confirmationViewModel.showConfirmation(
-                                            ConfirmationData(
-                                                iconResId = R.drawable.ws_full_sad,
-                                                title = context.getString(R.string.error_permissiondenied),
+                                        confirmationViewModel.showFailure(
+                                            message = context.getString(
+                                                R.string.error_permissiondenied_wear
                                             )
                                         )
 
-                                        valueActionViewModel.openAppOnPhone(
-                                            activity,
-                                            false
-                                        )
+                                        valueActionViewModel.openAppOnPhone(false)
                                     }
 
                                     ActionStatus.TIMEOUT -> {
-                                        confirmationViewModel.showConfirmation(
-                                            ConfirmationData(
-                                                iconResId = R.drawable.ws_full_sad,
-                                                title = context.getString(R.string.error_sendmessage)
+                                        confirmationViewModel.showFailure(
+                                            message = context.getString(
+                                                R.string.error_sendmessage
                                             )
                                         )
                                     }
@@ -194,30 +182,32 @@ fun ValueActionScreen(
 
                     WearableHelper.AudioVolumePath, WearableHelper.ValueStatusSetPath -> {
                         val status =
-                            event.data.getSerializable(WearableListenerViewModel.EXTRA_STATUS) as ActionStatus
+                            event.data.getSerializableCompat(
+                                WearableListenerViewModel.EXTRA_STATUS,
+                                ActionStatus::class.java
+                            )
 
                         when (status) {
                             ActionStatus.UNKNOWN, ActionStatus.FAILURE -> {
-                                confirmationViewModel.showConfirmation(
-                                    ConfirmationData(
-                                        iconResId = R.drawable.ws_full_sad,
-                                        title = context.getString(R.string.error_actionfailed)
-                                    )
-                                )
+                                confirmationViewModel.showFailure(message = context.getString(R.string.error_actionfailed))
                             }
 
                             ActionStatus.PERMISSION_DENIED -> {
-                                confirmationViewModel.showConfirmation(
-                                    ConfirmationData(
-                                        iconResId = R.drawable.ws_full_sad,
-                                        title = context.getString(R.string.error_permissiondenied)
-                                    )
-                                )
+                                confirmationViewModel.showFailure(message = context.getString(R.string.error_permissiondenied_wear))
 
-                                valueActionViewModel.openAppOnPhone(activity, false)
+                                valueActionViewModel.openAppOnPhone(false)
                             }
 
                             else -> {}
+                        }
+                    }
+
+                    WearableListenerViewModel.ACTION_SHOWCONFIRMATION -> {
+                        val jsonData =
+                            event.data.getString(WearableListenerViewModel.EXTRA_ACTIONDATA)
+
+                        JSONParser.deserializer(jsonData, ConfirmationData::class.java)?.let {
+                            confirmationViewModel.showConfirmation(it)
                         }
                     }
                 }
@@ -233,23 +223,23 @@ fun ValueActionScreen(
 
 @Composable
 fun ValueActionScreen(
+    modifier: Modifier = Modifier,
     valueActionViewModel: ValueActionViewModel,
     volumeViewModel: ValueActionVolumeViewModel
 ) {
-    val lifecycleOwner = LocalLifecycleOwner.current
-    val activityCtx = LocalContext.current.findActivity()
-
     val uiState by valueActionViewModel.uiState.collectAsState()
     val progressUiState by volumeViewModel.volumeUiState.collectAsState()
 
     ValueActionScreen(
-        modifier = Modifier.rotaryScrollable(
-            focusRequester = rememberActiveFocusRequester(),
-            behavior = volumeRotaryBehavior(
-                volumeUiStateProvider = { progressUiState },
-                onRotaryVolumeInput = { newValue -> volumeViewModel.setVolume(newValue) }
-            )
-        ),
+        modifier = modifier
+            .requestFocusOnHierarchyActive()
+            .rotaryScrollable(
+                focusRequester = rememberFocusRequester(),
+                behavior = volumeRotaryBehavior(
+                    volumeUiStateProvider = { progressUiState },
+                    onRotaryVolumeInput = { newValue -> volumeViewModel.setVolume(newValue) }
+                )
+            ),
         uiState = uiState,
         volumeUiState = progressUiState,
         onValueChanged = { newValue -> volumeViewModel.setVolume(newValue) },
@@ -286,12 +276,12 @@ fun ValueActionScreen(
             if (uiState.action == Actions.VOLUME) {
                 Icon(
                     painter = painterResource(id = R.drawable.ic_volume_up_white_24dp),
-                    contentDescription = stringResource(id = R.string.horologist_stepper_increase_content_description)
+                    contentDescription = stringResource(id = R.string.horologist_volume_screen_volume_up_content_description)
                 )
             } else {
                 Icon(
-                    painter = painterResource(id = R.drawable.ic_add_white_24dp),
-                    contentDescription = stringResource(id = R.string.horologist_stepper_increase_content_description)
+                    imageVector = Icons.Rounded.Add,
+                    contentDescription = stringResource(id = R.string.wear_m3c_slider_increase_content_description)
                 )
             }
         },
@@ -299,17 +289,17 @@ fun ValueActionScreen(
             if (uiState.action == Actions.VOLUME) {
                 Icon(
                     painter = painterResource(id = R.drawable.ic_baseline_volume_down_24),
-                    contentDescription = stringResource(id = R.string.horologist_stepper_decrease_content_description)
+                    contentDescription = stringResource(id = R.string.horologist_volume_screen_volume_down_content_description)
                 )
             } else {
                 Icon(
-                    painter = painterResource(id = R.drawable.ic_remove_white_24dp),
-                    contentDescription = stringResource(id = R.string.horologist_stepper_decrease_content_description)
+                    imageVector = Icons.Rounded.Remove,
+                    contentDescription = stringResource(id = R.string.wear_m3c_slider_decrease_content_description)
                 )
             }
         }
     ) {
-        Chip(
+        Button(
             label = {
                 when (uiState.action) {
                     Actions.VOLUME -> {
@@ -345,7 +335,7 @@ fun ValueActionScreen(
                                 id = when (uiState.streamType) {
                                     AudioStreamType.MUSIC -> R.drawable.ic_music_note_white_24dp
                                     AudioStreamType.RINGTONE -> R.drawable.ic_baseline_ring_volume_24dp
-                                    AudioStreamType.VOICE_CALL -> R.drawable.ic_baseline_call_24dp
+                                    AudioStreamType.VOICE_CALL -> R.drawable.ic_phone_24dp
                                     AudioStreamType.ALARM -> R.drawable.ic_alarm_white_24dp
                                     null -> R.drawable.ic_volume_up_white_24dp
                                 }
@@ -381,11 +371,10 @@ fun ValueActionScreen(
                     }
                 }
             },
-            colors = ChipDefaults.secondaryChipColors(),
             onClick = onActionChange
         )
     }
-    VolumePositionIndicator(
+    VolumeLevelIndicator(
         volumeUiState = { volumeUiState }
     )
 }

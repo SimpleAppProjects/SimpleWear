@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="permission_title_bt">"Bluetooth"</string>
+    <string name="permission_bt_enabled">"Bluetooth-Berechtigung aktiviert"</string>
+    <string name="permission_bt_disabled">"Bluetooth-Berechtigung deaktiviert"</string>
+    <string name="permission_dnd_enabled">"Bitte-nicht-stören-Zugriff aktiviert"</string>
+    <string name="permission_dnd_disabled">"Bitte-nicht-stören-Zugriff deaktiviert. Bitte hier klicken, um die Änderung der Bitte-nicht-stören-Einstellung von Ihrem WearOS-Gerät aus zu aktivieren."</string>
+</resources>

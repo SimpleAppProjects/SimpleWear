@@ -17,8 +17,11 @@ import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.hardware.camera2.CameraManager
 import android.location.LocationManager
+import android.media.AudioFocusRequest
 import android.media.AudioManager
 import android.net.wifi.WifiManager
+import android.nfc.NfcAdapter
+import android.nfc.NfcManager
 import android.os.BatteryManager
 import android.os.Build
 import android.os.Handler
@@ -584,6 +587,34 @@ object PhoneStatusHelper {
         return if (musicActive) ActionStatus.SUCCESS else ActionStatus.FAILURE
     }
 
+    suspend fun sendPauseMusicCommand(context: Context): ActionStatus {
+        // Send pause event to which ever player has audio focus
+        val audioMan = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        if (audioMan.isMusicActive) {
+            val event = KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_MEDIA_PAUSE)
+            audioMan.dispatchMediaKeyEvent(event)
+        }
+
+        // Use AudioFocus as a fallback
+        if (audioMan.isMusicActive) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                val request = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+                    .build()
+                audioMan.requestAudioFocus(request)
+                audioMan.abandonAudioFocusRequest(request)
+            } else {
+                audioMan.requestAudioFocus(
+                    null,
+                    AudioManager.STREAM_MUSIC,
+                    AudioManager.AUDIOFOCUS_GAIN
+                )
+                audioMan.abandonAudioFocus(null)
+            }
+        }
+
+        return if (!audioMan.isMusicActive) ActionStatus.SUCCESS else ActionStatus.FAILURE
+    }
+
     suspend fun isMusicActive(context: Context, delay: Boolean = true): ActionStatus {
         val audioMan = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
 
@@ -687,6 +718,19 @@ object PhoneStatusHelper {
         return try {
             context.startActivity(
                 Intent(Settings.ACTION_BLUETOOTH_SETTINGS)
+                    .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            )
+            ActionStatus.SUCCESS
+        } catch (e: Exception) {
+            Logger.writeLine(Log.ERROR, e)
+            ActionStatus.FAILURE
+        }
+    }
+
+    fun openWirelessSettings(context: Context): ActionStatus {
+        return try {
+            context.startActivity(
+                Intent(Settings.ACTION_WIRELESS_SETTINGS)
                     .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             )
             ActionStatus.SUCCESS
@@ -914,6 +958,12 @@ object PhoneStatusHelper {
                     }
                 }
 
+                Actions.NFC -> {
+                    if (!checkSecureSettingsPermission(context)) {
+                        return ActionStatus.PERMISSION_DENIED
+                    }
+                }
+
                 else -> {}
             }
 
@@ -995,4 +1045,63 @@ object PhoneStatusHelper {
 
     fun setWifiApEnabled(context: Context, enable: Boolean): ActionStatus =
         TetherHelper.setWifiApEnabled(context, enable)
+
+    fun checkSecureSettingsPermission(context: Context): Boolean {
+        return ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.WRITE_SECURE_SETTINGS
+        ) == PackageManager.PERMISSION_GRANTED
+    }
+
+    fun isNfcEnabled(context: Context): Boolean {
+        val nfcAdapter = NfcAdapter.getDefaultAdapter(context)
+        return nfcAdapter?.isEnabled ?: false
+    }
+
+    fun setNfcEnabled(context: Context, enable: Boolean): ActionStatus {
+        if (checkSecureSettingsPermission(context)) {
+            val nfcService = context.getSystemService(Context.NFC_SERVICE) as NfcManager
+            return nfcService.defaultAdapter?.let {
+                try {
+                    val success = if (enable) it.enable() else it.disable()
+                    if (success) {
+                        ActionStatus.SUCCESS
+                    } else {
+                        ActionStatus.FAILURE
+                    }
+                } catch (e: SecurityException) {
+                    Logger.writeLine(Log.ERROR, e)
+                    ActionStatus.PERMISSION_DENIED
+                }
+            } ?: ActionStatus.FAILURE
+        } else {
+            return ActionStatus.PERMISSION_DENIED
+        }
+    }
+
+    fun isBatterySaverEnabled(context: Context): Boolean {
+        val powerManager = context.getSystemService(Context.POWER_SERVICE) as PowerManager
+        return powerManager.isPowerSaveMode
+    }
+
+    fun setBatterySaverEnabled(context: Context, enable: Boolean): ActionStatus {
+        return if (checkSecureSettingsPermission(context)) {
+            try {
+                val success = Settings.Global.putInt(
+                    context.contentResolver, "low_power", if (enable) 1 else 0
+                )
+
+                if (success) {
+                    ActionStatus.SUCCESS
+                } else {
+                    ActionStatus.FAILURE
+                }
+            } catch (e: SecurityException) {
+                Logger.writeLine(Log.ERROR, e)
+                ActionStatus.PERMISSION_DENIED
+            }
+        } else {
+            ActionStatus.PERMISSION_DENIED
+        }
+    }
 }

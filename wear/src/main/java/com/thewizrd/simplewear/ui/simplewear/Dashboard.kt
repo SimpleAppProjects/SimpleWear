@@ -12,14 +12,12 @@ import androidx.compose.animation.graphics.ExperimentalAnimationGraphicsApi
 import androidx.compose.animation.graphics.res.animatedVectorResource
 import androidx.compose.animation.graphics.res.rememberAnimatedVectorPainter
 import androidx.compose.animation.graphics.vector.AnimatedImageVector
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.rounded.Info
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -41,22 +39,14 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.withStarted
 import androidx.navigation.NavController
 import androidx.preference.PreferenceManager
-import androidx.wear.compose.material.ChipDefaults
-import androidx.wear.compose.material.Icon
-import androidx.wear.compose.material.MaterialTheme
-import androidx.wear.compose.material.PositionIndicator
-import androidx.wear.compose.material.Scaffold
-import androidx.wear.compose.material.TimeText
-import androidx.wear.compose.material.Vignette
-import androidx.wear.compose.material.VignettePosition
-import androidx.wear.compose.material.dialog.Dialog
+import androidx.wear.compose.material3.AlertDialog
+import androidx.wear.compose.material3.AlertDialogDefaults
+import androidx.wear.compose.material3.Button
+import androidx.wear.compose.material3.FilledTonalButton
+import androidx.wear.compose.material3.Icon
+import androidx.wear.compose.material3.ScreenScaffold
+import androidx.wear.compose.material3.Text
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
-import com.google.android.horologist.compose.layout.ScalingLazyColumnDefaults
-import com.google.android.horologist.compose.layout.rememberColumnState
-import com.google.android.horologist.compose.layout.scrollAway
-import com.google.android.horologist.compose.material.AlertContent
-import com.google.android.horologist.compose.material.AlertDialog
-import com.google.android.horologist.compose.material.Chip
 import com.thewizrd.shared_resources.actions.Action
 import com.thewizrd.shared_resources.actions.ActionStatus
 import com.thewizrd.shared_resources.actions.Actions
@@ -107,12 +97,10 @@ fun Dashboard(
     var showUpdateDialog by remember { mutableStateOf(false) }
     var showAppUpdateConfirmation by remember { mutableStateOf(false) }
 
-    Scaffold(
-        modifier = modifier.background(MaterialTheme.colors.background),
-        timeText = { TimeText(modifier = Modifier.scrollAway { scrollState }) },
-        vignette = { Vignette(vignettePosition = VignettePosition.TopAndBottom) },
-        positionIndicator = { PositionIndicator(scrollState = scrollState) }
-    ) {
+    ScreenScaffold(
+        modifier = modifier,
+        scrollState = scrollState
+    ) { contentPadding ->
         DashboardScreen(
             dashboardViewModel = dashboardViewModel,
             scrollState = scrollState,
@@ -121,26 +109,30 @@ fun Dashboard(
     }
 
     AlertDialog(
-        showDialog = showUpdateDialog,
-        onDismiss = {
+        visible = showUpdateDialog,
+        onDismissRequest = {
             Settings.setLastUpdateCheckTime(Instant.now())
             showUpdateDialog = false
         },
         icon = {
             Icon(
-                painter = rememberVectorPainter(image = Icons.Default.Info),
+                painter = rememberVectorPainter(image = Icons.Rounded.Info),
                 contentDescription = null
             )
         },
-        message = stringResource(id = R.string.message_wearappupdate_available)
+        title = {},
+        text = {
+            Text(text = stringResource(id = R.string.message_wearappupdate_available))
+        }
     ) {
         item {
             Spacer(modifier = Modifier.height(12.dp))
         }
         item {
-            Chip(
-                modifier = Modifier.padding(horizontal = 16.dp),
-                label = stringResource(id = R.string.action_update),
+            Button(
+                label = {
+                    Text(text = stringResource(id = R.string.action_update))
+                },
                 onClick = {
                     runCatching {
                         // Open store on device
@@ -156,57 +148,55 @@ fun Dashboard(
         }
         if (inAppUpdateMgr.updatePriority <= 3) {
             item {
-                Chip(
-                    label = stringResource(id = android.R.string.cancel),
+                FilledTonalButton(
+                    label = {
+                        Text(text = stringResource(id = android.R.string.cancel))
+                    },
                     onClick = {
                         Settings.setLastUpdateCheckTime(Instant.now())
                         showUpdateDialog = false
-                    },
-                    colors = ChipDefaults.secondaryChipColors()
+                    }
                 )
             }
         }
     }
 
-    if (showAppUpdateConfirmation) {
-        var startAnim by remember { mutableStateOf(false) }
-        val dialogScrollState = rememberColumnState(
-            ScalingLazyColumnDefaults.responsive(),
-        )
+    AlertDialog(
+        visible = showAppUpdateConfirmation,
+        onDismissRequest = {
+            Settings.setLastUpdateCheckTime(Instant.now())
+            showAppUpdateConfirmation = false
+        },
+        icon = {
+            var startAnim by remember { mutableStateOf(false) }
 
-        Dialog(
-            showDialog = showAppUpdateConfirmation,
-            onDismissRequest = {
-                Settings.setLastUpdateCheckTime(Instant.now())
-                showAppUpdateConfirmation = false
-            },
-            scrollState = dialogScrollState.state
-        ) {
-            AlertContent(
-                icon = {
-                    Icon(
-                        modifier = Modifier.size(36.dp),
-                        painter = rememberAnimatedVectorPainter(
-                            animatedImageVector = AnimatedImageVector.animatedVectorResource(id = R.drawable.open_on_phone_animation),
-                            atEnd = startAnim
-                        ),
-                        contentDescription = null
-                    )
-                },
-                message = stringResource(id = R.string.message_phoneappupdate_available),
-                onOk = {
+            Icon(
+                modifier = Modifier.size(36.dp),
+                painter = rememberAnimatedVectorPainter(
+                    animatedImageVector = AnimatedImageVector.animatedVectorResource(id = R.drawable.open_on_phone_animation),
+                    atEnd = startAnim
+                ),
+                contentDescription = null
+            )
+
+            LaunchedEffect(showAppUpdateConfirmation) {
+                delay(250)
+                startAnim = true
+            }
+        },
+        title = {},
+        text = {
+            Text(text = stringResource(id = R.string.message_phoneappupdate_available))
+        },
+        edgeButton = {
+            AlertDialogDefaults.EdgeButton(
+                onClick = {
                     Settings.setLastUpdateCheckTime(Instant.now())
                     showAppUpdateConfirmation = false
-                },
-                state = dialogScrollState
+                }
             )
         }
-
-        LaunchedEffect(showAppUpdateConfirmation) {
-            delay(250)
-            startAnim = true
-        }
-    }
+    )
 
     ConfirmationOverlay(
         confirmationData = confirmationData,
@@ -224,26 +214,6 @@ fun Dashboard(
                         runCatching {
                             lifecycleOwner.withStarted {
                                 dashboardViewModel.updateLayout(Settings.useGridLayout())
-                            }
-                        }
-                    }
-                }
-
-                Settings.KEY_DASHCONFIG -> {
-                    lifecycleOwner.lifecycleScope.launch {
-                        runCatching {
-                            lifecycleOwner.withStarted {
-                                dashboardViewModel.resetDashboard()
-                            }
-                        }
-                    }
-                }
-
-                Settings.KEY_SHOWBATSTATUS -> {
-                    lifecycleOwner.lifecycleScope.launch {
-                        runCatching {
-                            lifecycleOwner.withStarted {
-                                dashboardViewModel.showBatteryState(Settings.isShowBatStatus())
                             }
                         }
                     }
@@ -321,7 +291,7 @@ fun Dashboard(
                             WearConnectionStatus.CONNECTING -> {}
                             WearConnectionStatus.APPNOTINSTALLED -> {
                                 // Open store on remote device
-                                dashboardViewModel.openPlayStore(activity)
+                                dashboardViewModel.openPlayStore()
 
                                 // Navigate
                                 activity.startActivity(
@@ -357,9 +327,9 @@ fun Dashboard(
 
                                 ActionStatus.PERMISSION_DENIED -> {
                                     if (action.actionType == Actions.TORCH) {
-                                        confirmationViewModel.showConfirmation(
-                                            ConfirmationData(
-                                                title = context.getString(R.string.error_torch_action)
+                                        confirmationViewModel.showFailure(
+                                            message = context.getString(
+                                                R.string.error_torch_action
                                             )
                                         )
                                     } else if (action.actionType == Actions.SLEEPTIMER) {
@@ -370,51 +340,35 @@ fun Dashboard(
 
                                         if (intentAndroid.resolveActivity(activity.packageManager) != null) {
                                             activity.startActivity(intentAndroid)
-                                            Toast.makeText(
-                                                activity,
-                                                R.string.error_sleeptimer_notinstalled,
-                                                Toast.LENGTH_LONG
-                                            ).show()
                                         } else {
-                                            confirmationViewModel.showConfirmation(
-                                                ConfirmationData(
-                                                    title = context.getString(R.string.error_sleeptimer_notinstalled)
+                                            confirmationViewModel.showFailure(
+                                                message = context.getString(
+                                                    R.string.error_sleeptimer_notinstalled
                                                 )
                                             )
                                         }
                                     } else {
-                                        confirmationViewModel.showConfirmation(
-                                            ConfirmationData(
-                                                title = context.getString(R.string.error_permissiondenied)
+                                        confirmationViewModel.showFailure(
+                                            message = context.getString(
+                                                R.string.error_permissiondenied_wear
                                             )
                                         )
                                     }
 
-                                    dashboardViewModel.openAppOnPhone(activity, false)
+                                    dashboardViewModel.openAppOnPhone(false)
                                 }
 
                                 ActionStatus.TIMEOUT -> {
-                                    confirmationViewModel.showConfirmation(
-                                        ConfirmationData(
-                                            title = context.getString(R.string.error_sendmessage)
-                                        )
-                                    )
+                                    confirmationViewModel.showFailure(message = context.getString(R.string.error_sendmessage))
                                 }
 
                                 ActionStatus.REMOTE_FAILURE -> {
-                                    confirmationViewModel.showConfirmation(
-                                        ConfirmationData(
-                                            title = context.getString(R.string.error_remoteactionfailed)
-                                        )
-                                    )
+                                    confirmationViewModel.showFailure(message = context.getString(R.string.error_remoteactionfailed))
                                 }
 
                                 ActionStatus.REMOTE_PERMISSION_DENIED -> {
-                                    confirmationViewModel.showConfirmation(
-                                        ConfirmationData(
-                                            title = context.getString(R.string.error_permissiondenied)
-                                        )
-                                    )
+                                    confirmationViewModel.showFailure(message = context.getString(R.string.error_permissiondenied_wear))
+                                    dashboardViewModel.openAppOnPhone(false)
                                 }
 
                                 ActionStatus.SUCCESS -> {
@@ -467,7 +421,7 @@ fun Dashboard(
                     phoneVersionCode?.let {
                         showAppUpdateConfirmation = !WearableHelper.isAppUpToDate(it)
                         if (showAppUpdateConfirmation) {
-                            dashboardViewModel.openPlayStore(activity, false)
+                            dashboardViewModel.openPlayStore(false)
                         }
                     }
                 }

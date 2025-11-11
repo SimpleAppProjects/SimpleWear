@@ -17,8 +17,13 @@ import com.thewizrd.shared_resources.actions.ActionStatus
 import com.thewizrd.shared_resources.actions.ToggleAction
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.wearsettings.shizuku.ShizukuUtils
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withTimeout
 import rikka.shizuku.ShizukuBinderWrapper
 import rikka.shizuku.SystemServiceHelper
+import kotlin.coroutines.resume
 
 @SuppressLint("PrivateApi")
 object WifiHotspotAction {
@@ -64,29 +69,43 @@ object WifiHotspotAction {
                 .let(IConnectivityManager.Stub::asInterface)
 
             if (enabled) {
-                val resultReceiver = object : ResultReceiver(null) {
-                    override fun onReceiveResult(resultCode: Int, resultData: Bundle?) {
-                        when (resultCode) {
-                            TETHER_ERROR_NO_ERROR -> {
-                                Logger.info(TAG, "setHotspotEnabledShizukuPreR(true) - success")
+                return@runCatching runBlocking {
+                    withTimeout(10000) {
+                        suspendCancellableCoroutine { continuation ->
+                            val resultReceiver = object : ResultReceiver(null) {
+                                override fun onReceiveResult(resultCode: Int, resultData: Bundle?) {
+                                    when (resultCode) {
+                                        TETHER_ERROR_NO_ERROR -> {
+                                            Logger.info(
+                                                TAG,
+                                                "setHotspotEnabledShizukuPreR(true) - success"
+                                            )
+                                            if (isActive) {
+                                                continuation.resume(ActionStatus.SUCCESS)
+                                            }
+                                        }
+
+                                        else -> {
+                                            Logger.error(
+                                                TAG,
+                                                "setHotspotEnabledShizukuPreR(true) - failed. code = $resultCode"
+                                            )
+                                            if (isActive) {
+                                                continuation.resume(ActionStatus.REMOTE_FAILURE)
+                                            }
+                                        }
+                                    }
+                                }
                             }
 
-                            else -> {
-                                Logger.error(
-                                    TAG,
-                                    "setHotspotEnabledShizukuPreR(true) - failed. code = $resultCode"
-                                )
-                            }
+                            connMgr.startTethering(TETHERING_WIFI, resultReceiver, false)
                         }
                     }
                 }
-
-                connMgr.startTethering(TETHERING_WIFI, resultReceiver, false)
             } else {
                 connMgr.stopTethering(TETHERING_WIFI)
+                ActionStatus.SUCCESS
             }
-
-            ActionStatus.SUCCESS
         }.getOrElse {
             Logger.writeLine(Log.ERROR, it)
             ActionStatus.REMOTE_FAILURE
@@ -97,7 +116,8 @@ object WifiHotspotAction {
     private fun setHotspotEnabledShizuku(
         enabled: Boolean,
         exemptFromEntitlementCheck: Boolean = true,
-        shouldShowEntitlementUi: Boolean = false
+        shouldShowEntitlementUi: Boolean = false,
+        retry: Boolean = true
     ): ActionStatus {
         Logger.info(TAG, "entering setHotspotEnabledShizuku(enabled = ${enabled})...")
 
@@ -106,80 +126,94 @@ object WifiHotspotAction {
                 .let(::ShizukuBinderWrapper)
                 .let(ITetheringConnector.Stub::asInterface)
 
-            if (enabled) {
-                val resultListener = object : IIntResultListener.Stub() {
-                    override fun onResult(resultCode: Int) {
-                        when (resultCode) {
-                            TETHER_ERROR_NO_ERROR -> {
-                                Logger.info(TAG, "setHotspotEnabledShizuku(true) - success")
-                            }
+            runBlocking {
+                withTimeout(10000) {
+                    suspendCancellableCoroutine { continuation ->
+                        val resultListener = object : IIntResultListener.Stub() {
+                            override fun onResult(resultCode: Int) {
+                                when (resultCode) {
+                                    TETHER_ERROR_NO_ERROR -> {
+                                        Logger.info(
+                                            TAG,
+                                            "setHotspotEnabledShizuku(${enabled}) - success"
+                                        )
+                                        if (isActive) {
+                                            continuation.resume(ActionStatus.SUCCESS)
+                                        }
+                                    }
 
-                            TETHER_ERROR_NO_CHANGE_TETHERING_PERMISSION -> {
-                                // retry
-                                setHotspotEnabledShizuku(enabled, false, shouldShowEntitlementUi)
-                            }
+                                    TETHER_ERROR_NO_CHANGE_TETHERING_PERMISSION -> {
+                                        // retry
+                                        Logger.warn(
+                                            TAG,
+                                            "setHotspotEnabledShizuku(${enabled}) - TETHER_ERROR_NO_CHANGE_TETHERING_PERMISSION"
+                                        )
+                                        if (retry) {
+                                            setHotspotEnabledShizuku(
+                                                enabled,
+                                                false,
+                                                shouldShowEntitlementUi
+                                            )
+                                        } else {
+                                            if (isActive) {
+                                                continuation.resume(ActionStatus.REMOTE_PERMISSION_DENIED)
+                                            }
+                                        }
+                                    }
 
-                            else -> {
-                                Logger.error(
-                                    TAG,
-                                    "setHotspotEnabledShizuku(true) - failed. code = $resultCode"
+                                    else -> {
+                                        Logger.error(
+                                            TAG,
+                                            "setHotspotEnabledShizuku(${enabled}) - failed. code = $resultCode"
+                                        )
+                                        if (isActive) {
+                                            continuation.resume(ActionStatus.REMOTE_FAILURE)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        if (enabled) {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                                tetheringMgr.startTethering(
+                                    createTetheringRequestParcel(
+                                        exemptFromEntitlementCheck,
+                                        shouldShowEntitlementUi
+                                    ) as TetheringRequestParcel,
+                                    "com.android.shell",
+                                    "",
+                                    resultListener
+                                )
+                            } else {
+                                tetheringMgr.startTethering(
+                                    createTetheringRequestParcel(
+                                        exemptFromEntitlementCheck,
+                                        shouldShowEntitlementUi
+                                    ) as TetheringRequestParcel,
+                                    "com.android.shell",
+                                    resultListener
+                                )
+                            }
+                        } else {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                                tetheringMgr.stopTethering(
+                                    TETHERING_WIFI,
+                                    "com.android.shell",
+                                    "",
+                                    resultListener
+                                )
+                            } else {
+                                tetheringMgr.stopTethering(
+                                    TETHERING_WIFI,
+                                    "com.android.shell",
+                                    resultListener
                                 )
                             }
                         }
                     }
-                }
-
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    tetheringMgr.startTethering(
-                        createTetheringRequestParcel(
-                            exemptFromEntitlementCheck,
-                            shouldShowEntitlementUi
-                        ) as TetheringRequestParcel,
-                        "com.android.shell",
-                        "",
-                        resultListener
-                    )
-                } else {
-                    tetheringMgr.startTethering(
-                        createTetheringRequestParcel(
-                            exemptFromEntitlementCheck,
-                            shouldShowEntitlementUi
-                        ) as TetheringRequestParcel,
-                        "com.android.shell",
-                        resultListener
-                    )
-                }
-            } else {
-                val resultListener = object : IIntResultListener.Stub() {
-                    override fun onResult(resultCode: Int) {
-                        when (resultCode) {
-                            TETHER_ERROR_NO_ERROR -> {
-                                Logger.info(TAG, "setHotspotEnabledShizuku(false) - success")
-                            }
-
-                            else -> {
-                                Logger.error(
-                                    TAG,
-                                    "setHotspotEnabledShizuku(false) - failed. code = $resultCode"
-                                )
-                            }
-                        }
-                    }
-                }
-
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    tetheringMgr.stopTethering(
-                        TETHERING_WIFI,
-                        "com.android.shell",
-                        "",
-                        resultListener
-                    )
-                } else {
-                    tetheringMgr.stopTethering(TETHERING_WIFI, "com.android.shell", resultListener)
                 }
             }
-
-            ActionStatus.SUCCESS
         }.getOrElse {
             Logger.writeLine(Log.ERROR, it)
             ActionStatus.REMOTE_FAILURE

@@ -1,6 +1,5 @@
 package com.thewizrd.simplewear.viewmodels
 
-import android.app.Activity
 import android.app.Application
 import android.os.Bundle
 import android.util.Log
@@ -16,10 +15,10 @@ import com.thewizrd.shared_resources.data.AppItemSerializer
 import com.thewizrd.shared_resources.helpers.WearConnectionStatus
 import com.thewizrd.shared_resources.helpers.WearableHelper
 import com.thewizrd.shared_resources.utils.ImageUtils.toBitmap
+import com.thewizrd.shared_resources.utils.JSONParser
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.shared_resources.utils.bytesToString
 import com.thewizrd.simplewear.controls.AppItemViewModel
-import com.thewizrd.simplewear.helpers.showConfirmationOverlay
 import com.thewizrd.simplewear.preferences.Settings
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -61,7 +60,7 @@ class AppLauncherViewModel(app: Application) : WearableListenerViewModel(app) {
 
                             viewModelState.update { state ->
                                 state.copy(
-                                    appsList = createAppsList(items ?: emptyList()),
+                                    appsList = createAppsList(items),
                                     isLoading = false
                                 )
                             }
@@ -164,7 +163,7 @@ class AppLauncherViewModel(app: Application) : WearableListenerViewModel(app) {
         }
     }
 
-    fun openRemoteApp(activity: Activity, item: AppItemViewModel) {
+    fun openRemoteApp(item: AppItemViewModel) {
         viewModelScope.launch {
             val success = runCatching {
                 val intent = WearableHelper.createRemoteActivityIntent(
@@ -174,7 +173,21 @@ class AppLauncherViewModel(app: Application) : WearableListenerViewModel(app) {
                 startRemoteActivity(intent)
             }.getOrDefault(false)
 
-            activity.showConfirmationOverlay(success)
+            _eventsFlow.tryEmit(
+                WearableEvent(
+                    ACTION_SHOWCONFIRMATION,
+                    Bundle().apply {
+                        putString(
+                            EXTRA_ACTIONDATA,
+                            JSONParser.serializer(
+                                ConfirmationData(
+                                    confirmationType = if (success) ConfirmationType.OpenOnPhone else ConfirmationType.Failure
+                                ), ConfirmationData::class.java
+                            )
+                        )
+                    }
+                )
+            )
         }
     }
 

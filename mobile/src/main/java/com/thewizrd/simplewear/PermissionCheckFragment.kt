@@ -1,6 +1,7 @@
 package com.thewizrd.simplewear
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.annotation.TargetApi
 import android.app.Activity
 import android.app.admin.DevicePolicyManager
@@ -16,8 +17,9 @@ import android.content.Context
 import android.content.DialogInterface
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.res.Configuration.UI_MODE_NIGHT_MASK
+import android.content.res.Configuration.UI_MODE_NIGHT_YES
 import android.graphics.Color
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
@@ -29,8 +31,15 @@ import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.ColorInt
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.ColorUtils
+import androidx.core.net.toUri
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.children
 import androidx.core.view.isVisible
+import androidx.core.view.updateLayoutParams
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.thewizrd.shared_resources.helpers.WearSettingsHelper
@@ -62,6 +71,11 @@ import java.util.regex.Pattern
 class PermissionCheckFragment : LifecycleAwareFragment() {
     companion object {
         private const val TAG = "PermissionCheckFragment"
+
+        private const val CORNERS_FULL = 0
+        private const val CORNERS_TOP = 1
+        private const val CORNERS_CENTER = 2
+        private const val CORNERS_BOTTOM = 3
     }
 
     private lateinit var binding: FragmentPermcheckBinding
@@ -163,7 +177,7 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
                     )
                         .show()
 
-                    binding.companionPairProgress.visibility = View.GONE
+                    binding.companionPairProgress.hide()
                 }
             }
 
@@ -172,7 +186,7 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
                 if (it.resultCode == Activity.RESULT_OK) {
                     pairDevice()
                 } else {
-                    binding.companionPairProgress.visibility = View.GONE
+                    binding.companionPairProgress.hide()
                 }
             }
     }
@@ -184,6 +198,36 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
     ): View {
         // Inflate the layout for this fragment
         binding = FragmentPermcheckBinding.inflate(inflater, container, false)
+
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, insets ->
+            binding.bottom.updateLayoutParams {
+                val sysBarInsets = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+                height = sysBarInsets.top + sysBarInsets.bottom
+            }
+
+            insets
+        }
+
+        binding.toolbar.setOnMenuItemClickListener { menuItem ->
+            when (menuItem.itemId) {
+                R.id.timed_actions -> {
+                    parentFragmentManager.beginTransaction()
+                        .replace(R.id.fragment_container, TimedActionsFragment())
+                        .addToBackStack("timedActions")
+                        .commit()
+                    true
+                }
+            }
+
+            false
+        }
+        binding.scrollView.children.firstOrNull().let { root ->
+            val parent = root as ViewGroup
+
+            parent.viewTreeObserver.addOnGlobalLayoutListener {
+                updateRoundedBackground(parent)
+            }
+        }
         binding.torchPref.setOnClickListener {
             if (!isCameraPermissionEnabled(requireContext())) {
                 permissionRequestLauncher.launch(arrayOf(Manifest.permission.CAMERA))
@@ -326,7 +370,7 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
         binding.wearsettingsPref.setOnClickListener {
             if (!WearSettingsHelper.isWearSettingsInstalled() || !WearSettingsHelper.isWearSettingsUpToDate()) {
                 val i = Intent(Intent.ACTION_VIEW).apply {
-                    data = Uri.parse(getString(R.string.url_wearsettings_helper))
+                    data = getString(R.string.url_wearsettings_helper).toUri()
                 }
                 if (i.resolveActivity(requireContext().packageManager) != null) {
                     startActivity(i)
@@ -344,7 +388,7 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
             if (!PhoneStatusHelper.isWriteSystemSettingsPermissionEnabled(ctx)) {
                 runCatching {
                     startActivity(Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS).apply {
-                        data = Uri.parse("package:${ctx.packageName}")
+                        data = "package:${ctx.packageName}".toUri()
                         flags = Intent.FLAG_ACTIVITY_NEW_TASK
                     })
                 }
@@ -387,7 +431,7 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !canScheduleExactAlarms(ctx)) {
                 runCatching {
                     startActivity(Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
-                        data = Uri.parse("package:${ctx.packageName}")
+                        data = "package:${ctx.packageName}".toUri()
                         flags = Intent.FLAG_ACTIVITY_NEW_TASK
                     })
                 }
@@ -410,11 +454,12 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
             }
         }
 
-        binding.companionPairProgress.visibility = View.VISIBLE
+        binding.companionPairProgress.show()
         enqueueAction(requireContext(), WearableWorker.ACTION_REQUESTBTDISCOVERABLE)
         pairDevice()
     }
 
+    @SuppressLint("WrongConstant", "UseRequiresApi")
     @TargetApi(Build.VERSION_CODES.Q)
     private fun pairDevice() {
         runWithView {
@@ -483,7 +528,7 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
                         context?.let { _ ->
                             runCatching {
                                 lifecycleScope.launch {
-                                    binding.companionPairProgress.visibility = View.GONE
+                                    binding.companionPairProgress.hide()
                                 }
                                 companionDeviceResultLauncher.launch(
                                     IntentSenderRequest.Builder(it)
@@ -499,7 +544,7 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
 
                         context?.let { ctx ->
                             lifecycleScope.launch {
-                                binding.companionPairProgress.visibility = View.GONE
+                                binding.companionPairProgress.hide()
                                 Toast.makeText(
                                     ctx,
                                     R.string.message_nodevices_found,
@@ -591,32 +636,57 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
 
     private fun updateCamPermText(enabled: Boolean) {
         binding.torchPrefSummary.setText(if (enabled) R.string.permission_camera_enabled else R.string.permission_camera_disabled)
-        binding.torchPrefSummary.setTextColor(if (enabled) Color.GREEN else Color.RED)
+        binding.torchPrefSummary.setTextColor(
+            getTextColor(
+                binding.torchPrefSummary.context,
+                enabled
+            )
+        )
     }
 
     private fun updateDeviceAdminText(enabled: Boolean) {
         binding.lockscreenSummary.setText(if (enabled) R.string.permission_admin_enabled else R.string.permission_lockscreen_disabled)
-        binding.lockscreenSummary.setTextColor(if (enabled) Color.GREEN else Color.RED)
+        binding.lockscreenSummary.setTextColor(
+            getTextColor(
+                binding.lockscreenSummary.context,
+                enabled
+            )
+        )
     }
 
     private fun updateLockScreenText(enabled: Boolean) {
         binding.lockscreenSummary.setText(if (enabled) R.string.permission_lockscreen_enabled else R.string.permission_lockscreen_disabled)
-        binding.lockscreenSummary.setTextColor(if (enabled) Color.GREEN else Color.RED)
+        binding.lockscreenSummary.setTextColor(
+            getTextColor(
+                binding.lockscreenSummary.context,
+                enabled
+            )
+        )
     }
 
     private fun updateDNDAccessText(enabled: Boolean) {
         binding.dndSummary.setText(if (enabled) R.string.permission_dnd_enabled else R.string.permission_dnd_disabled)
-        binding.dndSummary.setTextColor(if (enabled) Color.GREEN else Color.RED)
+        binding.dndSummary.setTextColor(getTextColor(binding.dndSummary.context, enabled))
     }
 
     private fun updatePairPermText(enabled: Boolean) {
         binding.companionPairSummary.setText(if (enabled) R.string.permission_pairdevice_enabled else R.string.permission_pairdevice_disabled)
-        binding.companionPairSummary.setTextColor(if (enabled) Color.GREEN else Color.RED)
+        binding.companionPairSummary.setTextColor(
+            getTextColor(
+                binding.companionPairSummary.context,
+                enabled
+            )
+        )
     }
 
     private fun updateNotifListenerText(enabled: Boolean) {
         binding.notiflistenerSummary.setText(if (enabled) R.string.prompt_notifservice_enabled else R.string.prompt_notifservice_disabled)
-        binding.notiflistenerSummary.setTextColor(if (enabled) Color.GREEN else Color.RED)
+        binding.notiflistenerSummary.setTextColor(
+            getTextColor(
+                binding.notiflistenerSummary.context,
+                enabled
+            )
+        )
     }
 
     private fun updateUninstallText(enabled: Boolean) {
@@ -626,7 +696,12 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
 
     private fun updateManageCallsText(enabled: Boolean) {
         binding.callcontrolSummary.setText(if (enabled) R.string.permission_callmanager_enabled else R.string.permission_callmanager_disabled)
-        binding.callcontrolSummary.setTextColor(if (enabled) Color.GREEN else Color.RED)
+        binding.callcontrolSummary.setTextColor(
+            getTextColor(
+                binding.callcontrolSummary.context,
+                enabled
+            )
+        )
     }
 
     private fun updateWearSettingsHelperPref(installed: Boolean, upToDate: Boolean) {
@@ -643,36 +718,50 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
         )
         binding.wearsettingsPrefSummary.setTextColor(
             if (installed) {
-                if (upToDate) Color.GREEN else Color.argb(0xFF, 0xFF, 0xA5, 0)
+                if (upToDate) {
+                    getTextColor(binding.wearsettingsPrefSummary.context, true)
+                } else {
+                    Color.argb(0xFF, 0xFF, 0xA5, 0)
+                }
             } else {
-                Color.RED
+                getTextColor(binding.wearsettingsPrefSummary.context, false)
             }
         )
     }
 
     private fun updateSystemSettingsPref(enabled: Boolean) {
         binding.systemsettingsPrefSummary.setText(if (enabled) R.string.permission_systemsettings_enabled else R.string.permission_systemsettings_disabled)
-        binding.systemsettingsPrefSummary.setTextColor(if (enabled) Color.GREEN else Color.RED)
+        binding.systemsettingsPrefSummary.setTextColor(
+            getTextColor(
+                binding.systemsettingsPrefSummary.context,
+                enabled
+            )
+        )
     }
 
     private fun updateNotificationPref(enabled: Boolean) {
         binding.notifPrefSummary.setText(if (enabled) R.string.permission_notifications_enabled else R.string.permission_notifications_disabled)
-        binding.notifPrefSummary.setTextColor(if (enabled) Color.GREEN else Color.RED)
+        binding.notifPrefSummary.setTextColor(
+            getTextColor(
+                binding.notifPrefSummary.context,
+                enabled
+            )
+        )
     }
 
     private fun updateBTPref(enabled: Boolean) {
         binding.btPrefSummary.setText(if (enabled) R.string.permission_bt_enabled else R.string.permission_bt_disabled)
-        binding.btPrefSummary.setTextColor(if (enabled) Color.GREEN else Color.RED)
+        binding.btPrefSummary.setTextColor(getTextColor(binding.btPrefSummary.context, enabled))
     }
 
     private fun updateGesturesPref(enabled: Boolean) {
         binding.gesturesSummary.setText(if (enabled) R.string.permission_gestures_enabled else R.string.permission_gestures_disabled)
-        binding.gesturesSummary.setTextColor(if (enabled) Color.GREEN else Color.RED)
+        binding.gesturesSummary.setTextColor(getTextColor(binding.gesturesSummary.context, enabled))
     }
 
     private fun updateExactAlarmsPref(enabled: Boolean) {
         binding.alarmsSummary.setText(if (enabled) R.string.permission_exact_alarms_enabled else R.string.permission_exact_alarms_disabled)
-        binding.alarmsSummary.setTextColor(if (enabled) Color.GREEN else Color.RED)
+        binding.alarmsSummary.setTextColor(getTextColor(binding.alarmsSummary.context, enabled))
     }
 
     @Suppress("DEPRECATION")
@@ -681,14 +770,14 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             runCatching {
                 startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                    data = Uri.parse("package:${ctx.packageName}")
+                    data = "package:${ctx.packageName}".toUri()
                     flags = Intent.FLAG_ACTIVITY_NEW_TASK
                 })
             }
         } else {
             runCatching {
                 startActivity(Intent(Intent.ACTION_UNINSTALL_PACKAGE).apply {
-                    data = Uri.parse("package:${ctx.packageName}")
+                    data = "package:${ctx.packageName}".toUri()
                 })
             }
         }
@@ -739,5 +828,61 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
             .setCancelable(true)
             .setNegativeButton(android.R.string.cancel, null)
             .show()
+    }
+
+    @ColorInt
+    private fun getTextColor(context: Context, enabled: Boolean): Int {
+        return when (enabled) {
+            true -> if ((context.resources.configuration.uiMode and UI_MODE_NIGHT_MASK) == UI_MODE_NIGHT_YES) {
+                Color.GREEN
+            } else {
+                ColorUtils.blendARGB(Color.GREEN, Color.BLACK, 0.25f)
+            }
+
+            false -> if ((context.resources.configuration.uiMode and UI_MODE_NIGHT_MASK) == UI_MODE_NIGHT_YES) {
+                ColorUtils.blendARGB(Color.RED, Color.WHITE, 0.25f)
+            } else {
+                Color.RED
+            }
+        }
+    }
+
+    private fun updateRoundedBackground(parent: ViewGroup) {
+        val permissionsPreferences =
+            parent.children.filter { it.tag == "permissions" && it.isVisible }.toList()
+        val settingsPreferences =
+            parent.children.filter { it.tag == "settings" && it.isVisible }.toList()
+
+        permissionsPreferences.forEachIndexed { index, view ->
+            val cornerType = when {
+                permissionsPreferences.size <= 1 -> CORNERS_FULL
+                index == 0 -> CORNERS_TOP
+                index == permissionsPreferences.size - 1 -> CORNERS_BOTTOM
+                else -> CORNERS_CENTER
+            }
+
+            when (cornerType) {
+                CORNERS_FULL -> view.setBackgroundResource(R.drawable.preference_round_background)
+                CORNERS_TOP -> view.setBackgroundResource(R.drawable.preference_round_background_top)
+                CORNERS_BOTTOM -> view.setBackgroundResource(R.drawable.preference_round_background_bottom)
+                CORNERS_CENTER -> view.setBackgroundResource(R.drawable.preference_round_background_center)
+            }
+        }
+
+        settingsPreferences.forEachIndexed { index, view ->
+            val cornerType = when {
+                settingsPreferences.size <= 1 -> CORNERS_FULL
+                index == 0 -> CORNERS_TOP
+                index == settingsPreferences.size - 1 -> CORNERS_BOTTOM
+                else -> CORNERS_CENTER
+            }
+
+            when (cornerType) {
+                CORNERS_FULL -> view.setBackgroundResource(R.drawable.preference_round_background)
+                CORNERS_TOP -> view.setBackgroundResource(R.drawable.preference_round_background_top)
+                CORNERS_BOTTOM -> view.setBackgroundResource(R.drawable.preference_round_background_bottom)
+                CORNERS_CENTER -> view.setBackgroundResource(R.drawable.preference_round_background_center)
+            }
+        }
     }
 }

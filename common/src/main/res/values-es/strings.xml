@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="permission_title_bt">"Bluetooth"</string>
+    <string name="permission_bt_enabled">"Permiso de Bluetooth activado"</string>
+    <string name="permission_bt_disabled">"Permiso de Bluetooth desactivado"</string>
+    <string name="permission_dnd_enabled">"Acceso a No Molestar activado"</string>
+    <string name="permission_dnd_disabled">"Acceso a No Molestar desactivado. Por favor, haga clic para activar el cambio de la configuración de No Molestar desde su dispositivo WearOS"</string>
+</resources>

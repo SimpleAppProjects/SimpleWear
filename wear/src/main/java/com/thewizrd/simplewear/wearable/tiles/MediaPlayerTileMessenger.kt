@@ -5,7 +5,6 @@ import android.util.Log
 import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.wearable.CapabilityClient
 import com.google.android.gms.wearable.CapabilityInfo
-import com.google.android.gms.wearable.DataClient
 import com.google.android.gms.wearable.MessageClient
 import com.google.android.gms.wearable.MessageEvent
 import com.google.android.gms.wearable.Node
@@ -240,7 +239,7 @@ class MediaPlayerTileMessenger(
                 .addListener(
                     listener,
                     WearableHelper.getWearDataUri("*", MediaHelper.MediaPlayerStatePath),
-                    DataClient.FILTER_LITERAL
+                    MessageClient.FILTER_LITERAL
                 )
                 .await()
 
@@ -265,7 +264,7 @@ class MediaPlayerTileMessenger(
                 .addListener(
                     listener,
                     WearableHelper.getWearDataUri("*", MediaHelper.MediaPlayerArtPath),
-                    DataClient.FILTER_LITERAL
+                    MessageClient.FILTER_LITERAL
                 )
                 .await()
 
@@ -332,7 +331,7 @@ class MediaPlayerTileMessenger(
                                         "*",
                                         MediaHelper.MediaVolumeStatusPath
                                     ),
-                                    DataClient.FILTER_LITERAL
+                                    MessageClient.FILTER_LITERAL
                                 )
                             }
 
@@ -343,7 +342,7 @@ class MediaPlayerTileMessenger(
                                         "*",
                                         MediaHelper.MediaPlayerStatePath
                                     ),
-                                    DataClient.FILTER_LITERAL
+                                    MessageClient.FILTER_LITERAL
                                 )
                             }
                         }

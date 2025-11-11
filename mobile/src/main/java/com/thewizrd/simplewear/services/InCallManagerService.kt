@@ -8,15 +8,20 @@ import android.os.IBinder
 import android.os.Looper
 import android.telecom.Call
 import android.telecom.CallAudioState
+import android.telecom.CallEndpoint
 import android.telecom.InCallService
 import android.telecom.TelecomManager
 import android.telephony.TelephonyManager
+import androidx.annotation.DeprecatedSinceApi
 import androidx.annotation.MainThread
 import androidx.annotation.RequiresApi
 import androidx.lifecycle.MutableLiveData
 import com.thewizrd.shared_resources.utils.Logger
+import com.thewizrd.simplewear.helpers.ListChangedArgs
+import com.thewizrd.simplewear.helpers.ObservableArrayList
+import com.thewizrd.simplewear.helpers.OnListChangedListener
+import java.util.concurrent.Executors
 
-@RequiresApi(Build.VERSION_CODES.S)
 class InCallManagerService : InCallService() {
     companion object {
         @RequiresApi(Build.VERSION_CODES.S)
@@ -27,6 +32,9 @@ class InCallManagerService : InCallService() {
     }
 
     private var previousAudioRoute: Int? = null
+    private var previousCallEndpoint: CallEndpoint? = null
+    private val availableCallEndpoints: MutableList<CallEndpoint> = mutableListOf()
+    private var isMuted = false
 
     override fun onCallAdded(call: Call?) {
         OngoingCall.call = call
@@ -37,6 +45,8 @@ class InCallManagerService : InCallService() {
         OngoingCall.call = null
     }
 
+    @Deprecated("Deprecated in Java")
+    @DeprecatedSinceApi(api = 34)
     override fun onCallAudioStateChanged(audioState: CallAudioState?) {
         if (audioState?.route != CallAudioState.ROUTE_SPEAKER) {
             previousAudioRoute = audioState?.route
@@ -44,14 +54,61 @@ class InCallManagerService : InCallService() {
         OngoingCall.callAudioState.postValue(audioState)
     }
 
+    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+    override fun onCallEndpointChanged(callEndpoint: CallEndpoint) {
+        if (callEndpoint.endpointType != CallEndpoint.TYPE_SPEAKER) {
+            previousAudioRoute = CallAudioState.ROUTE_SPEAKER
+            previousCallEndpoint = callEndpoint
+        }
+        OngoingCall.callAudioState.postValue(createAudioState())
+    }
+
+    override fun onMuteStateChanged(isMuted: Boolean) {
+        this.isMuted = isMuted
+    }
+
+    override fun onAvailableCallEndpointsChanged(availableEndpoints: List<CallEndpoint>) {
+        availableCallEndpoints.clear()
+        availableCallEndpoints.addAll(availableEndpoints)
+    }
+
+    @Suppress("DEPRECATION")
     fun setSpeakerPhoneEnabled(enabled: Boolean) {
-        setAudioRoute(
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             if (enabled) {
-                CallAudioState.ROUTE_SPEAKER
+                val speakerEndpoint =
+                    availableCallEndpoints.firstOrNull { it.endpointType == CallEndpoint.TYPE_SPEAKER }
+
+                if (speakerEndpoint != null) {
+                    requestCallEndpointChange(
+                        speakerEndpoint,
+                        Executors.newSingleThreadExecutor()
+                    ) {}
+                } else {
+                    setAudioRoute(CallAudioState.ROUTE_SPEAKER)
+                }
             } else {
-                previousAudioRoute ?: CallAudioState.ROUTE_EARPIECE
+                val targetEndpoint = previousCallEndpoint
+                    ?: availableCallEndpoints.firstOrNull { it.endpointType == CallEndpoint.TYPE_EARPIECE }
+
+                if (targetEndpoint != null) {
+                    requestCallEndpointChange(
+                        targetEndpoint,
+                        Executors.newSingleThreadExecutor()
+                    ) {}
+                } else {
+                    setAudioRoute(previousAudioRoute ?: CallAudioState.ROUTE_EARPIECE)
+                }
             }
-        )
+        } else {
+            setAudioRoute(
+                if (enabled) {
+                    CallAudioState.ROUTE_SPEAKER
+                } else {
+                    previousAudioRoute ?: CallAudioState.ROUTE_EARPIECE
+                }
+            )
+        }
     }
 
     override fun onBind(intent: Intent?): IBinder? {
@@ -66,9 +123,36 @@ class InCallManagerService : InCallService() {
 
         return result
     }
+
+    @Suppress("DEPRECATION")
+    internal fun createAudioState(): CallAudioState? {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            currentCallEndpoint?.let { endpoint ->
+                CallAudioState(
+                    isMuted,
+                    endpoint.getAudioRoute(),
+                    availableCallEndpoints.map { it.getAudioRoute() }
+                        .reduceOrNull { acc, i -> acc or i } ?: 0
+                )
+            }
+        } else {
+            callAudioState
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+    private fun CallEndpoint.getAudioRoute(): Int {
+        return when (this.endpointType) {
+            CallEndpoint.TYPE_BLUETOOTH -> CallAudioState.ROUTE_BLUETOOTH
+            CallEndpoint.TYPE_EARPIECE -> CallAudioState.ROUTE_EARPIECE
+            CallEndpoint.TYPE_SPEAKER -> CallAudioState.ROUTE_SPEAKER
+            CallEndpoint.TYPE_STREAMING -> CallAudioState.ROUTE_STREAMING
+            CallEndpoint.TYPE_WIRED_HEADSET -> CallAudioState.ROUTE_WIRED_HEADSET
+            else -> -1
+        }
+    }
 }
 
-@RequiresApi(Build.VERSION_CODES.S)
 class InCallManagerAdapter private constructor() {
     private var mInCallService: InCallManagerService? = null
 
@@ -121,15 +205,15 @@ class InCallManagerAdapter private constructor() {
     }
 
     fun getAudioState(): CallAudioState? {
-        return mInCallService?.callAudioState
+        return mInCallService?.createAudioState()
     }
 }
 
-@RequiresApi(Build.VERSION_CODES.S)
 object OngoingCall {
     val callLiveData = MutableLiveData<Call?>()
     val callState = MutableLiveData<Int>()
     val callAudioState = MutableLiveData<CallAudioState?>()
+    val callNotificationLiveData = MutableLiveData<NotificationListener.CallNotificationData?>()
 
     private val callback = object : Call.Callback() {
         override fun onStateChanged(call: Call?, state: Int) {
@@ -138,26 +222,59 @@ object OngoingCall {
         }
     }
 
+    @Suppress("DEPRECATION")
     var call: Call? = null
         internal set(value) {
             field?.unregisterCallback(callback)
             callLiveData.postValue(value)
             if (value != null) {
                 value.registerCallback(callback)
-                callState.postValue(
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                        value.details.state
-                    } else {
-                        value.state
-                    }
-                )
+                callState.postValue(value.callStateCompat)
             } else {
                 callState.postValue(TelephonyManager.CALL_STATE_IDLE)
             }
             field = value
         }
 
-    fun hangup() {
-        call?.disconnect()
+    internal val callNotifications =
+        ObservableArrayList<NotificationListener.CallNotificationData>()
+
+    var currentCallNotification: NotificationListener.CallNotificationData? = null
+        internal set(value) {
+            if (value?.key != field?.key) {
+                callNotificationLiveData.postValue(value)
+                field = value
+            }
+        }
+
+    @Suppress("DEPRECATION")
+    val Call.callStateCompat: Int
+        get() {
+            val state = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                this.details.state
+            } else {
+                this.state
+            }
+
+            return when (state) {
+                Call.STATE_DIALING,
+                Call.STATE_HOLDING,
+                Call.STATE_ACTIVE -> TelephonyManager.CALL_STATE_OFFHOOK
+
+                Call.STATE_RINGING -> TelephonyManager.CALL_STATE_RINGING
+                else -> TelephonyManager.CALL_STATE_IDLE
+            }
+        }
+
+    init {
+        callNotifications.addOnListChangedCallback(object :
+            OnListChangedListener<NotificationListener.CallNotificationData> {
+            override fun onChanged(
+                sender: ArrayList<NotificationListener.CallNotificationData>,
+                args: ListChangedArgs<NotificationListener.CallNotificationData>
+            ) {
+                currentCallNotification = sender.lastOrNull()
+            }
+        })
     }
 }

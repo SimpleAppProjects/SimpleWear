@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="message_openedonphone">"Abierto en el teléfono…"</string>
+
+    <!-- Connection Status -->
+    <string name="status_disconnected">"Dispositivo no conectado"</string>
+    <string name="status_connecting">"Conectando…"</string>
+    <string name="status_connected">"Conectado"</string>
+    <string name="status_unsupported_device">"El dispositivo conectado no es compatible"</string>
+    <string name="status_device_disconnected_notinstalled">"El dispositivo no está conectado o la aplicación no está instalada en el dispositivo..."</string>
+
+    <!-- Setup -->
+    <string name="message_gettingstatus">"Obteniendo el estado de la conexión…"</string>
+    <string name="error_notinstalled">"Instale la aplicación en el dispositivo y vuelva a intentarlo"</string>
+    <string name="error_syncing">"No se pueden sincronizar los datos"</string>
+
+    <!-- Activity -->
+    <string name="title_activity_dashboard">"Panel de control"</string>
+    <string name="batt_state_charging">"Cargando"</string>
+    <string name="batt_state_discharging">"Descargando"</string>
+    <string name="state_unknown">"Desconocido"</string>
+    <string name="title_actions">"Acciones"</string>
+    <string name="state_syncing">"Sincronizando…"</string>
+    <string name="error_torch_action">"Permiso de la cámara desactivado. Por favor, compruebe el permiso en la aplicación del teléfono"</string>
+    <string name="error_sendmessage">"Sin respuesta. Por favor, compruebe la conexión"</string>
+    <string name="error_actionfailed">"Error al realizar la acción"</string>
+    <string name="error_remoteactionfailed">"Error al realizar la acción. Por favor, compruebe el permiso en la aplicación del teléfono"</string>
+    <string name="pref_layout">"Diseño de acciones"</string>
+    <string name="option_grid">"Cuadrícula"</string>
+    <string name="option_list">"Lista"</string>
+    <string name="title_launchmediacontrols">"Iniciar Controles Multimedia"</string>
+    <string name="title_autolaunchmediactrls">"Iniciar automáticamente los controles multimedia"</string>
+    <string name="action_failed_playmusic">"Error al reproducir el contenido. Inténtalo de nuevo."</string>
+    <string name="error_nomusicplayers">"No se encontraron reproductores multimedia"</string>
+    <string name="shortcut_label_playmusic">"Reproducir contenido en el teléfono"</string>
+    <string name="error_sleeptimer_notinstalled">"La aplicación SleepTimer no está instalada.
+Instálala para continuar."</string>
+    <string name="title_filter_apps">"Filtrar aplicaciones"</string>
+    <string name="clear_all">"Borrar todo"</string>
+    <string name="message_playback_stopped">"Reproducción detenida"</string>
+    <string name="error_playback_failed">"Error al reproducir. Comprueba la cola de reproducción"</string>
+    <string name="label_back">"Atrás"</string>
+    <string name="message_enablebt">"Habilita Bluetooth para una conexión fiable"</string>
+    <string name="message_nocall_active">"No hay ninguna llamada activa"</string>
+    <string name="error_noapps">"No se pueden recuperar las aplicaciones"</string>
+    <string name="pref_loadicons_title">"Cargar iconos de aplicaciones"</string>
+    <string name="action_launchcontroller">"Iniciar controlador"</string>
+    <string name="title_nowplaying">"Reproduciendo ahora"</string>
+    <string name="title_dashtile_config">"Configurar mosaico"</string>
+    <string name="message_reset_to_default">"¿Restablecer a los valores predeterminados?"</string>
+    <string name="pref_title_tiledasheditor">"Editor de mosaicos"</string>
+    <string name="title_dash_config">"Configurar panel de control"</string>
+    <string name="pref_title_dasheditor">"Editor de panel de control"</string>
+    <string name="pref_title_mediacontroller_launcher">"Añadir controlador multimedia al iniciador"</string>
+    <string name="pref_title_phone_batt_state">"Estado de la batería del teléfono"</string>
+    <string name="title_batt_state">"Estado de la batería"</string>
+    <string name="state_loading">"Cargando…"</string>
+    <string name="action_refresh">"Actualizar"</string>
+    <string name="action_retry">"Reintentar"</string>
+    <string name="action_play">"Reproducir"</string>
+    <string name="action_add_batt_state">"Añadir estado de la batería"</string>
+    <string name="action_remove_batt_state">"Eliminar estado de la batería"</string>
+    <string name="message_accessibility_svc_disabled">"Servicio de accesibilidad desactivado"</string>
+
+    <!-- Timed Actions -->
+    <string name="title_schedule_action">"Programar nueva acción"</string>
+    <string name="title_confirm_action">"Confirmar acción"</string>
+    <string name="title_edit_action">"Editar acción"</string>
+    <string name="title_set_initial_state">"Establecer estado inicial"</string>
+    <string name="title_initial_state">"Estado inicial"</string>
+    <string name="title_scheduled_state">"Estado programado"</string>
+
+    <!-- Content Descriptions -->
+    <string name="label_mute">"Silenciar"</string>
+    <string name="label_keypad">"Teclado"</string>
+    <string name="desc_speakerphone_on">"Altavoz activado"</string>
+    <string name="desc_speakerphone_off">"Altavoz Apagado"</string>
+    <string name="desc_contact_photo">"Foto de Contacto"</string>
+    <string name="desc_phone_state">"Estado del Dispositivo"</string>
+    <string name="label_arrow_up">"Flecha Arriba"</string>
+    <string name="label_arrow_down">"Flecha Abajo"</string>
+    <string name="label_arrow_left">"Flecha Izquierda"</string>
+    <string name="label_arrow_right">"Flecha Derecha"</string>
+    <string name="label_dpad_center">"Centro del D-pad"</string>
+    <string name="desc_open_player_list">"Abrir Lista de Reproductor"</string>
+    <string name="desc_artwork">"Ilustración"</string>
+    <string name="label_add_action">"Añadir Acción"</string>
+    <string name="error_permissiondenied_wear">"Permiso denegado para la acción. Por favor, compruebe el permiso en la aplicación del teléfono"</string>
+</resources>

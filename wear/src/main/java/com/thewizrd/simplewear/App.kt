@@ -9,6 +9,7 @@ import android.util.Log
 import androidx.preference.PreferenceManager
 import com.thewizrd.shared_resources.ApplicationLib
 import com.thewizrd.shared_resources.SharedModule
+import com.thewizrd.shared_resources.actions.Actions
 import com.thewizrd.shared_resources.appLib
 import com.thewizrd.shared_resources.helpers.AppState
 import com.thewizrd.shared_resources.sharedDeps
@@ -55,6 +56,8 @@ class App : Application(), ActivityLifecycleCallbacks {
                 exitProcess(2)
             }
         }
+
+        startMigration()
     }
 
     override fun onTerminate() {
@@ -62,6 +65,38 @@ class App : Application(), ActivityLifecycleCallbacks {
         // Shutdown logger
         Logger.shutdown()
         appLib.appScope.cancel()
+    }
+
+    private fun startMigration() {
+        val versionCode = runCatching {
+            val packageInfo = applicationContext.packageManager.getPackageInfo(packageName, 0)
+            packageInfo.versionCode.toLong()
+        }.getOrDefault(0)
+
+        if (com.thewizrd.simplewear.preferences.Settings.getVersionCode() < versionCode) {
+            // Add NFC Option
+            if (com.thewizrd.simplewear.preferences.Settings.getVersionCode() < 361917001) {
+                val dashConfig = com.thewizrd.simplewear.preferences.Settings.getDashboardConfig()
+                    ?.toMutableList()
+                if (dashConfig != null && !dashConfig.contains(Actions.NFC)) {
+                    dashConfig.add(Actions.NFC)
+                    com.thewizrd.simplewear.preferences.Settings.setDashboardConfig(dashConfig)
+                }
+            }
+            // Add Battery Saver Option
+            if (com.thewizrd.simplewear.preferences.Settings.getVersionCode() < 361917011) {
+                val dashConfig = com.thewizrd.simplewear.preferences.Settings.getDashboardConfig()
+                    ?.toMutableList()
+                if (dashConfig != null && !dashConfig.contains(Actions.BATTERYSAVER)) {
+                    dashConfig.add(Actions.BATTERYSAVER)
+                    com.thewizrd.simplewear.preferences.Settings.setDashboardConfig(dashConfig)
+                }
+            }
+        }
+
+        if (versionCode > 0) {
+            com.thewizrd.simplewear.preferences.Settings.setVersionCode(versionCode)
+        }
     }
 
     override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {}

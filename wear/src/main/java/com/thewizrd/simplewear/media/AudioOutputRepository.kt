@@ -14,5 +14,5 @@ class NoopAudioOutputRepository : AudioOutputRepository {
 
     override fun close() {}
 
-    override fun launchOutputSelection(closeOnConnect: Boolean) {}
+    override fun launchOutputSelection(closeOnConnect: Boolean, clientPackageName: String?) {}
 }

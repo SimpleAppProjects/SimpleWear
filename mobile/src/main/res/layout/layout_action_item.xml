@@ -10,7 +10,7 @@
     app:contentPaddingTop="8dp"
     app:contentPaddingBottom="8dp"
     app:cardCornerRadius="0dp"
-    tools:theme="@style/Theme.Material3.DayNight">
+    tools:theme="@style/Theme.Material3Expressive.DayNight">
 
     <LinearLayout
         android:layout_width="match_parent"

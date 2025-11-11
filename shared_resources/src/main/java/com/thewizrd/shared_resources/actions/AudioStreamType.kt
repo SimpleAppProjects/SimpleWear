@@ -16,7 +16,7 @@ enum class AudioStreamType(val value: Int) {
         }
 
         init {
-            for (stream in values()) {
+            for (stream in entries) {
                 map.put(stream.value, stream)
             }
         }

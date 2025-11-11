@@ -11,6 +11,7 @@ import android.os.Bundle
 import android.util.Log
 import androidx.annotation.RestrictTo
 import androidx.annotation.VisibleForTesting
+import androidx.concurrent.futures.await
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.wear.phone.interactions.PhoneTypeHelper
@@ -35,12 +36,12 @@ import com.thewizrd.shared_resources.utils.JSONParser
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.shared_resources.utils.bytesToString
 import com.thewizrd.shared_resources.utils.stringToBytes
-import com.thewizrd.simplewear.helpers.showConfirmationOverlay
+import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.utils.ErrorMessage
+import com.thewizrd.simplewear.viewmodels.WearableListenerViewModel.Companion.ACTION_OPENONPHONE
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.guava.await
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlin.coroutines.cancellation.CancellationException
@@ -94,47 +95,44 @@ abstract class WearableListenerViewModel(private val app: Application) : Android
         activityContext = null
     }
 
-    fun openAppOnPhone(activity: Activity, showAnimation: Boolean = true) {
+    fun openAppOnPhone(showAnimation: Boolean = true) {
         viewModelScope.launch {
             connect()
 
             if (mPhoneNodeWithApp == null) {
-                _errorMessagesFlow.tryEmit(ErrorMessage.String("Device is not connected or app is not installed on device..."))
+                _errorMessagesFlow.tryEmit(ErrorMessage.Resource(R.string.status_device_disconnected_notinstalled))
 
                 when (PhoneTypeHelper.getPhoneDeviceType(appContext)) {
                     PhoneTypeHelper.DEVICE_TYPE_ANDROID -> {
-                        openPlayStore(activity, showAnimation)
+                        openPlayStore(showAnimation)
                     }
 
                     PhoneTypeHelper.DEVICE_TYPE_IOS -> {
-                        _errorMessagesFlow.tryEmit(ErrorMessage.String("Connected device is not supported"))
+                        _errorMessagesFlow.tryEmit(ErrorMessage.Resource(R.string.status_unsupported_device))
                     }
 
                     else -> {
-                        _errorMessagesFlow.tryEmit(ErrorMessage.String("Connected device is not supported"))
+                        _errorMessagesFlow.tryEmit(ErrorMessage.Resource(R.string.status_unsupported_device))
                     }
                 }
             } else {
                 // Send message to device to start activity
-                val result = sendMessage(
-                    mPhoneNodeWithApp!!.id,
-                    WearableHelper.StartActivityPath,
-                    ByteArray(0)
-                )
+                val success = runCatching {
+                    val intent = WearableHelper.createRemoteActivityIntent(
+                        WearableHelper.getPackageName(),
+                        "${WearableHelper.PACKAGE_NAME}.MainActivity"
+                    )
+                    startRemoteActivity(intent)
+                }.getOrDefault(false)
 
                 if (showAnimation) {
-                    activity.showConfirmationOverlay(result != -1)
+                    sendConfirmationEvent(success)
                 }
-
-                _eventsFlow.tryEmit(WearableEvent(ACTION_OPENONPHONE, Bundle().apply {
-                    putBoolean(EXTRA_SUCCESS, result != -1)
-                    putBoolean(EXTRA_SHOWANIMATION, showAnimation)
-                }))
             }
         }
     }
 
-    suspend fun openPlayStore(activity: Activity, showAnimation: Boolean = true) {
+    suspend fun openPlayStore(showAnimation: Boolean = true) {
         // Open store on remote device
         val intentAndroid = Intent(Intent.ACTION_VIEW)
             .addCategory(Intent.CATEGORY_BROWSABLE)
@@ -145,11 +143,11 @@ abstract class WearableListenerViewModel(private val app: Application) : Android
                 .await()
 
             if (showAnimation) {
-                activity.showConfirmationOverlay(true)
+                sendConfirmationEvent(true)
             }
         }.onFailure {
             if (it !is CancellationException && showAnimation) {
-                activity.showConfirmationOverlay(false)
+                sendConfirmationEvent(false)
             }
         }
     }
@@ -392,6 +390,32 @@ abstract class WearableListenerViewModel(private val app: Application) : Android
         }
     }
 
+    protected fun sendConfirmationEvent(success: Boolean) {
+        if (success) {
+            sendConfirmationEvent(ConfirmationType.OpenOnPhone)
+        } else {
+            sendConfirmationEvent(ConfirmationType.Failure)
+        }
+    }
+
+    protected fun sendConfirmationEvent(confirmationType: ConfirmationType) {
+        _eventsFlow.tryEmit(
+            WearableEvent(
+                ACTION_SHOWCONFIRMATION,
+                Bundle().apply {
+                    putString(
+                        EXTRA_ACTIONDATA,
+                        JSONParser.serializer(
+                            ConfirmationData(
+                                confirmationType = confirmationType
+                            ), ConfirmationData::class.java
+                        )
+                    )
+                }
+            )
+        )
+    }
+
     /*
      * There should only ever be one phone in a node set (much less w/ the correct capability), so
      * I am just grabbing the first one (which should be the only one).
@@ -445,6 +469,32 @@ abstract class WearableListenerViewModel(private val app: Application) : Android
         }
 
         return -1
+    }
+
+    protected suspend fun sendRequest(nodeID: String, path: String, data: ByteArray?): ByteArray {
+        try {
+            return Wearable.getMessageClient(appContext)
+                .sendRequest(nodeID, path, data).await()
+        } catch (e: Exception) {
+            if (e is ApiException || e.cause is ApiException) {
+                val apiException = e.cause as? ApiException ?: e as? ApiException
+                if (apiException?.statusCode == WearableStatusCodes.TARGET_NODE_NOT_CONNECTED) {
+                    mConnectionStatus = WearConnectionStatus.DISCONNECTED
+
+                    _eventsFlow.tryEmit(
+                        WearableEvent(
+                            ACTION_UPDATECONNECTIONSTATUS,
+                            Bundle().apply {
+                                putInt(EXTRA_CONNECTIONSTATUS, mConnectionStatus.value)
+                            })
+                    )
+                }
+            }
+
+            Logger.writeLine(Log.ERROR, e)
+        }
+
+        return byteArrayOf()
     }
 
     @Throws(ApiException::class)

@@ -6,15 +6,15 @@ apply plugin: 'com.google.firebase.crashlytics'
 apply plugin: 'org.jetbrains.kotlin.plugin.compose'
 
 android {
-    compileSdk rootProject.compileSdkVersion
+    compileSdk = libs.versions.compileSdkVersion.get().toInteger()
 
     defaultConfig {
         applicationId "com.thewizrd.simplewear"
         minSdkVersion 26
-        targetSdkVersion rootProject.targetSdkVersion
+        targetSdkVersion libs.versions.targetSdkVersion.get().toInteger()
         // NOTE: Version Code Format (TargetSDK, Version Name, Build Number, Variant Code (Android: 0, WearOS: 1)
-        versionCode 341916051
-        versionName "1.16.1"
+        versionCode 361917021
+        versionName "1.17.0"
 
         vectorDrawables.useSupportLibrary = true
     }
@@ -24,13 +24,13 @@ android {
             applicationIdSuffix ".debug"
             debuggable true
             minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
         release {
             minifyEnabled true
             shrinkResources true
             crunchPngs true
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
 
@@ -50,7 +50,7 @@ android {
     }
 
     composeOptions {
-        kotlinCompilerExtensionVersion compose_compiler_version
+        kotlinCompilerExtensionVersion libs.versions.compose.compiler.version.get()
     }
 
     kotlin {
@@ -63,78 +63,81 @@ dependencies {
     implementation project(":shared_resources")
     implementation project(":unofficialtileapi")
 
-    coreLibraryDesugaring "com.android.tools:desugar_jdk_libs:$desugar_version"
+    coreLibraryDesugaring libs.desugar.jdk.libs
 
     // Kotlin
-    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinx_version"
-    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$kotlinx_version"
-    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-play-services:$kotlinx_version"
+    implementation libs.kotlinx.coroutines.core
+    implementation libs.kotlinx.coroutines.android
+    implementation libs.kotlinx.coroutines.play.services
 
-    implementation "androidx.appcompat:appcompat:$appcompat_version"
-    implementation "androidx.core:core-ktx:$core_version"
-    implementation "androidx.constraintlayout:constraintlayout:$constraintlayout_version"
-    implementation "androidx.fragment:fragment-ktx:$fragment_version"
-    implementation "androidx.lifecycle:lifecycle-runtime-ktx:$lifecycle_version"
-    implementation "androidx.recyclerview:recyclerview:$recyclerview_version"
-    implementation "androidx.preference:preference-ktx:$preference_version"
-    implementation "androidx.core:core-splashscreen:$coresplash_version"
-    implementation "androidx.navigation:navigation-runtime-ktx:$navigation_version"
-    implementation "androidx.datastore:datastore:$datastore_version"
+    implementation libs.appcompat
+    implementation libs.core.ktx
+    implementation libs.constraintlayout
+    implementation libs.fragment.ktx
+    implementation libs.lifecycle.runtime.ktx
+    implementation libs.recyclerview
+    implementation libs.preference.ktx
+    implementation libs.core.splashscreen
+    implementation(libs.navigation.runtime.ktx)
+    implementation(libs.datastore)
+    implementation libs.palette.ktx
 
-    implementation platform("com.google.firebase:firebase-bom:$firebase_version")
-    implementation 'com.google.firebase:firebase-analytics'
-    implementation 'com.google.firebase:firebase-crashlytics'
-    implementation 'com.google.firebase:firebase-config'
+    implementation platform(libs.firebase.bom)
+    implementation libs.firebase.analytics
+    implementation libs.firebase.crashlytics
+    implementation libs.firebase.config
 
-    implementation "com.google.android.material:material:$material_version"
+    implementation libs.material
 
     // WearOS
-    implementation 'com.google.android.gms:play-services-wearable:19.0.0'
-    compileOnly 'com.google.android.wearable:wearable:2.9.0' // Needed for Ambient Mode
+    implementation libs.play.services.wearable
+    compileOnly libs.wearable // Needed for Ambient Mode
 
-    implementation 'androidx.wear:wear:1.3.0'
-    implementation 'androidx.wear:wear-ongoing:1.0.0'
-    implementation 'androidx.wear:wear-phone-interactions:1.1.0'
-    implementation 'androidx.wear:wear-remote-interactions:1.1.0'
-    implementation "androidx.wear.watchface:watchface-complications-data:$wear_watchface_version"
-    implementation "androidx.wear.watchface:watchface-complications-data-source-ktx:$wear_watchface_version"
+    implementation libs.wear
+    implementation libs.wear.ongoing
+    implementation libs.wear.phone.interactions
+    implementation libs.wear.remote.interactions
+    implementation libs.androidx.watchface.complications.data
+    implementation libs.wear.watchface.complications.data.source.ktx
 
     // WearOS Tiles
-    implementation "androidx.wear.tiles:tiles:$wear_tiles_version"
-    debugImplementation "androidx.wear.tiles:tiles-renderer:$wear_tiles_version"
-    testImplementation "androidx.wear.tiles:tiles-testing:$wear_tiles_version"
-    debugImplementation "androidx.wear.tiles:tiles-tooling:$wear_tiles_version"
-    implementation "androidx.wear.tiles:tiles-tooling-preview:$wear_tiles_version"
-    implementation 'androidx.wear.protolayout:protolayout-material:1.2.1'
-    implementation "com.google.android.horologist:horologist-tiles:$horologist_version"
+    implementation libs.wear.tiles
+    debugImplementation libs.wear.tiles.renderer
+    testImplementation libs.wear.tiles.testing
+    debugImplementation libs.wear.tiles.tooling
+    implementation libs.wear.tiles.tooling.preview
+    implementation libs.wear.protolayout.material3
+    implementation libs.horologist.tiles
 
     // WearOS Compose
-    implementation "androidx.activity:activity-compose:$activity_version"
-    implementation "androidx.compose.compiler:compiler:$compose_compiler_version"
-    implementation platform("androidx.compose:compose-bom:$compose_bom_version")
-    implementation "androidx.compose.ui:ui"
-    implementation "androidx.compose.ui:ui-tooling-preview"
-    implementation "androidx.compose.animation:animation-graphics"
-    implementation "androidx.compose.runtime:runtime-livedata"
-    implementation "androidx.compose.material:material"
-    implementation "androidx.compose.material:material-icons-core"
-    implementation "androidx.lifecycle:lifecycle-viewmodel-compose:$lifecycle_version"
-    implementation "androidx.wear.compose:compose-foundation:$wear_compose_version"
-    implementation "androidx.wear.compose:compose-material:$wear_compose_version"
-    implementation "androidx.wear.compose:compose-navigation:$wear_compose_version"
-    implementation "androidx.wear:wear-tooling-preview:1.0.0"
+    implementation(libs.activity.compose)
+    implementation libs.androidx.compose.compiler
+    implementation platform(libs.compose.bom)
+    implementation libs.androidx.compose.ui
+    implementation libs.androidx.compose.ui.tooling.preview
+    implementation libs.androidx.compose.animation.graphics
+    implementation libs.androidx.compose.runtime.livedata
+    implementation libs.androidx.compose.material.icons.extended.android
+    implementation libs.androidx.compose.material3
+    implementation libs.lifecycle.viewmodel.compose
+    implementation libs.wear.compose.foundation
+    implementation libs.wear.compose.material3
+    implementation libs.wear.compose.navigation
+    implementation libs.wear.compose.ui.tooling
+    implementation libs.wear.tooling.preview
 
-    implementation "com.google.accompanist:accompanist-drawablepainter:$accompanist_version"
-    implementation "com.google.android.horologist:horologist-audio-ui:$horologist_version"
-    implementation "com.google.android.horologist:horologist-compose-layout:$horologist_version"
-    implementation "com.google.android.horologist:horologist-compose-material:$horologist_version"
-    implementation "com.google.android.horologist:horologist-compose-tools:$horologist_version"
-    implementation "com.google.android.horologist:horologist-media-ui:$horologist_version"
+    implementation libs.accompanist.drawablepainter
+    implementation libs.horologist.audio.ui.material3
+    implementation libs.horologist.compose.layout
+    implementation libs.horologist.compose.tools
+    implementation libs.horologist.media.ui.material3
 
-    androidTestImplementation platform("androidx.compose:compose-bom:$compose_bom_version")
-    androidTestImplementation "androidx.compose.ui:ui-test-junit4"
-    debugImplementation "androidx.compose.ui:ui-tooling"
+    implementation libs.reorderable
 
-    implementation "com.jakewharton.timber:timber:$timber_version"
-    implementation "com.google.code.gson:gson:$gson_version"
+    androidTestImplementation platform(libs.compose.bom)
+    androidTestImplementation libs.androidx.compose.ui.test.junit4
+    debugImplementation libs.androidx.compose.ui.tooling
+
+    implementation libs.timber
+    implementation libs.gson
 }

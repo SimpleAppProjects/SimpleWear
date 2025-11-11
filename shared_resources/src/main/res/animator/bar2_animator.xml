@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<set xmlns:android="http://schemas.android.com/apk/res/android"
+    android:ordering="sequentially">
+    <objectAnimator
+        android:duration="400"
+        android:propertyName="pathData"
+        android:valueFrom="m480,800q-33,0 -56.5,-23.5Q400,753 400,720v-480q0,-33 23.5,-56.5 23.5,-23.5 56.5,-23.5 33,0 56.5,23.5 23.5,23.5 23.5,56.5v480q0,33 -23.5,56.5Q513,800 480,800Z"
+        android:valueTo="m480,800q-33,0 -56.5,-23.5Q400,753 400,720v-200q0,-33 23.5,-56.5 23.5,-23.5 56.5,-23.5 33,0 56.5,23.5 23.5,23.5 23.5,56.5v200q0,33 -23.5,56.5Q513,800 480,800Z"
+        android:valueType="pathType"
+        android:repeatCount="infinite"
+        android:repeatMode="restart"
+        android:interpolator="@android:interpolator/fast_out_slow_in" />
+</set>

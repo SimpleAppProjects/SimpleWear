@@ -173,7 +173,7 @@ class ActionButtonViewModel(val action: Action) {
             }
 
             Actions.LOCKSCREEN -> {
-                drawableResId = R.drawable.ic_lock_outline_white_24dp
+                drawableResId = R.drawable.ic_lock_white_24dp
                 actionLabelResId = R.string.action_lockscreen
                 stateLabelResId = 0
             }
@@ -216,7 +216,7 @@ class ActionButtonViewModel(val action: Action) {
 
                     DNDChoice.SILENCE -> {
                         drawableResId =
-                            R.drawable.ic_notifications_off_white_24dp
+                            R.drawable.ic_do_not_disturb_silence_white_24dp
                         stateLabelResId = R.string.dndstate_silence
                     }
                 }
@@ -294,6 +294,23 @@ class ActionButtonViewModel(val action: Action) {
                 drawableResId = R.drawable.ic_timelapse
                 actionLabelResId = R.string.action_timedaction
                 stateLabelResId = 0
+            }
+
+            Actions.NFC -> {
+                tA = action as ToggleAction
+                drawableResId =
+                    if (tA.isEnabled) R.drawable.ic_nfc_on else R.drawable.ic_nfc_off
+                actionLabelResId = R.string.action_nfc
+                stateLabelResId =
+                    if (tA.isEnabled) R.string.state_on else R.string.state_off
+            }
+
+            Actions.BATTERYSAVER -> {
+                tA = action as ToggleAction
+                drawableResId = R.drawable.ic_battery_saver
+                actionLabelResId = R.string.action_batterysaver
+                stateLabelResId =
+                    if (tA.isEnabled) R.string.state_on else R.string.state_off
             }
         }
     }

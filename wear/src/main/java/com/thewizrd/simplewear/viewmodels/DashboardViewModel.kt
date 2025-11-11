@@ -78,7 +78,8 @@ class DashboardViewModel(app: Application) : WearableListenerViewModel(app) {
                                     EXTRA_ACTIONDATA,
                                     JSONParser.serializer(
                                         ConfirmationData(
-                                            title = it.getString(R.string.error_sendmessage)
+                                            confirmationType = ConfirmationType.Failure,
+                                            message = it.getString(R.string.error_sendmessage)
                                         ), ConfirmationData::class.java
                                     )
                                 )
@@ -154,6 +155,18 @@ class DashboardViewModel(app: Application) : WearableListenerViewModel(app) {
                         setActionsClickable(false)
                     }
                 }
+            }
+        }
+
+        viewModelScope.launch {
+            Settings.getDashboardConfigFlow().collect {
+                updateActions(it)
+            }
+        }
+
+        viewModelScope.launch {
+            Settings.isShowBatStatusFlow().collect {
+                showBatteryState(it)
             }
         }
 

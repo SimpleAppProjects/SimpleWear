@@ -43,6 +43,14 @@ class MediaPlayerTileRenderer(context: Context, debugResourceMode: Boolean = fal
         internal const val ID_VOL_UP = "vol_up"
         internal const val ID_VOL_DOWN = "vol_down"
         internal const val ID_APPICON = "app_icon"
+
+        fun getTapAction(context: Context): ActionBuilders.Action {
+            return ActionBuilders.launchAction(
+                ComponentName(context.packageName, context.packageName.run {
+                    if (BuildConfig.DEBUG) removeSuffix(".debug") else this
+                } + ".MediaControllerActivity")
+            )
+        }
     }
 
     override fun renderTile(
@@ -147,13 +155,5 @@ class MediaPlayerTileRenderer(context: Context, debugResourceMode: Boolean = fal
         } else {
             super.getFreshnessIntervalMillis(state)
         }
-    }
-
-    private fun getTapAction(context: Context): ActionBuilders.Action {
-        return ActionBuilders.launchAction(
-            ComponentName(context.packageName, context.packageName.run {
-                if (BuildConfig.DEBUG) removeSuffix(".debug") else this
-            } + ".MediaControllerActivity")
-        )
     }
 }

@@ -1,5 +1,3 @@
-@file:OptIn(ExperimentalWearFoundationApi::class, ExperimentalMaterialApi::class)
-
 package com.thewizrd.simplewear.ui.simplewear
 
 import android.content.ComponentName
@@ -13,7 +11,6 @@ import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -26,13 +23,14 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.pullrefresh.PullRefreshDefaults
-import androidx.compose.material.pullrefresh.PullRefreshIndicator
-import androidx.compose.material.pullrefresh.rememberPullRefreshState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ViewList
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.Stable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -42,15 +40,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.composed
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.platform.LocalViewConfiguration
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -62,24 +57,22 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
 import androidx.navigation.NavOptions
-import androidx.wear.compose.foundation.ExperimentalWearFoundationApi
-import androidx.wear.compose.foundation.rememberActiveFocusRequester
+import androidx.wear.compose.foundation.requestFocusOnHierarchyActive
 import androidx.wear.compose.foundation.rotary.RotaryScrollableDefaults
 import androidx.wear.compose.foundation.rotary.rotaryScrollable
-import androidx.wear.compose.material.Button
-import androidx.wear.compose.material.ButtonDefaults
-import androidx.wear.compose.material.Chip
-import androidx.wear.compose.material.ChipColors
-import androidx.wear.compose.material.ChipDefaults
-import androidx.wear.compose.material.CircularProgressIndicator
-import androidx.wear.compose.material.Icon
-import androidx.wear.compose.material.MaterialTheme
-import androidx.wear.compose.material.OutlinedChip
-import androidx.wear.compose.material.Switch
-import androidx.wear.compose.material.Text
-import androidx.wear.compose.material.TimeText
-import androidx.wear.compose.material.ToggleChip
-import androidx.wear.compose.ui.tooling.preview.WearPreviewDevices
+import androidx.wear.compose.material3.Button
+import androidx.wear.compose.material3.ButtonColors
+import androidx.wear.compose.material3.ButtonDefaults
+import androidx.wear.compose.material3.CircularProgressIndicator
+import androidx.wear.compose.material3.FilledTonalButton
+import androidx.wear.compose.material3.Icon
+import androidx.wear.compose.material3.MaterialTheme
+import androidx.wear.compose.material3.OutlinedButton
+import androidx.wear.compose.material3.SwitchButton
+import androidx.wear.compose.material3.Text
+import androidx.wear.compose.material3.TimeText
+import androidx.wear.compose.material3.contentColorFor
+import com.google.android.horologist.images.base.paintable.ImageVectorPaintable.Companion.asPaintable
 import com.thewizrd.shared_resources.actions.Actions
 import com.thewizrd.shared_resources.actions.BatteryStatus
 import com.thewizrd.shared_resources.controls.ActionButtonViewModel
@@ -90,19 +83,21 @@ import com.thewizrd.shared_resources.utils.ContextUtils.isSmallestWidth
 import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.controls.onClick
 import com.thewizrd.simplewear.preferences.Settings
-import com.thewizrd.simplewear.ui.components.PullRefresh
 import com.thewizrd.simplewear.ui.components.WearDivider
+import com.thewizrd.simplewear.ui.compose.tools.WearPreviewDevices
 import com.thewizrd.simplewear.ui.navigation.Screen
+import com.thewizrd.simplewear.ui.utils.fillDashboard
+import com.thewizrd.simplewear.ui.utils.rememberFocusRequester
 import com.thewizrd.simplewear.viewmodels.DashboardState
 import com.thewizrd.simplewear.viewmodels.DashboardViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlin.math.sqrt
 
 @Composable
 fun DashboardScreen(
+    modifier: Modifier = Modifier,
     dashboardViewModel: DashboardViewModel,
     scrollState: ScrollState = rememberScrollState(),
     navController: NavController
@@ -114,6 +109,7 @@ fun DashboardScreen(
     val uiState by dashboardViewModel.uiState.collectAsState()
 
     DashboardScreen(
+        modifier = modifier,
         isRefreshing = refreshing,
         onRefresh = {
             refreshing = true
@@ -159,6 +155,7 @@ fun DashboardScreen(
     )
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun DashboardScreen(
     modifier: Modifier = Modifier,
@@ -171,30 +168,21 @@ fun DashboardScreen(
     onDashTileSettingsClick: () -> Unit = {},
 ) {
     val isPreview = LocalInspectionMode.current
-    val configuration = LocalConfiguration.current
 
-    val refreshThreshold = remember(configuration) {
-        (configuration.screenHeightDp / 3f).dp
-    }
+    val pullRefreshState = rememberPullToRefreshState()
 
-    val pullRefreshState = rememberPullRefreshState(
-        refreshing = isRefreshing,
-        onRefresh = onRefresh,
-        refreshThreshold = refreshThreshold,
-        refreshingOffset = PullRefreshDefaults.RefreshingOffset + 4.dp
-    )
-
-    PullRefresh(
+    PullToRefreshBox(
         modifier = modifier.fillMaxSize(),
+        isRefreshing = isRefreshing,
+        onRefresh = onRefresh,
         state = pullRefreshState,
         indicator = {
-            PullRefreshIndicator(
+            PullToRefreshDefaults.LoadingIndicator(
                 modifier = Modifier.align(Alignment.TopCenter),
-                refreshing = isRefreshing,
                 state = pullRefreshState,
-                backgroundColor = MaterialTheme.colors.surface,
-                contentColor = MaterialTheme.colors.primary,
-                scale = true
+                isRefreshing = isRefreshing,
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
             )
         }
     ) {
@@ -202,8 +190,9 @@ fun DashboardScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(scrollState)
+                .requestFocusOnHierarchyActive()
                 .rotaryScrollable(
-                    focusRequester = rememberActiveFocusRequester(),
+                    focusRequester = rememberFocusRequester(),
                     behavior = RotaryScrollableDefaults.behavior(scrollState)
                 ),
         ) {
@@ -251,7 +240,7 @@ private fun DeviceStateChip(
     isStatusLoading: Boolean = false,
     connectionStatus: WearConnectionStatus? = null
 ) {
-    OutlinedChip(
+    OutlinedButton(
         modifier = Modifier.fillMaxWidth(),
         icon = {
             Icon(
@@ -292,11 +281,8 @@ private fun DeviceStateChip(
         },
         onClick = {},
         enabled = false,
-        colors = transparentChipColors(),
-        border = ChipDefaults.outlinedChipBorder(
-            borderColor = Color.Transparent,
-            disabledBorderColor = Color.Transparent
-        )
+        colors = transparentButtonColors(),
+        border = null
     )
 }
 
@@ -309,11 +295,17 @@ private fun BatteryStatusChip(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Start
     ) {
-        OutlinedChip(
+        OutlinedButton(
             modifier = Modifier.weight(1f, fill = true),
             icon = {
                 Icon(
-                    painter = painterResource(id = R.drawable.ic_battery_std_white_24dp),
+                    painter = painterResource(
+                        id = if (batteryStatus?.isCharging == true) {
+                            R.drawable.ic_battery_charging_white_24dp
+                        } else {
+                            R.drawable.ic_battery_std_white_24dp
+                        }
+                    ),
                     contentDescription = stringResource(R.string.title_batt_state)
                 )
             },
@@ -340,11 +332,8 @@ private fun BatteryStatusChip(
             },
             onClick = {},
             enabled = false,
-            colors = transparentChipColors(),
-            border = ChipDefaults.outlinedChipBorder(
-                borderColor = Color.Transparent,
-                disabledBorderColor = Color.Transparent
-            )
+            colors = transparentButtonColors(),
+            border = null
         )
         if (isStatusLoading) {
             Box(
@@ -361,19 +350,6 @@ private fun BatteryStatusChip(
     }
 }
 
-@Composable
-private fun transparentChipColors(): ChipColors = ChipDefaults.chipColors(
-    backgroundColor = Color.Transparent,
-    disabledBackgroundColor = Color.Transparent,
-    contentColor = Color.White,
-    disabledContentColor = Color.White,
-    iconColor = Color.White,
-    disabledIconColor = Color.White,
-    secondaryContentColor = MaterialTheme.colors.onSurfaceVariant,
-    disabledSecondaryContentColor = MaterialTheme.colors.onSurfaceVariant,
-)
-
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ActionsList(
     actions: List<ActionButtonViewModel>,
@@ -392,7 +368,7 @@ private fun ActionsList(
             .heightIn(min = 48.dp)
             .wrapContentHeight(align = Alignment.CenterVertically),
         text = stringResource(id = R.string.title_actions),
-        style = MaterialTheme.typography.button,
+        style = MaterialTheme.typography.labelMedium,
         textAlign = TextAlign.Center,
         maxLines = 1
     )
@@ -475,19 +451,10 @@ private fun ActionGridButton(
         interactionSource = interactionSource,
         enabled = model.buttonState != null,
         colors = model.buttonState?.let { state ->
-            ButtonDefaults.buttonColors(
-                backgroundColor = if (state) {
-                    colorResource(id = R.color.colorPrimary)
-                } else {
-                    MaterialTheme.colors.surface
-                }
-            )
+            actionButtonColors(state)
         } ?: run {
             // Indeterminate state
-            ButtonDefaults.buttonColors(
-                backgroundColor = colorResource(id = R.color.colorPrimaryDark),
-                disabledBackgroundColor = colorResource(id = R.color.colorPrimaryDark)
-            )
+            indeterminateActionButtonColors()
         },
         onClick = {
             if (isClickable && model.getItemViewType() != ActionItemType.READONLY_ACTION) {
@@ -531,23 +498,14 @@ private fun ActionListButton(
 ) {
     val context = LocalContext.current
 
-    Chip(
+    Button(
         modifier = Modifier.fillMaxWidth(),
         enabled = model.buttonState != null,
         colors = model.buttonState?.let { state ->
-            ChipDefaults.chipColors(
-                backgroundColor = if (state) {
-                    colorResource(id = R.color.colorPrimary)
-                } else {
-                    MaterialTheme.colors.surface
-                }
-            )
+            actionButtonColors(state)
         } ?: run {
             // Indeterminate state
-            ChipDefaults.chipColors(
-                backgroundColor = colorResource(id = R.color.colorPrimaryDark),
-                disabledBackgroundColor = colorResource(id = R.color.colorPrimaryDark)
-            )
+            indeterminateActionButtonColors()
         },
         label = {
             Text(
@@ -606,7 +564,7 @@ private fun LayoutPreferenceButton(
 ) {
     val lifecycleOwner = LocalLifecycleOwner.current
 
-    Chip(
+    FilledTonalButton(
         modifier = Modifier.fillMaxWidth(),
         label = {
             Text(text = stringResource(id = R.string.pref_layout))
@@ -625,7 +583,7 @@ private fun LayoutPreferenceButton(
                 painter = if (isGridLayout) {
                     painterResource(id = R.drawable.ic_apps_white_24dp)
                 } else {
-                    painterResource(id = R.drawable.ic_view_list_white_24dp)
+                    Icons.AutoMirrored.Rounded.ViewList.asPaintable().rememberPainter()
                 },
                 contentDescription = if (isGridLayout) {
                     stringResource(id = R.string.option_grid)
@@ -634,9 +592,6 @@ private fun LayoutPreferenceButton(
                 }
             )
         },
-        colors = ChipDefaults.secondaryChipColors(
-            secondaryContentColor = MaterialTheme.colors.onSurfaceVariant
-        ),
         onClick = {
             AnalyticsLogger.logEvent("dash_layout_btn_clicked", Bundle().apply {
                 putBoolean("isGridLayout", isGridLayout)
@@ -655,18 +610,17 @@ private fun LayoutPreferenceButton(
 private fun DashboardConfigButton(
     onClick: () -> Unit = {}
 ) {
-    Chip(
+    FilledTonalButton(
         modifier = Modifier.fillMaxWidth(),
         label = {
             Text(text = stringResource(id = R.string.pref_title_dasheditor))
         },
         icon = {
             Icon(
-                painter = painterResource(id = R.drawable.ic_baseline_edit_24),
+                painter = painterResource(id = R.drawable.ic_mode_edit),
                 contentDescription = stringResource(id = R.string.pref_title_dasheditor)
             )
         },
-        colors = ChipDefaults.secondaryChipColors(),
         onClick = onClick
     )
 }
@@ -675,18 +629,17 @@ private fun DashboardConfigButton(
 private fun TileDashboardConfigButton(
     onClick: () -> Unit = {}
 ) {
-    Chip(
+    FilledTonalButton(
         modifier = Modifier.fillMaxWidth(),
         label = {
             Text(text = stringResource(id = R.string.pref_title_tiledasheditor))
         },
         icon = {
             Icon(
-                painter = painterResource(id = R.drawable.ic_baseline_edit_24),
+                painter = painterResource(id = R.drawable.ic_mode_edit),
                 contentDescription = stringResource(id = R.string.pref_title_tiledasheditor)
             )
         },
-        colors = ChipDefaults.secondaryChipColors(),
         onClick = onClick
     )
 }
@@ -701,7 +654,7 @@ private fun MediaControllerSwitch() {
 
     var isChecked by remember { mutableStateOf(false) }
 
-    ToggleChip(
+    SwitchButton(
         modifier = Modifier.fillMaxWidth(),
         checked = isChecked,
         onCheckedChange = {
@@ -718,11 +671,6 @@ private fun MediaControllerSwitch() {
                 text = stringResource(id = R.string.pref_title_mediacontroller_launcher),
                 maxLines = 10
             )
-        },
-        toggleControl = {
-            Switch(
-                checked = isChecked
-            )
         }
     )
 
@@ -732,24 +680,51 @@ private fun MediaControllerSwitch() {
     }
 }
 
-@Stable
-private fun Modifier.fillDashboard(): Modifier = composed {
-    val isRound = LocalConfiguration.current.isScreenRound
-    val screenHeightDp = LocalConfiguration.current.screenHeightDp
+@Composable
+private fun transparentButtonColors(): ButtonColors = ButtonDefaults.outlinedButtonColors(
+    contentColor = MaterialTheme.colorScheme.onSurface,
+    secondaryContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+    iconColor = MaterialTheme.colorScheme.onSurface,
+    disabledContentColor = MaterialTheme.colorScheme.onSurface,
+    disabledSecondaryContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+    disabledIconColor = MaterialTheme.colorScheme.onSurface,
+)
 
-    var bottomInset = Dp(screenHeightDp - (screenHeightDp * 0.8733032f))
+@Composable
+private fun actionButtonColors(state: Boolean): ButtonColors {
+    return ButtonDefaults.buttonColors(
+        containerColor = if (state) {
+            MaterialTheme.colorScheme.primary
+        } else {
+            MaterialTheme.colorScheme.surfaceContainer
+        },
+        contentColor = if (state) {
+            MaterialTheme.colorScheme.onPrimary
+        } else {
+            MaterialTheme.colorScheme.onSurface
+        },
+        secondaryContentColor = if (state) {
+            MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f)
+        } else {
+            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
+        },
+        iconColor = if (state) {
+            MaterialTheme.colorScheme.onPrimary
+        } else {
+            MaterialTheme.colorScheme.onSurface
+        }
+    )
+}
 
-    if (isRound) {
-        val screenWidthDp = LocalConfiguration.current.smallestScreenWidthDp
-        val maxSquareEdge = (sqrt(((screenHeightDp * screenWidthDp) / 2).toFloat()))
-        bottomInset = Dp((screenHeightDp - (maxSquareEdge * 0.8733032f)) / 2)
-    }
+@Composable
+private fun indeterminateActionButtonColors(): ButtonColors {
+    val color = MaterialTheme.colorScheme.primaryContainer
 
-    fillMaxSize().padding(
-        start = if (isRound) 14.dp else 8.dp,
-        end = if (isRound) 14.dp else 8.dp,
-        top = if (isRound) 36.dp else 8.dp,
-        bottom = bottomInset
+    return ButtonDefaults.buttonColors(
+        disabledContainerColor = color,
+        disabledContentColor = contentColorFor(color),
+        disabledSecondaryContentColor = contentColorFor(color).copy(alpha = 0.8f),
+        disabledIconColor = contentColorFor(color)
     )
 }
 
@@ -780,9 +755,65 @@ private fun PreviewDashboardScreen() {
     }
 }
 
+@WearPreviewDevices
+@Composable
+private fun PreviewDashboardScreen_List() {
+    val dashboardState = remember {
+        DashboardState(
+            connectionStatus = WearConnectionStatus.CONNECTED,
+            isStatusLoading = true,
+            batteryStatus = BatteryStatus(100, false),
+            isGridLayout = false,
+            showBatteryState = true,
+            isActionsClickable = true,
+            actions = Actions.entries.map {
+                ActionButtonViewModel.getViewModelFromAction(it)
+            }
+        )
+    }
+
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        DashboardScreen(
+            dashboardState = dashboardState
+        )
+    }
+}
+
+@WearPreviewDevices
+@Composable
+private fun PreviewDashboardScreen_Indeterminate() {
+    val dashboardState = remember {
+        DashboardState(
+            connectionStatus = WearConnectionStatus.CONNECTED,
+            isStatusLoading = true,
+            batteryStatus = BatteryStatus(100, false),
+            isGridLayout = true,
+            showBatteryState = true,
+            isActionsClickable = true,
+            actions = Actions.entries.map {
+                ActionButtonViewModel.getViewModelFromAction(it).apply {
+                    buttonState = null
+                }
+            }
+        )
+    }
+
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        DashboardScreen(
+            dashboardState = dashboardState
+        )
+    }
+}
+
 private fun ActionButtonViewModel.getItemViewType(): Int {
     return when (this.actionType) {
-        Actions.WIFI, Actions.BLUETOOTH, Actions.MOBILEDATA, Actions.TORCH, Actions.HOTSPOT -> {
+        Actions.WIFI, Actions.BLUETOOTH, Actions.MOBILEDATA, Actions.TORCH, Actions.HOTSPOT, Actions.NFC, Actions.BATTERYSAVER -> {
             ActionItemType.TOGGLE_ACTION
         }
 
@@ -802,7 +833,6 @@ private fun ActionButtonViewModel.getItemViewType(): Int {
         }
 
         Actions.RINGER -> ActionItemType.MULTICHOICE_ACTION
-        else -> ActionItemType.TOGGLE_ACTION
     }
 }
 

@@ -1,67 +1,17 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 
 buildscript {
-    ext {
-        compileSdkVersion = 35
-        minSdkVersion = 24
-        targetSdkVersion = 34
-
-        kotlin_version = '2.1.10'
-        kotlinx_version = '1.10.2'
-
-        desugar_version = '2.1.5'
-
-        firebase_version = '33.13.0'
-
-        activity_version = '1.10.1'
-        appcompat_version = '1.7.0'
-        constraintlayout_version = '2.2.1'
-        core_version = '1.16.0'
-        fragment_version = '1.8.6'
-        lifecycle_version = '2.9.0'
-        preference_version = '1.2.1'
-        recyclerview_version = '1.4.0'
-        coresplash_version = '1.0.1'
-        work_version = '2.10.1'
-        navigation_version = '2.9.0'
-        datastore_version = '1.1.7'
-
-        test_core_version = '1.6.1'
-        test_runner_version = '1.6.2'
-        test_rules_version = '1.6.1'
-        junit_version = '1.2.1'
-        androidx_truth_version = '1.6.0'
-        google_truth_version = '1.4.4'
-
-        material_version = '1.12.0'
-
-        compose_bom_version = '2025.05.00'
-        compose_compiler_version = '1.5.15'
-        wear_compose_version = '1.4.1'
-        wear_tiles_version = '1.4.1'
-        wear_watchface_version = '1.2.1'
-        horologist_version = '0.6.23'
-        accompanist_version = '0.37.3'
-
-        gson_version = '2.13.1'
-        timber_version = '5.0.1'
-
-        // Shizuku
-        shizuku_version = '13.1.5'
-        refine_version = '4.4.0'
-    }
-
     repositories {
         mavenCentral()
         google()
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:8.10.0'
-        classpath 'com.google.gms:google-services:4.4.2'
-        classpath 'com.google.firebase:firebase-crashlytics-gradle:3.0.3'
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-        classpath "org.jetbrains.kotlin:compose-compiler-gradle-plugin:$kotlin_version"
+        classpath libs.gradle
+        classpath libs.google.services
+        classpath libs.firebase.crashlytics.gradle
+        classpath libs.kotlin.gradle.plugin
+        classpath libs.compose.compiler.gradle.plugin
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
     }

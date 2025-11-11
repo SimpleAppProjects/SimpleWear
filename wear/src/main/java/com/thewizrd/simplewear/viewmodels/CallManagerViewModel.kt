@@ -3,6 +3,7 @@ package com.thewizrd.simplewear.viewmodels
 import android.app.Application
 import android.graphics.Bitmap
 import android.os.Bundle
+import android.telephony.TelephonyManager
 import androidx.lifecycle.viewModelScope
 import com.google.android.gms.wearable.MessageEvent
 import com.thewizrd.shared_resources.actions.ActionStatus
@@ -32,10 +33,16 @@ data class CallManagerUiState(
     // InCallUi
     val callerName: String? = null,
     val callerBitmap: Bitmap? = null,
+    val callStartTime: Long = -1L,
     val supportsSpeaker: Boolean = false,
     val canSendDTMFKeys: Boolean = false,
     val isCallActive: Boolean = false,
+    val callUiState: CallUiState = CallUiState.IDLE
 )
+
+enum class CallUiState {
+    IDLE, INCOMING, ONGOING
+}
 
 class CallManagerViewModel(app: Application) : WearableListenerViewModel(app) {
     private val viewModelState = MutableStateFlow(CallManagerUiState(isLoading = true))
@@ -152,10 +159,16 @@ class CallManagerViewModel(app: Application) : WearableListenerViewModel(app) {
         val callActive = callState?.callActive ?: false
         val callerName = callState?.callerName
         val callerBmp = callState?.callerBitmap?.toBitmap()
+        val callStartTime = callState?.callStartTime ?: -1L
         val inCallFeatures = callState?.supportedFeatures ?: 0
         val supportsSpeakerToggle =
             inCallFeatures and InCallUIHelper.INCALL_FEATURE_SPEAKERPHONE != 0
         val canSendDTMFKey = inCallFeatures and InCallUIHelper.INCALL_FEATURE_DTMF != 0
+        val callUiState = when (callState?.callState) {
+            TelephonyManager.CALL_STATE_RINGING -> CallUiState.INCOMING
+            TelephonyManager.CALL_STATE_OFFHOOK -> CallUiState.ONGOING
+            else -> CallUiState.IDLE
+        }
 
         viewModelState.update {
             it.copy(
@@ -163,9 +176,11 @@ class CallManagerViewModel(app: Application) : WearableListenerViewModel(app) {
                 callerName = callerName?.takeIf { name -> name.isNotBlank() }
                     ?: appContext.getString(R.string.message_callactive),
                 callerBitmap = if (callActive) callerBmp else null,
+                callStartTime = callStartTime,
                 supportsSpeaker = callActive && supportsSpeakerToggle,
                 canSendDTMFKeys = callActive && canSendDTMFKey,
-                isCallActive = callActive
+                isCallActive = callActive,
+                callUiState = callUiState
             )
         }
     }
@@ -222,6 +237,14 @@ class CallManagerViewModel(app: Application) : WearableListenerViewModel(app) {
                     InCallUIHelper.MuteMicPath,
                     enable.booleanToBytes()
                 )
+            }
+        }
+    }
+
+    fun answerCall() {
+        viewModelScope.launch {
+            if (connect()) {
+                sendMessage(mPhoneNodeWithApp!!.id, InCallUIHelper.AnswerCallPath, null)
             }
         }
     }

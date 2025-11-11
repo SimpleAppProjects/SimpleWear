@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="message_openedonphone">"Auf dem Telefon geöffnet…"</string>
+
+    <!-- Connection Status -->
+    <string name="status_disconnected">"Gerät nicht verbunden"</string>
+    <string name="status_connecting">"Verbinden…"</string>
+    <string name="status_connected">"Verbunden"</string>
+    <string name="status_unsupported_device">"Verbundenes Gerät wird nicht unterstützt"</string>
+    <string name="status_device_disconnected_notinstalled">"Gerät ist nicht verbunden oder die App ist nicht auf dem Gerät installiert..."</string>
+
+    <!-- Setup -->
+    <string name="message_gettingstatus">"Verbindungsstatus wird abgerufen…"</string>
+    <string name="error_notinstalled">"App auf dem Gerät installieren und erneut versuchen"</string>
+    <string name="error_syncing">"Daten konnten nicht synchronisiert werden"</string>
+
+    <!-- Activity -->
+    <string name="title_activity_dashboard">"Dashboard"</string>
+    <string name="batt_state_charging">"Aufladen"</string>
+    <string name="batt_state_discharging">"Entladen"</string>
+    <string name="state_unknown">"Unbekannt"</string>
+    <string name="title_actions">"Aktionen"</string>
+    <string name="state_syncing">"Synchronisieren…"</string>
+    <string name="error_torch_action">"Kameraberechtigung deaktiviert. Bitte überprüfen Sie die Berechtigung in der Telefon-App"</string>
+    <string name="error_sendmessage">"Keine Antwort. Bitte überprüfen Sie die Verbindung"</string>
+    <string name="error_actionfailed">"Aktion konnte nicht ausgeführt werden"</string>
+    <string name="error_remoteactionfailed">"Aktion konnte nicht ausgeführt werden. Bitte überprüfen Sie die Berechtigung in der Telefon-App"</string>
+    <string name="pref_layout">"Aktionslayout"</string>
+    <string name="option_grid">"Raster"</string>
+    <string name="option_list">"Liste"</string>
+    <string name="title_launchmediacontrols">"Mediensteuerung starten"</string>
+    <string name="title_autolaunchmediactrls">"Mediensteuerung automatisch starten"</string>
+    <string name="action_failed_playmusic">"Medienwiedergabe fehlgeschlagen. Bitte versuche es erneut."</string>
+    <string name="error_nomusicplayers">"Keine Media Player gefunden"</string>
+    <string name="shortcut_label_playmusic">"Medien auf dem Telefon abspielen"</string>
+    <string name="error_sleeptimer_notinstalled">"SleepTimer-App nicht installiert.
+Bitte installieren, um fortzufahren."</string>
+    <string name="title_filter_apps">"Apps filtern"</string>
+    <string name="clear_all">"Alle löschen"</string>
+    <string name="message_playback_stopped">"Wiedergabe gestoppt"</string>
+    <string name="error_playback_failed">"Wiedergabe fehlgeschlagen. Bitte überprüfe die Medienwarteschlange"</string>
+    <string name="label_back">"Zurück"</string>
+    <string name="message_enablebt">"Bitte aktiviere Bluetooth für eine zuverlässige Verbindung"</string>
+    <string name="message_nocall_active">"Kein Anruf aktiv"</string>
+    <string name="error_noapps">"Apps konnten nicht abgerufen werden"</string>
+    <string name="pref_loadicons_title">"App-Symbole laden"</string>
+    <string name="action_launchcontroller">"Controller starten"</string>
+    <string name="title_nowplaying">"Aktuelle Wiedergabe"</string>
+    <string name="title_dashtile_config">"Kachel konfigurieren"</string>
+    <string name="message_reset_to_default">"Auf Standardwerte zurücksetzen?"</string>
+    <string name="pref_title_tiledasheditor">"Kachel-Editor"</string>
+    <string name="title_dash_config">"Dashboard konfigurieren"</string>
+    <string name="pref_title_dasheditor">"Dashboard-Editor"</string>
+    <string name="pref_title_mediacontroller_launcher">"Mediensteuerung zum Launcher hinzufügen"</string>
+    <string name="pref_title_phone_batt_state">"Telefon-Akkustatus"</string>
+    <string name="title_batt_state">"Akkuzustand"</string>
+    <string name="state_loading">"Lädt…"</string>
+    <string name="action_refresh">"Aktualisieren"</string>
+    <string name="action_retry">"Wiederholen"</string>
+    <string name="action_play">"Abspielen"</string>
+    <string name="action_add_batt_state">"Akkuzustand hinzufügen"</string>
+    <string name="action_remove_batt_state">"Akkuzustand entfernen"</string>
+    <string name="message_accessibility_svc_disabled">"Bedienungshilfendienst deaktiviert"</string>
+
+    <!-- Timed Actions -->
+    <string name="title_schedule_action">"Neue Aktion planen"</string>
+    <string name="title_confirm_action">"Aktion bestätigen"</string>
+    <string name="title_edit_action">"Aktion bearbeiten"</string>
+    <string name="title_set_initial_state">"Anfangszustand festlegen"</string>
+    <string name="title_initial_state">"Anfangszustand"</string>
+    <string name="title_scheduled_state">"Geplanter Zustand"</string>
+
+    <!-- Content Descriptions -->
+    <string name="label_mute">"Stumm"</string>
+    <string name="label_keypad">"Tastatur"</string>
+    <string name="desc_speakerphone_on">"Lautsprecher Ein"</string>
+    <string name="desc_speakerphone_off">"Lautsprecher Aus"</string>
+    <string name="desc_contact_photo">"Kontaktfoto"</string>
+    <string name="desc_phone_state">"Gerätezustand"</string>
+    <string name="label_arrow_up">"Pfeil nach oben"</string>
+    <string name="label_arrow_down">"Pfeil nach unten"</string>
+    <string name="label_arrow_left">"Pfeil nach links"</string>
+    <string name="label_arrow_right">"Pfeil nach rechts"</string>
+    <string name="label_dpad_center">"DPad Mitte"</string>
+    <string name="desc_open_player_list">"Player-Liste öffnen"</string>
+    <string name="desc_artwork">"Cover"</string>
+    <string name="label_add_action">"Aktion hinzufügen"</string>
+    <string name="error_permissiondenied_wear">"Berechtigung für Aktion verweigert. Bitte überprüfe die Berechtigung in der Telefon-App"</string>
+</resources>

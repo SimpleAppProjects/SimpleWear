@@ -214,9 +214,9 @@ class WearableDataListenerService : WearableListenerService() {
             /* InCall Actions */
             else if (messageEvent.path == InCallUIHelper.ConnectPath) {
                 if (PhoneStatusHelper.callStatePermissionEnabled(ctx) &&
-                    (Build.VERSION.SDK_INT < Build.VERSION_CODES.O ||
-                            Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
-                            PhoneStatusHelper.companionDeviceAssociated(ctx))
+                    (Build.VERSION.SDK_INT < Build.VERSION_CODES.O || PhoneStatusHelper.companionDeviceAssociated(
+                        ctx
+                    ))
                 ) {
                     CallControllerService.enqueueWork(
                         ctx, Intent(ctx, CallControllerService::class.java)

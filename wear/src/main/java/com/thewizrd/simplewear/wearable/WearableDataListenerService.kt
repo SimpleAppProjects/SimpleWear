@@ -37,6 +37,7 @@ import com.thewizrd.shared_resources.actions.BatteryStatus
 import com.thewizrd.shared_resources.actions.ToggleAction
 import com.thewizrd.shared_resources.appLib
 import com.thewizrd.shared_resources.data.AppItemData
+import com.thewizrd.shared_resources.data.CallState
 import com.thewizrd.shared_resources.helpers.InCallUIHelper
 import com.thewizrd.shared_resources.helpers.MediaHelper
 import com.thewizrd.shared_resources.helpers.WearableHelper
@@ -61,6 +62,7 @@ import com.thewizrd.simplewear.viewmodels.WearableListenerViewModel
 import com.thewizrd.simplewear.wearable.complications.BatteryStatusComplicationService
 import com.thewizrd.simplewear.wearable.tiles.DashboardTileProviderService
 import com.thewizrd.simplewear.wearable.tiles.MediaPlayerTileProviderService
+import com.thewizrd.simplewear.wearable.tiles.NowPlayingTileProviderService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.firstOrNull
@@ -126,9 +128,15 @@ class WearableDataListenerService : WearableListenerService() {
 
             messageEvent.path == InCallUIHelper.CallStateBridgePath -> {
                 val enable = messageEvent.data.bytesToBool()
+                val callState = messageEvent.data.takeIf { it.size > 1 }?.let {
+                    JSONParser.deserializer(
+                        it.copyOfRange(1, it.size).bytesToString(),
+                        CallState::class.java
+                    )
+                }
 
                 if (enable) {
-                    createCallOngoingActivity()
+                    createCallOngoingActivity(callState)
                 } else {
                     dismissCallOngoingActivity()
                 }
@@ -171,6 +179,7 @@ class WearableDataListenerService : WearableListenerService() {
 
                         if (!mLegacyTilesEnabled && (playerState?.key != currentState?.mediaPlayerState?.key || (playerState?.playbackState == PlaybackState.PLAYING && playerState.mediaMetaData?.positionState != currentState?.mediaPlayerState?.mediaMetaData?.positionState))) {
                             MediaPlayerTileProviderService.requestTileUpdate(appLib.context)
+                            NowPlayingTileProviderService.requestTileUpdate(appLib.context)
                         }
                     }.onFailure {
                         Logger.error(TAG, it)
@@ -191,6 +200,7 @@ class WearableDataListenerService : WearableListenerService() {
 
                         if (!mLegacyTilesEnabled && !artworkBytes.contentEquals(currentState)) {
                             MediaPlayerTileProviderService.requestTileUpdate(appLib.context)
+                            NowPlayingTileProviderService.requestTileUpdate(appLib.context)
                         }
                     }.onFailure {
                         Logger.error(TAG, it)
@@ -220,6 +230,7 @@ class WearableDataListenerService : WearableListenerService() {
 
                         if (!mLegacyTilesEnabled && appInfo?.key != currentState?.key) {
                             MediaPlayerTileProviderService.requestTileUpdate(appLib.context)
+                            NowPlayingTileProviderService.requestTileUpdate(appLib.context)
                         }
                     }.onFailure {
                         Logger.error(TAG, it)
@@ -350,7 +361,9 @@ class WearableDataListenerService : WearableListenerService() {
                     Actions.LOCATION,
                     Actions.LOCKSCREEN,
                     Actions.PHONE,
-                    Actions.HOTSPOT -> {
+                    Actions.HOTSPOT,
+                    Actions.NFC,
+                    Actions.BATTERYSAVER -> {
                         appLib.appScope.launch {
                             runCatching {
                                 val dashboardDataStore = appLib.context.dashboardDataStore
@@ -447,6 +460,17 @@ class WearableDataListenerService : WearableListenerService() {
         }
     }
 
+    protected suspend fun sendRequest(nodeID: String, path: String, data: ByteArray?): ByteArray {
+        try {
+            return Wearable.getMessageClient(this@WearableDataListenerService)
+                .sendRequest(nodeID, path, data).await()
+        } catch (e: Exception) {
+            Logger.writeLine(Log.ERROR, e)
+        }
+
+        return byteArrayOf()
+    }
+
     override fun onDataChanged(dataEventBuffer: DataEventBuffer) {
         super.onDataChanged(dataEventBuffer)
 
@@ -466,12 +490,13 @@ class WearableDataListenerService : WearableListenerService() {
         }
     }
 
-    private fun createCallOngoingActivity() {
+    private fun createCallOngoingActivity(callState: CallState? = null) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             initCallControllerNotifChannel()
         }
 
-        val notifTitle = getString(R.string.message_callactive)
+        val notifTitle: String = callState?.callerName?.takeIf { it.isNotEmpty() }
+            ?: getString(R.string.message_callactive)
 
         val notifBuilder = NotificationCompat.Builder(this, CALLS_NOT_CHANNEL_ID)
             .setStyle(
@@ -493,9 +518,16 @@ class WearableDataListenerService : WearableListenerService() {
                 getCallControllerIntent()
             )
             .setLocusId(LocusIdCompat(CALLS_LOCUS_ID))
+            .apply {
+                callState?.callStartTime?.takeIf { it > 0 }?.let { callStartTime ->
+                    this.setUsesChronometer(true)
+                        .setWhen(callStartTime)
+                        .setShowWhen(false)
+                }
+            }
 
         val ongoingActivityStatus = Status.Builder()
-            .addTemplate(getString(R.string.message_callactive))
+            .addTemplate(notifTitle)
             .build()
 
         val ongoingActivity = OngoingActivity.Builder(applicationContext, 1000, notifBuilder)
@@ -551,6 +583,7 @@ class WearableDataListenerService : WearableListenerService() {
 
         val ongoingActivity = OngoingActivity.Builder(applicationContext, 1001, notifBuilder)
             .setStaticIcon(R.drawable.ic_music_note_white_24dp)
+            .setAnimatedIcon(R.drawable.music_note_bounce_animated)
             .setTouchIntent(getMediaControllerIntent())
             //.setStatus(ongoingActivityStatus) // Uses content text from notif
             .setTitle(notifTitle)
@@ -636,6 +669,13 @@ class WearableDataListenerService : WearableListenerService() {
             // Disconnect or dismiss any ongoing activity
             dismissMediaOngoingActivity()
             dismissCallOngoingActivity()
+        } else {
+            if (DashboardTileProviderService.isInFocus) {
+                DashboardTileProviderService.requestTileUpdate(this)
+            }
+            if (MediaPlayerTileProviderService.isInFocus) {
+                MediaPlayerTileProviderService.requestTileUpdate(this)
+            }
         }
     }
 
