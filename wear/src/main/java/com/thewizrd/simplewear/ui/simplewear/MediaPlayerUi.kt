@@ -147,6 +147,7 @@ import com.thewizrd.simplewear.ui.components.HorizontalPagerScreen
 import com.thewizrd.simplewear.ui.components.LoadingContent
 import com.thewizrd.simplewear.ui.compose.tools.WearPreviewDevices
 import com.thewizrd.simplewear.ui.navigation.Screen
+import com.thewizrd.simplewear.ui.theme.activityViewModel
 import com.thewizrd.simplewear.ui.theme.findActivity
 import com.thewizrd.simplewear.ui.utils.DynamicThemePrimaryColorsFromImage
 import com.thewizrd.simplewear.ui.utils.MinContrastOfPrimaryVsBackground
@@ -173,7 +174,7 @@ fun MediaPlayerUi(
     val activity = context.findActivity()
 
     val lifecycleOwner = LocalLifecycleOwner.current
-    val mediaPlayerViewModel = viewModel<MediaPlayerViewModel>()
+    val mediaPlayerViewModel = activityViewModel<MediaPlayerViewModel>()
     val volumeViewModel = remember(context, mediaPlayerViewModel) {
         MediaVolumeViewModel(
             context,
@@ -791,26 +792,40 @@ private fun RoundSettingsButtonsLayout(
             horizontalArrangement = Arrangement.Center
         ) {
             Spacer(modifier = Modifier.fillMaxWidth(horizontalSpacerFraction))
-            if (isLargeWidth) {
-                SettingsButton(
-                    modifier = Modifier.weight(1f),
-                    alignment = Alignment.TopCenter,
-                    onClick = leftButton.onClick,
-                    imageVector = leftButton.imageVector,
-                    contentDescription = leftButton.contentDescription,
-                    iconSize = ButtonDefaults.ExtraSmallIconSize,
-                    buttonColors = if (!isAmbient) {
+            SettingsButton(
+                modifier = Modifier.weight(1f),
+                alignment = Alignment.TopCenter,
+                onClick = leftButton.onClick,
+                imageVector = leftButton.imageVector,
+                contentDescription = leftButton.contentDescription,
+                iconSize = if (isLargeWidth) {
+                    ButtonDefaults.ExtraSmallIconSize
+                } else {
+                    ButtonDefaults.IconSize
+                },
+                buttonColors = if (isLargeWidth) {
+                    if (!isAmbient) {
                         SettingsButtonDefaults.buttonColors()
                     } else {
                         SettingsButtonDefaults.ambientButtonColors()
-                    },
-                    border = if (!isAmbient) {
+                    }
+                } else {
+                    if (!isAmbient) {
+                        IconButtonDefaults.iconButtonColors()
+                    } else {
+                        IconButtonDefaults.outlinedIconButtonColors()
+                    }
+                },
+                border = if (isLargeWidth) {
+                    if (!isAmbient) {
                         null
                     } else {
                         SettingsButtonDefaults.ambientButtonBorder(true)
                     }
-                )
-            }
+                } else {
+                    null
+                }
+            )
             Box(
                 modifier = Modifier
                     .weight(1f)
@@ -828,30 +843,42 @@ private fun RoundSettingsButtonsLayout(
                         interactionSource = null,
                         role = Role.Button
                     ),
-                contentAlignment = if (isLargeWidth) {
-                    Alignment.BottomCenter
-                } else {
-                    Alignment.TopCenter
-                }
+                contentAlignment = Alignment.BottomCenter
             ) {
                 BrandImage(brandImage)
             }
             SettingsButton(
                 modifier = Modifier.weight(1f),
                 alignment = Alignment.TopCenter,
-                onClick = if (isLargeWidth) rightButton.onClick else onOpenVolume,
+                onClick = rightButton.onClick,
                 imageVector = rightButton.imageVector,
                 contentDescription = rightButton.contentDescription,
-                iconSize = ButtonDefaults.ExtraSmallIconSize,
-                buttonColors = if (!isAmbient) {
-                    SettingsButtonDefaults.buttonColors()
+                iconSize = if (isLargeWidth) {
+                    ButtonDefaults.ExtraSmallIconSize
                 } else {
-                    SettingsButtonDefaults.ambientButtonColors()
+                    ButtonDefaults.IconSize
                 },
-                border = if (!isAmbient) {
-                    null
+                buttonColors = if (isLargeWidth) {
+                    if (!isAmbient) {
+                        SettingsButtonDefaults.buttonColors()
+                    } else {
+                        SettingsButtonDefaults.ambientButtonColors()
+                    }
                 } else {
-                    SettingsButtonDefaults.ambientButtonBorder(true)
+                    if (!isAmbient) {
+                        IconButtonDefaults.iconButtonColors()
+                    } else {
+                        IconButtonDefaults.outlinedIconButtonColors()
+                    }
+                },
+                border = if (isLargeWidth) {
+                    if (!isAmbient) {
+                        null
+                    } else {
+                        SettingsButtonDefaults.ambientButtonBorder(true)
+                    }
+                } else {
+                    null
                 }
             )
             Spacer(modifier = Modifier.fillMaxWidth(horizontalSpacerFraction))
@@ -861,27 +888,34 @@ private fun RoundSettingsButtonsLayout(
 
 @Composable
 private fun BrandImage(data: BrandImageData) {
+    val isLargeWidth = LocalConfiguration.current.screenWidthDp >= 225
+    val iconSize = if (isLargeWidth) {
+        IconButtonDefaults.LargeIconSize
+    } else {
+        IconButtonDefaults.DefaultIconSize
+    }
+
     if (data.imageVector != null) {
         Image(
-            modifier = Modifier.touchTargetAwareSize(IconButtonDefaults.LargeIconSize),
+            modifier = Modifier.touchTargetAwareSize(iconSize),
             imageVector = data.imageVector,
             contentDescription = stringResource(R.string.desc_open_player_list)
         )
     } else if (data.painter != null) {
         Image(
-            modifier = Modifier.touchTargetAwareSize(IconButtonDefaults.LargeIconSize),
+            modifier = Modifier.touchTargetAwareSize(iconSize),
             painter = data.painter,
             contentDescription = stringResource(R.string.desc_open_player_list)
         )
     } else if (data.bitmap != null) {
         Image(
-            modifier = Modifier.touchTargetAwareSize(IconButtonDefaults.LargeIconSize),
+            modifier = Modifier.touchTargetAwareSize(iconSize),
             bitmap = data.bitmap.asImageBitmap(),
             contentDescription = stringResource(R.string.desc_open_player_list)
         )
     } else {
         Image(
-            modifier = Modifier.touchTargetAwareSize(IconButtonDefaults.LargeIconSize),
+            modifier = Modifier.touchTargetAwareSize(iconSize),
             painter = painterResource(R.drawable.ic_play_circle_filled_white_24dp),
             contentDescription = stringResource(R.string.desc_open_player_list)
         )
