@@ -304,9 +304,7 @@ class CallControllerService : LifecycleService(), MessageClient.OnMessageReceive
         }
         OngoingCall.callNotificationLiveData.observe(this) {
             scope.launch {
-                if (isInCall()) {
-                    sendCallState(it?.callState)
-                }
+                sendCallState(it?.callState)
             }
         }
     }
