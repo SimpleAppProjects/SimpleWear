@@ -30,7 +30,9 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Forward10
 import androidx.compose.material.icons.rounded.Refresh
+import androidx.compose.material.icons.rounded.Replay10
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
@@ -561,27 +563,62 @@ private fun MediaPlayerControlsPage(
                     controlButtons = {
                         if (!isAmbient) {
                             CompositionLocalProvider(LocalTimestampProvider provides timestampProvider) {
-                                AnimatedMediaControlButtons(
-                                    onPlayButtonClick = {
-                                        playerUiController.play()
-                                    },
-                                    onPauseButtonClick = {
-                                        playerUiController.pause()
-                                    },
-                                    playPauseButtonEnabled = !uiState.isPlaybackLoading || playerState.playbackState > PlaybackState.LOADING,
-                                    playing = playerState.playbackState == PlaybackState.PLAYING,
-                                    onSeekToPreviousButtonClick = {
-                                        playerUiController.skipToPreviousMedia()
-                                    },
-                                    seekToPreviousButtonEnabled = !uiState.isPlaybackLoading || playerState.playbackState > PlaybackState.LOADING,
-                                    onSeekToNextButtonClick = {
-                                        playerUiController.skipToNextMedia()
-                                    },
-                                    seekToNextButtonEnabled = !uiState.isPlaybackLoading || playerState.playbackState > PlaybackState.LOADING,
-                                    trackPositionUiModel = TrackPositionUiModelMapper.map(
-                                        playbackStateEvent
+                                Column(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth(0.82f)
+                                            .padding(bottom = 2.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        FilledIconButton(
+                                            onClick = { playerUiController.seekBackward() },
+                                            modifier = Modifier.size(32.dp),
+                                            enabled = !uiState.isPlaybackLoading || playerState.playbackState > PlaybackState.LOADING
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Rounded.Replay10,
+                                                contentDescription = "-10s",
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                        }
+                                        FilledIconButton(
+                                            onClick = { playerUiController.seekForward() },
+                                            modifier = Modifier.size(32.dp),
+                                            enabled = !uiState.isPlaybackLoading || playerState.playbackState > PlaybackState.LOADING
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Rounded.Forward10,
+                                                contentDescription = "+10s",
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                        }
+                                    }
+                                    AnimatedMediaControlButtons(
+                                        onPlayButtonClick = {
+                                            playerUiController.play()
+                                        },
+                                        onPauseButtonClick = {
+                                            playerUiController.pause()
+                                        },
+                                        playPauseButtonEnabled = !uiState.isPlaybackLoading || playerState.playbackState > PlaybackState.LOADING,
+                                        playing = playerState.playbackState == PlaybackState.PLAYING,
+                                        onSeekToPreviousButtonClick = {
+                                            playerUiController.skipToPreviousMedia()
+                                        },
+                                        seekToPreviousButtonEnabled = !uiState.isPlaybackLoading || playerState.playbackState > PlaybackState.LOADING,
+                                        onSeekToNextButtonClick = {
+                                            playerUiController.skipToNextMedia()
+                                        },
+                                        seekToNextButtonEnabled = !uiState.isPlaybackLoading || playerState.playbackState > PlaybackState.LOADING,
+                                        trackPositionUiModel = TrackPositionUiModelMapper.map(
+                                            playbackStateEvent
+                                        )
                                     )
-                                )
+                                }
                             }
                         } else {
                             val leftButtonPadding =
@@ -599,22 +636,54 @@ private fun MediaPlayerControlsPage(
                                 playPauseButtonEnabled = !uiState.isPlaybackLoading || playerState.playbackState > PlaybackState.LOADING,
                                 playing = playerState.playbackState == PlaybackState.PLAYING,
                                 leftButton = {
-                                    AmbientSeekToPreviousButton(
-                                        onClick = {
-                                            playerUiController.skipToPreviousMedia()
-                                        },
-                                        buttonPadding = leftButtonPadding,
-                                        enabled = !uiState.isPlaybackLoading || playerState.playbackState > PlaybackState.LOADING,
-                                    )
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally
+                                    ) {
+                                        FilledIconButton(
+                                            onClick = { playerUiController.seekBackward() },
+                                            modifier = Modifier.size(28.dp),
+                                            enabled = !uiState.isPlaybackLoading || playerState.playbackState > PlaybackState.LOADING
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Rounded.Replay10,
+                                                contentDescription = "-10s",
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                        }
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        AmbientSeekToPreviousButton(
+                                            onClick = {
+                                                playerUiController.skipToPreviousMedia()
+                                            },
+                                            buttonPadding = leftButtonPadding,
+                                            enabled = !uiState.isPlaybackLoading || playerState.playbackState > PlaybackState.LOADING,
+                                        )
+                                    }
                                 },
                                 rightButton = {
-                                    AmbientSeekToNextButton(
-                                        onClick = {
-                                            playerUiController.skipToNextMedia()
-                                        },
-                                        buttonPadding = rightButtonPadding,
-                                        enabled = !uiState.isPlaybackLoading || playerState.playbackState > PlaybackState.LOADING,
-                                    )
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally
+                                    ) {
+                                        FilledIconButton(
+                                            onClick = { playerUiController.seekForward() },
+                                            modifier = Modifier.size(28.dp),
+                                            enabled = !uiState.isPlaybackLoading || playerState.playbackState > PlaybackState.LOADING
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Rounded.Forward10,
+                                                contentDescription = "+10s",
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                        }
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        AmbientSeekToNextButton(
+                                            onClick = {
+                                                playerUiController.skipToNextMedia()
+                                            },
+                                            buttonPadding = rightButtonPadding,
+                                            enabled = !uiState.isPlaybackLoading || playerState.playbackState > PlaybackState.LOADING,
+                                        )
+                                    }
                                 }
                             )
                         }

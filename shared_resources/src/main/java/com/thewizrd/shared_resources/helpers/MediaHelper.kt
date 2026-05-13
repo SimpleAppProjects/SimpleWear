@@ -26,6 +26,9 @@ object MediaHelper {
     const val MediaPlayFromSearchPath = "/media/searchplay"
     const val MediaPlayerDisconnectPath = "/media/disconnect"
 
+    const val MediaSeekForwardPath = "/media/action/seek_forward"
+    const val MediaSeekBackwardPath = "/media/action/seek_backward"
+
     const val MediaVolumeUpPath = "/media/volume/up"
     const val MediaVolumeDownPath = "/media/volume/down"
     const val MediaVolumeStatusPath = "/media/volume/status"
