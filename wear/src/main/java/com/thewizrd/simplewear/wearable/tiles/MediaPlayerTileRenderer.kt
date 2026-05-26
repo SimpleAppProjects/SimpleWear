@@ -43,6 +43,8 @@ class MediaPlayerTileRenderer(context: Context, debugResourceMode: Boolean = fal
         internal const val ID_VOL_UP = "vol_up"
         internal const val ID_VOL_DOWN = "vol_down"
         internal const val ID_APPICON = "app_icon"
+        internal const val ID_SEEK_BACKWARD = "seek_backward"
+        internal const val ID_SEEK_FORWARD = "seek_forward"
 
         fun getTapAction(context: Context): ActionBuilders.Action {
             return ActionBuilders.launchAction(
@@ -94,7 +96,9 @@ class MediaPlayerTileRenderer(context: Context, debugResourceMode: Boolean = fal
             ID_SKIP to R.drawable.ic_baseline_skip_next_24,
 
             ID_VOL_UP to R.drawable.ic_volume_up_white_24dp,
-            ID_VOL_DOWN to R.drawable.ic_baseline_volume_down_24
+            ID_VOL_DOWN to R.drawable.ic_baseline_volume_down_24,
+            ID_SEEK_BACKWARD to R.drawable.ic_replay_10_white_24dp,
+            ID_SEEK_FORWARD to R.drawable.ic_forward_10_white_24dp
         )
 
         (resourceIds.takeIf { it.isNotEmpty() } ?: resources.keys).forEach { key ->

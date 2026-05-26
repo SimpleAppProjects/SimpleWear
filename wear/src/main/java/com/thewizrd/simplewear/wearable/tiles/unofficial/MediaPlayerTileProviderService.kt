@@ -250,6 +250,15 @@ class MediaPlayerTileProviderService : TileProviderService() {
             )
 
             views.setOnClickPendingIntent(
+                R.id.seek_backward_button,
+                getActionClickIntent(this, MediaHelper.MediaSeekBackwardPath)
+            )
+            views.setOnClickPendingIntent(
+                R.id.seek_forward_button,
+                getActionClickIntent(this, MediaHelper.MediaSeekForwardPath)
+            )
+
+            views.setOnClickPendingIntent(
                 R.id.vol_down_button,
                 getActionClickIntent(this, MediaHelper.MediaVolumeDownPath)
             )
@@ -287,6 +296,8 @@ class MediaPlayerTileProviderService : TileProviderService() {
             MediaHelper.MediaNextPath -> requestPlayerAction(PlayerAction.NEXT)
             MediaHelper.MediaVolumeUpPath -> requestPlayerAction(PlayerAction.VOL_UP)
             MediaHelper.MediaVolumeDownPath -> requestPlayerAction(PlayerAction.VOL_DOWN)
+            MediaHelper.MediaSeekBackwardPath -> requestPlayerAction(PlayerAction.SEEK_BACKWARD)
+            MediaHelper.MediaSeekForwardPath -> requestPlayerAction(PlayerAction.SEEK_FORWARD)
         }
 
         return super.onStartCommand(intent, flags, startId)

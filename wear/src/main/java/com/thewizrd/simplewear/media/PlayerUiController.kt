@@ -5,6 +5,8 @@ interface PlayerUiController {
     fun pause()
     fun skipToPreviousMedia()
     fun skipToNextMedia()
+    fun seekForward()
+    fun seekBackward()
 }
 
 class NoopPlayerUiController : PlayerUiController {
@@ -15,6 +17,10 @@ class NoopPlayerUiController : PlayerUiController {
     override fun skipToPreviousMedia() {}
 
     override fun skipToNextMedia() {}
+
+    override fun seekForward() {}
+
+    override fun seekBackward() {}
 }
 
 class MediaPlayerUiController(private val mediaPlayerViewModel: MediaPlayerViewModel) :
@@ -26,4 +32,8 @@ class MediaPlayerUiController(private val mediaPlayerViewModel: MediaPlayerViewM
     override fun skipToPreviousMedia() = mediaPlayerViewModel.requestSkipToPreviousAction()
 
     override fun skipToNextMedia() = mediaPlayerViewModel.requestSkipToNextAction()
+
+    override fun seekForward() = mediaPlayerViewModel.requestSeekForward()
+
+    override fun seekBackward() = mediaPlayerViewModel.requestSeekBackward()
 }

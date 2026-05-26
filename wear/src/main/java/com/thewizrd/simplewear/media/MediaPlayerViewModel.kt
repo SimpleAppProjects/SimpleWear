@@ -538,6 +538,14 @@ class MediaPlayerViewModel(app: Application) : WearableListenerViewModel(app) {
         requestMediaAction(MediaHelper.MediaNextPath)
     }
 
+    fun requestSeekForward() {
+        requestMediaAction(MediaHelper.MediaSeekForwardPath)
+    }
+
+    fun requestSeekBackward() {
+        requestMediaAction(MediaHelper.MediaSeekBackwardPath)
+    }
+
     fun requestVolumeUp() {
         requestMediaAction(MediaHelper.MediaVolumeUpPath)
     }

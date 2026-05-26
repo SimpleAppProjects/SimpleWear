@@ -53,7 +53,9 @@ class MediaPlayerTileMessenger(
         PREVIOUS,
         NEXT,
         VOL_UP,
-        VOL_DOWN
+        VOL_DOWN,
+        SEEK_BACKWARD,
+        SEEK_FORWARD
     }
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -207,6 +209,14 @@ class MediaPlayerTileMessenger(
 
                 PlayerAction.VOL_DOWN -> {
                     sendMessage(mPhoneNodeWithApp!!.id, MediaHelper.MediaVolumeDownPath, null)
+                }
+
+                PlayerAction.SEEK_BACKWARD -> {
+                    sendMessage(mPhoneNodeWithApp!!.id, MediaHelper.MediaSeekBackwardPath, null)
+                }
+
+                PlayerAction.SEEK_FORWARD -> {
+                    sendMessage(mPhoneNodeWithApp!!.id, MediaHelper.MediaSeekForwardPath, null)
                 }
             }
         }

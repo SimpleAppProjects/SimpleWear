@@ -85,6 +85,8 @@ import com.thewizrd.simplewear.wearable.tiles.MediaPlayerTileRenderer.Companion.
 import com.thewizrd.simplewear.wearable.tiles.MediaPlayerTileRenderer.Companion.ID_SKIP
 import com.thewizrd.simplewear.wearable.tiles.MediaPlayerTileRenderer.Companion.ID_VOL_DOWN
 import com.thewizrd.simplewear.wearable.tiles.MediaPlayerTileRenderer.Companion.ID_VOL_UP
+import com.thewizrd.simplewear.wearable.tiles.MediaPlayerTileRenderer.Companion.ID_SEEK_BACKWARD
+import com.thewizrd.simplewear.wearable.tiles.MediaPlayerTileRenderer.Companion.ID_SEEK_FORWARD
 import com.thewizrd.simplewear.wearable.tiles.MediaPlayerTileState
 import kotlinx.coroutines.runBlocking
 import java.time.Instant
@@ -345,15 +347,9 @@ internal fun MediaPlayerTileLayout(
                                     Box.Builder()
                                         .setWidth(expand())
                                         .setHeight(
-                                            WrappedDimensionProp.Builder()
-                                                .apply {
-                                                    if (deviceParameters.isLargeHeight()) {
-                                                        setMinimumSize(dp(80f))
-                                                    } else {
-                                                        setMinimumSize(dp(64f))
-                                                    }
-                                                }
-                                                .build()
+                                            dp(
+                                                if (deviceParameters.isLargeHeight()) 80f else 64f
+                                            )
                                         )
                                         .addContent(
                                             buttonGroup(
@@ -361,6 +357,10 @@ internal fun MediaPlayerTileLayout(
                                                 width = expand(),
                                                 spacing = 0f
                                             ) {
+                                                buttonGroupItem {
+                                                    SeekButton(PlayerAction.SEEK_BACKWARD)
+                                                }
+
                                                 buttonGroupItem {
                                                     PlayerButton(action = PlayerAction.PREVIOUS)
                                                 }
@@ -371,6 +371,10 @@ internal fun MediaPlayerTileLayout(
 
                                                 buttonGroupItem {
                                                     PlayerButton(action = PlayerAction.NEXT)
+                                                }
+
+                                                buttonGroupItem {
+                                                    SeekButton(PlayerAction.SEEK_FORWARD)
                                                 }
                                             }
                                         )
@@ -547,6 +551,24 @@ private fun DeviceParameters.getScreenWidthInDpFromPercentage(
     percent: Float
 ): Float {
     return ceil(screenWidthDp * percent / 100f)
+}
+
+private fun MaterialScope.SeekButton(
+    action: PlayerAction
+): LayoutElement {
+    val size = if (deviceConfiguration.isLargeHeight()) 28f else 24f
+    return iconButton(
+        onClick = clickable(id = action.name),
+        width = dp(size),
+        height = dp(size),
+        iconContent = {
+            icon(
+                protoLayoutResourceId = getResourceIdForPlayerAction(action),
+                width = dp(size - 8f),
+                height = dp(size - 8f)
+            )
+        }
+    )
 }
 
 private fun MaterialScope.PlayerButton(
@@ -792,6 +814,8 @@ private fun getResourceIdForPlayerAction(action: PlayerAction): String {
         PlayerAction.NEXT -> ID_SKIP
         PlayerAction.VOL_UP -> ID_VOL_UP
         PlayerAction.VOL_DOWN -> ID_VOL_DOWN
+        PlayerAction.SEEK_BACKWARD -> ID_SEEK_BACKWARD
+        PlayerAction.SEEK_FORWARD -> ID_SEEK_FORWARD
     }
 }
 

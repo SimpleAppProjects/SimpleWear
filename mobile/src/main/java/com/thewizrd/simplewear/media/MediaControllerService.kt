@@ -24,6 +24,7 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.os.PowerManager
+import android.os.SystemClock
 import android.provider.MediaStore
 import android.support.v4.media.MediaBrowserCompat
 import android.support.v4.media.MediaMetadataCompat
@@ -803,6 +804,28 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
             MediaHelper.MediaNextPath -> {
                 if (!isNotificationListenerEnabled(messageEvent)) return
                 mController?.transportControls?.skipToNext()
+            }
+            MediaHelper.MediaSeekForwardPath -> {
+                if (!isNotificationListenerEnabled(messageEvent)) return
+                val state = mController?.playbackState ?: return
+                val currentPositionMs = if (state.state == android.support.v4.media.session.PlaybackStateCompat.STATE_PLAYING) {
+                    val elapsed = SystemClock.elapsedRealtime() - state.lastPositionUpdateTime
+                    state.position + (elapsed * state.playbackSpeed).toLong()
+                } else {
+                    state.position
+                }
+                mController?.transportControls?.seekTo((currentPositionMs + 10_000L).coerceAtLeast(0L))
+            }
+            MediaHelper.MediaSeekBackwardPath -> {
+                if (!isNotificationListenerEnabled(messageEvent)) return
+                val state = mController?.playbackState ?: return
+                val currentPositionMs = if (state.state == android.support.v4.media.session.PlaybackStateCompat.STATE_PLAYING) {
+                    val elapsed = SystemClock.elapsedRealtime() - state.lastPositionUpdateTime
+                    state.position + (elapsed * state.playbackSpeed).toLong()
+                } else {
+                    state.position
+                }
+                mController?.transportControls?.seekTo((currentPositionMs - 10_000L).coerceAtLeast(0L))
             }
             MediaHelper.MediaPlayFromSearchPath -> {
                 if (!isNotificationListenerEnabled(messageEvent)) return
