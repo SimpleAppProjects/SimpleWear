@@ -80,6 +80,7 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.concurrent.TimeUnit
+import com.thewizrd.shared_resources.R as sharedRes
 
 @Composable
 fun TimedActionSetupUi(
@@ -141,9 +142,7 @@ fun TimedActionSetupUi(
 
                             ActionStatus.PERMISSION_DENIED -> {
                                 confirmationViewModel.showOpenOnPhoneForFailure(
-                                    message = context.getString(
-                                        R.string.error_permissiondenied_wear
-                                    )
+                                    messageResId = R.string.error_permissiondenied_wear
                                 )
 
                                 timedActionUiViewModel.openAppOnPhone(showAnimation = false)
@@ -151,7 +150,7 @@ fun TimedActionSetupUi(
 
                             else -> {
                                 confirmationViewModel.showFailure(
-                                    message = context.getString(R.string.error_actionfailed)
+                                    messageResId = R.string.error_actionfailed
                                 )
                             }
                         }
@@ -338,7 +337,7 @@ private fun TimedActionSetupUi(
                                         )
                                     },
                                     label = {
-                                        Text(text = stringResource(id = R.string.label_action))
+                                        Text(text = stringResource(id = sharedRes.string.label_action))
                                     },
                                     secondaryLabel = {
                                         Text(text = stringResource(id = model.actionLabelResId))
@@ -366,12 +365,12 @@ private fun TimedActionSetupUi(
                                     enabled = false,
                                     icon = {
                                         Icon(
-                                            painter = painterResource(id = R.drawable.ic_alarm_white_24dp),
-                                            contentDescription = stringResource(id = R.string.label_time),
+                                            painter = painterResource(id = sharedRes.drawable.ic_alarm_white_24dp),
+                                            contentDescription = stringResource(id = sharedRes.string.label_time),
                                         )
                                     },
                                     label = {
-                                        Text(text = stringResource(id = R.string.label_time))
+                                        Text(text = stringResource(id = sharedRes.string.label_time))
                                     },
                                     secondaryLabel = {
                                         Text(text = timeString)
@@ -566,7 +565,7 @@ private fun TimedActionSetupUi(
                                                     transformationSpec
                                                 ),
                                                 label = {
-                                                    Text(text = stringResource(id = R.string.label_action_not_supported))
+                                                    Text(text = stringResource(id = sharedRes.string.label_action_not_supported))
                                                 },
                                                 onClick = {},
                                                 enabled = false
@@ -585,7 +584,7 @@ private fun TimedActionSetupUi(
                                     FilledIconButton(
                                         content = {
                                             Icon(
-                                                painter = painterResource(R.drawable.ic_check_white_24dp),
+                                                painter = painterResource(sharedRes.drawable.ic_check_white_24dp),
                                                 contentDescription = stringResource(id = android.R.string.ok),
                                             )
                                         },
@@ -602,7 +601,7 @@ private fun TimedActionSetupUi(
                                     FilledTonalIconButton(
                                         content = {
                                             Icon(
-                                                painter = painterResource(R.drawable.ic_close_white_24dp),
+                                                painter = painterResource(sharedRes.drawable.ic_close_white_24dp),
                                                 contentDescription = stringResource(id = android.R.string.cancel),
                                             )
                                         },

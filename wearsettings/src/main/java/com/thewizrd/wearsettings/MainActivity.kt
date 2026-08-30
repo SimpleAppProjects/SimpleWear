@@ -35,6 +35,8 @@ import com.thewizrd.wearsettings.shizuku.ShizukuState
 import com.thewizrd.wearsettings.shizuku.ShizukuUtils
 import kotlinx.coroutines.launch
 import rikka.shizuku.Shizuku
+import com.thewizrd.common.R as commonRes
+import com.thewizrd.shared_resources.R as sharedRes
 import com.thewizrd.wearsettings.Settings as SettingsHelper
 
 class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListener {
@@ -165,7 +167,7 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
                                 R.string.message_shizuku_disabled,
                                 Snackbar.LENGTH_LONG
                             ).apply {
-                                setAction(R.string.title_settings) {
+                                setAction(sharedRes.string.title_settings) {
                                     runCatching {
                                         startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
                                             data = "package:${it.context.packageName}".toUri()
@@ -265,12 +267,12 @@ class MainActivity : AppCompatActivity(), Shizuku.OnRequestPermissionResultListe
     }
 
     private fun updateBTPref(enabled: Boolean) {
-        binding.btPrefSummary.setText(if (enabled) R.string.permission_bt_enabled else R.string.permission_bt_disabled)
+        binding.btPrefSummary.setText(if (enabled) commonRes.string.permission_bt_enabled else commonRes.string.permission_bt_disabled)
         binding.btPrefSummary.setTextColor(getTextColor(binding.btPrefSummary.context, enabled))
     }
 
     private fun updateDNDAccessText(enabled: Boolean) {
-        binding.dndSummary.setText(if (enabled) R.string.permission_dnd_enabled else R.string.permission_dnd_disabled)
+        binding.dndSummary.setText(if (enabled) commonRes.string.permission_dnd_enabled else commonRes.string.permission_dnd_disabled)
         binding.dndSummary.setTextColor(getTextColor(binding.dndSummary.context, enabled))
     }
 

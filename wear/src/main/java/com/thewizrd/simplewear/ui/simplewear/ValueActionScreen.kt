@@ -54,6 +54,9 @@ import com.thewizrd.simplewear.viewmodels.ValueActionVolumeViewModel
 import com.thewizrd.simplewear.viewmodels.WearableListenerViewModel
 import kotlinx.coroutines.launch
 import kotlin.math.max
+import androidx.wear.compose.material3.R as wearM3Res
+import com.google.android.horologist.audio.ui.model.R as horologistAudioUiRes
+import com.thewizrd.shared_resources.R as sharedRes
 
 @Composable
 fun ValueActionScreen(
@@ -149,17 +152,13 @@ fun ValueActionScreen(
                                 when (actionStatus) {
                                     ActionStatus.UNKNOWN, ActionStatus.FAILURE -> {
                                         confirmationViewModel.showFailure(
-                                            message = context.getString(
-                                                R.string.error_actionfailed
-                                            )
+                                            messageResId = R.string.error_actionfailed
                                         )
                                     }
 
                                     ActionStatus.PERMISSION_DENIED -> {
                                         confirmationViewModel.showFailure(
-                                            message = context.getString(
-                                                R.string.error_permissiondenied_wear
-                                            )
+                                            messageResId = R.string.error_permissiondenied_wear
                                         )
 
                                         valueActionViewModel.openAppOnPhone(false)
@@ -167,9 +166,7 @@ fun ValueActionScreen(
 
                                     ActionStatus.TIMEOUT -> {
                                         confirmationViewModel.showFailure(
-                                            message = context.getString(
-                                                R.string.error_sendmessage
-                                            )
+                                            messageResId = R.string.error_sendmessage
                                         )
                                     }
 
@@ -189,11 +186,11 @@ fun ValueActionScreen(
 
                         when (status) {
                             ActionStatus.UNKNOWN, ActionStatus.FAILURE -> {
-                                confirmationViewModel.showFailure(message = context.getString(R.string.error_actionfailed))
+                                confirmationViewModel.showFailure(messageResId = R.string.error_actionfailed)
                             }
 
                             ActionStatus.PERMISSION_DENIED -> {
-                                confirmationViewModel.showFailure(message = context.getString(R.string.error_permissiondenied_wear))
+                                confirmationViewModel.showFailure(messageResId = R.string.error_permissiondenied_wear)
 
                                 valueActionViewModel.openAppOnPhone(false)
                             }
@@ -275,26 +272,26 @@ fun ValueActionScreen(
         increaseIcon = {
             if (uiState.action == Actions.VOLUME) {
                 Icon(
-                    painter = painterResource(id = R.drawable.ic_volume_up_white_24dp),
-                    contentDescription = stringResource(id = R.string.horologist_volume_screen_volume_up_content_description)
+                    painter = painterResource(id = sharedRes.drawable.ic_volume_up_white_24dp),
+                    contentDescription = stringResource(id = horologistAudioUiRes.string.horologist_volume_screen_volume_up_content_description)
                 )
             } else {
                 Icon(
                     imageVector = Icons.Rounded.Add,
-                    contentDescription = stringResource(id = R.string.wear_m3c_slider_increase_content_description)
+                    contentDescription = stringResource(id = wearM3Res.string.wear_m3c_slider_increase_content_description)
                 )
             }
         },
         decreaseIcon = {
             if (uiState.action == Actions.VOLUME) {
                 Icon(
-                    painter = painterResource(id = R.drawable.ic_baseline_volume_down_24),
-                    contentDescription = stringResource(id = R.string.horologist_volume_screen_volume_down_content_description)
+                    painter = painterResource(id = sharedRes.drawable.ic_baseline_volume_down_24),
+                    contentDescription = stringResource(id = horologistAudioUiRes.string.horologist_volume_screen_volume_down_content_description)
                 )
             } else {
                 Icon(
                     imageVector = Icons.Rounded.Remove,
-                    contentDescription = stringResource(id = R.string.wear_m3c_slider_decrease_content_description)
+                    contentDescription = stringResource(id = wearM3Res.string.wear_m3c_slider_decrease_content_description)
                 )
             }
         }
@@ -304,7 +301,7 @@ fun ValueActionScreen(
                 when (uiState.action) {
                     Actions.VOLUME -> {
                         Text(
-                            text = stringResource(id = R.string.action_volume),
+                            text = stringResource(id = sharedRes.string.action_volume),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -312,7 +309,7 @@ fun ValueActionScreen(
 
                     Actions.BRIGHTNESS -> {
                         Text(
-                            text = stringResource(id = R.string.action_brightness),
+                            text = stringResource(id = sharedRes.string.action_brightness),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -333,14 +330,14 @@ fun ValueActionScreen(
                         Icon(
                             painter = painterResource(
                                 id = when (uiState.streamType) {
-                                    AudioStreamType.MUSIC -> R.drawable.ic_music_note_white_24dp
-                                    AudioStreamType.RINGTONE -> R.drawable.ic_baseline_ring_volume_24dp
-                                    AudioStreamType.VOICE_CALL -> R.drawable.ic_phone_24dp
-                                    AudioStreamType.ALARM -> R.drawable.ic_alarm_white_24dp
-                                    null -> R.drawable.ic_volume_up_white_24dp
+                                    AudioStreamType.MUSIC -> sharedRes.drawable.ic_music_note_white_24dp
+                                    AudioStreamType.RINGTONE -> sharedRes.drawable.ic_baseline_ring_volume_24dp
+                                    AudioStreamType.VOICE_CALL -> sharedRes.drawable.ic_phone_24dp
+                                    AudioStreamType.ALARM -> sharedRes.drawable.ic_alarm_white_24dp
+                                    null -> sharedRes.drawable.ic_volume_up_white_24dp
                                 }
                             ),
-                            contentDescription = stringResource(id = R.string.action_volume)
+                            contentDescription = stringResource(id = sharedRes.string.action_volume)
                         )
                     }
 
@@ -348,24 +345,26 @@ fun ValueActionScreen(
                         Icon(
                             painter = painterResource(
                                 id = if (uiState.isAutoBrightnessEnabled) {
-                                    R.drawable.ic_brightness_auto
+                                    sharedRes.drawable.ic_brightness_auto
                                 } else {
-                                    R.drawable.ic_brightness_medium
+                                    sharedRes.drawable.ic_brightness_medium
                                 }
                             ),
-                            contentDescription = stringResource(id = R.string.action_brightness)
+                            contentDescription = stringResource(id = sharedRes.string.action_brightness)
                         )
                     }
 
                     else -> {
+                        val iconContentDescResId = remember(uiState.action) {
+                            uiState.action?.let {
+                                ActionButtonViewModel.getViewModelFromAction(it).actionLabelResId
+                            }
+                        }
+
                         Icon(
-                            painter = painterResource(id = R.drawable.ic_icon),
-                            contentDescription = remember(uiState.action) {
-                                uiState.action?.let {
-                                    context.getString(
-                                        ActionButtonViewModel.getViewModelFromAction(it).actionLabelResId
-                                    )
-                                }
+                            painter = painterResource(id = sharedRes.drawable.ic_icon),
+                            contentDescription = iconContentDescResId?.let {
+                                stringResource(it)
                             }
                         )
                     }

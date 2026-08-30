@@ -67,6 +67,7 @@ import com.thewizrd.simplewear.wearable.WearableWorker
 import com.thewizrd.simplewear.wearable.WearableWorker.Companion.enqueueAction
 import kotlinx.coroutines.launch
 import java.util.regex.Pattern
+import com.thewizrd.common.R as commonRes
 
 class PermissionCheckFragment : LifecycleAwareFragment() {
     companion object {
@@ -665,7 +666,7 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
     }
 
     private fun updateDNDAccessText(enabled: Boolean) {
-        binding.dndSummary.setText(if (enabled) R.string.permission_dnd_enabled else R.string.permission_dnd_disabled)
+        binding.dndSummary.setText(if (enabled) commonRes.string.permission_dnd_enabled else commonRes.string.permission_dnd_disabled)
         binding.dndSummary.setTextColor(getTextColor(binding.dndSummary.context, enabled))
     }
 
@@ -750,7 +751,7 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
     }
 
     private fun updateBTPref(enabled: Boolean) {
-        binding.btPrefSummary.setText(if (enabled) R.string.permission_bt_enabled else R.string.permission_bt_disabled)
+        binding.btPrefSummary.setText(if (enabled) commonRes.string.permission_bt_enabled else commonRes.string.permission_bt_disabled)
         binding.btPrefSummary.setTextColor(getTextColor(binding.btPrefSummary.context, enabled))
     }
 
@@ -862,10 +863,10 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
             }
 
             when (cornerType) {
-                CORNERS_FULL -> view.setBackgroundResource(R.drawable.preference_round_background)
-                CORNERS_TOP -> view.setBackgroundResource(R.drawable.preference_round_background_top)
-                CORNERS_BOTTOM -> view.setBackgroundResource(R.drawable.preference_round_background_bottom)
-                CORNERS_CENTER -> view.setBackgroundResource(R.drawable.preference_round_background_center)
+                CORNERS_FULL -> view.setBackgroundResource(commonRes.drawable.preference_round_background)
+                CORNERS_TOP -> view.setBackgroundResource(commonRes.drawable.preference_round_background_top)
+                CORNERS_BOTTOM -> view.setBackgroundResource(commonRes.drawable.preference_round_background_bottom)
+                CORNERS_CENTER -> view.setBackgroundResource(commonRes.drawable.preference_round_background_center)
             }
         }
 
@@ -878,10 +879,10 @@ class PermissionCheckFragment : LifecycleAwareFragment() {
             }
 
             when (cornerType) {
-                CORNERS_FULL -> view.setBackgroundResource(R.drawable.preference_round_background)
-                CORNERS_TOP -> view.setBackgroundResource(R.drawable.preference_round_background_top)
-                CORNERS_BOTTOM -> view.setBackgroundResource(R.drawable.preference_round_background_bottom)
-                CORNERS_CENTER -> view.setBackgroundResource(R.drawable.preference_round_background_center)
+                CORNERS_FULL -> view.setBackgroundResource(commonRes.drawable.preference_round_background)
+                CORNERS_TOP -> view.setBackgroundResource(commonRes.drawable.preference_round_background_top)
+                CORNERS_BOTTOM -> view.setBackgroundResource(commonRes.drawable.preference_round_background_bottom)
+                CORNERS_CENTER -> view.setBackgroundResource(commonRes.drawable.preference_round_background_center)
             }
         }
     }

@@ -11,20 +11,22 @@ import androidx.core.graphics.drawable.toDrawable
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
 import com.thewizrd.shared_resources.utils.ContextUtils.getAttrColor
-import com.thewizrd.simplewear.R
+import androidx.appcompat.R as appcompatRes
+import com.google.android.material.R as materialRes
+import com.thewizrd.shared_resources.R as sharedRes
 
 abstract class SwipeToDeleteCallback(context: Context) :
     ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT) {
     private val deleteIcon = DrawableCompat.wrap(
-        ContextCompat.getDrawable(context, R.drawable.ic_delete_outline)!!.mutate()
+        ContextCompat.getDrawable(context, sharedRes.drawable.ic_delete_outline)!!.mutate()
     )
-    private val deleteBackground = context.getAttrColor(R.attr.colorError).toDrawable()
+    private val deleteBackground = context.getAttrColor(appcompatRes.attr.colorError).toDrawable()
     private val clearPaint = Paint().apply {
         xfermode = PorterDuffXfermode(PorterDuff.Mode.CLEAR)
     }
 
     init {
-        DrawableCompat.setTint(deleteIcon, context.getAttrColor(R.attr.colorOnError))
+        DrawableCompat.setTint(deleteIcon, context.getAttrColor(materialRes.attr.colorOnError))
     }
 
     override fun onMove(

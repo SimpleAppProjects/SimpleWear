@@ -5,9 +5,9 @@ import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.widget.Space
 import androidx.annotation.Px
 import androidx.recyclerview.widget.RecyclerView
-import com.thewizrd.simplewear.R
+import androidx.appcompat.R as appcompatRes
 
-class SpacerAdapter(@Px private val spacerSize: Int) :
+class SpacerAdapter(@param:Px private val spacerSize: Int) :
     RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     init {
@@ -33,10 +33,10 @@ class SpacerAdapter(@Px private val spacerSize: Int) :
     }
 
     override fun getItemViewType(position: Int): Int {
-        return R.id.spacer
+        return appcompatRes.id.spacer
     }
 
     override fun getItemId(position: Int): Long {
-        return R.id.spacer.toLong()
+        return appcompatRes.id.spacer.toLong()
     }
 }

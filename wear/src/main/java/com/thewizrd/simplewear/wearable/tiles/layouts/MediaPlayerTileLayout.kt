@@ -90,6 +90,8 @@ import kotlinx.coroutines.runBlocking
 import java.time.Instant
 import kotlin.math.ceil
 import kotlin.math.max
+import com.google.android.gms.base.R as gmsBaseRes
+import com.thewizrd.shared_resources.R as sharedRes
 
 @SuppressLint("ProtoLayoutPrimaryLayoutResponsive")
 @OptIn(ProtoLayoutExperimental::class)
@@ -104,7 +106,7 @@ internal fun MediaPlayerTileLayout(
                 WearConnectionStatus.APPNOTINSTALLED -> {
                     primaryLayout(
                         titleSlot = {
-                            text(text = context.getString(R.string.title_media_controller).layoutString)
+                            text(text = context.getString(sharedRes.string.title_media_controller).layoutString)
                         },
                         mainSlot = {
                             textDataCard(
@@ -126,7 +128,11 @@ internal fun MediaPlayerTileLayout(
                         },
                         bottomSlot = {
                             iconEdgeButton(
-                                modifier = LayoutModifier.contentDescription(context.getString(R.string.common_open_on_phone)),
+                                modifier = LayoutModifier.contentDescription(
+                                    context.getString(
+                                        gmsBaseRes.string.common_open_on_phone
+                                    )
+                                ),
                                 onClick = clickable(id = ID_OPENONPHONE),
                                 iconContent = {
                                     icon(ID_OPENONPHONE)
@@ -139,7 +145,7 @@ internal fun MediaPlayerTileLayout(
                 else -> {
                     primaryLayout(
                         titleSlot = {
-                            text(text = context.getString(R.string.title_media_controller).layoutString)
+                            text(text = context.getString(sharedRes.string.title_media_controller).layoutString)
                         },
                         mainSlot = {
                             textDataCard(
@@ -174,7 +180,7 @@ internal fun MediaPlayerTileLayout(
         } else if (state.isEmpty || state.playbackState == null || state.playbackState == PlaybackState.NONE) {
             primaryLayout(
                 titleSlot = {
-                    text(text = context.getString(R.string.title_media_controller).layoutString)
+                    text(text = context.getString(sharedRes.string.title_media_controller).layoutString)
                 },
                 mainSlot = {
                     textDataCard(
@@ -805,11 +811,14 @@ private fun MediaPlayerTilePreview(context: Context): TilePreviewData {
         audioStreamState = AudioStreamState(3, 0, 5, AudioStreamType.MUSIC),
         positionState = PositionState(100, 50),
         artwork = runBlocking {
-            ContextCompat.getDrawable(context, R.drawable.sample_image)?.toBitmapOrNull()
+            ContextCompat.getDrawable(
+                context,
+                gmsBaseRes.drawable.common_google_signin_btn_icon_dark_normal
+            )?.toBitmapOrNull()
                 ?.toByteArray()
         },
         appIcon = runBlocking {
-            ContextCompat.getDrawable(context, R.drawable.ic_play_circle_simpleblue)
+            ContextCompat.getDrawable(context, sharedRes.drawable.ic_play_circle_simpleblue)
                 ?.toBitmapOrNull()
                 ?.toByteArray()
         }
@@ -850,7 +859,7 @@ private fun MediaPlayerNotPlayingTilePreview(context: Context): TilePreviewData 
         audioStreamState = AudioStreamState(3, 0, 5, AudioStreamType.MUSIC),
         artwork = null,
         appIcon = runBlocking {
-            ContextCompat.getDrawable(context, R.drawable.ic_play_circle_simpleblue)
+            ContextCompat.getDrawable(context, sharedRes.drawable.ic_play_circle_simpleblue)
                 ?.toBitmapOrNull()
                 ?.toByteArray()
         }

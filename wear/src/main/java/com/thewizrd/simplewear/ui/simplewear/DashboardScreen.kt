@@ -94,6 +94,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import com.thewizrd.shared_resources.R as sharedRes
 
 @Composable
 fun DashboardScreen(
@@ -244,7 +245,7 @@ private fun DeviceStateChip(
         modifier = Modifier.fillMaxWidth(),
         icon = {
             Icon(
-                painter = painterResource(id = R.drawable.ic_smartphone_white_24dp),
+                painter = painterResource(id = sharedRes.drawable.ic_smartphone_white_24dp),
                 contentDescription = stringResource(R.string.desc_phone_state)
             )
         },
@@ -301,9 +302,9 @@ private fun BatteryStatusChip(
                 Icon(
                     painter = painterResource(
                         id = if (batteryStatus?.isCharging == true) {
-                            R.drawable.ic_battery_charging_white_24dp
+                            sharedRes.drawable.ic_battery_charging_white_24dp
                         } else {
-                            R.drawable.ic_battery_std_white_24dp
+                            sharedRes.drawable.ic_battery_std_white_24dp
                         }
                     ),
                     contentDescription = stringResource(R.string.title_batt_state)
@@ -581,7 +582,7 @@ private fun LayoutPreferenceButton(
         icon = {
             Icon(
                 painter = if (isGridLayout) {
-                    painterResource(id = R.drawable.ic_apps_white_24dp)
+                    painterResource(id = sharedRes.drawable.ic_apps_white_24dp)
                 } else {
                     Icons.AutoMirrored.Rounded.ViewList.asPaintable().rememberPainter()
                 },
@@ -617,7 +618,7 @@ private fun DashboardConfigButton(
         },
         icon = {
             Icon(
-                painter = painterResource(id = R.drawable.ic_mode_edit),
+                painter = painterResource(id = sharedRes.drawable.ic_mode_edit),
                 contentDescription = stringResource(id = R.string.pref_title_dasheditor)
             )
         },
@@ -636,7 +637,7 @@ private fun TileDashboardConfigButton(
         },
         icon = {
             Icon(
-                painter = painterResource(id = R.drawable.ic_mode_edit),
+                painter = painterResource(id = sharedRes.drawable.ic_mode_edit),
                 contentDescription = stringResource(id = R.string.pref_title_tiledasheditor)
             )
         },

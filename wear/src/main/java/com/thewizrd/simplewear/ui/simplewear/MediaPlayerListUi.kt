@@ -82,6 +82,7 @@ import com.thewizrd.simplewear.viewmodels.MediaPlayerListUiState
 import com.thewizrd.simplewear.viewmodels.MediaPlayerListViewModel
 import com.thewizrd.simplewear.viewmodels.WearableListenerViewModel
 import kotlinx.coroutines.launch
+import com.thewizrd.shared_resources.R as sharedRes
 
 @Composable
 fun MediaPlayerListUi(
@@ -183,9 +184,7 @@ fun MediaPlayerListUi(
 
                         if (status == ActionStatus.PERMISSION_DENIED) {
                             confirmationViewModel.showOpenOnPhoneForFailure(
-                                message = context.getString(
-                                    R.string.error_permissiondenied_wear
-                                )
+                                messageResId = R.string.error_permissiondenied_wear
                             )
 
                             mediaPlayerListViewModel.openAppOnPhone(false)
@@ -331,7 +330,7 @@ private fun MediaPlayerListScreen(
                             .transformedHeight(this, transformationSpec),
                         transformation = SurfaceTransformation(transformationSpec)
                     ) {
-                        Text(text = stringResource(id = R.string.action_apps))
+                        Text(text = stringResource(id = sharedRes.string.action_apps))
                     }
                 }
 
@@ -415,7 +414,7 @@ private fun MediaPlayerListSettings(
                         .transformedHeight(this, transformationSpec),
                     transformation = SurfaceTransformation(transformationSpec)
                 ) {
-                    Text(text = stringResource(id = R.string.title_settings))
+                    Text(text = stringResource(id = sharedRes.string.title_settings))
                 }
             }
             item {
@@ -482,7 +481,7 @@ private fun MediaPlayerFilterScreen(
             EdgeButton(
                 content = {
                     Icon(
-                        painter = painterResource(id = R.drawable.ic_check_white_24dp),
+                        painter = painterResource(id = sharedRes.drawable.ic_check_white_24dp),
                         contentDescription = stringResource(id = android.R.string.ok)
                     )
                 },
@@ -569,7 +568,8 @@ private fun PreviewMediaPlayerListScreen() {
             AppItemViewModel().apply {
                 appLabel = "App ${it + 1}"
                 packageName = "com.package.${it}"
-                bitmapIcon = ContextCompat.getDrawable(context, R.drawable.ic_icon)!!.toBitmap()
+                bitmapIcon =
+                    ContextCompat.getDrawable(context, sharedRes.drawable.ic_icon)!!.toBitmap()
             }
         }.toSet()
     }
@@ -614,7 +614,8 @@ private fun PreviewMediaPlayerFilterScreen() {
             AppItemViewModel().apply {
                 appLabel = "App ${it + 1}"
                 packageName = "com.package.${it}"
-                bitmapIcon = ContextCompat.getDrawable(context, R.drawable.ic_icon)!!.toBitmap()
+                bitmapIcon =
+                    ContextCompat.getDrawable(context, sharedRes.drawable.ic_icon)!!.toBitmap()
             }
         }.toSet()
     }

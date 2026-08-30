@@ -94,6 +94,7 @@ import java.time.LocalTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+import com.thewizrd.shared_resources.R as sharedRes
 
 @Composable
 fun TimedActionUi(
@@ -165,9 +166,7 @@ fun TimedActionUi(
 
                             ActionStatus.PERMISSION_DENIED -> {
                                 confirmationViewModel.showOpenOnPhoneForFailure(
-                                    message = context.getString(
-                                        R.string.error_permissiondenied_wear
-                                    )
+                                    messageResId = R.string.error_permissiondenied_wear
                                 )
 
                                 timedActionUiViewModel.openAppOnPhone(showAnimation = false)
@@ -175,7 +174,7 @@ fun TimedActionUi(
 
                             else -> {
                                 confirmationViewModel.showFailure(
-                                    message = context.getString(R.string.error_actionfailed)
+                                    messageResId = R.string.error_actionfailed
                                 )
                             }
                         }
@@ -326,11 +325,11 @@ private fun TimedActionChip(
                 icon = {
                     Icon(
                         imageVector = Icons.Rounded.DeleteOutline,
-                        contentDescription = stringResource(id = R.string.action_delete)
+                        contentDescription = stringResource(id = sharedRes.string.action_delete)
                     )
                 },
                 text = {
-                    Text(text = stringResource(id = R.string.action_delete))
+                    Text(text = stringResource(id = sharedRes.string.action_delete))
                 }
             )
         },
@@ -450,9 +449,7 @@ fun TimedActionDetailUi(
 
                             ActionStatus.PERMISSION_DENIED -> {
                                 confirmationViewModel.showOpenOnPhoneForFailure(
-                                    message = context.getString(
-                                        R.string.error_permissiondenied_wear
-                                    )
+                                    messageResId = R.string.error_permissiondenied_wear
                                 )
 
                                 timedActionUiViewModel.openAppOnPhone(showAnimation = false)
@@ -460,7 +457,7 @@ fun TimedActionDetailUi(
 
                             else -> {
                                 confirmationViewModel.showFailure(
-                                    message = context.getString(R.string.error_actionfailed)
+                                    messageResId = R.string.error_actionfailed
                                 )
                             }
                         }
@@ -555,7 +552,7 @@ private fun TimedActionDetailUi(
                         )
                     },
                     label = {
-                        Text(text = stringResource(id = R.string.label_action))
+                        Text(text = stringResource(id = sharedRes.string.label_action))
                     },
                     secondaryLabel = {
                         Text(text = stringResource(id = model.actionLabelResId))
@@ -575,12 +572,12 @@ private fun TimedActionDetailUi(
                     },
                     icon = {
                         Icon(
-                            painter = painterResource(id = R.drawable.ic_alarm_white_24dp),
-                            contentDescription = stringResource(id = R.string.label_time)
+                            painter = painterResource(id = sharedRes.drawable.ic_alarm_white_24dp),
+                            contentDescription = stringResource(id = sharedRes.string.label_time)
                         )
                     },
                     label = {
-                        Text(text = stringResource(id = R.string.label_time))
+                        Text(text = stringResource(id = sharedRes.string.label_time))
                     },
                     secondaryLabel = {
                         Text(text = timeString)
@@ -595,7 +592,7 @@ private fun TimedActionDetailUi(
                         .transformedHeight(this, transformationSpec),
                     transformation = SurfaceTransformation(transformationSpec)
                 ) {
-                    Text(text = stringResource(id = R.string.label_state))
+                    Text(text = stringResource(id = sharedRes.string.label_state))
                 }
             }
 
@@ -657,7 +654,7 @@ private fun TimedActionDetailUi(
                                 .transformedHeight(this, transformationSpec),
                             transformation = SurfaceTransformation(transformationSpec),
                             label = {
-                                Text(text = stringResource(id = R.string.label_action_not_supported))
+                                Text(text = stringResource(id = sharedRes.string.label_action_not_supported))
                             },
                             onClick = {},
                             enabled = false
@@ -682,7 +679,7 @@ private fun TimedActionDetailUi(
                     FilledIconButton(
                         content = {
                             Icon(
-                                painter = painterResource(R.drawable.ic_check_white_24dp),
+                                painter = painterResource(sharedRes.drawable.ic_check_white_24dp),
                                 contentDescription = stringResource(id = android.R.string.ok),
                             )
                         },
@@ -693,8 +690,8 @@ private fun TimedActionDetailUi(
                     FilledIconButton(
                         content = {
                             Icon(
-                                painter = painterResource(R.drawable.ic_delete_outline),
-                                contentDescription = stringResource(id = R.string.action_delete),
+                                painter = painterResource(sharedRes.drawable.ic_delete_outline),
+                                contentDescription = stringResource(id = sharedRes.string.action_delete),
                             )
                         },
                         colors = IconButtonDefaults.iconButtonColors(

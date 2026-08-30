@@ -89,6 +89,7 @@ import com.thewizrd.simplewear.wearable.tiles.DashboardTileRenderer.Companion.ID
 import com.thewizrd.simplewear.wearable.tiles.DashboardTileRenderer.Companion.ID_WIFI_ON
 import com.thewizrd.simplewear.wearable.tiles.DashboardTileState
 import java.util.Locale
+import androidx.wear.compose.material3.R as wearM3Res
 
 internal fun DashboardTileLayout(
     context: Context,
@@ -125,7 +126,11 @@ internal fun DashboardTileLayout(
                         },
                         bottomSlot = {
                             iconEdgeButton(
-                                modifier = LayoutModifier.contentDescription(context.getString(R.string.common_open_on_phone)),
+                                modifier = LayoutModifier.contentDescription(
+                                    context.getString(
+                                        wearM3Res.string.wear_m3c_open_on_phone_icon_content_description
+                                    )
+                                ),
                                 onClick = clickable(id = ID_OPENONPHONE),
                                 iconContent = {
                                     icon(ID_OPENONPHONE)

@@ -14,13 +14,14 @@ import com.thewizrd.shared_resources.actions.TimedAction
 import com.thewizrd.shared_resources.controls.ActionButtonViewModel
 import com.thewizrd.shared_resources.utils.ContextUtils.getAttrColor
 import com.thewizrd.shared_resources.utils.ContextUtils.getAttrColorStateList
-import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.databinding.LayoutActionItemBinding
 import java.time.Instant
 import java.time.LocalTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+import com.google.android.material.R as materialRes
+import com.thewizrd.shared_resources.R as sharedRes
 
 internal class TimedActionsDiffItemCallback : DiffUtil.ItemCallback<TimedAction>() {
     override fun areItemsTheSame(oldItem: TimedAction, newItem: TimedAction): Boolean {
@@ -67,17 +68,25 @@ class TimedActionsAdapter : ListAdapter<TimedAction, TimedActionsAdapter.TimedAc
 
             binding.root.isChecked = isSelected
             if (isSelected) {
-                binding.actionIcon.setImageResource(R.drawable.ic_check_white_24dp)
-                binding.actionIcon.setBackgroundColor(itemView.context.getAttrColor(R.attr.colorPrimaryContainer))
+                binding.actionIcon.setImageResource(sharedRes.drawable.ic_check_white_24dp)
+                binding.actionIcon.setBackgroundColor(itemView.context.getAttrColor(materialRes.attr.colorPrimaryContainer))
                 binding.actionIcon.imageTintList =
-                    itemView.context.getAttrColorStateList(R.attr.colorOnPrimaryContainer)
-                binding.root.setCardBackgroundColor(itemView.context.getAttrColorStateList(R.attr.colorSurfaceContainerHighest))
+                    itemView.context.getAttrColorStateList(materialRes.attr.colorOnPrimaryContainer)
+                binding.root.setCardBackgroundColor(
+                    itemView.context.getAttrColorStateList(
+                        materialRes.attr.colorSurfaceContainerHighest
+                    )
+                )
             } else {
                 binding.actionIcon.setImageResource(model.drawableResId)
-                binding.actionIcon.setBackgroundColor(itemView.context.getAttrColor(R.attr.colorPrimaryContainer))
+                binding.actionIcon.setBackgroundColor(itemView.context.getAttrColor(materialRes.attr.colorPrimaryContainer))
                 binding.actionIcon.imageTintList =
-                    itemView.context.getAttrColorStateList(R.attr.colorOnPrimaryContainer)
-                binding.root.setCardBackgroundColor(itemView.context.getAttrColorStateList(R.attr.colorSurfaceContainer))
+                    itemView.context.getAttrColorStateList(materialRes.attr.colorOnPrimaryContainer)
+                binding.root.setCardBackgroundColor(
+                    itemView.context.getAttrColorStateList(
+                        materialRes.attr.colorSurfaceContainer
+                    )
+                )
             }
         }
     }

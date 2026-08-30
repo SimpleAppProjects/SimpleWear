@@ -23,9 +23,10 @@ import com.thewizrd.shared_resources.media.PlaybackState
 import com.thewizrd.shared_resources.utils.ContextUtils.dpToPx
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.simplewear.BuildConfig
-import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.wearable.tiles.layouts.NowPlayingTileLayout
 import kotlin.math.min
+import com.google.android.gms.base.R as gmsBaseRes
+import com.thewizrd.shared_resources.R as sharedRes
 
 class NowPlayingTileRenderer(context: Context, debugResourceMode: Boolean = false) :
     SingleTileLayoutRendererWithState<MediaPlayerTileState, MediaPlayerTileState>(
@@ -83,8 +84,8 @@ class NowPlayingTileRenderer(context: Context, debugResourceMode: Boolean = fals
         Logger.debug(this::class.java.name, "produceRequestedResources: resIds = $resourceIds")
 
         val resources = mapOf(
-            ID_OPENONPHONE to R.drawable.common_full_open_on_phone,
-            ID_PHONEDISCONNECTED to R.drawable.ic_phonelink_erase_white_24dp
+            ID_OPENONPHONE to gmsBaseRes.drawable.common_full_open_on_phone,
+            ID_PHONEDISCONNECTED to sharedRes.drawable.ic_phonelink_erase_white_24dp
         )
 
         (resourceIds.takeIf { it.isNotEmpty() } ?: resources.keys).forEach { key ->
@@ -137,7 +138,7 @@ class NowPlayingTileRenderer(context: Context, debugResourceMode: Boolean = fals
                 ImageResource.Builder()
                     .setAndroidResourceByResId(
                         ResourceBuilders.AndroidImageResourceByResId.Builder()
-                            .setResourceId(R.drawable.equalizer_animated)
+                            .setResourceId(sharedRes.drawable.equalizer_animated)
                             .build()
                     )
                     .build()

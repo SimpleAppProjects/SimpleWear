@@ -68,6 +68,8 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.tasks.await
+import kotlin.time.Duration.Companion.seconds
+import com.thewizrd.shared_resources.R as sharedRes
 
 class WearableDataListenerService : WearableListenerService() {
     companion object {
@@ -425,7 +427,7 @@ class WearableDataListenerService : WearableListenerService() {
                         }.getOrDefault(false)
 
                         if (startedAdv) {
-                            delay(10000)
+                            delay(10.seconds)
                             Logger.writeLine(Log.DEBUG, "${TAG}: stopping BLE advertising")
                             advertiser.stopAdvertisingSet(callback)
                         }
@@ -492,7 +494,7 @@ class WearableDataListenerService : WearableListenerService() {
         }
 
         val notifTitle: String = callState?.callerName?.takeIf { it.isNotEmpty() }
-            ?: getString(R.string.message_callactive)
+            ?: getString(sharedRes.string.message_callactive)
 
         val notifBuilder = NotificationCompat.Builder(this, CALLS_NOT_CHANNEL_ID)
             .setStyle(
@@ -500,7 +502,7 @@ class WearableDataListenerService : WearableListenerService() {
                     .setBigContentTitle(notifTitle)
             )
             .setContentTitle(notifTitle)
-            .setSmallIcon(R.drawable.ic_icon)
+            .setSmallIcon(sharedRes.drawable.ic_icon)
             .setDefaults(NotificationCompat.DEFAULT_ALL)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
@@ -509,7 +511,7 @@ class WearableDataListenerService : WearableListenerService() {
             .setCategory(NotificationCompat.CATEGORY_CALL)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .addAction(
-                R.drawable.ic_phone_24dp,
+                sharedRes.drawable.ic_phone_24dp,
                 getString(R.string.action_launchcontroller),
                 getCallControllerIntent()
             )
@@ -527,7 +529,7 @@ class WearableDataListenerService : WearableListenerService() {
             .build()
 
         val ongoingActivity = OngoingActivity.Builder(applicationContext, 1000, notifBuilder)
-            .setStaticIcon(R.drawable.ic_phone_24dp)
+            .setStaticIcon(sharedRes.drawable.ic_phone_24dp)
             .setTouchIntent(getCallControllerIntent())
             .setStatus(ongoingActivityStatus)
             .setLocusId(LocusIdCompat(CALLS_LOCUS_ID))
@@ -555,7 +557,7 @@ class WearableDataListenerService : WearableListenerService() {
             )
             .setContentTitle(notifTitle)
             .setContentText(songTitle)
-            .setSmallIcon(R.drawable.ic_icon)
+            .setSmallIcon(sharedRes.drawable.ic_icon)
             .setDefaults(NotificationCompat.DEFAULT_ALL)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
@@ -565,7 +567,7 @@ class WearableDataListenerService : WearableListenerService() {
             .setCategory(NotificationCompat.CATEGORY_TRANSPORT)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .addAction(
-                R.drawable.ic_music_note_white_24dp,
+                sharedRes.drawable.ic_music_note_white_24dp,
                 getString(R.string.action_launchcontroller),
                 getMediaControllerIntent()
             )
@@ -578,8 +580,8 @@ class WearableDataListenerService : WearableListenerService() {
          */
 
         val ongoingActivity = OngoingActivity.Builder(applicationContext, 1001, notifBuilder)
-            .setStaticIcon(R.drawable.ic_music_note_white_24dp)
-            .setAnimatedIcon(R.drawable.music_note_bounce_animated)
+            .setStaticIcon(sharedRes.drawable.ic_music_note_white_24dp)
+            .setAnimatedIcon(sharedRes.drawable.music_note_bounce_animated)
             .setTouchIntent(getMediaControllerIntent())
             //.setStatus(ongoingActivityStatus) // Uses content text from notif
             .setTitle(notifTitle)
@@ -625,7 +627,12 @@ class WearableDataListenerService : WearableListenerService() {
     private fun createMediaControllerShortcut() {
         val shortcut = ShortcutInfoCompat.Builder(this, MEDIA_LOCUS_ID)
             .setShortLabel(getString(R.string.title_nowplaying))
-            .setIcon(IconCompat.createWithResource(this, R.drawable.ic_play_circle_simpleblue))
+            .setIcon(
+                IconCompat.createWithResource(
+                    this,
+                    sharedRes.drawable.ic_play_circle_simpleblue
+                )
+            )
             .setIntent(
                 MediaPlayerActivity.buildAutoLaunchIntent(this).setAction(Intent.ACTION_VIEW)
             )
@@ -641,7 +648,7 @@ class WearableDataListenerService : WearableListenerService() {
 
     private fun createCallControllerShortcut() {
         val shortcut = ShortcutInfoCompat.Builder(this, CALLS_LOCUS_ID)
-            .setShortLabel(getString(R.string.title_callcontroller))
+            .setShortLabel(getString(sharedRes.string.title_callcontroller))
             .setIcon(IconCompat.createWithResource(this, R.drawable.ic_phone_simpleblue))
             .setIntent(
                 Intent(this, DashboardActivity::class.java)
@@ -678,7 +685,7 @@ class WearableDataListenerService : WearableListenerService() {
     @RequiresApi(Build.VERSION_CODES.O)
     private fun initCallControllerNotifChannel() {
         var channel = mNotificationManager.getNotificationChannel(CALLS_NOT_CHANNEL_ID)
-        val notChannelName = getString(R.string.title_callcontroller)
+        val notChannelName = getString(sharedRes.string.title_callcontroller)
         if (channel == null) {
             channel = NotificationChannel(
                 CALLS_NOT_CHANNEL_ID, notChannelName, NotificationManager.IMPORTANCE_DEFAULT
@@ -693,7 +700,7 @@ class WearableDataListenerService : WearableListenerService() {
     @RequiresApi(Build.VERSION_CODES.O)
     private fun initMediaControllerNotifChannel() {
         var channel = mNotificationManager.getNotificationChannel(MEDIA_NOT_CHANNEL_ID)
-        val notChannelName = getString(R.string.title_media_controller)
+        val notChannelName = getString(sharedRes.string.title_media_controller)
         if (channel == null) {
             channel = NotificationChannel(
                 MEDIA_NOT_CHANNEL_ID, notChannelName, NotificationManager.IMPORTANCE_DEFAULT

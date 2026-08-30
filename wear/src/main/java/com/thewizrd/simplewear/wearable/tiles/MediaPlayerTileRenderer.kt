@@ -20,9 +20,10 @@ import com.thewizrd.shared_resources.media.PlaybackState
 import com.thewizrd.shared_resources.utils.ContextUtils.dpToPx
 import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.simplewear.BuildConfig
-import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.wearable.tiles.layouts.MediaPlayerTileLayout
 import kotlin.math.min
+import com.google.android.gms.base.R as gmsBaseRes
+import com.thewizrd.shared_resources.R as sharedRes
 
 @OptIn(ExperimentalHorologistApi::class)
 class MediaPlayerTileRenderer(context: Context, debugResourceMode: Boolean = false) :
@@ -85,16 +86,16 @@ class MediaPlayerTileRenderer(context: Context, debugResourceMode: Boolean = fal
         Logger.debug(this::class.java.name, "produceRequestedResources: resIds = $resourceIds")
 
         val resources = mapOf(
-            ID_OPENONPHONE to R.drawable.common_full_open_on_phone,
-            ID_PHONEDISCONNECTED to R.drawable.ic_phonelink_erase_white_24dp,
+            ID_OPENONPHONE to gmsBaseRes.drawable.common_full_open_on_phone,
+            ID_PHONEDISCONNECTED to sharedRes.drawable.ic_phonelink_erase_white_24dp,
 
-            ID_PLAY to R.drawable.ic_play_arrow_white_24dp,
-            ID_PAUSE to R.drawable.ic_baseline_pause_24,
-            ID_PREVIOUS to R.drawable.ic_baseline_skip_previous_24,
-            ID_SKIP to R.drawable.ic_baseline_skip_next_24,
+            ID_PLAY to sharedRes.drawable.ic_play_arrow_white_24dp,
+            ID_PAUSE to sharedRes.drawable.ic_baseline_pause_24,
+            ID_PREVIOUS to sharedRes.drawable.ic_baseline_skip_previous_24,
+            ID_SKIP to sharedRes.drawable.ic_baseline_skip_next_24,
 
-            ID_VOL_UP to R.drawable.ic_volume_up_white_24dp,
-            ID_VOL_DOWN to R.drawable.ic_baseline_volume_down_24
+            ID_VOL_UP to sharedRes.drawable.ic_volume_up_white_24dp,
+            ID_VOL_DOWN to sharedRes.drawable.ic_baseline_volume_down_24
         )
 
         (resourceIds.takeIf { it.isNotEmpty() } ?: resources.keys).forEach { key ->

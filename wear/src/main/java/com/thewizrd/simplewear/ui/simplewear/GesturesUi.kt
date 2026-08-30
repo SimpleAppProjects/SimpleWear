@@ -91,6 +91,8 @@ import kotlin.math.absoluteValue
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.sqrt
+import kotlin.time.Duration.Companion.milliseconds
+import com.thewizrd.shared_resources.R as sharedRes
 
 @Composable
 fun GesturesUi(
@@ -239,9 +241,7 @@ fun GesturesUi(
 
                         if (status == ActionStatus.PERMISSION_DENIED) {
                             confirmationViewModel.showOpenOnPhoneForFailure(
-                                message = context.getString(
-                                    R.string.error_permissiondenied_wear
-                                )
+                                messageResId = R.string.error_permissiondenied_wear
                             )
 
                             gestureUiViewModel.openAppOnPhone(false)
@@ -371,7 +371,7 @@ private fun GestureScreen(
                 dispatchJob?.cancel()
 
                 dispatchJob = lifecycleOwner.lifecycleScope.launch {
-                    delay((scrollPx.absoluteValue / viewConfig.scaledMaximumFlingVelocity).toLong())
+                    delay((scrollPx.absoluteValue / viewConfig.scaledMaximumFlingVelocity).toLong().milliseconds)
 
                     if (isActive) {
                         onScroll(
@@ -489,7 +489,7 @@ private fun ButtonScreen(
                 content = {
                     Icon(
                         imageVector = Icons.Rounded.Home,
-                        contentDescription = stringResource(id = R.string.label_home),
+                        contentDescription = stringResource(id = sharedRes.string.label_home),
                     )
                 },
                 onClick = {
@@ -499,8 +499,8 @@ private fun ButtonScreen(
             FilledIconButton(
                 content = {
                     Icon(
-                        painter = painterResource(R.drawable.ic_view_apps_filled),
-                        contentDescription = stringResource(id = R.string.label_recents),
+                        painter = painterResource(sharedRes.drawable.ic_view_apps_filled),
+                        contentDescription = stringResource(id = sharedRes.string.label_recents),
                     )
                 },
                 onClick = {

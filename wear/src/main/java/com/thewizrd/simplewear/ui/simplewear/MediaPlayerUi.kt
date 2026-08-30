@@ -162,6 +162,10 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
+import com.google.android.gms.base.R as gmsBaseRes
+import com.google.android.horologist.audio.ui.model.R as horologistAudioUiRes
+import com.thewizrd.shared_resources.R as sharedRes
 
 @Composable
 fun MediaPlayerUi(
@@ -349,9 +353,7 @@ fun MediaPlayerUi(
 
                         if (actionStatus == ActionStatus.PERMISSION_DENIED) {
                             confirmationViewModel.showOpenOnPhoneForFailure(
-                                message = context.getString(
-                                    R.string.error_permissiondenied_wear
-                                )
+                                messageResId = R.string.error_permissiondenied_wear
                             )
 
                             mediaPlayerViewModel.openAppOnPhone(false)
@@ -366,7 +368,7 @@ fun MediaPlayerUi(
                             )
 
                         if (actionStatus == ActionStatus.TIMEOUT) {
-                            confirmationViewModel.showFailure(message = context.getString(R.string.error_playback_failed))
+                            confirmationViewModel.showFailure(messageResId = R.string.error_playback_failed)
                         }
                     }
 
@@ -626,8 +628,8 @@ private fun MediaPlayerControlsPage(
                             isAmbient = isAmbient,
                             leftButton = SettingsButtonData(
                                 onClick = onVolumeDown,
-                                imageVector = ImageVector.vectorResource(id = R.drawable.ic_baseline_volume_down_24),
-                                contentDescription = stringResource(R.string.horologist_volume_screen_volume_down_content_description)
+                                imageVector = ImageVector.vectorResource(id = sharedRes.drawable.ic_baseline_volume_down_24),
+                                contentDescription = stringResource(horologistAudioUiRes.string.horologist_volume_screen_volume_down_content_description)
                             ),
                             brandImage = BrandImageData(
                                 bitmap = uiState.mediaPlayerDetails.bitmapIcon,
@@ -635,8 +637,8 @@ private fun MediaPlayerControlsPage(
                             ),
                             rightButton = SettingsButtonData(
                                 onClick = onVolumeUp,
-                                imageVector = ImageVector.vectorResource(id = R.drawable.ic_volume_up_white_24dp),
-                                contentDescription = stringResource(R.string.horologist_volume_screen_volume_up_content_description)
+                                imageVector = ImageVector.vectorResource(id = sharedRes.drawable.ic_volume_up_white_24dp),
+                                contentDescription = stringResource(horologistAudioUiRes.string.horologist_volume_screen_volume_up_content_description)
                             ),
                             onOpenVolume = onOpenVolume
                         )
@@ -916,7 +918,7 @@ private fun BrandImage(data: BrandImageData) {
     } else {
         Image(
             modifier = Modifier.touchTargetAwareSize(iconSize),
-            painter = painterResource(R.drawable.ic_play_circle_filled_white_24dp),
+            painter = painterResource(sharedRes.drawable.ic_play_circle_filled_white_24dp),
             contentDescription = stringResource(R.string.desc_open_player_list)
         )
     }
@@ -1324,7 +1326,7 @@ private fun MediaQueuePage(
                             if (item.id.toLong() == uiState.activeQueueItemId) {
                                 {
                                     val image =
-                                        AnimatedImageVector.animatedVectorResource(R.drawable.equalizer_animated)
+                                        AnimatedImageVector.animatedVectorResource(sharedRes.drawable.equalizer_animated)
                                     var atEnd by remember { mutableStateOf(false) }
 
                                     Icon(
@@ -1355,7 +1357,7 @@ private fun MediaQueuePage(
             }
 
             LaunchedEffect(uiState.activeQueueItemId, uiState.mediaQueueItems) {
-                delay(500)
+                delay(500.milliseconds)
 
                 if (isActive && !columnState.isScrollInProgress) {
                     columnState.animateScrollToItem(activeQueueItemIndex)
@@ -1364,7 +1366,7 @@ private fun MediaQueuePage(
 
             LaunchedEffect(uiState, uiState.pagerState) {
                 if (uiState.pagerState.currentPageKey == MediaPageType.Queue) {
-                    delay(500)
+                    delay(500.milliseconds)
                     focusRequester.requestFocus()
                 }
             }
@@ -1428,7 +1430,10 @@ private fun PreviewMediaControls() {
     val context = LocalContext.current
 
     val background = remember(context) {
-        ContextCompat.getDrawable(context, R.drawable.sample_image)?.toBitmap()
+        ContextCompat.getDrawable(
+            context,
+            gmsBaseRes.drawable.common_google_signin_btn_icon_dark_normal
+        )?.toBitmap()
     }
 
     val uiState = remember {
@@ -1456,7 +1461,10 @@ private fun PreviewMediaControlsInAmbientMode() {
     val context = LocalContext.current
 
     val background = remember(context) {
-        ContextCompat.getDrawable(context, R.drawable.sample_image)?.toBitmap()
+        ContextCompat.getDrawable(
+            context,
+            gmsBaseRes.drawable.common_google_signin_btn_icon_dark_normal
+        )?.toBitmap()
     }
 
     val uiState = remember {
@@ -1493,18 +1501,23 @@ private fun PreviewCustomControls() {
                 playbackState = PlaybackState.PLAYING,
                 title = "Title",
                 artist = "Artist",
-                artworkBitmap = ContextCompat.getDrawable(context, R.drawable.sample_image)!!
+                artworkBitmap = ContextCompat.getDrawable(
+                    context,
+                    gmsBaseRes.drawable.common_google_signin_btn_icon_dark_normal
+                )!!
                     .toBitmap()
             ),
             mediaPlayerDetails = AppItemViewModel().apply {
                 activityName = "Media Player"
                 bitmapIcon =
-                    ContextCompat.getDrawable(context, R.mipmap.ic_launcher_round)!!.toBitmap()
+                    ContextCompat.getDrawable(context, sharedRes.mipmap.ic_launcher_round)!!
+                        .toBitmap()
             },
             mediaCustomItems = List(5) {
                 MediaItemModel(it.toString()).apply {
                     title = "Item ${it + 1}"
-                    icon = ContextCompat.getDrawable(context, R.drawable.ic_icon)!!.toBitmap()
+                    icon =
+                        ContextCompat.getDrawable(context, sharedRes.drawable.ic_icon)!!.toBitmap()
                 }
             },
             activeQueueItemId = 0
@@ -1529,18 +1542,25 @@ private fun PreviewMediaQueue() {
                 playbackState = PlaybackState.PLAYING,
                 title = "Title",
                 artist = "Artist",
-                artworkBitmap = ContextCompat.getDrawable(context, R.drawable.sample_image)!!
+                artworkBitmap = ContextCompat.getDrawable(
+                    context,
+                    gmsBaseRes.drawable.common_google_signin_btn_icon_dark_normal
+                )!!
                     .toBitmap()
             ),
             mediaPlayerDetails = AppItemViewModel().apply {
                 activityName = "Media Player"
                 bitmapIcon =
-                    ContextCompat.getDrawable(context, R.mipmap.ic_launcher_round)!!.toBitmap()
+                    ContextCompat.getDrawable(context, sharedRes.mipmap.ic_launcher_round)!!
+                        .toBitmap()
             },
             mediaQueueItems = List(5) {
                 MediaItemModel(it.toString()).apply {
                     title = "Item ${it + 1}"
-                    icon = ContextCompat.getDrawable(context, R.drawable.sample_image)!!.toBitmap()
+                    icon = ContextCompat.getDrawable(
+                        context,
+                        gmsBaseRes.drawable.common_google_signin_btn_icon_dark_normal
+                    )!!.toBitmap()
                 }
             },
             activeQueueItemId = 0

@@ -21,6 +21,8 @@ import com.thewizrd.simplewear.PhoneSyncActivity
 import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.wearable.tiles.layouts.DashboardTileLayout
 import com.thewizrd.simplewear.wearable.tiles.layouts.LoadingTileLayout
+import com.google.android.gms.base.R as gmsBaseRes
+import com.thewizrd.shared_resources.R as sharedRes
 
 @OptIn(ExperimentalHorologistApi::class)
 class DashboardTileRenderer(context: Context, debugResourceMode: Boolean = false) :
@@ -124,44 +126,44 @@ class DashboardTileRenderer(context: Context, debugResourceMode: Boolean = false
         Logger.debug(this::class.java.name, "produceRequestedResources: resIds = $resourceIds")
 
         val resources = mapOf(
-            ID_OPENONPHONE to R.drawable.common_full_open_on_phone,
-            ID_PHONEDISCONNECTED to R.drawable.ic_phonelink_erase_white_24dp,
-            ID_BATTERY to R.drawable.ic_battery_std_white_24dp,
-            ID_BATTERY_CHARGING to R.drawable.ic_battery_charging_white_24dp,
+            ID_OPENONPHONE to gmsBaseRes.drawable.common_full_open_on_phone,
+            ID_PHONEDISCONNECTED to sharedRes.drawable.ic_phonelink_erase_white_24dp,
+            ID_BATTERY to sharedRes.drawable.ic_battery_std_white_24dp,
+            ID_BATTERY_CHARGING to sharedRes.drawable.ic_battery_charging_white_24dp,
 
-            ID_WIFI_ON to R.drawable.ic_network_wifi_white_24dp,
-            ID_WIFI_OFF to R.drawable.ic_signal_wifi_off_white_24dp,
+            ID_WIFI_ON to sharedRes.drawable.ic_network_wifi_white_24dp,
+            ID_WIFI_OFF to sharedRes.drawable.ic_signal_wifi_off_white_24dp,
 
-            ID_BT_ON to R.drawable.ic_bluetooth_white_24dp,
-            ID_BT_OFF to R.drawable.ic_bluetooth_disabled_white_24dp,
+            ID_BT_ON to sharedRes.drawable.ic_bluetooth_white_24dp,
+            ID_BT_OFF to sharedRes.drawable.ic_bluetooth_disabled_white_24dp,
 
-            ID_DATA_ON to R.drawable.ic_network_cell_white_24dp,
-            ID_DATA_OFF to R.drawable.ic_signal_cellular_off_white_24dp,
+            ID_DATA_ON to sharedRes.drawable.ic_network_cell_white_24dp,
+            ID_DATA_OFF to sharedRes.drawable.ic_signal_cellular_off_white_24dp,
 
-            ID_LOCATION_OFF to R.drawable.ic_location_off_white_24dp,
-            ID_LOCATION_SENSORSONLY to R.drawable.ic_baseline_gps_fixed_24dp,
-            ID_LOCATION_BATSAVER to R.drawable.ic_outline_location_on_24dp,
-            ID_LOCATION_HIGHACC to R.drawable.ic_location_on_white_24dp,
+            ID_LOCATION_OFF to sharedRes.drawable.ic_location_off_white_24dp,
+            ID_LOCATION_SENSORSONLY to sharedRes.drawable.ic_baseline_gps_fixed_24dp,
+            ID_LOCATION_BATSAVER to sharedRes.drawable.ic_outline_location_on_24dp,
+            ID_LOCATION_HIGHACC to sharedRes.drawable.ic_location_on_white_24dp,
 
-            ID_FLASHLIGHT to R.drawable.ic_lightbulb_outline_white_24dp,
+            ID_FLASHLIGHT to sharedRes.drawable.ic_lightbulb_outline_white_24dp,
 
-            ID_LOCK to R.drawable.ic_lock_white_24dp,
+            ID_LOCK to sharedRes.drawable.ic_lock_white_24dp,
 
-            ID_DND_OFF to R.drawable.ic_do_not_disturb_off_white_24dp,
-            ID_DND_PRIORITY to R.drawable.ic_error_white_24dp,
-            ID_DND_ALARMS to R.drawable.ic_alarm_white_24dp,
-            ID_DND_SILENCE to R.drawable.ic_do_not_disturb_silence_white_24dp,
+            ID_DND_OFF to sharedRes.drawable.ic_do_not_disturb_off_white_24dp,
+            ID_DND_PRIORITY to sharedRes.drawable.ic_error_white_24dp,
+            ID_DND_ALARMS to sharedRes.drawable.ic_alarm_white_24dp,
+            ID_DND_SILENCE to sharedRes.drawable.ic_do_not_disturb_silence_white_24dp,
 
-            ID_RINGER_VIB to R.drawable.ic_vibration_white_24dp,
-            ID_RINGER_SOUND to R.drawable.ic_notifications_active_white_24dp,
-            ID_RINGER_SILENT to R.drawable.ic_volume_off_white_24dp,
+            ID_RINGER_VIB to sharedRes.drawable.ic_vibration_white_24dp,
+            ID_RINGER_SOUND to sharedRes.drawable.ic_notifications_active_white_24dp,
+            ID_RINGER_SILENT to sharedRes.drawable.ic_volume_off_white_24dp,
 
-            ID_HOTSPOT to R.drawable.ic_wifi_tethering,
+            ID_HOTSPOT to sharedRes.drawable.ic_wifi_tethering,
 
-            ID_NFC_ON to R.drawable.ic_nfc_on,
-            ID_NFC_OFF to R.drawable.ic_nfc_off,
+            ID_NFC_ON to sharedRes.drawable.ic_nfc_on,
+            ID_NFC_OFF to sharedRes.drawable.ic_nfc_off,
 
-            ID_BATTERY_SAVER to R.drawable.ic_battery_saver,
+            ID_BATTERY_SAVER to sharedRes.drawable.ic_battery_saver,
 
             ID_BUTTON_ENABLED to R.drawable.round_button_enabled,
             ID_BUTTON_DISABLED to R.drawable.round_button_disabled

@@ -58,6 +58,8 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.concurrent.Executors
+import androidx.core.R as androidxRes
+import com.thewizrd.shared_resources.R as sharedRes
 
 class CallControllerService : LifecycleService(), MessageClient.OnMessageReceivedListener,
     MediaSessionManager.OnActiveSessionsChangedListener {
@@ -176,7 +178,7 @@ class CallControllerService : LifecycleService(), MessageClient.OnMessageReceive
 
         val notif = NotificationCompat.Builder(context, NOT_CHANNEL_ID).apply {
             setSmallIcon(R.drawable.ic_settings_phone_24dp)
-            setContentTitle(context.getString(if (callActive) R.string.message_callactive else R.string.not_title_callcontroller_running))
+            setContentTitle(context.getString(if (callActive) sharedRes.string.message_callactive else R.string.not_title_callcontroller_running))
             setOnlyAlertOnce(true)
             setSilent(true)
             priority =
@@ -216,7 +218,7 @@ class CallControllerService : LifecycleService(), MessageClient.OnMessageReceive
                 if (callState == TelephonyManager.CALL_STATE_RINGING) {
                     addAction(
                         0,
-                        context.getString(R.string.call_notification_answer_action),
+                        context.getString(androidxRes.string.call_notification_answer_action),
                         PendingIntent.getService(
                             context, ACTION_ANSWERCALL.hashCode(),
                             Intent(context, CallControllerService::class.java)
@@ -227,7 +229,7 @@ class CallControllerService : LifecycleService(), MessageClient.OnMessageReceive
                 }
                 addAction(
                     0,
-                    context.getString(R.string.action_hangup),
+                    context.getString(sharedRes.string.action_hangup),
                     PendingIntent.getService(
                         context, ACTION_HANGUPCALL.hashCode(),
                         Intent(context, CallControllerService::class.java)

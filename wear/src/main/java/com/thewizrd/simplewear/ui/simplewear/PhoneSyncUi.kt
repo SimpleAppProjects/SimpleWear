@@ -82,6 +82,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
+import com.google.android.gms.base.R as gmsBaseRes
+import com.thewizrd.shared_resources.R as sharedRes
 
 @Composable
 fun PhoneSyncUi(
@@ -116,9 +120,9 @@ private fun PhoneSyncUi(
         rememberLauncherForActivityResult(contract = ActivityResultContracts.StartActivityForResult()) {
             if (it.resultCode == Activity.RESULT_OK) {
                 lifecycleOwner.lifecycleScope.launch(Dispatchers.Main) {
-                    delay(2000)
+                    delay(2.seconds)
                     phoneSyncViewModel.showProgressBar()
-                    delay(10000)
+                    delay(10.seconds)
                     if (isActive) {
                         phoneSyncViewModel.showProgressBar(false)
                     }
@@ -280,8 +284,8 @@ private fun PhoneSyncUi(
                     ) {
                         Icon(
                             modifier = Modifier.requiredSize(IconButtonDefaults.SmallIconSize - 4.dp),
-                            painter = painterResource(id = R.drawable.ic_network_wifi_white_24dp),
-                            contentDescription = stringResource(id = R.string.action_wifi)
+                            painter = painterResource(id = sharedRes.drawable.ic_network_wifi_white_24dp),
+                            contentDescription = stringResource(id = sharedRes.string.action_wifi)
                         )
                     }
                 }
@@ -310,7 +314,7 @@ private fun PhoneSyncUi(
 
                             LaunchedEffect(uiState.isLoading) {
                                 if (!uiState.isLoading) {
-                                    delay(500)
+                                    delay(500.milliseconds)
                                 }
                                 if (isActive) {
                                     isVisible = uiState.isLoading
@@ -340,7 +344,7 @@ private fun PhoneSyncUi(
                                 ),
                             painter = when (uiState.connectionStatus) {
                                 WearConnectionStatus.DISCONNECTED -> {
-                                    painterResource(id = R.drawable.ic_phonelink_erase_white_24dp)
+                                    painterResource(id = sharedRes.drawable.ic_phonelink_erase_white_24dp)
                                 }
 
                                 WearConnectionStatus.CONNECTING, WearConnectionStatus.CONNECTED -> {
@@ -348,7 +352,7 @@ private fun PhoneSyncUi(
                                 }
 
                                 WearConnectionStatus.APPNOTINSTALLED -> {
-                                    painterResource(id = R.drawable.common_full_open_on_phone)
+                                    painterResource(id = gmsBaseRes.drawable.common_full_open_on_phone)
                                 }
 
                                 null -> Icons.Rounded.Sync.asPaintable().rememberPainter()
@@ -383,8 +387,8 @@ private fun PhoneSyncUi(
                     ) {
                         Icon(
                             modifier = Modifier.requiredSize(IconButtonDefaults.SmallIconSize - 4.dp),
-                            painter = painterResource(id = R.drawable.ic_bluetooth_white_24dp),
-                            contentDescription = stringResource(id = R.string.action_bt)
+                            painter = painterResource(id = sharedRes.drawable.ic_bluetooth_white_24dp),
+                            contentDescription = stringResource(id = sharedRes.string.action_bt)
                         )
                     }
                 }
@@ -412,7 +416,7 @@ private fun PhoneSyncUi(
 
                 LaunchedEffect(uiState.isLoading) {
                     if (!uiState.isLoading) {
-                        delay(500)
+                        delay(500.milliseconds)
                     }
                     if (isActive) {
                         isVisible = uiState.isLoading

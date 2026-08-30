@@ -36,6 +36,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
+import com.thewizrd.shared_resources.R as sharedRes
 
 class BatteryStatusComplicationService : SuspendingComplicationDataSourceService() {
     companion object {
@@ -101,9 +102,9 @@ class BatteryStatusComplicationService : SuspendingComplicationDataSourceService
                 getString(R.string.batt_state_discharging)
             }
             val complicationIconResId = if (batteryStatus.isCharging) {
-                R.drawable.ic_charging_station_24dp
+                sharedRes.drawable.ic_charging_station_24dp
             } else {
-                R.drawable.ic_smartphone_white_24dp
+                sharedRes.drawable.ic_smartphone_white_24dp
             }
 
             when (request.complicationType) {
@@ -164,7 +165,7 @@ class BatteryStatusComplicationService : SuspendingComplicationDataSourceService
             return NoDataComplicationData()
         }
 
-        val complicationIconResId = R.drawable.ic_charging_station_24dp
+        val complicationIconResId = sharedRes.drawable.ic_charging_station_24dp
 
         return when (type) {
             ComplicationType.RANGED_VALUE -> {

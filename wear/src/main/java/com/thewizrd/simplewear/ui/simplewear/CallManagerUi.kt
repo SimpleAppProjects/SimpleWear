@@ -117,6 +117,9 @@ import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 import kotlin.math.sqrt
 import kotlin.random.Random
+import androidx.core.R as androidxRes
+import com.google.android.gms.base.R as gmsBaseRes
+import com.thewizrd.shared_resources.R as sharedRes
 
 @Composable
 fun CallManagerUi(
@@ -222,9 +225,7 @@ fun CallManagerUi(
 
                         if (status == ActionStatus.PERMISSION_DENIED) {
                             confirmationViewModel.showOpenOnPhoneForFailure(
-                                message = context.getString(
-                                    R.string.error_permissiondenied_wear
-                                )
+                                messageResId = R.string.error_permissiondenied_wear
                             )
 
                             callManagerViewModel.openAppOnPhone(false)
@@ -240,11 +241,11 @@ fun CallManagerUi(
 
                         when (status) {
                             ActionStatus.UNKNOWN, ActionStatus.FAILURE -> {
-                                confirmationViewModel.showFailure(message = context.getString(R.string.error_actionfailed))
+                                confirmationViewModel.showFailure(messageResId = R.string.error_actionfailed)
                             }
 
                             ActionStatus.PERMISSION_DENIED -> {
-                                confirmationViewModel.showFailure(message = context.getString(R.string.error_permissiondenied_wear))
+                                confirmationViewModel.showFailure(messageResId = R.string.error_permissiondenied_wear)
 
                                 valueActionViewModel.openAppOnPhone(false)
                             }
@@ -420,7 +421,8 @@ private fun CallManagerUi(
                     modifier = Modifier
                         .wrapContentHeight()
                         .basicMarquee(iterations = Int.MAX_VALUE),
-                    text = uiState.callerName ?: stringResource(id = R.string.message_callactive),
+                    text = uiState.callerName
+                        ?: stringResource(id = sharedRes.string.message_callactive),
                     style = if (isLargeWidth || isLargeHeight) {
                         MaterialTheme.typography.labelLarge
                     } else {
@@ -463,7 +465,7 @@ private fun CallManagerUi(
                     isChecked = uiState.isMuted,
                     onClick = onMute,
                     contentDescription = if (uiState.isMuted) {
-                        stringResource(R.string.volstate_muted)
+                        stringResource(sharedRes.string.volstate_muted)
                     } else {
                         stringResource(R.string.label_mute)
                     }
@@ -474,14 +476,14 @@ private fun CallManagerUi(
                         imageVector = Icons.Rounded.MoreHoriz,
                         buttonSize = buttonSize,
                         onClick = { showMenuDialog = true },
-                        contentDescription = stringResource(R.string.action_volume)
+                        contentDescription = stringResource(sharedRes.string.action_volume)
                     )
                 } else {
                     CallUiButton(
                         imageVector = Icons.AutoMirrored.Rounded.VolumeUp,
                         buttonSize = buttonSize,
                         onClick = onVolume,
-                        contentDescription = stringResource(R.string.action_volume)
+                        contentDescription = stringResource(sharedRes.string.action_volume)
                     )
                 }
             }
@@ -503,7 +505,7 @@ private fun CallManagerUi(
                 Icon(
                     modifier = Modifier.size(IconButtonDefaults.iconSizeFor(buttonSize)),
                     imageVector = Icons.Rounded.CallEnd,
-                    contentDescription = stringResource(id = R.string.action_hangup)
+                    contentDescription = stringResource(id = sharedRes.string.action_hangup)
                 )
             }
         }
@@ -536,7 +538,7 @@ private fun CallManagerUi(
                             .transformedHeight(this, transformationSpec),
                         transformation = SurfaceTransformation(transformationSpec)
                     ) {
-                        Text(text = stringResource(R.string.title_callcontroller))
+                        Text(text = stringResource(sharedRes.string.title_callcontroller))
                     }
                 }
 
@@ -607,12 +609,12 @@ private fun CallManagerUi(
                             .transformedHeight(this, transformationSpec),
                         transformation = SurfaceTransformation(transformationSpec),
                         label = {
-                            Text(text = stringResource(R.string.action_volume))
+                            Text(text = stringResource(sharedRes.string.action_volume))
                         },
                         icon = {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Rounded.VolumeUp,
-                                contentDescription = stringResource(R.string.action_volume)
+                                contentDescription = stringResource(sharedRes.string.action_volume)
                             )
                         },
                         onClick = {
@@ -694,7 +696,8 @@ private fun IncomingCallUi(
                     modifier = Modifier
                         .wrapContentHeight()
                         .basicMarquee(iterations = Int.MAX_VALUE),
-                    text = uiState.callerName ?: stringResource(id = R.string.message_callactive),
+                    text = uiState.callerName
+                        ?: stringResource(id = sharedRes.string.message_callactive),
                     style = if (isLargeWidth || isLargeHeight) {
                         MaterialTheme.typography.labelLarge
                     } else {
@@ -708,7 +711,7 @@ private fun IncomingCallUi(
 
             Text(
                 modifier = Modifier.fillMaxWidth(),
-                text = stringResource(R.string.call_notification_incoming_text),
+                text = stringResource(androidxRes.string.call_notification_incoming_text),
                 style = if (isLargeWidth || isLargeHeight) {
                     MaterialTheme.typography.bodySmall
                 } else {
@@ -736,7 +739,7 @@ private fun IncomingCallUi(
                     Icon(
                         modifier = Modifier.size(IconButtonDefaults.iconSizeFor(buttonSize)),
                         imageVector = Icons.Rounded.CallEnd,
-                        contentDescription = stringResource(id = R.string.action_hangup)
+                        contentDescription = stringResource(id = sharedRes.string.action_hangup)
                     )
                 }
 
@@ -745,7 +748,7 @@ private fun IncomingCallUi(
                     imageVector = Icons.AutoMirrored.Rounded.VolumeUp,
                     buttonSize = buttonSize,
                     onClick = onVolume,
-                    contentDescription = stringResource(R.string.action_volume)
+                    contentDescription = stringResource(sharedRes.string.action_volume)
                 )
             }
         }
@@ -766,7 +769,7 @@ private fun IncomingCallUi(
                 Icon(
                     modifier = Modifier.size(IconButtonDefaults.iconSizeFor(buttonSize)),
                     imageVector = Icons.Rounded.Call,
-                    contentDescription = stringResource(id = R.string.call_notification_answer_action)
+                    contentDescription = stringResource(id = androidxRes.string.call_notification_answer_action)
                 )
             }
         }
@@ -942,7 +945,10 @@ private fun PreviewCallManagerUi() {
     val context = LocalContext.current
 
     val background = remember(context) {
-        ContextCompat.getDrawable(context, R.drawable.sample_image)?.toBitmap()
+        ContextCompat.getDrawable(
+            context,
+            gmsBaseRes.drawable.common_google_signin_btn_icon_dark_normal
+        )?.toBitmap()
     }
 
     val uiState = remember {
@@ -974,7 +980,10 @@ private fun PreviewIncomingCallUi() {
     val context = LocalContext.current
 
     val background = remember(context) {
-        ContextCompat.getDrawable(context, R.drawable.sample_image)?.toBitmap()
+        ContextCompat.getDrawable(
+            context,
+            gmsBaseRes.drawable.common_google_signin_btn_icon_dark_normal
+        )?.toBitmap()
     }
 
     val uiState = remember {

@@ -17,12 +17,12 @@ import com.thewizrd.shared_resources.utils.booleanToBytes
 import com.thewizrd.shared_resources.utils.bytesToBool
 import com.thewizrd.shared_resources.utils.bytesToString
 import com.thewizrd.shared_resources.utils.charToBytes
-import com.thewizrd.simplewear.R
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import com.thewizrd.shared_resources.R as sharedRes
 
 data class CallManagerUiState(
     val connectionStatus: WearConnectionStatus? = null,
@@ -174,7 +174,7 @@ class CallManagerViewModel(app: Application) : WearableListenerViewModel(app) {
             it.copy(
                 isLoading = false,
                 callerName = callerName?.takeIf { name -> name.isNotBlank() }
-                    ?: appContext.getString(R.string.message_callactive),
+                    ?: appContext.getString(sharedRes.string.message_callactive),
                 callerBitmap = if (callActive) callerBmp else null,
                 callStartTime = callStartTime,
                 supportsSpeaker = callActive && supportsSpeakerToggle,

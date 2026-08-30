@@ -72,6 +72,7 @@ import com.thewizrd.simplewear.ui.utils.rememberReorderHapticFeedback
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyGridState
 import java.util.Collections
+import com.thewizrd.shared_resources.R as sharedRes
 
 private val MAX_BUTTONS = Actions.entries.size
 private val DEFAULT_TILES = Actions.entries
@@ -190,7 +191,7 @@ private fun DashboardConfigUi(
                         },
                         icon = {
                             Icon(
-                                painter = painterResource(id = R.drawable.ic_close_white_24dp),
+                                painter = painterResource(id = sharedRes.drawable.ic_close_white_24dp),
                                 contentDescription = stringResource(id = R.string.action_remove_batt_state)
                             )
                         },
@@ -218,7 +219,7 @@ private fun DashboardConfigUi(
                         },
                         icon = {
                             Icon(
-                                painter = painterResource(id = R.drawable.ic_battery_std_white_24dp),
+                                painter = painterResource(id = sharedRes.drawable.ic_battery_std_white_24dp),
                                 contentDescription = stringResource(id = R.string.title_batt_state)
                             )
                         },
@@ -260,7 +261,7 @@ private fun DashboardConfigUi(
             itemsIndexed(
                 items = userTileConfigList,
                 key = { index, item -> (item as? Actions) ?: index },
-                span = { index, _ ->
+                span = { _, _ ->
                     GridItemSpan(1)
                 }
             ) { index, item ->
@@ -305,7 +306,7 @@ private fun DashboardConfigUi(
                                     )
                                 ) {
                                     Icon(
-                                        painter = painterResource(id = R.drawable.ic_close_white_24dp),
+                                        painter = painterResource(id = sharedRes.drawable.ic_close_white_24dp),
                                         contentDescription = stringResource(id = android.R.string.cancel),
                                     )
                                 }
@@ -441,7 +442,7 @@ private fun DashboardConfigUi(
                     onClick = { showAddTileDialog = false }
                 ) {
                     Icon(
-                        painter = painterResource(id = R.drawable.ic_close_white_24dp),
+                        painter = painterResource(id = sharedRes.drawable.ic_close_white_24dp),
                         contentDescription = stringResource(android.R.string.cancel)
                     )
                 }

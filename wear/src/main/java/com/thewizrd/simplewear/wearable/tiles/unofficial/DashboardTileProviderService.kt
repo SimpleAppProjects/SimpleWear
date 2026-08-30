@@ -40,6 +40,8 @@ import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.withTimeoutOrNull
 import java.util.Locale
 import kotlin.time.Duration.Companion.seconds
+import com.google.android.gms.base.R as gmsBaseRes
+import com.thewizrd.shared_resources.R as sharedRes
 
 class DashboardTileProviderService : TileProviderService() {
     companion object {
@@ -164,7 +166,7 @@ class DashboardTileProviderService : TileProviderService() {
                     views.setTextViewText(R.id.message, getString(R.string.error_notinstalled))
                     views.setImageViewResource(
                         R.id.imageButton,
-                        R.drawable.common_full_open_on_phone
+                        gmsBaseRes.drawable.common_full_open_on_phone
                     )
                 }
 
@@ -172,7 +174,7 @@ class DashboardTileProviderService : TileProviderService() {
                     views.setTextViewText(R.id.message, getString(R.string.status_disconnected))
                     views.setImageViewResource(
                         R.id.imageButton,
-                        R.drawable.ic_phonelink_erase_white_24dp
+                        sharedRes.drawable.ic_phonelink_erase_white_24dp
                     )
                 }
             }

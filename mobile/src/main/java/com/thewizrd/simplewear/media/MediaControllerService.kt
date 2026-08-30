@@ -90,6 +90,9 @@ import timber.log.Timber
 import java.lang.reflect.Type
 import java.util.Stack
 import java.util.concurrent.Executors
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
+import com.thewizrd.shared_resources.R as sharedRes
 
 class MediaControllerService : Service(), MessageClient.OnMessageReceivedListener,
     MediaSessionManager.OnActiveSessionsChangedListener {
@@ -188,7 +191,7 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
 
     private fun createForegroundNotification(context: Context): Notification {
         val notif = NotificationCompat.Builder(context, NOT_CHANNEL_ID).apply {
-            setSmallIcon(R.drawable.ic_music_note_white_24dp)
+            setSmallIcon(sharedRes.drawable.ic_music_note_white_24dp)
             setContentTitle(context.getString(R.string.not_title_mediacontroller_running))
             setOnlyAlertOnce(true)
             setSilent(true)
@@ -291,7 +294,7 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
                 if (disconnect) {
                     disconnectJob = scope.launch {
                         // Delay in case service was just started as foreground
-                        delay(1500)
+                        delay(1500.milliseconds)
                         stopSelf()
                     }
                 }
@@ -577,7 +580,7 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
             playFromSearchTimer.cancel()
             updateJob?.cancel()
             updateJob = scope.launch {
-                delay(UPDATE_DELAY_MS)
+                delay(UPDATE_DELAY_MS.milliseconds)
 
                 if (!isActive) return@launch
 
@@ -599,7 +602,7 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
             playFromSearchTimer.cancel()
             updateJob?.cancel()
             updateJob = scope.launch {
-                delay(UPDATE_DELAY_MS)
+                delay(UPDATE_DELAY_MS.milliseconds)
 
                 if (!isActive) return@launch
 
@@ -966,7 +969,7 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
 
             // Notify wear device if successful
             scope.launch {
-                delay(3000)
+                delay(3.seconds)
                 mWearableManager.sendMessage(
                     null, MediaHelper.PlayCommandPath,
                     PhoneStatusHelper.sendPlayMusicCommand(this@MediaControllerService).name.stringToBytes()
@@ -1049,7 +1052,7 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
         fun onDatasetChanged() {
             updateJob?.cancel()
             updateJob = scope.launch(Dispatchers.Default) {
-                delay(UPDATE_DELAY_MS)
+                delay(UPDATE_DELAY_MS.milliseconds)
 
                 if (!isActive) return@launch
 
@@ -1077,12 +1080,12 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
                     runCatching {
                         val iconDrawable = ContextCompat.getDrawable(
                             applicationContext,
-                            R.drawable.ic_play_circle_filled_white_24dp
+                            sharedRes.drawable.ic_play_circle_filled_white_24dp
                         )
                         actions.add(
                             ActionItem(
                                 action = MediaHelper.ACTIONITEM_PLAY,
-                                title = getString(R.string.action_musicplayback),
+                                title = getString(sharedRes.string.action_musicplayback),
                                 icon = ImageUtils.bitmapFromDrawable(
                                     iconDrawable!!,
                                     iconSize,
@@ -1201,7 +1204,7 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
         private fun onDatasetChanged() {
             updateJob?.cancel()
             updateJob = scope.launch(Dispatchers.Default) {
-                delay(UPDATE_DELAY_MS)
+                delay(UPDATE_DELAY_MS.milliseconds)
 
                 if (!isActive) return@launch
 
@@ -1316,7 +1319,7 @@ class MediaControllerService : Service(), MessageClient.OnMessageReceivedListene
         fun onDatasetChanged() {
             updateJob?.cancel()
             updateJob = scope.launch(Dispatchers.Default) {
-                delay(UPDATE_DELAY_MS)
+                delay(UPDATE_DELAY_MS.milliseconds)
 
                 if (!isActive) return@launch
 

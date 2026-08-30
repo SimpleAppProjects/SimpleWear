@@ -67,6 +67,7 @@ import com.thewizrd.simplewear.viewmodels.ConfirmationData
 import com.thewizrd.simplewear.viewmodels.ConfirmationViewModel
 import com.thewizrd.simplewear.viewmodels.WearableListenerViewModel
 import kotlinx.coroutines.launch
+import com.thewizrd.shared_resources.R as sharedRes
 
 @Composable
 fun AppLauncherScreen(
@@ -170,14 +171,14 @@ fun AppLauncherScreen(
                             }
 
                             ActionStatus.PERMISSION_DENIED -> {
-                                confirmationViewModel.showFailure(message = context.getString(R.string.error_permissiondenied_wear))
+                                confirmationViewModel.showFailure(messageResId = R.string.error_permissiondenied_wear)
 
                                 appLauncherViewModel.openAppOnPhone(false)
                             }
 
                             ActionStatus.FAILURE -> {
                                 confirmationViewModel.showFailure(
-                                    message = context.getString(R.string.error_actionfailed)
+                                    messageResId = R.string.error_actionfailed
                                 )
                             }
 
@@ -295,7 +296,7 @@ private fun AppLauncherScreen(
                                 .transformedHeight(this, transformationSpec),
                             transformation = SurfaceTransformation(transformationSpec)
                         ) {
-                            Text(text = stringResource(id = R.string.action_apps))
+                            Text(text = stringResource(id = sharedRes.string.action_apps))
                         }
                     }
 
@@ -378,7 +379,7 @@ private fun AppLauncherSettings(
                         .transformedHeight(this, transformationSpec),
                     transformation = SurfaceTransformation(transformationSpec)
                 ) {
-                    Text(text = stringResource(id = R.string.title_settings))
+                    Text(text = stringResource(id = sharedRes.string.title_settings))
                 }
             }
             item {
@@ -407,7 +408,8 @@ private fun PreviewAppLauncherScreen() {
                 AppItemViewModel().apply {
                     appLabel = "App ${index + 1}"
                     packageName = "com.package.${index}"
-                    bitmapIcon = ContextCompat.getDrawable(context, R.drawable.ic_icon)!!.toBitmap()
+                    bitmapIcon =
+                        ContextCompat.getDrawable(context, sharedRes.drawable.ic_icon)!!.toBitmap()
                 }
             },
             isLoading = false,

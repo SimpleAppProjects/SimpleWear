@@ -23,6 +23,7 @@ import com.thewizrd.shared_resources.utils.Logger
 import com.thewizrd.simplewear.R
 import com.thewizrd.simplewear.receivers.PhoneBroadcastReceiver
 import com.thewizrd.simplewear.wearable.WearableWorker
+import com.thewizrd.shared_resources.R as sharedRes
 
 class TorchService : Service() {
     companion object {
@@ -69,7 +70,7 @@ class TorchService : Service() {
         val mNotifyMgr =
             applicationContext.getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         var mChannel = mNotifyMgr.getNotificationChannel(NOT_CHANNEL_ID)
-        val notChannelName = applicationContext.getString(R.string.not_channel_name_torch)
+        val notChannelName = applicationContext.getString(sharedRes.string.not_channel_name_torch)
         if (mChannel == null) {
             mChannel = NotificationChannel(
                 NOT_CHANNEL_ID,
@@ -93,8 +94,8 @@ class TorchService : Service() {
 
     private fun getForegroundNotification(context: Context): Notification {
         val mBuilder = NotificationCompat.Builder(context, NOT_CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_lightbulb_outline_white_24dp)
-            .setContentTitle(context.getString(R.string.action_torch))
+            .setSmallIcon(sharedRes.drawable.ic_lightbulb_outline_white_24dp)
+            .setContentTitle(context.getString(sharedRes.string.action_torch))
             .addAction(
                 0,
                 context.getString(R.string.action_turnoff),
@@ -105,7 +106,7 @@ class TorchService : Service() {
                     PendingIntent.FLAG_UPDATE_CURRENT.toImmutableCompatFlag()
                 )
             )
-            .setColor(ContextCompat.getColor(context, R.color.colorPrimary))
+            .setColor(ContextCompat.getColor(context, sharedRes.color.colorPrimary))
             .setOnlyAlertOnce(true)
             .setPriority(NotificationCompat.PRIORITY_LOW)
         return mBuilder.build()

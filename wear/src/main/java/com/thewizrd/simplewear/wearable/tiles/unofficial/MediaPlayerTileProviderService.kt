@@ -39,6 +39,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.time.Duration.Companion.seconds
+import com.google.android.gms.base.R as gmsBaseRes
+import com.thewizrd.shared_resources.R as sharedRes
 
 class MediaPlayerTileProviderService : TileProviderService() {
     companion object {
@@ -171,14 +173,14 @@ class MediaPlayerTileProviderService : TileProviderService() {
                     views.setTextViewText(R.id.message, getString(R.string.error_notinstalled))
                     views.setImageViewResource(
                         R.id.imageButton,
-                        R.drawable.common_full_open_on_phone
+                        gmsBaseRes.drawable.common_full_open_on_phone
                     )
                 }
                 else -> {
                     views.setTextViewText(R.id.message, getString(R.string.status_disconnected))
                     views.setImageViewResource(
                         R.id.imageButton,
-                        R.drawable.ic_phonelink_erase_white_24dp
+                        sharedRes.drawable.ic_phonelink_erase_white_24dp
                     )
                 }
             }
@@ -223,7 +225,10 @@ class MediaPlayerTileProviderService : TileProviderService() {
             if (tileState.appIcon != null) {
                 views.setImageViewBitmap(R.id.app_icon, tileState.appIcon.toBitmap())
             } else {
-                views.setImageViewResource(R.id.app_icon, R.drawable.ic_play_circle_simpleblue)
+                views.setImageViewResource(
+                    R.id.app_icon,
+                    sharedRes.drawable.ic_play_circle_simpleblue
+                )
             }
 
             views.setProgressBar(
