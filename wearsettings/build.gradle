@@ -1,6 +1,5 @@
 plugins {
-    id('com.android.application')
-    id('kotlin-android')
+    id 'com.android.application'
     id('dev.rikka.tools.refine') version libs.versions.refine.version
 }
 
@@ -37,6 +36,7 @@ android {
     buildFeatures {
         viewBinding true
         buildConfig true
+        resValues true
     }
 
     compileOptions {

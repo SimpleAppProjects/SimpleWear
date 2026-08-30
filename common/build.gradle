@@ -1,5 +1,6 @@
-apply plugin: 'com.android.library'
-apply plugin: 'kotlin-android'
+plugins {
+    id 'com.android.library'
+}
 
 android {
     namespace 'com.thewizrd.common'
@@ -7,7 +8,6 @@ android {
 
     defaultConfig {
         minSdkVersion libs.versions.minSdkVersion.get().toInteger()
-        targetSdkVersion libs.versions.targetSdkVersion.get().toInteger()
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles "consumer-rules.pro"
@@ -30,6 +30,13 @@ android {
 
     kotlin {
         jvmToolchain(21)
+    }
+
+    lint {
+        targetSdk libs.versions.targetSdkVersion.get().toInteger()
+    }
+    testOptions {
+        targetSdk libs.versions.targetSdkVersion.get().toInteger()
     }
 }
 

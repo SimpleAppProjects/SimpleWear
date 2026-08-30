@@ -3,8 +3,8 @@ compileSdkVersion = "36"
 minSdkVersion = "24"
 targetSdkVersion = "36"
 
-gradleVersion = "8.13.2"
-kotlin_version = '2.1.20'
+gradleVersion = "9.3.2"
+kotlin_version = "2.2.10"
 kotlinx_version = '1.10.2'
 
 desugar_version = '2.1.5'
@@ -89,6 +89,7 @@ refine-annotation = { module = "dev.rikka.tools.refine:annotation", version.ref 
 refine-annotation-processor = { module = "dev.rikka.tools.refine:annotation-processor", version.ref = "refine_version" }
 hiddenapibypass = { module = "org.lsposed.hiddenapibypass:hiddenapibypass", version.ref = "hiddenapibypassVersion" }
 horologist-audio-ui-material3 = { module = "com.google.android.horologist:horologist-audio-ui-material3", version.ref = "horologist_version" }
+legacy-kapt-plugin = { module = "com.android.legacy-kapt:com.android.legacy-kapt.gradle.plugin", version.ref = "gradleVersion" }
 libsu-core = { module = "com.github.topjohnwu.libsu:core", version.ref = "libsu_version" }
 refine-runtime = { module = "dev.rikka.tools.refine:runtime", version.ref = "refine_version" }
 shizuki-provider = { module = "dev.rikka.shizuku:provider", version.ref = "shizuku_version" }
@@ -100,7 +101,6 @@ google-services = { module = "com.google.gms:google-services", version.ref = "go
 gradle = { module = "com.android.tools.build:gradle", version.ref = "gradleVersion" }
 horologist-compose-tools = { module = "com.google.android.horologist:horologist-compose-tools", version.ref = "horologist_version" }
 horologist-tiles = { module = "com.google.android.horologist:horologist-tiles", version.ref = "horologist_version" }
-kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin_version" }
 desugar-jdk-libs = { module = "com.android.tools:desugar_jdk_libs", version.ref = "desugar_version" }
 test-core = { module = "androidx.test:core", version.ref = "test_core_version" }
 test-runner = { module = "androidx.test:runner", version.ref = "test_runner_version" }

@@ -1,6 +1,5 @@
 plugins {
     id 'com.android.library'
-    id 'org.jetbrains.kotlin.android'
 }
 
 android {
@@ -8,7 +7,6 @@ android {
 
     defaultConfig {
         minSdkVersion libs.versions.minSdkVersion.get().toInteger()
-        targetSdkVersion libs.versions.targetSdkVersion.get().toInteger()
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles "consumer-rules.pro"
@@ -35,6 +33,12 @@ android {
     }
 
     namespace 'com.thewizrd.wearsettings.hidden_api'
+    lint {
+        targetSdk libs.versions.targetSdkVersion.get().toInteger()
+    }
+    testOptions {
+        targetSdk libs.versions.targetSdkVersion.get().toInteger()
+    }
 }
 
 dependencies {

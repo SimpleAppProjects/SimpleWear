@@ -1,13 +1,13 @@
-apply plugin: 'com.android.library'
-apply plugin: 'kotlin-android'
-apply plugin: 'kotlin-kapt'
+plugins {
+    id 'com.android.library'
+    id 'com.android.legacy-kapt'
+}
 
 android {
     compileSdk = libs.versions.compileSdkVersion.get().toInteger()
 
     defaultConfig {
         minSdkVersion libs.versions.minSdkVersion.get().toInteger()
-        targetSdkVersion libs.versions.targetSdkVersion.get().toInteger()
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles "consumer-rules.pro"
@@ -27,6 +27,7 @@ android {
         dataBinding true
         viewBinding true
         buildConfig true
+        resValues true
     }
 
     compileOptions {
@@ -41,6 +42,12 @@ android {
         jvmToolchain(21)
     }
     namespace 'com.thewizrd.shared_resources'
+    lint {
+        targetSdk libs.versions.targetSdkVersion.get().toInteger()
+    }
+    testOptions {
+        targetSdk libs.versions.targetSdkVersion.get().toInteger()
+    }
 }
 
 dependencies {

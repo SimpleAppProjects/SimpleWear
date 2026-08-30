@@ -8,9 +8,9 @@ buildscript {
 
     dependencies {
         classpath libs.gradle
+        classpath libs.legacy.kapt.plugin
         classpath libs.google.services
         classpath libs.firebase.crashlytics.gradle
-        classpath libs.kotlin.gradle.plugin
         classpath libs.compose.compiler.gradle.plugin
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files

@@ -1,9 +1,10 @@
-apply plugin: 'com.android.application'
-apply plugin: 'kotlin-android'
-apply plugin: 'kotlin-kapt'
-apply plugin: 'com.google.gms.google-services'
-apply plugin: 'com.google.firebase.crashlytics'
-apply plugin: 'org.jetbrains.kotlin.plugin.compose'
+plugins {
+    id 'com.android.application'
+    id 'com.android.legacy-kapt'
+    id 'com.google.gms.google-services'
+    id 'com.google.firebase.crashlytics'
+    id 'org.jetbrains.kotlin.plugin.compose'
+}
 
 android {
     compileSdk = libs.versions.compileSdkVersion.get().toInteger()
@@ -39,6 +40,7 @@ android {
         dataBinding true
         viewBinding true
         buildConfig true
+        resValues true
     }
 
     compileOptions {
