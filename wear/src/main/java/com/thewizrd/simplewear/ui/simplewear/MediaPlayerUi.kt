@@ -12,6 +12,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -76,6 +77,7 @@ import androidx.wear.compose.material3.Button
 import androidx.wear.compose.material3.ButtonDefaults
 import androidx.wear.compose.material3.ButtonGroup
 import androidx.wear.compose.material3.ButtonGroupDefaults
+import androidx.wear.compose.material3.ColorScheme
 import androidx.wear.compose.material3.CompactButton
 import androidx.wear.compose.material3.FilledIconButton
 import androidx.wear.compose.material3.FilledTonalButton
@@ -90,6 +92,11 @@ import androidx.wear.compose.material3.SurfaceTransformation
 import androidx.wear.compose.material3.Text
 import androidx.wear.compose.material3.lazy.rememberTransformationSpec
 import androidx.wear.compose.material3.lazy.transformedHeight
+import androidx.wear.compose.material3.onehandedgesture.OneHandedGestureAction
+import androidx.wear.compose.material3.onehandedgesture.OneHandedGestureClickIndicator
+import androidx.wear.compose.material3.onehandedgesture.OneHandedGestureClickIndicatorState
+import androidx.wear.compose.material3.onehandedgesture.oneHandedGesture
+import androidx.wear.compose.material3.onehandedgesture.rememberOneHandedGestureConfiguration
 import androidx.wear.compose.material3.touchTargetAwareSize
 import androidx.wear.compose.ui.tooling.preview.WearPreviewFontScales
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
@@ -106,19 +113,25 @@ import com.google.android.horologist.compose.layout.rememberResponsiveColumnPadd
 import com.google.android.horologist.images.base.paintable.BitmapPaintable.Companion.asPaintable
 import com.google.android.horologist.media.model.PlaybackStateEvent
 import com.google.android.horologist.media.model.TimestampProvider
+import com.google.android.horologist.media.ui.material3.components.ButtonGroupLayout
 import com.google.android.horologist.media.ui.material3.components.ButtonGroupLayoutDefaults
 import com.google.android.horologist.media.ui.material3.components.ambient.AmbientMediaControlButtons
 import com.google.android.horologist.media.ui.material3.components.ambient.AmbientMediaInfoDisplay
 import com.google.android.horologist.media.ui.material3.components.ambient.AmbientSeekToNextButton
 import com.google.android.horologist.media.ui.material3.components.ambient.AmbientSeekToPreviousButton
-import com.google.android.horologist.media.ui.material3.components.animated.AnimatedMediaControlButtons
 import com.google.android.horologist.media.ui.material3.components.animated.AnimatedMediaInfoDisplay
+import com.google.android.horologist.media.ui.material3.components.animated.AnimatedPlayPauseButton
+import com.google.android.horologist.media.ui.material3.components.animated.AnimatedPlayPauseButtonContent
+import com.google.android.horologist.media.ui.material3.components.animated.AnimatedPlayPauseProgressButton
+import com.google.android.horologist.media.ui.material3.components.animated.AnimatedSeekToNextButton
+import com.google.android.horologist.media.ui.material3.components.animated.AnimatedSeekToPreviousButton
 import com.google.android.horologist.media.ui.material3.components.background.ArtworkImageBackground
 import com.google.android.horologist.media.ui.material3.components.display.TextMediaDisplay
 import com.google.android.horologist.media.ui.material3.screens.player.PlayerScreen
 import com.google.android.horologist.media.ui.state.LocalTimestampProvider
 import com.google.android.horologist.media.ui.state.mapper.TrackPositionUiModelMapper
 import com.google.android.horologist.media.ui.state.model.MediaUiModel
+import com.google.android.horologist.media.ui.state.model.TrackPositionUiModel
 import com.thewizrd.shared_resources.actions.ActionStatus
 import com.thewizrd.shared_resources.actions.Actions
 import com.thewizrd.shared_resources.actions.AudioStreamState
@@ -160,11 +173,13 @@ import com.thewizrd.simplewear.viewmodels.WearableListenerViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.milliseconds
 import com.google.android.gms.base.R as gmsBaseRes
 import com.google.android.horologist.audio.ui.model.R as horologistAudioUiRes
+import com.google.android.horologist.media.ui.model.R as horologistMediaUiRes
 import com.thewizrd.shared_resources.R as sharedRes
 
 @Composable
@@ -564,7 +579,7 @@ private fun MediaPlayerControlsPage(
                     controlButtons = {
                         if (!isAmbient) {
                             CompositionLocalProvider(LocalTimestampProvider provides timestampProvider) {
-                                AnimatedMediaControlButtons(
+                                AnimatedMediaControlButtonsWithOneHandedGestures(
                                     onPlayButtonClick = {
                                         playerUiController.play()
                                     },
@@ -653,13 +668,170 @@ private fun MediaPlayerControlsPage(
 
                 LaunchedEffect(uiState, uiState.pagerState) {
                     if (uiState.pagerState.currentPageKey == MediaPageType.Player) {
-                        delay(500)
+                        delay(500.milliseconds)
                         focusRequester.requestFocus()
                     }
                 }
             }
         }
     }
+}
+
+@Composable
+private fun AnimatedMediaControlButtonsWithOneHandedGestures(
+    onPlayButtonClick: () -> Unit,
+    onPauseButtonClick: () -> Unit,
+    playPauseButtonEnabled: Boolean,
+    playing: Boolean,
+    onSeekToPreviousButtonClick: () -> Unit,
+    seekToPreviousButtonEnabled: Boolean,
+    onSeekToNextButtonClick: () -> Unit,
+    seekToNextButtonEnabled: Boolean,
+    modifier: Modifier = Modifier,
+    colorScheme: ColorScheme = MaterialTheme.colorScheme,
+    onSeekToPreviousRepeatableClick: (() -> Unit)? = null,
+    onSeekToPreviousRepeatableClickEnd: (() -> Unit)? = null,
+    onSeekToNextRepeatableClick: (() -> Unit)? = null,
+    onSeekToNextRepeatableClickEnd: (() -> Unit)? = null,
+    trackPositionUiModel: TrackPositionUiModel,
+    rotateProgressIndicator: Flow<Unit> = flowOf(),
+) {
+    val interactionSources = remember { Array(3) { MutableInteractionSource() } }
+    val buttonPressedStateList = interactionSources.map { it.collectIsPressedAsState() }
+    val isAnyButtonPressed = remember {
+        derivedStateOf { buttonPressedStateList.any { it.value } }
+    }
+
+    val leftButtonPadding = ButtonGroupLayoutDefaults.getSideButtonsPadding(isLeftButton = true)
+    val rightButtonPadding = ButtonGroupLayoutDefaults.getSideButtonsPadding(isLeftButton = false)
+
+    val indicatorState = remember { OneHandedGestureClickIndicatorState() }
+    val gestureConfig = rememberOneHandedGestureConfiguration(
+        action = OneHandedGestureAction.Primary
+    )
+
+    val coroutineScope = rememberCoroutineScope()
+
+    ButtonGroupLayout(
+        modifier = modifier,
+        interactionSources = interactionSources,
+        leftButton = {
+            AnimatedSeekToPreviousButton(
+                modifier = Modifier
+                    .animateWidth(it)
+                    .fillMaxSize(),
+                onClick = onSeekToPreviousButtonClick,
+                enabled = seekToPreviousButtonEnabled,
+                interactionSource = it,
+                buttonPadding = leftButtonPadding,
+                onRepeatableClick = onSeekToPreviousRepeatableClick,
+                onRepeatableClickEnd = onSeekToPreviousRepeatableClickEnd,
+            )
+        },
+        middleButton = {
+            if (trackPositionUiModel.showProgress) {
+                AnimatedPlayPauseProgressButton(
+                    onPlayClick = onPlayButtonClick,
+                    onPauseClick = onPauseButtonClick,
+                    enabled = playPauseButtonEnabled,
+                    playing = playing,
+                    interactionSource = it,
+                    trackPositionUiModel = trackPositionUiModel,
+                    modifier = Modifier
+                        .minWidth(ButtonGroupLayoutDefaults.middleButtonSize)
+                        .animateWidth(it)
+                        .fillMaxSize()
+                        .oneHandedGesture(
+                            gestureConfiguration = gestureConfig,
+                            interactionSource = it,
+                            onGestureLabel = stringResource(
+                                if (playing) {
+                                    horologistMediaUiRes.string.horologist_pause_button_content_description
+                                } else {
+                                    horologistMediaUiRes.string.horologist_play_button_content_description
+                                }
+                            ),
+                            enabledInAmbient = true,
+                            onGestureAvailable = {
+                                coroutineScope.launch { indicatorState.showIndicator() }
+                            },
+                            onGesture = {
+                                if (playing) {
+                                    onPauseButtonClick()
+                                } else {
+                                    onPlayButtonClick()
+                                }
+                            }
+                        ),
+                    colorScheme = colorScheme,
+                    rotateProgressIndicator = rotateProgressIndicator,
+                    isAnyButtonPressed = isAnyButtonPressed,
+                ) {
+                    OneHandedGestureClickIndicator(
+                        gestureConfiguration = gestureConfig,
+                        state = indicatorState
+                    ) {
+                        AnimatedPlayPauseButtonContent(playing)
+                    }
+                }
+            } else {
+                AnimatedPlayPauseButton(
+                    onPlayClick = onPlayButtonClick,
+                    onPauseClick = onPauseButtonClick,
+                    enabled = playPauseButtonEnabled,
+                    colorScheme = colorScheme,
+                    playing = playing,
+                    interactionSource = it,
+                    modifier = Modifier
+                        .minWidth(ButtonGroupLayoutDefaults.middleButtonSize)
+                        .animateWidth(it)
+                        .fillMaxSize()
+                        .oneHandedGesture(
+                            gestureConfiguration = gestureConfig,
+                            interactionSource = it,
+                            onGestureLabel = stringResource(
+                                if (playing) {
+                                    horologistMediaUiRes.string.horologist_pause_button_content_description
+                                } else {
+                                    horologistMediaUiRes.string.horologist_play_button_content_description
+                                }
+                            ),
+                            enabledInAmbient = true,
+                            onGestureAvailable = {
+                                coroutineScope.launch { indicatorState.showIndicator() }
+                            },
+                            onGesture = {
+                                if (playing) {
+                                    onPauseButtonClick()
+                                } else {
+                                    onPlayButtonClick()
+                                }
+                            }
+                        ),
+                ) {
+                    OneHandedGestureClickIndicator(
+                        gestureConfiguration = gestureConfig,
+                        state = indicatorState
+                    ) {
+                        AnimatedPlayPauseButtonContent(playing)
+                    }
+                }
+            }
+        },
+        rightButton = {
+            AnimatedSeekToNextButton(
+                modifier = Modifier
+                    .animateWidth(it)
+                    .fillMaxSize(),
+                onClick = onSeekToNextButtonClick,
+                interactionSource = it,
+                buttonPadding = rightButtonPadding,
+                onRepeatableClick = onSeekToNextRepeatableClick,
+                onRepeatableClickEnd = onSeekToNextRepeatableClickEnd,
+                enabled = seekToNextButtonEnabled,
+            )
+        },
+    )
 }
 
 private data class SettingsButtonData(

@@ -36,6 +36,7 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -81,6 +82,11 @@ import androidx.wear.compose.material3.Text
 import androidx.wear.compose.material3.TimeText
 import androidx.wear.compose.material3.lazy.rememberTransformationSpec
 import androidx.wear.compose.material3.lazy.transformedHeight
+import androidx.wear.compose.material3.onehandedgesture.OneHandedGestureAction
+import androidx.wear.compose.material3.onehandedgesture.OneHandedGestureClickIndicator
+import androidx.wear.compose.material3.onehandedgesture.OneHandedGestureClickIndicatorState
+import androidx.wear.compose.material3.onehandedgesture.oneHandedGesture
+import androidx.wear.compose.material3.onehandedgesture.rememberOneHandedGestureConfiguration
 import androidx.wear.compose.material3.ripple
 import androidx.wear.compose.material3.touchTargetAwareSize
 import androidx.wear.compose.ui.tooling.preview.WearPreviewFontScales
@@ -376,7 +382,14 @@ private fun CallManagerUi(
 
     var showMenuDialog by remember { mutableStateOf(false) }
 
+    val coroutineScope = rememberCoroutineScope()
+
     Box(modifier = modifier.fillMaxSize()) {
+        val gestureConfig = rememberOneHandedGestureConfiguration(
+            action = OneHandedGestureAction.Primary
+        )
+        val indicatorState = remember { OneHandedGestureClickIndicatorState() }
+
         if (uiState.callerBitmap != null) {
             val colorScheme = MaterialTheme.colorScheme
             Image(
@@ -494,19 +507,35 @@ private fun CallManagerUi(
                 .align(Alignment.BottomCenter)
                 .padding(bottom = if (buttonSize > 40.dp) 4.dp else 0.dp),
         ) {
+            val interactionSource = remember { MutableInteractionSource() }
+
             FilledIconButton(
-                modifier = Modifier.touchTargetAwareSize(buttonSize),
+                modifier = Modifier
+                    .touchTargetAwareSize(buttonSize)
+                    .oneHandedGesture(
+                        gestureConfiguration = gestureConfig,
+                        interactionSource = interactionSource,
+                        onGestureLabel = stringResource(id = androidxRes.string.call_notification_hang_up_action),
+                        onGestureAvailable = { coroutineScope.launch { indicatorState.showIndicator() } },
+                        onGesture = onEndCall
+                    ),
+                interactionSource = interactionSource,
                 colors = IconButtonDefaults.filledIconButtonColors(
                     containerColor = MaterialTheme.colorScheme.errorContainer,
                     contentColor = MaterialTheme.colorScheme.onErrorContainer
                 ),
                 onClick = onEndCall
             ) {
-                Icon(
-                    modifier = Modifier.size(IconButtonDefaults.iconSizeFor(buttonSize)),
-                    imageVector = Icons.Rounded.CallEnd,
-                    contentDescription = stringResource(id = sharedRes.string.action_hangup)
-                )
+                OneHandedGestureClickIndicator(
+                    gestureConfiguration = gestureConfig,
+                    state = indicatorState
+                ) {
+                    Icon(
+                        modifier = Modifier.size(IconButtonDefaults.iconSizeFor(buttonSize)),
+                        imageVector = Icons.Rounded.CallEnd,
+                        contentDescription = stringResource(id = androidxRes.string.call_notification_hang_up_action),
+                    )
+                }
             }
         }
     }
@@ -651,6 +680,12 @@ private fun IncomingCallUi(
 
     val buttonRowPadding = if (isRound) 16.dp else 8.dp
 
+    val gestureConfig = rememberOneHandedGestureConfiguration(
+        action = OneHandedGestureAction.Primary
+    )
+    val indicatorState = remember { OneHandedGestureClickIndicatorState() }
+    val coroutineScope = rememberCoroutineScope()
+
     Box(modifier = modifier.fillMaxSize()) {
         if (uiState.callerBitmap != null) {
             val colorScheme = MaterialTheme.colorScheme
@@ -758,19 +793,35 @@ private fun IncomingCallUi(
                 .align(Alignment.BottomCenter)
                 .padding(bottom = if (buttonSize > 40.dp) 4.dp else 0.dp),
         ) {
+            val interactionSource = remember { MutableInteractionSource() }
+
             FilledIconButton(
-                modifier = Modifier.touchTargetAwareSize(buttonSize),
+                modifier = Modifier
+                    .touchTargetAwareSize(buttonSize)
+                    .oneHandedGesture(
+                        gestureConfiguration = gestureConfig,
+                        interactionSource = interactionSource,
+                        onGestureLabel = stringResource(id = androidxRes.string.call_notification_answer_action),
+                        onGestureAvailable = { coroutineScope.launch { indicatorState.showIndicator() } },
+                        onGesture = onAnswerCall
+                    ),
+                interactionSource = interactionSource,
                 colors = IconButtonDefaults.filledIconButtonColors(
                     containerColor = Color(0xFF1E8D41),
                     contentColor = Color.White
                 ),
                 onClick = onAnswerCall
             ) {
-                Icon(
-                    modifier = Modifier.size(IconButtonDefaults.iconSizeFor(buttonSize)),
-                    imageVector = Icons.Rounded.Call,
-                    contentDescription = stringResource(id = androidxRes.string.call_notification_answer_action)
-                )
+                OneHandedGestureClickIndicator(
+                    gestureConfiguration = gestureConfig,
+                    state = indicatorState
+                ) {
+                    Icon(
+                        modifier = Modifier.size(IconButtonDefaults.iconSizeFor(buttonSize)),
+                        imageVector = Icons.Rounded.Call,
+                        contentDescription = stringResource(id = androidxRes.string.call_notification_answer_action)
+                    )
+                }
             }
         }
     }
