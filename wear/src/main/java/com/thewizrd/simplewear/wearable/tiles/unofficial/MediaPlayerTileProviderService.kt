@@ -38,6 +38,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.withTimeoutOrNull
+import kotlin.time.Duration.Companion.seconds
 
 class MediaPlayerTileProviderService : TileProviderService() {
     companion object {
@@ -307,7 +308,7 @@ class MediaPlayerTileProviderService : TileProviderService() {
 
             // Try to await for full metadata change
             runCatching {
-                withTimeoutOrNull(5000) {
+                withTimeoutOrNull(5.seconds) {
                     supervisorScope {
                         var songChanged = false
 

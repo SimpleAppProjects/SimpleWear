@@ -69,24 +69,22 @@ class DashboardViewModel(app: Application) : WearableListenerViewModel(app) {
             override fun onTick(millisUntilFinished: Long) {}
 
             override fun onFinish() {
-                activityContext?.let {
-                    _eventsFlow.tryEmit(
-                        WearableEvent(
-                            ACTION_SHOWCONFIRMATION,
-                            Bundle().apply {
-                                putString(
-                                    EXTRA_ACTIONDATA,
-                                    JSONParser.serializer(
-                                        ConfirmationData(
-                                            confirmationType = ConfirmationType.Failure,
-                                            message = it.getString(R.string.error_sendmessage)
-                                        ), ConfirmationData::class.java
-                                    )
+                _eventsFlow.tryEmit(
+                    WearableEvent(
+                        ACTION_SHOWCONFIRMATION,
+                        Bundle().apply {
+                            putString(
+                                EXTRA_ACTIONDATA,
+                                JSONParser.serializer(
+                                    ConfirmationData(
+                                        confirmationType = ConfirmationType.Failure,
+                                        messageResId = R.string.error_sendmessage
+                                    ), ConfirmationData::class.java
                                 )
-                            }
-                        )
+                            )
+                        }
                     )
-                }
+                )
             }
         }
 

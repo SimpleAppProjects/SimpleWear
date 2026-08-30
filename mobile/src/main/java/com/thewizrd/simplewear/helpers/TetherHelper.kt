@@ -23,6 +23,7 @@ import java.lang.reflect.Proxy
 import java.util.concurrent.Executor
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
+import kotlin.time.Duration.Companion.seconds
 
 object TetherHelper {
     private const val TAG = "TetherHelper"
@@ -201,7 +202,7 @@ object TetherHelper {
             )
 
             runBlocking {
-                withTimeout(10000) {
+                withTimeout(10.seconds) {
                     suspendCancellableCoroutine { continuation ->
                         val codeCacheDir = context.applicationContext.codeCacheDir
                         val proxy = try {
@@ -341,7 +342,7 @@ object TetherHelper {
             )
 
             runBlocking {
-                withTimeout(10000) {
+                withTimeout(10.seconds) {
                     suspendCancellableCoroutine { continuation ->
                         val proxy = try {
                             Proxy.newProxyInstance(

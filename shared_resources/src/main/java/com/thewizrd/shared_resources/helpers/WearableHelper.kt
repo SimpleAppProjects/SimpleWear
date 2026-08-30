@@ -7,6 +7,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.ParcelUuid
 import android.util.Log
+import androidx.core.net.toUri
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.GoogleApiAvailability
 import com.google.android.gms.wearable.Node
@@ -28,7 +29,7 @@ object WearableHelper {
 
     private const val SUPPORTED_VERSION_CODE: Long = 361917010
 
-    fun getPlayStoreURI(): Uri = Uri.parse(PLAY_STORE_APP_URI)
+    fun getPlayStoreURI(): Uri = PLAY_STORE_APP_URI.toUri()
 
     // For WearableListenerService
     const val StartActivityPath = "/start-activity"

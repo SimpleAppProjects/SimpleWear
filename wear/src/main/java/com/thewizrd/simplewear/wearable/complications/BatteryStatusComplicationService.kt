@@ -35,6 +35,7 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.seconds
 
 class BatteryStatusComplicationService : SuspendingComplicationDataSourceService() {
     companion object {
@@ -44,7 +45,7 @@ class BatteryStatusComplicationService : SuspendingComplicationDataSourceService
             updateJob?.cancel()
 
             updateJob = appLib.appScope.launch {
-                delay(1000)
+                delay(1.seconds)
                 if (isActive) {
                     Logger.debug(TAG, "requesting complication update")
 

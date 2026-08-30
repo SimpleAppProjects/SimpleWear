@@ -31,7 +31,21 @@ fun ConfirmationOverlay(
 ) {
     when (confirmationData?.confirmationType) {
         ConfirmationType.Success -> {
-            if (confirmationData.message != null) {
+            if (confirmationData.messageResId != null) {
+                ConfirmationDialog(
+                    visible = showDialog,
+                    onDismissRequest = onTimeout,
+                    colors = ConfirmationDialogDefaults.successColors(),
+                    text = {
+                        Text(text = stringResource(confirmationData.messageResId))
+                    },
+                    content = {
+                        ConfirmationDialogDefaults.SuccessIcon(
+                            modifier = Modifier.size(ConfirmationDialogDefaults.SmallIconSize)
+                        )
+                    }
+                )
+            } else if (confirmationData.message != null) {
                 ConfirmationDialog(
                     visible = showDialog,
                     onDismissRequest = onTimeout,
@@ -55,7 +69,21 @@ fun ConfirmationOverlay(
         }
 
         ConfirmationType.Failure -> {
-            if (confirmationData.message != null) {
+            if (confirmationData.messageResId != null) {
+                ConfirmationDialog(
+                    visible = showDialog,
+                    onDismissRequest = onTimeout,
+                    colors = ConfirmationDialogDefaults.failureColors(),
+                    text = {
+                        Text(text = stringResource(confirmationData.messageResId))
+                    },
+                    content = {
+                        ConfirmationDialogDefaults.FailureIcon(
+                            modifier = Modifier.size(ConfirmationDialogDefaults.SmallIconSize)
+                        )
+                    }
+                )
+            } else if (confirmationData.message != null) {
                 ConfirmationDialog(
                     visible = showDialog,
                     onDismissRequest = onTimeout,
@@ -83,7 +111,11 @@ fun ConfirmationOverlay(
                 visible = showDialog,
                 onDismissRequest = onTimeout,
                 colors = ConfirmationDialogDefaults.colors(),
-                text = confirmationData.message?.let {
+                text = confirmationData.messageResId?.let {
+                    {
+                        Text(text = stringResource(it))
+                    }
+                } ?: confirmationData.message?.let {
                     {
                         Text(text = it)
                     }
@@ -95,7 +127,7 @@ fun ConfirmationOverlay(
 
                     Icon(
                         modifier = Modifier.size(
-                            if (confirmationData.message != null) {
+                            if (confirmationData.messageResId != null || confirmationData.message != null) {
                                 ConfirmationDialogDefaults.SmallIconSize
                             } else {
                                 ConfirmationDialogDefaults.IconSize
@@ -117,7 +149,11 @@ fun ConfirmationOverlay(
                 visible = showDialog,
                 onDismissRequest = onTimeout,
                 colors = ConfirmationDialogDefaults.colors(),
-                text = confirmationData?.message?.let {
+                text = confirmationData?.messageResId?.let {
+                    {
+                        Text(text = stringResource(it))
+                    }
+                } ?: confirmationData?.message?.let {
                     {
                         Text(text = it)
                     }
@@ -129,7 +165,7 @@ fun ConfirmationOverlay(
 
                         Icon(
                             modifier = Modifier.size(
-                                if (confirmationData.message != null) {
+                                if (confirmationData.messageResId != null || confirmationData.message != null) {
                                     ConfirmationDialogDefaults.SmallIconSize
                                 } else {
                                     ConfirmationDialogDefaults.IconSize
@@ -147,7 +183,7 @@ fun ConfirmationOverlay(
                     {
                         Icon(
                             modifier = Modifier.size(
-                                if (confirmationData.message != null) {
+                                if (confirmationData.messageResId != null || confirmationData.message != null) {
                                     ConfirmationDialogDefaults.SmallIconSize
                                 } else {
                                     ConfirmationDialogDefaults.IconSize
@@ -160,7 +196,7 @@ fun ConfirmationOverlay(
                 } ?: {
                     Icon(
                         modifier = Modifier.size(
-                            if (confirmationData?.message != null) {
+                            if (confirmationData?.messageResId != null || confirmationData?.message != null) {
                                 ConfirmationDialogDefaults.SmallIconSize
                             } else {
                                 ConfirmationDialogDefaults.IconSize

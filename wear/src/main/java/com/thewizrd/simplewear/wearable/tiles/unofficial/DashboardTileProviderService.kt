@@ -39,6 +39,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.withTimeoutOrNull
 import java.util.Locale
+import kotlin.time.Duration.Companion.seconds
 
 class DashboardTileProviderService : TileProviderService() {
     companion object {
@@ -301,7 +302,7 @@ class DashboardTileProviderService : TileProviderService() {
 
             // Try to await for full metadata change
             runCatching {
-                withTimeoutOrNull(5000) {
+                withTimeoutOrNull(5.seconds) {
                     supervisorScope {
                         tileStateFlow.filterNotNull().collectLatest { newState ->
                             if (newState.actions.isNotEmpty() && newState.batteryStatus != null) {

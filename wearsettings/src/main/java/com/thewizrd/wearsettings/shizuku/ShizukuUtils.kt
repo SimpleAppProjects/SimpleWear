@@ -10,6 +10,7 @@ import android.net.Uri
 import android.os.Process
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 import androidx.fragment.app.Fragment
 import rikka.shizuku.Shizuku
 import rikka.shizuku.ShizukuProvider
@@ -107,11 +108,11 @@ object ShizukuUtils {
     fun isRunning(context: Context): Boolean = getShizukuState(context) == ShizukuState.RUNNING
 
     private fun getPlayStoreURI(): Uri {
-        return Uri.parse(PLAY_STORE_APP_URI)
+        return PLAY_STORE_APP_URI.toUri()
     }
 
     private fun getPlayStoreWebURI(): Uri {
-        return Uri.parse(PLAY_STORE_APP_WEBURI)
+        return PLAY_STORE_APP_WEBURI.toUri()
     }
 
     fun getUserId(): Int {

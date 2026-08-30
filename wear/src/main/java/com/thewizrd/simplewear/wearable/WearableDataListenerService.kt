@@ -59,7 +59,6 @@ import com.thewizrd.simplewear.datastore.media.mediaDataStore
 import com.thewizrd.simplewear.media.MediaPlayerActivity
 import com.thewizrd.simplewear.preferences.Settings
 import com.thewizrd.simplewear.viewmodels.WearableListenerViewModel
-import com.thewizrd.simplewear.wearable.complications.BatteryStatusComplicationService
 import com.thewizrd.simplewear.wearable.tiles.DashboardTileProviderService
 import com.thewizrd.simplewear.wearable.tiles.MediaPlayerTileProviderService
 import com.thewizrd.simplewear.wearable.tiles.NowPlayingTileProviderService
@@ -336,10 +335,7 @@ class WearableDataListenerService : WearableListenerService() {
                         }
 
                         if (currentState?.batteryStatus != status) {
-                            BatteryStatusComplicationService.requestComplicationUpdate(
-                                applicationContext
-                            )
-                            if (!mLegacyTilesEnabled) {
+                            if (!mLegacyTilesEnabled && DashboardTileProviderService.isInFocus) {
                                 DashboardTileProviderService.requestTileUpdate(appLib.context)
                             }
                         }

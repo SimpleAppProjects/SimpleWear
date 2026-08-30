@@ -24,7 +24,9 @@
         <shape android:shape="rectangle">
             <solid android:color="?colorSurfaceBright" />
             <corners android:radius="20dp" />
-            <padding android:bottom="16dp" />
+            <padding
+                android:bottom="16dp"
+                android:top="16dp" />
         </shape>
     </item>
 </ripple>

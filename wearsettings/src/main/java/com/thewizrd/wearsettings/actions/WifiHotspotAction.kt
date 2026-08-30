@@ -24,6 +24,7 @@ import kotlinx.coroutines.withTimeout
 import rikka.shizuku.ShizukuBinderWrapper
 import rikka.shizuku.SystemServiceHelper
 import kotlin.coroutines.resume
+import kotlin.time.Duration.Companion.seconds
 
 @SuppressLint("PrivateApi")
 object WifiHotspotAction {
@@ -70,7 +71,7 @@ object WifiHotspotAction {
 
             if (enabled) {
                 return@runCatching runBlocking {
-                    withTimeout(10000) {
+                    withTimeout(10.seconds) {
                         suspendCancellableCoroutine { continuation ->
                             val resultReceiver = object : ResultReceiver(null) {
                                 override fun onReceiveResult(resultCode: Int, resultData: Bundle?) {
@@ -127,7 +128,7 @@ object WifiHotspotAction {
                 .let(ITetheringConnector.Stub::asInterface)
 
             runBlocking {
-                withTimeout(10000) {
+                withTimeout(10.seconds) {
                     suspendCancellableCoroutine { continuation ->
                         val resultListener = object : IIntResultListener.Stub() {
                             override fun onResult(resultCode: Int) {

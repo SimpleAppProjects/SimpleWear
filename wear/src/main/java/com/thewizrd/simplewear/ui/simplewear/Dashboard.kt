@@ -72,6 +72,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import java.time.Duration
 import java.time.Instant
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 @OptIn(ExperimentalHorologistApi::class, ExperimentalAnimationGraphicsApi::class)
 @Composable
@@ -180,7 +182,7 @@ fun Dashboard(
             )
 
             LaunchedEffect(showAppUpdateConfirmation) {
-                delay(250)
+                delay(250.milliseconds)
                 startAnim = true
             }
         },
@@ -321,16 +323,14 @@ fun Dashboard(
                             when (actionStatus) {
                                 ActionStatus.UNKNOWN, ActionStatus.FAILURE -> {
                                     confirmationViewModel.showFailure(
-                                        message = context.getString(R.string.error_actionfailed)
+                                        messageResId = R.string.error_actionfailed
                                     )
                                 }
 
                                 ActionStatus.PERMISSION_DENIED -> {
                                     if (action.actionType == Actions.TORCH) {
                                         confirmationViewModel.showFailure(
-                                            message = context.getString(
-                                                R.string.error_torch_action
-                                            )
+                                            messageResId = R.string.error_torch_action
                                         )
                                     } else if (action.actionType == Actions.SLEEPTIMER) {
                                         // Open store on device
@@ -342,16 +342,12 @@ fun Dashboard(
                                             activity.startActivity(intentAndroid)
                                         } else {
                                             confirmationViewModel.showFailure(
-                                                message = context.getString(
-                                                    R.string.error_sleeptimer_notinstalled
-                                                )
+                                                messageResId = R.string.error_sleeptimer_notinstalled
                                             )
                                         }
                                     } else {
                                         confirmationViewModel.showFailure(
-                                            message = context.getString(
-                                                R.string.error_permissiondenied_wear
-                                            )
+                                            messageResId = R.string.error_permissiondenied_wear
                                         )
                                     }
 
@@ -359,15 +355,15 @@ fun Dashboard(
                                 }
 
                                 ActionStatus.TIMEOUT -> {
-                                    confirmationViewModel.showFailure(message = context.getString(R.string.error_sendmessage))
+                                    confirmationViewModel.showFailure(messageResId = R.string.error_sendmessage)
                                 }
 
                                 ActionStatus.REMOTE_FAILURE -> {
-                                    confirmationViewModel.showFailure(message = context.getString(R.string.error_remoteactionfailed))
+                                    confirmationViewModel.showFailure(messageResId = R.string.error_remoteactionfailed)
                                 }
 
                                 ActionStatus.REMOTE_PERMISSION_DENIED -> {
-                                    confirmationViewModel.showFailure(message = context.getString(R.string.error_permissiondenied_wear))
+                                    confirmationViewModel.showFailure(messageResId = R.string.error_permissiondenied_wear)
                                     dashboardViewModel.openAppOnPhone(false)
                                 }
 
@@ -414,7 +410,7 @@ fun Dashboard(
             ) {
                 // Check phone version
                 runCatching {
-                    val phoneVersionCode = withTimeoutOrNull(15000) {
+                    val phoneVersionCode = withTimeoutOrNull(15.seconds) {
                         dashboardViewModel.requestPhoneAppVersion()
                     }
 

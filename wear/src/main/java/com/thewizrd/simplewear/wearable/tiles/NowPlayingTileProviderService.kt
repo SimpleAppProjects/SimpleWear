@@ -27,6 +27,7 @@ import com.thewizrd.simplewear.wearable.tiles.NowPlayingTileRenderer.Companion.I
 import com.thewizrd.simplewear.wearable.tiles.NowPlayingTileRenderer.Companion.ID_PHONEDISCONNECTED
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -41,7 +42,7 @@ import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.withTimeoutOrNull
 import java.time.Duration
 import kotlin.coroutines.cancellation.CancellationException
-import kotlin.coroutines.coroutineContext
+import kotlin.time.Duration.Companion.seconds
 
 class NowPlayingTileProviderService : SuspendingTileService() {
     companion object {
@@ -52,7 +53,7 @@ class NowPlayingTileProviderService : SuspendingTileService() {
 
             // Defer update to prevent spam
             updateJob = appLib.appScope.launch {
-                delay(1000)
+                delay(1.seconds)
                 if (isActive) {
                     Logger.debug(TAG, "requesting tile update")
                     getUpdater(context).requestUpdate(NowPlayingTileProviderService::class.java)
@@ -188,13 +189,13 @@ class NowPlayingTileProviderService : SuspendingTileService() {
 
                     val state = latestTileState()
 
-                    withTimeoutOrNull(5000) {
+                    withTimeoutOrNull(5.seconds) {
                         val ret = tileMessenger.requestPlayerActionAsync(action)
                         Logger.debug(TAG, "requestPlayerActionAsync = $ret")
                     }
 
                     // Try to await for full metadata change
-                    withTimeoutOrNull(5000) {
+                    withTimeoutOrNull(5.seconds) {
                         supervisorScope {
                             var songChanged = false
                             tileStateFlow.collectLatest { newState ->
@@ -219,7 +220,7 @@ class NowPlayingTileProviderService : SuspendingTileService() {
 
         if (tileState.isEmpty) {
             AnalyticsLogger.logEvent("mediatile_state_empty", Bundle().apply {
-                putBoolean("isCoroutineActive", coroutineContext.isActive)
+                putBoolean("isCoroutineActive", currentCoroutineContext().isActive)
             })
         }
 
@@ -239,7 +240,7 @@ class NowPlayingTileProviderService : SuspendingTileService() {
 
             // Try to await for full metadata change
             runCatching {
-                withTimeoutOrNull(5000) {
+                withTimeoutOrNull(5.seconds) {
                     supervisorScope {
                         var songChanged = false
 

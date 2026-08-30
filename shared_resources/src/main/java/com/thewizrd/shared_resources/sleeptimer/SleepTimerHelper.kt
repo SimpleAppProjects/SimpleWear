@@ -4,6 +4,7 @@ import android.content.ComponentName
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
+import androidx.core.net.toUri
 import com.thewizrd.shared_resources.BuildConfig
 import com.thewizrd.shared_resources.sharedDeps
 
@@ -12,7 +13,7 @@ object SleepTimerHelper {
     const val PACKAGE_NAME = "com.thewizrd.simplesleeptimer"
     private const val PLAY_STORE_APP_URI = "market://details?id=$PACKAGE_NAME"
 
-    fun getPlayStoreURI(): Uri = Uri.parse(PLAY_STORE_APP_URI)
+    fun getPlayStoreURI(): Uri = PLAY_STORE_APP_URI.toUri()
 
     fun getPackageName(): String {
         var packageName = PACKAGE_NAME

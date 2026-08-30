@@ -1,6 +1,7 @@
 package com.thewizrd.simplewear.viewmodels
 
 import androidx.annotation.DrawableRes
+import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.wear.compose.material3.ConfirmationDialogDefaults
@@ -36,12 +37,32 @@ class ConfirmationViewModel : ViewModel() {
         }
     }
 
+    fun showSuccess(@StringRes messageResId: Int? = null) {
+        _confirmationEventsFlow.update {
+            ConfirmationData(
+                animatedVectorResId = R.drawable.confirmation_animation,
+                confirmationType = ConfirmationType.Success,
+                messageResId = messageResId
+            )
+        }
+    }
+
     fun showFailure(message: String? = null) {
         _confirmationEventsFlow.update {
             ConfirmationData(
                 animatedVectorResId = R.drawable.failure_animation,
                 confirmationType = ConfirmationType.Failure,
                 message = message
+            )
+        }
+    }
+
+    fun showFailure(@StringRes messageResId: Int? = null) {
+        _confirmationEventsFlow.update {
+            ConfirmationData(
+                animatedVectorResId = R.drawable.failure_animation,
+                confirmationType = ConfirmationType.Failure,
+                messageResId = messageResId
             )
         }
     }
@@ -56,12 +77,32 @@ class ConfirmationViewModel : ViewModel() {
         }
     }
 
+    fun showOpenOnPhone(@StringRes messageResId: Int? = null) {
+        _confirmationEventsFlow.update {
+            ConfirmationData(
+                animatedVectorResId = R.drawable.open_on_phone_animation,
+                confirmationType = ConfirmationType.OpenOnPhone,
+                messageResId = messageResId
+            )
+        }
+    }
+
     fun showOpenOnPhoneForFailure(message: String? = null) {
         _confirmationEventsFlow.update {
             ConfirmationData(
                 animatedVectorResId = R.drawable.open_on_phone_animation,
                 confirmationType = ConfirmationType.Custom,
                 message = message
+            )
+        }
+    }
+
+    fun showOpenOnPhoneForFailure(@StringRes messageResId: Int? = null) {
+        _confirmationEventsFlow.update {
+            ConfirmationData(
+                animatedVectorResId = R.drawable.open_on_phone_animation,
+                confirmationType = ConfirmationType.Custom,
+                messageResId = messageResId
             )
         }
     }
@@ -73,8 +114,9 @@ class ConfirmationViewModel : ViewModel() {
 
 data class ConfirmationData(
     val message: String? = null,
-    @DrawableRes val iconResId: Int? = null,
-    @DrawableRes val animatedVectorResId: Int? = null,
+    @param:StringRes val messageResId: Int? = null,
+    @param:DrawableRes val iconResId: Int? = null,
+    @param:DrawableRes val animatedVectorResId: Int? = null,
     val confirmationType: ConfirmationType = ConfirmationType.Custom,
     val durationMs: Long = ConfirmationDialogDefaults.DurationMillis
 )

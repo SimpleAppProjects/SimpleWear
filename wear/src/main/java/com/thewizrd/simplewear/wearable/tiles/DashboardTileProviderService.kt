@@ -29,6 +29,7 @@ import com.thewizrd.simplewear.wearable.tiles.DashboardTileRenderer.Companion.ID
 import com.thewizrd.simplewear.wearable.tiles.DashboardTileRenderer.Companion.ID_PHONEDISCONNECTED
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -43,7 +44,7 @@ import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.withTimeoutOrNull
 import java.time.Duration
 import kotlin.coroutines.cancellation.CancellationException
-import kotlin.coroutines.coroutineContext
+import kotlin.time.Duration.Companion.seconds
 
 class DashboardTileProviderService : SuspendingTileService() {
     companion object {
@@ -53,7 +54,7 @@ class DashboardTileProviderService : SuspendingTileService() {
             updateJob?.cancel()
 
             updateJob = appLib.appScope.launch {
-                delay(1000)
+                delay(1.seconds)
                 if (isActive) {
                     Logger.debug(TAG, "requesting tile update")
                     getUpdater(context).requestUpdate(DashboardTileProviderService::class.java)
@@ -184,7 +185,7 @@ class DashboardTileProviderService : SuspendingTileService() {
                     val state = latestTileState()
                     val actionState = state.getAction(action)
 
-                    withTimeoutOrNull(5000) {
+                    withTimeoutOrNull(5.seconds) {
                         AnalyticsLogger.logEvent("dashtile_action_clicked", Bundle().apply {
                             putString("action", action.name)
                         })
@@ -195,7 +196,7 @@ class DashboardTileProviderService : SuspendingTileService() {
 
                     if (Action.getDefaultAction(action) !is NormalAction) {
                         // Try to await for action change
-                        withTimeoutOrNull(5000) {
+                        withTimeoutOrNull(5.seconds) {
                             supervisorScope {
                                 tileStateFlow.collectLatest { newState ->
                                     if (newState?.getAction(action) != actionState) {
@@ -214,7 +215,7 @@ class DashboardTileProviderService : SuspendingTileService() {
 
         if (tileState.isEmpty) {
             AnalyticsLogger.logEvent("dashtile_state_empty", Bundle().apply {
-                putBoolean("isCoroutineActive", coroutineContext.isActive)
+                putBoolean("isCoroutineActive", currentCoroutineContext().isActive)
             })
         }
 
@@ -233,7 +234,7 @@ class DashboardTileProviderService : SuspendingTileService() {
 
             // Try to await for full metadata change
             runCatching {
-                withTimeoutOrNull(5000) {
+                withTimeoutOrNull(5.seconds) {
                     supervisorScope {
                         tileStateFlow.filterNotNull().collectLatest { newState ->
                             if (newState.actions.isNotEmpty() && newState.batteryStatus != null) {
