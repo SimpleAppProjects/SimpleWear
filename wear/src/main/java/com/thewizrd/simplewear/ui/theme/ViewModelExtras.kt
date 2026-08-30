@@ -11,31 +11,34 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 
 /** Try to fetch a viewModel in [store] */
 @Composable
-inline fun <reified T : ViewModel, S : ViewModelStoreOwner> viewModelInStore(store: S): Result<T> =
-    runCatching {
-        var result: Result<T>? = null
-        CompositionLocalProvider(LocalViewModelStoreOwner provides store) {
-            result = runCatching { viewModel(T::class.java) }
-        }
-        result!!.getOrThrow()
+inline fun <reified T : ViewModel, S : ViewModelStoreOwner> viewModelInStore(store: S): T {
+    var result: T? = null
+    CompositionLocalProvider(LocalViewModelStoreOwner provides store) {
+        result = viewModel(T::class.java)
     }
-
-/** Try to fetch a viewModel with current context (i.e. activity)  */
-@Composable
-inline fun <reified T : ViewModel> safeActivityViewModel(): Result<T> = runCatching {
-    val activity = LocalContext.current as? ViewModelStoreOwner
-        ?: throw IllegalStateException("Current context is not a viewModelStoreOwner.")
-    return viewModelInStore(activity)
+    return result!!
 }
 
 /** Try to fetch a viewModel with current context (i.e. activity)  */
 @Composable
-inline fun <reified T : ViewModel> safeActivityViewModel(context: Context): Result<T> =
-    runCatching {
-        val activity = context as? ViewModelStoreOwner
-            ?: throw IllegalStateException("Current context is not a viewModelStoreOwner.")
-        return viewModelInStore(activity)
+inline fun <reified T : ViewModel> safeActivityViewModel(): Result<T> {
+    val context = LocalContext.current
+    return if (context is ViewModelStoreOwner) {
+        Result.success(viewModelInStore(context))
+    } else {
+        Result.failure(IllegalStateException("Current context is not a viewModelStoreOwner."))
     }
+}
+
+/** Try to fetch a viewModel with current context (i.e. activity)  */
+@Composable
+inline fun <reified T : ViewModel> safeActivityViewModel(context: Context): Result<T> {
+    return if (context is ViewModelStoreOwner) {
+        Result.success(viewModelInStore(context))
+    } else {
+        Result.failure(IllegalStateException("Current context is not a viewModelStoreOwner."))
+    }
+}
 
 /** Force fetch a viewModel inside context's viewModelStore */
 @Composable
